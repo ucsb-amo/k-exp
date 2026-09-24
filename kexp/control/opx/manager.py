@@ -123,6 +123,7 @@ class OPXManager:
         self._simulate = False
         self._simulate_duration = 200.e-6
         self._simulate_shots = 1
+        self._simulate_web_plot = True
         self._map = None
         self._qmm: 'Optional[QuantumMachinesManager]' = None
         self._qm: 'Optional[QuantumMachine]' = None
@@ -137,6 +138,10 @@ class OPXManager:
         # cell survives the simulate branch
         self.sim_job: 'Optional[SimulatedJob]' = None
         self._exit_after_simulate = True
+        self._simulate_viewer = True
+        self._sim_builder = None
+        self._sim_config = None
+        self.viewer_bundle = None
 
     @property
     def active(self):
@@ -147,7 +152,7 @@ class OPXManager:
     # ------------------------------------------------------------------
 
     def use(self, sequence, simulate=False, simulate_duration=200.e-6,
-            simulate_shots=1):
+            simulate_shots=1, simulate_web_plot=None, simulate_viewer=True):
         """Select the per-shot OPX sequence for this run.
 
         Call in prepare(), before finish_prepare() (the measurement data
@@ -169,6 +174,16 @@ class OPXManager:
         a deterministic single-shot simulation. 0 or None simulates the
         full scan. The provenance/execute program is never scoped -- only
         the simulation is.
+
+        simulate_viewer=True (default): open the interactive pulse viewer
+        (waxx.util.seqview) on the simulation -- a separate window with
+        every simulated pulse linked to the sequence line that made it.
+        Re-running a simulation updates an open viewer in place.
+
+        simulate_web_plot: the QM waveform report (a browser plot). None
+        (default) means "only when the viewer is off"; True forces it on,
+        False skips it. The job is always kept on self.sim_job, so fetch
+        get_simulated_samples() from it and plot however you like.
         """
         if self._sequence is not None:
             raise RuntimeError("[opx] use() called twice for one run.")
@@ -194,6 +209,10 @@ class OPXManager:
         self._simulate = bool(simulate)
         self._simulate_duration = float(simulate_duration)
         self._simulate_shots = int(simulate_shots or 0)
+        self._simulate_viewer = bool(simulate_viewer)
+        self._simulate_web_plot = (not self._simulate_viewer
+                                   if simulate_web_plot is None
+                                   else bool(simulate_web_plot))
         console.info(f"[opx] using sequence {seq.name!r} "
                      f"(claims={seq.claims}, measurements={seq.measurements})"
                      + (" [SIMULATE]" if simulate else ""),
@@ -256,13 +275,17 @@ class OPXManager:
             tables_sim = ShotTables(
                 {k: col[:n_sim].copy()
                  for k, col in tables.columns.items()}, n_sim)
-            prog_sim, _ = OPXProgramBuilder(
-                seq, self._map, tables_sim, n_sim).trace(skip_triggers=True)
+            builder_sim = OPXProgramBuilder(seq, self._map, tables_sim, n_sim)
+            prog_sim, _ = builder_sim.trace(skip_triggers=True)
+            self._sim_builder = builder_sim
+            self._sim_config = config
             console.info(f"[opx] simulating the first {n_sim} of "
                          f"{self._n_shots} scheduled shot(s) (triggers "
                          f"skipped -- shots run back-to-back on the "
                          f"simulated timeline).")
             self._run_simulation(prog_sim, config)
+            if self._simulate_viewer and self.sim_job is not None:
+                self.open_viewer(prog_sim)
             if self._exit_after_simulate:
                 raise SystemExit(
                     "[opx] simulation complete -- exiting before any ARTIQ "
@@ -291,11 +314,73 @@ class OPXManager:
         job = self._qmm.simulate(config, prog,
                                  SimulationConfig(duration=n_cc))
         self.sim_job = job
+        if not self._simulate_web_plot:
+            return job
         samples = job.get_simulated_samples()
         report = job.get_simulated_waveform_report()
         if report is not None:
             report.create_plot(samples, plot=True)
         return job
+
+    # ------------------------------------------------------------------
+    # pulse viewer
+    # ------------------------------------------------------------------
+
+    def build_viewer_bundle(self, prog_sim=None):
+        """The seqview bundle for the last simulation (see
+        kexp.control.opx.viewer). Needs a completed simulate()."""
+        if self.sim_job is None or getattr(self, '_sim_builder', None) is None:
+            raise RuntimeError("[opx] no simulation to view -- run with "
+                               "simulate=True first.")
+        from kexp.control.opx.viewer import build_bundle
+        qua_sim = ''
+        if prog_sim is not None:
+            try:
+                from qm import generate_qua_script
+                qua_sim = generate_qua_script(prog_sim, self._sim_config)
+            except Exception as e:
+                print(f"[opx] NOTE: could not serialize the simulated program "
+                      f"for the viewer: {e}")
+        qua_real = self._expt._extra_file_texts.get(QUA_SOURCE_ATTR, '')
+        seq = self._sequence
+        n_sim = self._sim_builder.n_shots
+        dur_ns = self._simulate_duration * 1e9
+        title = f"{seq.name}  ·  {n_sim} of {self._n_shots} shot(s)  ·  "
+        title += (f"{dur_ns / 1e3:g} µs window")
+        info = {
+            'title': title,
+            'subtitle': f"claims {seq.claims}, measurements {seq.measurements}",
+            'sequence': seq.name,
+            'shots simulated': n_sim,
+            'shots scheduled': self._n_shots,
+            'simulated window': f"{dur_ns / 1e3:g} µs",
+            'triggers': 'skipped (shots run back-to-back on the simulated timeline)',
+            'simulator job': str(getattr(self.sim_job, 'id', '')),
+            'generated': time.strftime('%Y-%m-%d %H:%M:%S'),
+        }
+        return build_bundle(self.sim_job, self._sim_builder, self._map,
+                            self._sim_config, dur_ns, qua_sim=qua_sim,
+                            qua_real=qua_real, info=info, sequence=seq)
+
+    def open_viewer(self, prog_sim=None, inline=False, reuse=True):
+        """Open (or refresh) the pulse viewer on the last simulation."""
+        try:
+            bundle = self.build_viewer_bundle(prog_sim)
+        except Exception as e:
+            print(f"[opx] WARNING: pulse viewer bundle failed: {e!r}")
+            import traceback
+            traceback.print_exc()
+            return None
+        self.viewer_bundle = bundle
+        from kexp.control.opx.viewer import show_bundle
+        out = show_bundle(bundle, inline=inline, reuse=reuse,
+                          name=self._sequence.name)
+        n_err = sum(1 for w in bundle.meta['warnings'] if w['level'] == 'error')
+        console.info(f"[opx] pulse viewer: {len(bundle.pulses)} pulses, "
+                     f"{len(bundle.events)} events"
+                     + (f", {n_err} error-level warning(s)" if n_err else '')
+                     + (f" -> {out}" if isinstance(out, str) else ''))
+        return out
 
     # ------------------------------------------------------------------
     # end(): fetch, fill containers, halt

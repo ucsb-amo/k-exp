@@ -12,7 +12,7 @@ from a notebook:
 
     bench = OPXBench()
     bench.xvar('t_raman_pulse', np.linspace(0., 30.e-6, 15))
-    job = bench.simulate(rabi_raman_pulse, shots=2)   # waveform report pops
+    job = bench.simulate(rabi_raman_pulse, shots=2)   # pulse viewer opens
 
     print(bench.qua_source)                # the full (real) program text
     samples = job.get_simulated_samples()  # dig into the traces yourself
@@ -84,22 +84,42 @@ class OPXBench:
         vars(self.params)[key] = values[0]
         self.xvardims = [len(xv.values) for xv in self.scan_xvars]
 
-    def simulate(self, sequence, duration=200.e-6,
-                 shots=1) -> 'Optional[SimulatedJob]':
+    def simulate(self, sequence, duration=200.e-6, shots=1, viewer=True,
+                 web_plot=None) -> 'Optional[SimulatedJob]':
         """Build the program for `sequence` and run the QOP simulator
-        (needs the OPX reachable on the lab network). Plots the waveform
-        report and returns the simulation job. shots: how many scheduled
-        shots to simulate (0 = the whole scan); duration: simulated OPX
-        timeline (SI seconds)."""
+        (needs the OPX reachable on the lab network). Returns the
+        simulation job.
+
+        shots: how many scheduled shots to simulate (0 = the whole scan);
+        duration: simulated OPX timeline (SI seconds).
+
+        viewer=True (default): open the interactive pulse viewer on the
+        result -- a separate window; re-running simulate() updates it in
+        place. The QM waveform report (browser plot) is then suppressed:
+        web_plot=True forces it as well, web_plot=False skips it, None
+        (default) means "only when the viewer is off".
+        """
         # fresh state so this can be called repeatedly while iterating
         self.data = DataVault(expt=self)
         self._extra_file_texts = {}
         self.opx = self._fresh_manager()
 
         self.opx.use(sequence, simulate=True, simulate_duration=duration,
-                     simulate_shots=shots)
+                     simulate_shots=shots, simulate_web_plot=web_plot,
+                     simulate_viewer=viewer)
         self.opx.on_finish_prepare()
         return self.opx.sim_job
+
+    def view(self, inline=False):
+        """Re-open the pulse viewer on the last simulate() (after closing
+        the window, or with viewer=False). inline=True builds it in this
+        process, which needs a running Qt event loop (``%gui qt``)."""
+        return self.opx.open_viewer(inline=inline)
+
+    @property
+    def viewer_bundle(self):
+        """The seqview bundle of the last simulate() (None before one)."""
+        return self.opx.viewer_bundle
 
     @property
     def qua_source(self) -> str:

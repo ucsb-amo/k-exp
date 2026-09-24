@@ -26,6 +26,7 @@ from kexp.control.opx.params_bridge import (ParamRef, ParamsProxy, ShotTables,
 from kexp.control.opx.channels import ChannelMap
 from kexp.control.opx.units import (s_to_cc, hz_to_int, MIN_PULSE_CC,
                                     QUA_FIXED_LIMIT)
+from kexp.control.opx.trace_log import OpLog, PHASE_BODY
 
 # The lab's params class, for editors only: annotating a sequence with
 # OPXShotContext[ExptParams] makes ctx.p.<name> complete against the real
@@ -41,7 +42,7 @@ class OPXShotContext(Generic[P]):
     p: P
 
     def __init__(self, channel_map: ChannelMap, tables: ShotTables,
-                 sequence, shot_var, overlap_cc, guarded_specs):
+                 sequence, shot_var, overlap_cc, guarded_specs, log=None):
         self.p = cast(P, ParamsProxy(tables))
         self._map = channel_map
         self._tables = tables
@@ -55,6 +56,18 @@ class OPXShotContext(Generic[P]):
         self._stream_roles = {}  # data key -> channel role (for V conversion)
         self._save_counts = {}   # data key -> saves traced per shot
         self._handback_done = False
+
+        # provenance: every emitted QUA statement, with the sequence source
+        # line and the per-shot values behind it (read by the pulse viewer)
+        self._log: OpLog = log if log is not None else OpLog(
+            getattr(sequence, 'func', None), tables.n_shots)
+        # (label, raw per-shot SI values, converted per-shot column) of the
+        # most recent _resolve, so the macros can log what they resolved
+        self._last_resolved = ('', None, None)
+
+    @property
+    def log(self) -> OpLog:
+        return self._log
 
     # ------------------------------------------------------------------
     # Parameter resolution (SI in, OPX units out)
@@ -118,6 +131,9 @@ class OPXShotContext(Generic[P]):
             self._check_int32(label, col)
         else:
             self._check_fixed(label, col)
+        self._last_resolved = (label if isinstance(x, ParamRef) else '',
+                               np.atleast_1d(np.asarray(raw, dtype=float)),
+                               col)
         if np.all(col == col[0]):
             v = col[0]
             return int(v) if qua_dtype is int else float(v)
@@ -210,18 +226,43 @@ class OPXShotContext(Generic[P]):
         from qm import qua
         self._check_open(f"pulse on {role!r}")
         spec = self._claimed_spec(role)
+        self._log.new_call(f"{role}_pulse")
         d = self.cc(t, key=f"{role} pulse")
+        label, raw, cc_col = self._last_resolved
+        macro = f"{role}_pulse"
+        el = spec.switch_element
         if isinstance(d, (int, np.integer)):
             if d == 0:
+                self._log.record('play', el, spec.pass_op, macro=macro,
+                                 label=label, values=raw, duration_cc=cc_col,
+                                 executes=np.zeros(self._tables.n_shots, bool),
+                                 note='zero-length pulse: nothing played')
                 return          # a zero-length pulse is no pulse
-            qua.play(spec.pass_op, spec.switch_element, duration=d)
-            qua.play(spec.block_op, spec.switch_element)
+            self._log.record('play', el, spec.pass_op, macro=macro,
+                             label=label, values=raw, duration_cc=cc_col,
+                             note=f'{role} exposure (RF passes)')
+            qua.play(spec.pass_op, el, duration=d)
+            self._log.record('play', el, spec.block_op, macro=macro,
+                             label=label, values=raw,
+                             note=f'{role} re-blocked')
+            qua.play(spec.block_op, el)
         else:
             # duration varies per shot and may be zero on some shots (e.g.
             # a Rabi scan from t = 0): branch on the OPX
+            runs = cc_col >= MIN_PULSE_CC
+            self._log.record('if', None, macro=macro, label=label,
+                             values=raw, duration_cc=cc_col, executes=runs,
+                             note=f'skipped on shots where {label} < 16 ns')
             with qua.if_(d >= MIN_PULSE_CC):
-                qua.play(spec.pass_op, spec.switch_element, duration=d)
-                qua.play(spec.block_op, spec.switch_element)
+                self._log.record('play', el, spec.pass_op, macro=macro,
+                                 label=label, values=raw, duration_cc=cc_col,
+                                 executes=runs,
+                                 note=f'{role} exposure (RF passes)')
+                qua.play(spec.pass_op, el, duration=d)
+                self._log.record('play', el, spec.block_op, macro=macro,
+                                 label=label, values=raw, executes=runs,
+                                 note=f'{role} re-blocked')
+                qua.play(spec.block_op, el)
 
     def raman_pulse(self, t):
         """Expose the atoms to the Raman beams for t seconds (SI)."""
@@ -242,8 +283,73 @@ class OPXShotContext(Generic[P]):
         from qm import qua
         self._check_open("raman_phase_reset")
         spec = self._claimed_spec('raman')
+        self._log.new_call('raman_phase_reset')
         for el in spec.analog_elements:
+            self._log.record('reset_if_phase', el, macro='raman_phase_reset',
+                             note='IF phase reset to 0')
             qua.reset_if_phase(el)
+
+    # ------------------------------------------------------------------
+    # Analog drive control (frequency / frame) -- per-shot capable
+    # ------------------------------------------------------------------
+
+    def _analog_targets(self, role, which):
+        spec = self._claimed_spec(role)
+        els = list(spec.analog_elements)
+        if not els:
+            raise RuntimeError(
+                f"[opx] channel {role!r} has no analog drive elements.")
+        if which is None:
+            return els
+        if isinstance(which, str):
+            if which not in els:
+                raise RuntimeError(
+                    f"[opx] {which!r} is not an analog element of "
+                    f"{role!r} (has {els}).")
+            return [which]
+        return [els[int(which)]]
+
+    def set_frequency(self, role, f, which=None, keep_phase=False):
+        """Set the intermediate frequency of a channel's analog drive(s)
+        to f Hz (SI; a ctx.p parameter scans per shot). `which` selects
+        one drive by index or element name (default: every drive of the
+        role). The change takes effect on the sticky drive immediately."""
+        from qm import qua
+        self._check_open("set_frequency")
+        els = self._analog_targets(role, which)
+        self._log.new_call('set_frequency')
+        v = self.hz(f)
+        label, raw, col = self._last_resolved
+        for el in els:
+            self._log.record('update_frequency', el, macro='set_frequency',
+                             label=label, values=raw, duration_cc=None,
+                             note='IF change', frequency_hz=col)
+            qua.update_frequency(el, v, keep_phase=keep_phase)
+
+    def frame_rotation(self, role, turns, which=None):
+        """Rotate the frame of a channel's analog drive(s) by `turns`
+        (fraction of 2pi; SI-free; a ctx.p parameter scans per shot)."""
+        from qm import qua
+        self._check_open("frame_rotation")
+        els = self._analog_targets(role, which)
+        self._log.new_call('frame_rotation')
+        v = self.f(turns)
+        label, raw, col = self._last_resolved
+        for el in els:
+            self._log.record('frame_rotation_2pi', el, macro='frame_rotation',
+                             label=label, values=raw, note='frame rotation',
+                             turns=col)
+            qua.frame_rotation_2pi(v, el)
+
+    def reset_frame(self, role, which=None):
+        """Zero the frame of a channel's analog drive(s)."""
+        from qm import qua
+        self._check_open("reset_frame")
+        self._log.new_call('reset_frame')
+        for el in self._analog_targets(role, which):
+            self._log.record('reset_frame', el, macro='reset_frame',
+                             note='frame reset to 0')
+            qua.reset_frame(el)
 
     # ------------------------------------------------------------------
     # Measurement
@@ -277,16 +383,39 @@ class OPXShotContext(Generic[P]):
                 f"[opx] channel {role!r} has no measure element.")
         stream, ivar = self._get_stream(key)
         self._stream_roles[key] = role
+        n_prev = self._save_counts[key]
+        which = f"{key}[{n_prev}]"
 
+        self._log.new_call('measure')
+        self._log.record('align', None, macro='measure', data_key=key,
+                         note=f'align {spec.switch_element} and '
+                              f'{spec.measure_element}',
+                         elements=[spec.switch_element,
+                                   spec.measure_element])
         qua.align(spec.switch_element, spec.measure_element)
         if expose:
             t = t_expose if t_expose is not None else spec.t_acquire_s
             d = self.cc(t, key=f"{key} exposure")
+            label, raw, cc_col = self._last_resolved
+            self._log.record('play', spec.switch_element, spec.pass_op,
+                             macro='measure', label=label, values=raw,
+                             duration_cc=cc_col, data_key=key,
+                             note=f'{role} exposure for {which}')
             qua.play(spec.pass_op, spec.switch_element, duration=d)
+            self._log.record('play', spec.switch_element, spec.block_op,
+                             macro='measure', data_key=key,
+                             note=f'{role} re-blocked')
             qua.play(spec.block_op, spec.switch_element)
+        self._log.record('measure', spec.measure_element, spec.acquire_op,
+                         macro='measure', data_key=key,
+                         note=(f'ADC window for {which}'
+                               + ('' if expose else ' (dark: beam blocked)')),
+                         dark=not expose)
         qua.measure(spec.acquire_op, spec.measure_element,
                     qua.integration.full(spec.integration_weight, ivar,
                                          'out1'))
+        self._log.record('save', None, macro='measure', data_key=key,
+                         note=f'save {which}')
         qua.save(ivar, stream)
         self._save_counts[key] += 1
 
@@ -311,23 +440,56 @@ class OPXShotContext(Generic[P]):
             raise RuntimeError(
                 f"[opx] sequence {self._sequence.name!r} calls "
                 f"handback_to_artiq() more than once per shot.")
+        log, phase = self._log, self._handback_phase()
+        log.new_call('handback')
+        log.record('align', None, phase=phase, macro='handback',
+                   note='align before the hand-back')
         qua.align()
+        log.record('play', self._map.handback_element, self._map.handback_op,
+                   phase=phase, macro='handback',
+                   note='hand-back trigger to ARTIQ')
         qua.play(self._map.handback_op, self._map.handback_element)
         switches = [s.switch_element for s in self._guarded_specs]
+        log.record('wait', switches[0] if switches else None, phase=phase,
+                   macro='handback', label='t_opx_handback_overlap',
+                   duration_cc=self._overlap_cc,
+                   values=self._overlap_cc * 4e-9,
+                   note='blocks held while ARTIQ takes its RF back',
+                   elements=list(switches))
         qua.wait(self._overlap_cc, *switches)
         for s in self._guarded_specs:
+            log.record('play', s.switch_element, s.pass_op, phase=phase,
+                       macro='handback',
+                       note='block released: ARTIQ owns this beam again')
             qua.play(s.pass_op, s.switch_element)
         self._handback_done = True
+
+    def _handback_phase(self):
+        """Explicit handback_to_artiq() from the body carries the body's
+        source line; the builder's auto-append is handshake framing."""
+        from kexp.control.opx.trace_log import PHASE_HANDSHAKE
+        src = self._log.capture_source(skip=3)
+        return PHASE_BODY if src is not None else PHASE_HANDSHAKE
 
     def wait_s(self, t):
         """Advance all elements together by t seconds (SI)."""
         from qm import qua
         self._check_open("wait_s")
         d = self.cc(t, key='wait')
+        label, raw, cc_col = self._last_resolved
+        sync_el = self._map.spec(self._map.sync_channel).switch_element
+        self._log.new_call('wait_s')
+        self._log.record('align', None, macro='wait_s')
         qua.align()
-        qua.wait(d, self._map.spec(self._map.sync_channel).switch_element)
+        self._log.record('wait', sync_el, macro='wait_s', label=label,
+                         values=raw, duration_cc=cc_col,
+                         note='all elements wait together')
+        qua.wait(d, sync_el)
+        self._log.record('align', None, macro='wait_s')
         qua.align()
 
     def align(self):
         from qm import qua
+        self._log.new_call('align')
+        self._log.record('align', None, macro='align')
         qua.align()
