@@ -1,3 +1,5 @@
+@echo off
+rem Client Dashboard: embeds the control GUIs; starts no servers.
 call %kpy%
 cd %code%\k-exp
-python -m kexp.util.dashboard.client_dashboard_app %*
+start "" pythonw -m kexp.util.dashboard.client_dashboard_app %*

@@ -18,6 +18,14 @@ class BristolServerPanel(WidgetPanelBase):
         self._gui = BristolClientWindow()
         embed_main_window(self, self._gui)
 
+    def cleanup(self) -> None:
+        # Embedded widgets never get closeEvent, so stop the poller thread
+        # and close the (parentless) plot pop-out window explicitly.
+        try:
+            self._gui._widget.stop()
+        finally:
+            super().cleanup()
+
 
 # Alias for clarity from the client dashboard.
 BristolClientPanel = BristolServerPanel
