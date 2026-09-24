@@ -86,12 +86,15 @@ class RydbergBeamBase():
         read is slow when the LAN link to the drivers is down, and an unused
         beam has nothing worth recording.
         """
-        if self._used:
-            self._core.wait_until_mu(now_mu())
-            f = self._read_lock(robust)
-            self._lock_dc.put_data(f[0])
-            self._siglent_freq_dc.put_data(f[1])
-            self._core.break_realtime()
+        # if self._used:
+        #     self._core.wait_until_mu(now_mu())
+        #     f = self._read_lock(robust)
+        #     self._lock_dc.put_data(f[0])
+        #     self._siglent_freq_dc.put_data(f[1])
+        #     self._core.break_realtime()
+
+        #commented while testing Rydberg with LAN down as this is super slow
+        pass
 
     def _read_lock(self, robust) -> TList(TFloat):
         """Host-side siglent + wavemeter read for ``lock_status``.
