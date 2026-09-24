@@ -21,13 +21,13 @@ class hf_bec(EnvExperiment, Base):
 
         # self.p.v_hf_tweezer_paint_amp_max = 2.
 
-        # self.xvar('t_tof',np.linspace(500.,4000.,6)*1.e-6)
+        self.xvar('t_tof',np.linspace(1000.,4000.,6)*1.e-6)
         self.p.t_tof = 2500.e-6
         # self.adjust('t_tof',min_val=20.e-6,max_val=1000.e-6)
 
         self.data.apd = self.data.add_data_container(1)
 
-        self.p.N_repeats = 30
+        self.p.N_repeats = 10
         # self.xvar('beans',np.linspace(1,10.,10))
 
         # self.p.frequency_detuned_hf_f1m1=-553.e6
@@ -35,7 +35,7 @@ class hf_bec(EnvExperiment, Base):
 
         self.scanning()
         # Adjust.__init__(self)
-        self.finish_prepare(shuffle=False)
+        self.finish_prepare(shuffle=True)
 
     def scanning(self):
 
@@ -102,5 +102,5 @@ class hf_bec(EnvExperiment, Base):
     def analyze(self):
         import os
         expt_filepath = os.path.abspath(__file__)
-        self.end(expt_filepath)
+        self.end(expt_filepath, restart_monitor=False)
 
