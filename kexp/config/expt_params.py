@@ -445,7 +445,7 @@ class ExptParams(ExptParamsWaxx):
         # ~10 us total is the floor, 30 us leaves 3x margin on the CPU half.
         # self.t_opx_handback_overlap = 10.e-6 # 5 us CPU slack underflowed on the full off() events, 2026-09-23
         # self.t_opx_handback_overlap = 200.e-6 # 2026-09-23, never exercised: the gate missed the edge first
-        self.t_opx_handback_overlap = 30.e-6 # 2026-09-24, switch-only take-back
+        self.t_opx_handback_overlap = 10.e-6 # 2026-09-24, switch-only take-back
         # OPX APD integration window (within the acquire window, which is
         # t_imaging_pulse_apd_abs long). Placeholder values, 2026-09-23 --
         # to be calibrated against the ARTIQ sampler path in OPX milestone M3.
