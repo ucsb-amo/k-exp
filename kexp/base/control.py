@@ -4,8 +4,10 @@ from artiq.experiment import *
 from artiq.experiment import delay, delay_mu, parallel, sequential, at_mu
 from artiq.language.core import now_mu
 from waxx.control.artiq.dummy_core import DummyCore
+from waxx.control.exceptions import TriggerTimeout
 
 from waxx.control.raman_beams import RamanBeamPair
+from kexp.util.artiq.async_print import aprint
 
 from kexp.config.dds_id import dds_frame
 from kexp.config.ttl_id import ttl_frame
@@ -22,6 +24,14 @@ from waxx.control.beat_lock import BeatLockImagingPID
 
 dv = -0.1
 dvlist = np.linspace(1.,1.,5)
+
+# Sanity bound on the wait for the OPX hand-back edge, from the trigger. Not
+# a window to match to a sequence's length -- the gate is armed before the
+# trigger and stays open until the edge comes -- only how long a dead or
+# untriggered OPX takes to become a TriggerTimeout. Override per call:
+# wait_for_quantum_machines_handback(t_timeout=...).
+T_OPX_HANDBACK_TIMEOUT = 2.
+T_OPX_TRIGGER_PULSE = 1.e-6
 
 class Control():
     def __init__(self):
@@ -181,32 +191,87 @@ class Control():
 
     @kernel
     def handoff_to_quantum_machines(self):
-        """Start one OPX shot window (pairs with wait_for_quantum_machines_handoff).
+        """Start one OPX shot: arm the hand-back gate, trigger the OPX, turn
+        the ARTIQ RF on for it to gate. Pairs with
+        wait_for_quantum_machines_handback().
 
-        Contract with the OPX program (kexp.control.opx.builder): the
-        trigger wakes the OPX shot, whose first act is to raise the RF-block
-        switches (TTL high = ARTIQ RF blocked) on the raman and imaging
-        switch AOMs. The 5 us delay gives it time to do so before our RF
-        turns on steady-state for the OPX to gate. The handoff TTL routes
-        the raman 80/150 AOs to the OPX analog outputs.
+        The handshake, one shot. Both sides read the same two ExptParams
+        numbers (the OPX half is framed by kexp.control.opx.builder):
+
+            trigger edge, ARTIQ -> OPX
+              + ~1 us                    OPX awake, RF-block switches HIGH
+              + t_opx_handoff_settle/2   ARTIQ steady-state RF on (blocked)
+              + t_opx_handoff_settle     OPX may expose: RF on and settled
+              ... sequence body on the OPX ...
+            hand-back edge, OPX -> ARTIQ (quantum_machines_receive_trigger)
+              + t_opx_handback_overlap/2 ARTIQ RF off, handoff TTL off
+              + t_opx_handback_overlap   OPX releases the blocks (pass)
+
+        The gate on quantum_machines_receive_trigger is armed BEFORE the
+        trigger and closed only after the edge, so a shot with nothing to
+        play (t_raman_pulse = 0) can hand back within a microsecond of the
+        trigger and still be caught; nothing about the OPX shot's length is
+        coded on this side. The handoff TTL routes the raman 80/150 AOs to
+        the OPX analog outputs for the whole window.
         """
-        self.ttl.quantum_machines_trigger.pulse(1.e-6)
-        delay(5e-6)
+        self.ttl.quantum_machines_receive_trigger.arm()
+        t_trigger = now_mu()
+        self.ttl.quantum_machines_trigger.pulse(T_OPX_TRIGGER_PULSE)
+        at_mu(t_trigger)
+        delay(self.p.t_opx_handoff_settle / 2)
         self.ttl.quantum_machines_raman_rf_handoff_ttl.on()
         self.imaging.on()
         self.raman.on()
 
     @kernel
-    def wait_for_quantum_machines_handoff(self):
-        """End of the OPX shot window.
+    def wait_for_quantum_machines_handback(self, t_timeout=T_OPX_HANDBACK_TIMEOUT):
+        """End of the OPX shot: wait for the hand-back edge, then take the
+        RF and the raman AOs back. Timing in handoff_to_quantum_machines.
 
-        The OPX holds the RF blocks high for p.t_opx_handback_overlap (10 us)
-        after its hand-back trigger; the line-trigger's 5 us t_delay plus
-        these events must fit inside it. RF goes off BEFORE the handoff TTL
-        drops, so the raman AOs are never routed back to ARTIQ with the
-        ARTIQ RF still on.
+        The timeline resumes t_opx_handback_overlap/2 after the edge. That
+        half is the kernel CPU's slack to learn of the edge (~3 us) and
+        submit the three time-critical events: the RF switches of the raman
+        and imaging switch AOMs off (one RTIO write each -- the switch only,
+        DDS.set_sw, not the setpoint DAC) and the handoff TTL low. The
+        other half is the margin before the OPX releases its blocks. The
+        full off() -- setpoint DACs to zero, cached state -- is several SPI
+        writes (it underflowed at 5 us of slack) and runs at the end of the
+        overlap instead, where fresh slack costs nothing and the switch is
+        already off. RF goes off BEFORE the handoff TTL drops, so the raman
+        AOs are never routed back to ARTIQ with the ARTIQ RF still on.
+
+        No edge within t_timeout of the trigger: the same take-back runs
+        (the OPX released its blocks long ago, or never ran), then
+        TriggerTimeout ends the shot -- the scan loop runs cleanup and
+        aborts the run, or re-raises it under scan(raise_underflow=True).
         """
-        self.ttl.quantum_machines_receive_trigger.wait_for_line_trigger(t_delay=5.e-6)
+        t_edge = self.ttl.quantum_machines_receive_trigger.wait_for_edge(
+            self.p.t_opx_handback_overlap / 2, t_timeout)
+        # time-critical, inside the overlap
+        self.imaging.dds_sw.set_sw(0)
+        self.raman.dds_sw.set_sw(0)
+        self.ttl.quantum_machines_raman_rf_handoff_ttl.off()
+        if self._verbosity >= 2:   # console.VERBOSE
+            # slack left once the critical events were in: how much of the
+            # CPU-slack half was actually needed
+            slack_mu = now_mu() - self.core.get_rtio_counter_mu()
+            aprint("[opx] hand-back: timeline slack after the RF-off events =",
+                   slack_mu, "mu")
+        # bookkeeping, at the end of the overlap
+        delay(self.p.t_opx_handback_overlap / 2)
         self.imaging.off()
         self.raman.off()
-        self.ttl.quantum_machines_raman_rf_handoff_ttl.off()
+        if t_edge < 0:
+            aprint("[opx] no hand-back edge on quantum_machines_receive_trigger "
+                   "within T_OPX_HANDBACK_TIMEOUT of the trigger: the OPX job is "
+                   "not running, is not seeing the trigger, or its shot is longer "
+                   "than the timeout. ARTIQ RF and the handoff TTL are back off.")
+            raise TriggerTimeout("no OPX hand-back edge on ttl{0} within the "
+                                 "timeout",
+                                 np.int64(self.ttl.quantum_machines_receive_trigger.ch))
+
+    @kernel
+    def wait_for_quantum_machines_handoff(self):
+        """Old name of wait_for_quantum_machines_handback(), kept for the
+        experiments written against it."""
+        self.wait_for_quantum_machines_handback()

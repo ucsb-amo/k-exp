@@ -288,6 +288,11 @@ class Base(Expt, Devices, Cooling, Image, Cameras, Control, Clients):
         # line_trigger (and every other TTLInOut) input FIFO is drained in
         # cleanup_scan_kernel_wax via ttl_frame.clear_input_events().
 
+        # The raman AOs belong to the ARTIQ DDSs between shots, whatever
+        # happened inside an OPX window (an underflow there skips the
+        # hand-back that normally drops this line).
+        self.ttl.quantum_machines_raman_rf_handoff_ttl.off()
+
         self.core.break_realtime()
         self.ry_405.lock_status()
         self.ry_980.lock_status()
