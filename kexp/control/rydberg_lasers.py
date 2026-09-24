@@ -81,14 +81,15 @@ class RydbergBeamBase():
         elements, so this method is identical for every beam. The fetched siglent
         frequency is stored alongside the lock reading in a second container.
         """
-        pass 
-        #lock check time takes forever while lan connection is broken, so commented until LAN restored
         # if self._used:
         #     self._core.wait_until_mu(now_mu())
         #     f = self._read_lock(robust)
         #     self._lock_dc.put_data(f[0])
         #     self._siglent_freq_dc.put_data(f[1])
         #     self._core.break_realtime()
+
+        #commented while testing Rydberg with LAN down as this is super slow
+        pass
 
     def _read_lock(self, robust) -> TList(TFloat):
         """Host-side siglent + wavemeter read for ``lock_status``.
