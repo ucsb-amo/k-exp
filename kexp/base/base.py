@@ -313,8 +313,10 @@ class Base(Expt, Devices, Cooling, Image, Cameras, Control, Clients):
 
     @kernel
     def post_scan(self):
-        # if self.ry_980._used:
-        #     self.ry_980.sweep_to(reset=True)
+        # Siglent writes never raise: with the LAN down the sweep is reported
+        # as failed (loudly) and skipped, and the run still ends normally.
+        if self.ry_980._used:
+            self.ry_980.sweep_to(reset=True)
         self.tweezer.reset_awg()
         self.core.break_realtime()
         self.background_field()
