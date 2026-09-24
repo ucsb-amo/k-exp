@@ -80,32 +80,51 @@ class RydbergBeamBase():
         AO. Both beams are frequency controlled at the wavemeter purely by these
         elements, so this method is identical for every beam. The fetched siglent
         frequency is stored alongside the lock reading in a second container.
-        """
-        # if self._used:
-        #     self._core.wait_until_mu(now_mu())
-        #     f = self._read_lock(robust)
-        #     self._lock_dc.put_data(f[0])
-        #     self._siglent_freq_dc.put_data(f[1])
-        #     self._core.break_realtime()
 
-        #commented while testing Rydberg with LAN down as this is super slow
-        pass
+        Only runs when the beam was actually switched on this shot
+        (``self._used``, reset each shot in ``reset_devices``): an unused beam
+        has nothing worth recording.
+
+        Safe to leave in with the LAN to the drivers down: both drivers carry
+        a link latch (``waxx.util.link_latch``), so after the first failure a
+        read costs microseconds, not a connect timeout per query, and a
+        failed reading is stored as 0. (see ``_read_lock``).
+        """
+        if self._used:
+            self._core.wait_until_mu(now_mu())
+            f = self._read_lock(robust)
+            self._lock_dc.put_data(f[0])
+            self._siglent_freq_dc.put_data(f[1])
+            self._core.break_realtime()
 
     def _read_lock(self, robust) -> TList(TFloat):
         """Host-side siglent + wavemeter read for ``lock_status``.
 
-        A failed read (e.g. the 405 EO driver dropping off the LAN) is printed,
-        not raised, and both values come back 0. (matching the wavemeter
-        client's own failure value) rather than the previous shot's reading.
+        Each reading is attempted on its own: a siglent failure still records
+        the wavemeter frequency (without a lock verdict, since the target
+        depends on the siglent setting), and a wavemeter failure still records
+        the siglent frequency. A failed reading is printed, not raised, and
+        stored as 0. (the wavemeter client's own failure value) rather than
+        the previous shot's reading -- so a 0. in either container means
+        "not read this shot", never a measurement.
         """
+        name = getattr(self._wavemeter, 'key', '?')
         try:
             f_siglent = self.siglent.get_frequency()
-            frequency_shift = ( self._eo_shift_direction * f_siglent
-                                - self._cavity_ao_order * self._cavity_ao_frequency )
-            f_fzw = self._wavemeter.lock_status(frequency_shift, robust)
+            siglent_ok = True
         except Exception as e:
-            print(f"lock_status read failed for {getattr(self._wavemeter, 'key', '?')}: {e!r}")
-            f_siglent, f_fzw = 0., 0.
+            print(f"[{name}] siglent read failed, recording 0.: {e!r}")
+            f_siglent, siglent_ok = 0., False
+        try:
+            if siglent_ok:
+                frequency_shift = ( self._eo_shift_direction * f_siglent
+                                    - self._cavity_ao_order * self._cavity_ao_frequency )
+                f_fzw = self._wavemeter.lock_status(frequency_shift, robust)
+            else:
+                f_fzw = self._wavemeter.get_frequency()
+        except Exception as e:
+            print(f"[{name}] wavemeter read failed, recording 0.: {e!r}")
+            f_fzw = 0.
         return [f_fzw, f_siglent]
 
 class RydbergDDSSwitchBeam(RydbergBeamBase):
