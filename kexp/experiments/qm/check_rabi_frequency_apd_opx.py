@@ -9,7 +9,7 @@ AOM open for t_raman_pulse (delivered per shot from the scan table), and
 hands back.
 
 prep_raman() stays, unchanged from the reference: its 3 ms warm-up pulse
-thermally loads the common switch AOM -- the very AOM the OPX gates -- and
+thermally loads the common switch AOM -- the very AOM the OPX gates -- and 
 runs while the shutter is still closed, so the warm-up light never reaches
 the atoms; only then does it open the shutter. The OPX sticky analog drives
 cover a different thing entirely (the 80/150 double-pass AOs, whose servo

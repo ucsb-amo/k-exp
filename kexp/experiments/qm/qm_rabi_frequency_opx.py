@@ -28,8 +28,8 @@ class hf_raman_opx(EnvExperiment, Base):
                       warmup_shots=0)
 
         # self.p.t_raman_pulse = 0.
-        # self.xvar('t_raman_pulse', np.linspace(0.,30.,15)*1.e-6)
-        self.xvar('t_raman_pulse', [0., self.p.t_raman_pi_pulse])
+        self.xvar('t_raman_pulse', np.linspace(0.,self.p.t_raman_pi_pulse,2))
+        # self.xvar('t_raman_pulse', [0., self.p.t_raman_pi_pulse])
 
         self.p.t_tweezer_hold = 100.e-3
         self.p.t_tof = 2.0e-3
