@@ -80,7 +80,17 @@ class InterlockClient(NetClient):
     # ------------------------------------------------------------------
 
     def get_snapshot(self) -> dict:
+        """Snapshot dict (includes ``com``).  Raises on network failure."""
         return self._send_json("GET_SNAPSHOT")
+
+    def request_shutdown(self) -> bool:
+        """Ask the server process to exit cleanly.
+
+        The server exits through its normal SIGINT/SIGTERM path (closes the
+        PLC COM port, releases its mutex); relay and magnet state are not
+        touched.  Returns True when the server acknowledged the request.
+        """
+        return self._send_json("SHUTDOWN").get("status") == "ok"
 
     def reset_interlock(self) -> dict:
         return self._send_json("RESET_INTERLOCK")

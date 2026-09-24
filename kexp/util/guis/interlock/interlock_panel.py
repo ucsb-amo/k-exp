@@ -80,6 +80,7 @@ class _InterlockBodyBase(WidgetPanelBase):
         self._poller = None
         self._plot = None
         self._curves: dict = {}
+        self._last_state: Optional[str] = None
 
         outer = QVBoxLayout(self)
         outer.setContentsMargins(6, 4, 6, 4)
@@ -248,6 +249,7 @@ class _InterlockBodyBase(WidgetPanelBase):
     def _apply_snapshot(self, snap: dict) -> None:
         state = str(snap.get("state", _sm.STATE_UNKNOWN))
         msg = str(snap.get("message", ""))
+        self._last_state = state
         self._apply_status_style(state, msg)
 
         # Metric labels.  JSON converts integer dict keys to strings on the
@@ -318,8 +320,11 @@ class _InterlockBodyBase(WidgetPanelBase):
 
     def _on_conn_changed(self, status: str, detail: str) -> None:
         if status != "connected":
-            # Don't override the service state if we just lost the polling link.
-            self._apply_status_style(_sm.STATE_UNKNOWN, f"conn: {detail}" if detail else "conn lost")
+            # Link lost: state is now unknown, but say what it last was --
+            # a bare "conn: TimeoutError" hid a TRIPPED interlock.
+            link = f"link: {detail}" if detail else "link lost"
+            last = _STATE_COLOR.get(self._last_state, (None, None, None))[2]
+            self._apply_status_style(_sm.STATE_UNKNOWN, f"{link}; last: {last}" if last else link)
 
     def _apply_status_style(self, state: str, msg: str) -> None:
         bg, fg, label = _STATE_COLOR.get(state, _STATE_COLOR[_sm.STATE_UNKNOWN])
@@ -329,6 +334,7 @@ class _InterlockBodyBase(WidgetPanelBase):
         else:
             text = f"{label} — {msg}"
         self._status_btn.setText(text)
+        self._status_btn.setToolTip(text)  # full text; the pill truncates
         self._status_btn.setStyleSheet(
             f"QPushButton {{ background-color: {bg}; color: {fg};"
             " font-size: 16px; font-weight: 700; padding: 8px; border-radius: 4px; }"

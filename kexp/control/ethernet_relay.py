@@ -91,9 +91,9 @@ class EthernetRelay(EthernetRelayWaxx):
 		_ = self.__board.turn_off_relay_by_index(MAGNET_INHIBIT_IDX)
 		self.close()
 
-	def read_magnet_status(self):
+	def read_magnet_status(self, retries=None, timeout=None):
 		try:
-			self.connect()
+			self.connect(retries=retries, timeout=timeout)
 			out = bool(self.__board.get_relay_status_by_index(MAGNET_INHIBIT_IDX)[0])
 			return out
 		finally:
