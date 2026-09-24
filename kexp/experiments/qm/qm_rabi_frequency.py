@@ -15,7 +15,7 @@ class hf_raman(EnvExperiment, Base):
                       imaging_type=img_types.ABSORPTION,
                       warmup_shots=0)
         
-        self.xvar('t_raman_pulse', np.linspace(0.,30.,15)*1.e-6)
+        # self.xvar('t_raman_pulse', np.linspace(0.,30.,15)*1.e-6)
         self.p.t_raman_pulse = 0.
 
         # self.xvar('t_raman_pulse',np.linspace(0.,))
@@ -35,8 +35,7 @@ class hf_raman(EnvExperiment, Base):
         # self.imaging.
 
         self.prepare_hf_tweezers()
-
-        # self.prep_raman()
+        self.prep_raman()
 
         # self.raman.pulse(self.p.t_raman_pulse)
 
