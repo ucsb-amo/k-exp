@@ -3,6 +3,8 @@ import numpy as np
 from artiq.experiment import *
 from artiq.language.core import delay, kernel
 from kexp import Base, img_types, cameras
+from kexp.calibrations.imaging import high_field_imaging_detuning
+
 
 class hf_bec(EnvExperiment, Base):
 
@@ -12,25 +14,17 @@ class hf_bec(EnvExperiment, Base):
                       imaging_type=img_types.ABSORPTION)
         
         # self.xvar('t_tof',np.linspace(20.,3000.,7)*1.e-6)
-        self.p.t_tof = 1200.e-6
+        self.p.t_tof = 1500.e-6
 
         # self.xvar('do_405_pulse',[0,1])
         self.p.do_405_pulse = 1
         # self.xvar('do_980_pulse',[0,1])
         self.p.do_980_pulse = 0
-        self.p.amp_dds_405 = 0.04
+        self.p.amp_dds_405 = 0.06
 #   
 
          # self.xvar('compress',[0,1])
         self.p.compress = 0
-
-
-        # self.xvar('frequency_eo_980', 366.4e6 + 1.e6 * np.linspace(-5,5,9))
-        # self.xvar('frequency_eo_980', np.arange(400.,424.,0.05)*1.e6)
-        # self.xvar('frequency_eo_980', np.linspace(430.,460.,40)*1.e6)
-        # self.p.frequency_eo_980 = self.siglent.siglent_980._frequency_default
-        # self.p.frequency_eo_980 = 352.1e6
-        # self.p.frequency_eo_980 = 418.1e6
 
         # self.xvar('frequency_eo_980', np.arange(422.,424.,0.1)*1.e6)
         self.p.frequency_eo_980 = 422.1e6
@@ -40,21 +34,14 @@ class hf_bec(EnvExperiment, Base):
 
         self.xvar('t_tweezer_hold', np.linspace(0.0, 600.0, 7) * 1.e-3)
         self.p.t_tweezer_hold = 512.e-3
+        self.p.amp_imaging = .1
 
         # self.p.v_pd_hf_tweezer_1064_rampdown3_end=3.5
-
-        self.p.hf_imaging_detuning = -553.e6
-
-        self.p.amp_imaging = 0.125 # no beam splitter
-        # self.p.amp_imaging = 0.2 # beam splitter
-        # self.xvar('v_pd_ry_980',np.linspace(0.,1.,5))
-        self.p.v_pd_ry_405 = 0.3
+        self.p.hf_imaging_detuning = -568.e6    
+        self.p.v_pd_ry_405 = 0.8
         self.p.v_pd_ry_980 = 2.8
 
-        self.p.i_hf_raman = 182.
-
-        # self.xvar('beans',np.linspace(0,30,10))
-        self.p.N_repeats = 2
+        self.p.N_repeats = 1
         self.finish_prepare(shuffle=True)
 
         if self.p.do_405_pulse == 1:
@@ -69,6 +56,9 @@ class hf_bec(EnvExperiment, Base):
     @kernel
     def scan_kernel(self):
         
+        self.set_imaging_detuning(frequency_detuned=self.p.hf_imaging_detuning)
+        self.dds.imaging.set_dds(amplitude=self.p.amp_imaging)
+
         self.ry_405.set_power(self.p.v_pd_ry_405)
         self.ry_980.set_power(self.p.v_pd_ry_980)
         self.ttl.ry_intensity_pid_clear.pulse(10.e-6)
@@ -80,20 +70,10 @@ class hf_bec(EnvExperiment, Base):
 
         # self.ry_980.set_power(9.9)
 
-        self.set_imaging_detuning(frequency_detuned=self.p.hf_imaging_detuning)
-        self.imaging.set_power(self.p.amp_imaging)
-
         if self.p.compress:
             self.prepare_hf_tweezers(squeeze=True)
         else:
             self.prepare_hf_tweezers(squeeze=False, do_tweezer_evap_2=True)
-
-        # self.tweezer.ramp(t=self.p.t_tweezer_squeezer_ramp_1,
-        #                         v_start=self.p.v_pd_hf_tweezer_1064_rampdown3_end,
-        #                         v_end=self.p.v_pd_tweezer_squeeze_rampup_handoff_lp,
-        #                         low_power=True, paint=False, keep_trap_frequency_constant=False,
-        #                         cubic_ramp=self.cubic_ramp)
-
 
         if self.p.do_405_pulse == 1:
             self.ry_405.reboot()

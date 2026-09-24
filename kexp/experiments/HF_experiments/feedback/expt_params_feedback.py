@@ -42,14 +42,7 @@ class ExptParams(expt_params_kexp):
 
         # calibration run 78267
         # img amp 0.2, pulse time 5.0e-06 s
-        # self.frequency_lightshift = 50.66e+04  # Hz -- had an extra zero (5.066e5,
-        #   i.e. 10x the 50.66 kHz run 78267 measured). Run 78313 was taken with it.
-        # run 78313 | FeedbackReplayOptimizer, APD-MSE vs data.apd, 2026-09-03
-        # Interior minimum of a 45-80 kHz scan; equals the 460 kHz branch of a
-        # full-alias-period scan. Only identified mod 1/t_img_pulse (200 kHz) and
-        # up to a reflection, so this is the branch nearest the 50.66 kHz
-        # calibration, not a uniquely determined value.
-        self.frequency_lightshift = 5.90e+04  # Hz
+        self.frequency_lightshift = 4.061e+04  # Hz, +/- 1.5e+03 Hz, imaging amp 0.2 #80654
                 
         # calibration run 78309 (S_z endpoints from 'fit', deg-2 S_z response fit)
         self.t_img_pulse = 5e-06  # s

@@ -43,7 +43,7 @@ class hf_monitored_rabi(EnvExperiment, Base):
         self.imaging.set_power(self.p.amp_imaging)
 
         if self.p.make_atoms:
-            self.prepare_hf_tweezers()
+            self.prepare_hf_tweezers(ramp_down_painting=True)
         else:
             delay(0.2)
         

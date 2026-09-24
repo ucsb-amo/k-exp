@@ -39,7 +39,7 @@ class hf_monitored_rabi(EnvExperiment, Base):
         # self.adjust('amp_imaging',0.1,0.8)
         # self.adjust('trigger_later',0.,1.,step=1,dtype=float)
 
-        # self.p.v_pd_hf_tweezer_squeeze_power = 8.
+        self.p.v_pd_hf_tweezer_squeeze_power = 1.5
         self._idx = 0
         # self.p.v_pd_lightsheet_rampdown3_end = 0.2
 

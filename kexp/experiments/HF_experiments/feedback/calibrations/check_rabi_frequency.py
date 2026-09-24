@@ -15,8 +15,8 @@ class hf_raman(EnvExperiment, Base):
                       imaging_type=img_types.ABSORPTION,
                       warmup_shots=3)
         
-        # self.xvar('t_raman_pulse', np.linspace(0.,30.,11)*1.e-6)
-        # self.xvar('t_raman_pulse', np.concatenate((np.linspace(0.,30.,16),np.linspace(200.,240.,16)))*1.e-6)
+        self.xvar('t_raman_pulse', np.linspace(0.,45.,43)*1.e-6)
+        # self.xvar('t_raman_pulse', np.concatenate((np.linspace(0.,60.,32),np.linspace(200.,240.,16)))*1.e-6)
         # self.xvar('t_raman_pulse', np.linspace(200.,240.,20)*1.e-6)
         # self.xvar('t_raman_pulse',[0.,self.p.t_raman_pi_pulse]*5)
 
@@ -26,14 +26,12 @@ class hf_raman(EnvExperiment, Base):
 
         self.p.t_tweezer_hold = 100.e-3
 
-        # self.p.fraction_power_raman = 0.25
-
         # self.p.v_pd_hf_tweezer_squeeze_power = 7.
         # self.p.t_tof = 8.e-6
 
         self.p.t_tof = 2.0e-3
         
-        self.p.N_repeats = 10
+        self.p.N_repeats = 2
 
 
         self.finish_prepare(shuffle=True)
@@ -45,11 +43,11 @@ class hf_raman(EnvExperiment, Base):
         self.imaging.set_power(self.camera_params.amp_imaging)
 
         self.prepare_hf_tweezers()
-        # self.prep_raman()
+        self.prep_raman()
 
-        # self.raman.pulse(self.p.t_raman_pulse)
+        self.raman.pulse(self.p.t_raman_pulse)
 
-        # self.ttl.raman_shutter.off()
+        self.ttl.raman_shutter.off()
 
         delay(self.p.t_tweezer_hold)
         self.tweezer.off()
