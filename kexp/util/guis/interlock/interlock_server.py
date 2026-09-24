@@ -11,11 +11,14 @@ Wire format
 Newline-terminated commands; JSON responses.
 
 Commands:
-    GET_SNAPSHOT          -> JSON snapshot dict
+    GET_SNAPSHOT          -> JSON snapshot dict (includes a "com" serial summary)
     RESET_INTERLOCK       -> {"status": "ok"|"refused"|"ignored"|"error", ...}
     ENABLE_MAGNETS        -> {"status": ...}
     DISABLE_MAGNETS       -> {"status": ...}
     FLUSH_CSV             -> {"status": "ok"}
+    SHUTDOWN              -> {"status": "ok"}; then the process exits exactly as
+                             on SIGINT/SIGTERM (main loop stop_event -> tcp.stop()
+                             -> service.stop()).  Touches no relay/interlock state.
 
 No authentication; LAN-trusted (matches existing protocol).
 """
@@ -33,7 +36,7 @@ import sys
 import threading
 import time
 from pathlib import Path
-from typing import Optional
+from typing import Callable, Optional
 
 
 def _early_log_setup() -> Path:
@@ -59,6 +62,10 @@ from kexp.util.guis.interlock.interlock_service import (  # noqa: E402
 
 
 _DEFAULT_PORT = 5570  # matches lab's reserved range; reused by client.
+
+# Grace period between answering SHUTDOWN and signalling main() so the JSON
+# reply is on the wire before the listening socket closes.
+_SHUTDOWN_REPLY_GRACE_S = 0.2
 
 
 def _build_email_sender() -> Optional[callable]:
@@ -112,6 +119,7 @@ class InterlockTCPServer(NetServer):
         *,
         host: str = "0.0.0.0",
         port: int = _DEFAULT_PORT,
+        on_shutdown_request: Optional[Callable[[], None]] = None,
     ):
         NetServer.__init__(self, "interlock", port)
         self._service = service
@@ -120,6 +128,11 @@ class InterlockTCPServer(NetServer):
         self._sock: Optional[socket.socket] = None
         self._accept_thread: Optional[threading.Thread] = None
         self._running = False
+        # Called (on a helper thread, after a short grace) when a SHUTDOWN
+        # command arrives.  main() passes its stop_event.set so the process
+        # exits through the same path as SIGINT/SIGTERM.  Nothing else.
+        self._on_shutdown_request = on_shutdown_request
+        self._shutdown_requested = False
 
     # ------------------------------------------------------------------
 
@@ -206,10 +219,38 @@ class InterlockTCPServer(NetServer):
             if cmd == "FLUSH_CSV":
                 self._service.flush_csv()
                 return json.dumps({"status": "ok"})
+            if cmd == "SHUTDOWN":
+                return json.dumps(self._request_shutdown(client_addr))
             return json.dumps({"status": "error", "message": f"unknown command: {cmd}"})
         except Exception as exc:
             LOGGER.exception("RPC handler raised for %s", cmd)
             return json.dumps({"status": "error", "message": repr(exc)})
+
+    def _request_shutdown(self, client_addr: str) -> dict:
+        """Graceful process stop over TCP.
+
+        Does only what a process kill already does today: after a short
+        grace (so the reply is delivered) it invokes ``on_shutdown_request``
+        - main()'s ``stop_event.set`` - and main() then runs its existing
+        ``tcp.stop()`` / ``service.stop()`` path.  It never touches the relay,
+        the magnets or the interlock state.
+        """
+        if self._on_shutdown_request is None:
+            return {"status": "error", "message": "shutdown not wired in this process"}
+        if self._shutdown_requested:
+            return {"status": "ok", "message": "already shutting down"}
+        self._shutdown_requested = True
+        LOGGER.warning("Process shutdown requested over TCP by %s", client_addr)
+
+        def _worker() -> None:
+            time.sleep(_SHUTDOWN_REPLY_GRACE_S)
+            try:
+                self._on_shutdown_request()
+            except Exception:
+                LOGGER.exception("on_shutdown_request raised")
+
+        threading.Thread(target=_worker, name="ilock-shutdown", daemon=True).start()
+        return {"status": "ok"}
 
 
 # ---------------------------------------------------------------------------
@@ -247,11 +288,12 @@ def main() -> int:
         LOGGER.critical("Service failed to start (singleton mutex held by another process)")
         return _sm.EXIT_ALREADY_RUNNING
 
-    tcp = InterlockTCPServer(service)
-    tcp.start()
-
-    # Signal handling for clean shutdown.
+    # Signal handling for clean shutdown.  The TCP SHUTDOWN command sets the
+    # same event, so it exits through exactly this path.
     stop_event = threading.Event()
+
+    tcp = InterlockTCPServer(service, on_shutdown_request=stop_event.set)
+    tcp.start()
 
     def _sig(_signum, _frame):
         LOGGER.info("Signal received; shutting down")

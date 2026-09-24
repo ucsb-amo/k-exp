@@ -68,6 +68,16 @@ _COM_LOG = logging.getLogger("kexp.dashboard.server.interlock.com")
 # the values in the original interlock_gui.py.
 _CHECKSUM_PRIMES = (2, 3, 5, 7, 11)
 
+# Magnet-status read done from get_snapshot(): one attempt, short timeout,
+# so the RPC answers well inside the GUI client's 1.5 s budget.
+_SNAPSHOT_RELAY_RETRIES = 0
+_SNAPSHOT_RELAY_TIMEOUT_S = 0.5
+# ...and at most this often.  Every GUI/dashboard poll used to open a fresh
+# TCP connection to the relay board (>1/s across pollers); the board then
+# intermittently took >0.5 s to accept, and each miss logged an ERROR.
+# Service-initiated enable/kill force a fresh read on the next snapshot.
+_SNAPSHOT_RELAY_MIN_INTERVAL_S = 5.0
+
 
 def _ints_factor_into(n: int, primes: tuple[int, ...]) -> bool:
     """Return True if every prime in *primes* divides *n*."""
@@ -144,9 +154,25 @@ class InterlockService:
         # Serial.  Opened lazily on the poll thread.
         self._serial: Optional[serial.Serial] = None
         self._serial_lock = threading.Lock()
+        # Read-only bookkeeping for get_snapshot()["com"]; plain attribute
+        # writes on the poll thread, never read under a lock.
+        self._com_last_error: Optional[str] = None
+        self._com_last_rx_monotonic: Optional[float] = None
 
         # Relay lock.
         self._relay_lock = threading.Lock()
+        # Last magnet state actually read from the relay (by any path), so
+        # get_snapshot() can answer without waiting on _relay_lock.
+        self._magnets_enabled_cached: Optional[bool] = None
+        self._magnets_read_monotonic: Optional[float] = None
+        # Earliest time get_snapshot() may probe the relay again (successful
+        # or not); 0 = probe on the next snapshot.
+        self._next_snapshot_probe_monotonic: float = 0.0
+        self._snapshot_probe_failing = False
+        # At most one persistent-kill thread at a time (PLC repeats
+        # "I TRIPPED" every frame while tripped).
+        self._kill_thread: Optional[threading.Thread] = None
+        self._kill_thread_lock = threading.Lock()
 
         # Threads.
         self._stop_event = threading.Event()
@@ -255,6 +281,7 @@ class InterlockService:
         try:
             with self._relay_lock:
                 state = self._relay.read_magnet_status()
+            self._note_magnet_status(state)
             _LOG.info("Startup: current relay magnet-enabled state preserved as %s", state)
         except Exception:
             _LOG.exception("Could not read initial relay state; continuing")
@@ -307,6 +334,10 @@ class InterlockService:
     # Snapshot (read-only; safe to call from any thread)
     # ------------------------------------------------------------------
 
+    def _note_magnet_status(self, enabled) -> None:
+        self._magnets_enabled_cached = bool(enabled)
+        self._magnets_read_monotonic = time.monotonic()
+
     def get_snapshot(self) -> dict:
         now = time.monotonic()
         with self._state_lock:
@@ -317,14 +348,38 @@ class InterlockService:
             last_data_age = now - self._last_valid_data_monotonic
             reconnect_attempts = self._reconnect_attempts
             safe_reason = self._safe_mode_reason
-        # Read magnet state best-effort; never block trip path.
-        magnets_enabled = None
-        try:
-            with self._relay_lock:
-                magnets_enabled = bool(self._relay.read_magnet_status())
-        except Exception as exc:
-            _LOG.debug("read_magnet_status in snapshot failed: %r", exc)
+        # Read magnet state best-effort; never block trip path.  If the relay
+        # is busy (a kill in progress) report the last value actually read,
+        # with its age, instead of queueing behind it -- queueing made the
+        # GUI's 1.5 s RPC time out during trips and hid the TRIPPED state.
+        # A snapshot read is single-shot with a short timeout so it can never
+        # hold _relay_lock long enough to delay a kill.  Probes are rate
+        # limited (_SNAPSHOT_RELAY_MIN_INTERVAL_S); in between, the cached
+        # value and its age are reported.
+        if (now >= self._next_snapshot_probe_monotonic
+                and self._relay_lock.acquire(blocking=False)):
+            self._next_snapshot_probe_monotonic = now + _SNAPSHOT_RELAY_MIN_INTERVAL_S
+            try:
+                self._note_magnet_status(self._relay.read_magnet_status(
+                    retries=_SNAPSHOT_RELAY_RETRIES, timeout=_SNAPSHOT_RELAY_TIMEOUT_S))
+                if self._snapshot_probe_failing:
+                    self._snapshot_probe_failing = False
+                    _LOG.info("Relay snapshot read recovered")
+            except Exception as exc:
+                # Log the transition once, not every probe.
+                if not self._snapshot_probe_failing:
+                    self._snapshot_probe_failing = True
+                    _LOG.warning("Relay snapshot read failing (reporting cached "
+                                 "magnet state with its age): %r", exc)
+                else:
+                    _LOG.debug("read_magnet_status in snapshot failed: %r", exc)
+            finally:
+                self._relay_lock.release()
+        magnets_enabled = self._magnets_enabled_cached
+        read_at = self._magnets_read_monotonic
+        magnets_age = round(time.monotonic() - read_at, 2) if read_at is not None else None
         return {
+            "com": self._com_snapshot(reconnect_attempts, safe_reason),
             "state": state,                    # ok | tripped | warmup | safe_mode | unknown
             "message": message,
             "safe_mode_reason": safe_reason,
@@ -332,11 +387,45 @@ class InterlockService:
             "stale_threshold_s": self._cfg.stale_threshold_s,
             "warmup_active": warmup,
             "magnets_enabled": magnets_enabled,
+            "magnets_status_age_s": magnets_age,   # None = never read
             "reconnect_attempts": reconnect_attempts,
             "uptime_s": round(now - self._service_started_monotonic, 1),
             "temperature_c": sample.temperature_c if sample else None,
             "flow_v": dict(sample.flow_v) if sample else {},
             "plc_tripped": sample.plc_tripped if sample else False,
+        }
+
+    def _com_snapshot(self, reconnect_attempts: int, safe_reason: Optional[str]) -> dict:
+        """Serial-link summary in ``SerialSnapshot.as_dict()`` shape.
+
+        Lock-free on purpose: it must never queue behind the poll thread's
+        ``_serial_lock`` (held during a blocking read) and never affects the
+        trip path.  ``status``: port object present and open -> connected;
+        last open/read failed -> error; otherwise disconnected.
+        """
+        ser = self._serial
+        try:
+            is_open = bool(ser is not None and ser.is_open)
+        except Exception:
+            is_open = False
+        last_error = self._com_last_error
+        if is_open:
+            status = "connected"
+        elif last_error is not None:
+            status = "error"
+        else:
+            status = "disconnected"
+        last_rx = self._com_last_rx_monotonic
+        return {
+            "port": self._cfg.com_port,
+            "baud": int(self._cfg.com_baud),
+            "status": status,
+            "last_error": last_error,
+            "last_rx_seconds_ago": (
+                None if last_rx is None else round(time.monotonic() - last_rx, 3)
+            ),
+            "reconnect_attempts": int(reconnect_attempts),
+            "config_valid": safe_reason is None or _sm.REASON_BAD_COM_PORT not in safe_reason,
         }
 
     # ------------------------------------------------------------------
@@ -385,6 +474,7 @@ class InterlockService:
         try:
             with self._relay_lock:
                 self._relay.enable_magnets()
+            self._next_snapshot_probe_monotonic = 0.0
             _LOG.info("enable_magnets executed (requested by %s)", client_addr)
             return {"status": "ok"}
         except Exception as exc:
@@ -396,6 +486,7 @@ class InterlockService:
         try:
             with self._relay_lock:
                 self._relay.kill_magnets()
+            self._next_snapshot_probe_monotonic = 0.0
             _LOG.warning("disable_magnets executed by %s", client_addr)
             return {"status": "ok"}
         except Exception as exc:
@@ -420,9 +511,11 @@ class InterlockService:
                 )
                 _COM_LOG.info("Open success: port=%s elapsed_ms=%d",
                               self._cfg.com_port, int(1000 * (time.monotonic() - t0)))
+                self._com_last_error = None
             except Exception as exc:
                 _COM_LOG.error("Open failure: port=%s exc=%r", self._cfg.com_port, exc)
                 self._serial = None
+                self._com_last_error = f"{type(exc).__name__}: {exc}"
                 raise
 
     def _close_serial(self) -> None:
@@ -465,6 +558,9 @@ class InterlockService:
                 except Exception as exc:
                     _COM_LOG.error("read failure: %r", exc)
                     self._serial = None  # force reopen
+                    self._com_last_error = f"{type(exc).__name__}: {exc}"
+        if buffer:
+            self._com_last_rx_monotonic = time.monotonic()
         if not buffer:
             # No data this cycle — check stale and try reopen.
             self._check_stale()
@@ -584,11 +680,18 @@ class InterlockService:
                               f"K interlock tripped: {reason}")
         # Spawn the persistent kill on a separate thread so the poll loop
         # keeps running (IT4: relay-unreachable retry must not freeze poll).
-        threading.Thread(
-            target=self._kill_magnets_persistent,
-            name="ilock-trip",
-            daemon=True,
-        ).start()
+        # While one is still retrying, don't stack another: they would only
+        # serialize on _relay_lock.  Once it has confirmed the kill, the next
+        # "I TRIPPED" frame starts a fresh one (re-kills if re-enabled).
+        with self._kill_thread_lock:
+            if self._kill_thread is not None and self._kill_thread.is_alive():
+                return
+            self._kill_thread = threading.Thread(
+                target=self._kill_magnets_persistent,
+                name="ilock-trip",
+                daemon=True,
+            )
+            self._kill_thread.start()
 
     def _kill_magnets_persistent(self) -> None:
         """IT4: retry forever with 200 ms gap; CRITICAL every 10 attempts."""
@@ -600,6 +703,7 @@ class InterlockService:
                 with self._relay_lock:
                     self._relay.kill_magnets()
                     still_on = bool(self._relay.read_magnet_status())
+                self._note_magnet_status(still_on)
                 if not still_on:
                     _LOG.warning("Magnets confirmed killed after %d attempt(s) in %.2fs",
                                  attempt, time.monotonic() - t0)
