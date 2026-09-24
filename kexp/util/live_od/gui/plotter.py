@@ -1,22 +1,13 @@
-from PyQt6.QtCore import QThread, pyqtSignal
-from queue import Queue, Empty
+"""Moved to waxx.util.live_od.gui.plotter on 2026-09-18 (liveOD is lab-independent and lives in waxx).
 
-class LiveODPlotter(QThread):
-    plot_data_signal = pyqtSignal(object)
-    def __init__(self, plotwindow, plotting_queue: Queue):
-        super().__init__()
-        self.plotwindow = plotwindow
-        self.plotting_queue = plotting_queue
-        self.plot_data_signal.connect(self.plotwindow.handle_plot_data)
-    def run(self):
-        while True:
-            to_plot = self.plotting_queue.get()
-            # Drain any backlog so we always render the most recent frame.
-            # Prevents latency accumulation when the GUI/GPU can't keep up
-            # with the publish rate.
-            while True:
-                try:
-                    to_plot = self.plotting_queue.get_nowait()
-                except Empty:
-                    break
-            self.plot_data_signal.emit(to_plot)
+This module is kept so every existing import keeps working. It is not a copy and
+not a subclass: importing it gives you the waxx module itself, so classes are the
+same objects, private names are there, and patching one patches the other.
+"""
+import sys as _sys
+
+import waxx.util.live_od.gui.plotter as _impl
+
+# names on this module object too, for code that loads this file by path
+globals().update({_k: _v for _k, _v in vars(_impl).items() if not _k.startswith("__")})
+_sys.modules[__name__] = _impl

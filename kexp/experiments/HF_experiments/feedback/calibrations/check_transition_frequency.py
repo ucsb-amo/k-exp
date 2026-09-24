@@ -19,16 +19,14 @@ class hf_raman(EnvExperiment, Base):
         self.xvar('frequency_raman_transition',self.p.frequency_raman_transition + np.linspace(-2.e3,2.e3,9))
         self.xvar('t_ramsey', np.linspace(10.e-6, 500.e-6, 5))
         # self.p.frequency_raman_transition += 2.0e3
- 
-        self.p.t_raman_pi_pulse = 1.1996e-05 #78254, 2026-09-02
 
         self.p.t_raman_pulse = self.p.t_raman_pi_pulse / 2 # -1 --> 0
 
         self.p.t_tweezer_hold = .01e-3
 
-        self.p.t_tof = 800.e-6
+        self.p.t_tof = 2.e-3
 
-        self.amp_imaging = 0.2 # to juice when beam splitter is in
+        # self.amp_imaging = 0.2 # to juice when beam splitter is in
         
         self.p.N_repeats = 1
 
@@ -38,7 +36,7 @@ class hf_raman(EnvExperiment, Base):
     def scan_kernel(self):
         self.set_imaging_detuning(frequency_detuned=self.p.frequency_detuned_hf_f1m1)
         # self.imaging.set_power(self.camera_params.amp_imaging)  
-        self.imaging.set_power(self.amp_imaging)
+        # self.imaging.set_power(self.amp_imaging)
 
         self.prepare_hf_tweezers(squeeze=False)
         self.prep_raman()

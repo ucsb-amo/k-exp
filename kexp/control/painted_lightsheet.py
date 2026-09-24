@@ -217,7 +217,7 @@ class lightsheet(PaintedBeam):
         if v_pd_max == dv:
             v_pd_max = self.params.v_pd_lightsheet_rampup_end
         if tau == dv:
-            tau = t / 3.
+            tau = t / self.params.n_lightsheet_evap1_decay_coeff
 
         self._ramp_exponential(t,v_start,v_end,n_steps,tau,paint,
                                v_awg_am_max,v_pd_max,
@@ -256,3 +256,14 @@ class lightsheet(PaintedBeam):
         self.ttl_sw.off()
         self.pid_dac.set(v=self.params.v_pd_lightsheet_pd_minimum)
         self.zero_pid()
+
+    @kernel
+    def off_and_hold_pid(self):
+        self.pid_int_zero_ttl.on()
+        self.ttl_sw.off()
+
+    @kernel
+    def on_and_end_hold(self):
+        self.ttl_sw.on()
+        delay(1.e-6)
+        self.pid_int_zero_ttl.off()

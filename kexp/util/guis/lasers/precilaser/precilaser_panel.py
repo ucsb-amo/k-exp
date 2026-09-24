@@ -17,11 +17,13 @@ class PrecilaserPanel(WidgetPanelBase):
     # embedded GUI.  Stages stack.
     _COLLAPSE_STAGES = (
         # Hide Telemetry + Logs dropdowns first.
-        (480, ("telem_wrap", "log_wrap")),
-        # Then hide the Controls (startup/shutdown) box.
-        (340, ("control_panel",)),
-        # Then hide the Status Indicators panel.
-        (260, ("status_panel",)),
+        (260, ("telem_wrap", "log_wrap")),
+        # Then the Status panel — one ~20 px indicator row, and every
+        # indicator state is also visible in Telemetry.
+        (170, ("status_panel",)),
+        # The Controls (Ramp On / Ramp Off) box survives well past that;
+        # it is a single button row and the thing operators reach for.
+        (110, ("control_panel",)),
         # Last to go: the Current readout/editor (most important to keep).
         (160, ("current_panel",)),
     )
@@ -38,7 +40,7 @@ class PrecilaserPanel(WidgetPanelBase):
         # Lazily-measured collapse threshold for the Current panel.  Filled
         # by ``_measure_current_panel_min_h`` on first chance; falls back
         # to a small constant until then.
-        self._current_panel_min_h: int = 110
+        self._current_panel_min_h: int = 80
         self._current_panel_min_h_measured: bool = False
         # Re-strip after deferred sizing in the embedded GUI settles, so
         # the dock can be collapsed below the GUI's natural sizeHint.

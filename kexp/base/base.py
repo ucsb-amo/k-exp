@@ -74,7 +74,6 @@ class Base(Expt, Devices, Cooling, Image, Cameras, Control, Clients):
 
         # Resolved above: in when acquiring with the APD, out when a camera
         # grabs frames, None (stage left alone) when acquiring nothing.
-        print(apd_stage)
         self.pdxc.set_apd_stage(apd_stage)
 
         # Warm-up dry run. The first shot of a run is typically ~25% low in
@@ -84,10 +83,8 @@ class Base(Expt, Devices, Cooling, Image, Cameras, Control, Clients):
         # real shot, invisible to the camera, DataSaver and liveOD.
         self.params.N_warmup_shots = int(warmup_shots)
         if self.params.N_warmup_shots <= 0:
-            print("[warmup] WARNING: no warm-up shots requested. The first shot "
-                  "of a run is typically ~25% low in atom number. Pass "
-                  "'warmup_shots = N' to Base.__init__ to run N imaging-free "
-                  "preparations before the first shot (2 is usually enough).")
+            print("[warmup] No warm-up shots: first shot likely ~25% low. "
+                  "Set Base(warmup_shots=2) to fix.")
         else:
             print(f"[warmup] {self.params.N_warmup_shots} warm-up shot(s) "
                   "will run before the first real shot.")
@@ -120,8 +117,16 @@ class Base(Expt, Devices, Cooling, Image, Cameras, Control, Clients):
                     setup_awg = True, 
                     setup_slm = True,
                     init_magnets = True,
-                    init_ry = True):
-        
+                    init_ry = True,
+                    force_dds_init = True):
+        """
+        force_dds_init: run the full AD9910 init on every channel. By default
+        (False) channels that still hold their PLL / SYNC setup from an earlier
+        run are skipped, which saves ~1.5 s per run -- see Devices.init_all_dds
+        for the checks. Pass True after touching the Urukul clocking or SYNC
+        wiring, or whenever DDS phase coherence is in doubt.
+        """
+
         self.core.reset()
 
         if self.setup_camera:
@@ -143,7 +148,7 @@ class Base(Expt, Devices, Cooling, Image, Cameras, Control, Clients):
             self.core.break_realtime()
         if init_dds:
             self.init_all_cpld() # initializes DDS CPLDs
-            self.init_all_dds() # initializes DDS channels
+            self.init_all_dds(force_dds_init) # initializes DDS channels (skips intact ones)
         if dds_set:
             delay(1*ms)
             self.dds.stash_defaults()
@@ -285,7 +290,8 @@ class Base(Expt, Devices, Cooling, Image, Cameras, Control, Clients):
 
     @kernel
     def post_scan(self):
-        self.ry_980.sweep_to(reset=True)
+        if self.ry_980._used:
+            self.ry_980.sweep_to(reset=True)
         self.tweezer.reset_awg()
         self.core.break_realtime()
         self.background_field()

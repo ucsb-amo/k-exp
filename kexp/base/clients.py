@@ -5,7 +5,7 @@ from waxx.util.device_state.monitor_controller import MonitorController
 
 from waxx.util.guis.HMR_magnetometer.hmr_magnetometer_client import HMRClient, HMRDummy
 from kexp.control.misc.pdxc_apd_stage import APDStageClient
-from kexp.util.live_od.live_od_client import LiveODClient
+from waxx.util.live_od.live_od_client import LiveODClient
 
 # Construct on demand with ``MonitorController()`` — it discovers the monitor
 # server over the network and needs no shared-drive access.  We avoid building

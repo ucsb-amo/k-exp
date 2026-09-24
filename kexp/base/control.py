@@ -18,6 +18,7 @@ from kexp.control.painted_lightsheet import lightsheet
 from waxx.control.integrator import Integrator
 from waxx.util.guis.HMR_magnetometer.hmr_magnetometer_client import HMRClient
 from waxx.control.misc.oscilloscopes import ScopeData
+from waxx.control.beat_lock import BeatLockImagingPID
 
 dv = -0.1
 dvlist = np.linspace(1.,1.,5)
@@ -40,6 +41,7 @@ class Control():
         self.magnetometer = HMRClient()
         self.integrator = Integrator()
         self.scope_data = ScopeData()
+        self.imaging = BeatLockImagingPID()
         self.p = self.params
 
     @kernel
@@ -177,4 +179,34 @@ class Control():
         self.ttl.imaging_shutter_x.on()
         
 
-        
+    @kernel
+    def handoff_to_quantum_machines(self):
+        """Start one OPX shot window (pairs with wait_for_quantum_machines_handoff).
+
+        Contract with the OPX program (kexp.control.opx.builder): the
+        trigger wakes the OPX shot, whose first act is to raise the RF-block
+        switches (TTL high = ARTIQ RF blocked) on the raman and imaging
+        switch AOMs. The 5 us delay gives it time to do so before our RF
+        turns on steady-state for the OPX to gate. The handoff TTL routes
+        the raman 80/150 AOs to the OPX analog outputs.
+        """
+        self.ttl.quantum_machines_trigger.pulse(1.e-6)
+        delay(5e-6)
+        self.ttl.quantum_machines_raman_rf_handoff_ttl.on()
+        self.imaging.on()
+        self.raman.on()
+
+    @kernel
+    def wait_for_quantum_machines_handoff(self):
+        """End of the OPX shot window.
+
+        The OPX holds the RF blocks high for p.t_opx_handback_overlap (10 us)
+        after its hand-back trigger; the line-trigger's 5 us t_delay plus
+        these events must fit inside it. RF goes off BEFORE the handoff TTL
+        drops, so the raman AOs are never routed back to ARTIQ with the
+        ARTIQ RF still on.
+        """
+        self.ttl.quantum_machines_receive_trigger.wait_for_line_trigger(t_delay=5.e-6)
+        self.imaging.off()
+        self.raman.off()
+        self.ttl.quantum_machines_raman_rf_handoff_ttl.off()

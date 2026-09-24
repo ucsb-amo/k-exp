@@ -6,7 +6,7 @@ class camera_frame(camera_frame_waxx):
 
         self.setup()
 
-        self.andor = AndorParams(amp_absorption=.2, exposure_time_abs=20.e-6, em_gain_abs=300.,
+        self.andor = AndorParams(amp_absorption=.2, exposure_time_abs=10.e-6, em_gain_abs=300.,
                                 amp_fluorescence=0.5, exposure_time_fluor=25.e-6, em_gain_fluor=1.,
                                 amp_dispersive=0.2, exposure_time_dispersive=5.e-6, em_gain_dispersive=300.,
                                 magnification=16.4, # based on run 49189, updated 2025-11-20

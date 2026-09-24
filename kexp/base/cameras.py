@@ -1,4 +1,3 @@
-import pypylon.pylon as py
 import numpy as np
 import logging
 from collections import namedtuple
@@ -9,7 +8,6 @@ from artiq.experiment import delay, parallel, sequential
 from waxa.data.run_info import RunInfo
 
 from waxx.control.artiq.TTL import TTL, DummyTTL
-from waxx.control import BaslerUSB, AndorEMCCD, DummyCamera
 from waxx.control.slm.slm import SLM
 from waxx.control.beat_lock import BeatLockImaging, PolModBeatLock
 

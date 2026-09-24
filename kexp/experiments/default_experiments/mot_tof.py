@@ -7,7 +7,6 @@ class gm_tof(EnvExperiment, Base):
 
     def prepare(self):
         Base.__init__(self,
-                      setup_camera=True,
                       camera_select=cameras.xy_basler,
                       save_data=True)
 
@@ -15,7 +14,7 @@ class gm_tof(EnvExperiment, Base):
 
         # self.xvar('dumdum',np.linspace(1.,50.,50))
 
-        self.xvar('t_tof',np.linspace(0.03,1.2,10)*1.e-3)
+        # self.xvar('t_tof',np.linspace(0.03,1.2,10)*1.e-3)
 
         self.p.t_tof = 0.05e-3
         # self.xvar('detune_d2_r_hmot', np.linspace(-7., -1.,8))
@@ -41,7 +40,7 @@ class gm_tof(EnvExperiment, Base):
         self.p.imaging_state = 2.
         # self.p.t_tof = 20e-6
         self.p.t_mot_load = 1.
-        self.p.N_repeats = 1
+        self.p.N_repeats = 2
 
 
         # self.camera_params.gain = 28.

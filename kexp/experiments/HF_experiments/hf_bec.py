@@ -18,7 +18,7 @@ class tweezer_load(EnvExperiment, Base):
         # self.xvar('t_tof',np.linspace(100.,2000.,10)*1.e-6)
         self.p.t_tof = 1.5e-3
         
-        self.xvar('beans',np.linspace(0,30,5))
+        self.xvar('beans',np.linspace(1,10,10))
 
 
         self.p.amp_imaging = .1
@@ -35,8 +35,9 @@ class tweezer_load(EnvExperiment, Base):
         self.set_imaging_detuning(frequency_detuned=self.p.hf_imaging_detuning)
         self.dds.imaging.set_dds(amplitude=self.p.amp_imaging)
 
-        self.prepare_hf_tweezers(do_tweezer_evap_2=True,do_tweezer_evap_3=True,ramp_down_painting=False,squeeze=False)
+        self.prepare_hf_tweezers()
 
+        self.lightsheet.ramp()
 
         delay(self.p.t_tweezer_hold)
 

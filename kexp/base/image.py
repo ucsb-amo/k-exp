@@ -1,4 +1,3 @@
-import pypylon.pylon as py
 import numpy as np
 
 from artiq.experiment import *
@@ -7,7 +6,7 @@ from artiq.language.core import delay, parallel, sequential, delay_mu, now_mu
 from waxa.data.run_info import RunInfo
 from waxa.data.counter import counter
 
-from waxx.control import BaslerUSB, AndorEMCCD, DummyCamera
+from waxx.control.cameras.dummy_cam import DummyCamera
 from waxx.control.beat_lock import BeatLockImagingPID
 from waxx.util.artiq.async_print import aprint
 

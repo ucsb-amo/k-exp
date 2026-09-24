@@ -22,6 +22,7 @@ from waxx.control.raman_beams import RamanBeamPair
 from waxx.control.cameras.dummy_cam import DummyCamera
 from waxx.control.misc.thorlabs_kinesis import WaveplateRotatorPhotodiodePID
 from waxx.control.integrator import Integrator
+from waxx.control.ad9910_fast_init import AD9910FastInit
 
 from kexp.config.dds_id import dds_frame, N_uru
 from kexp.config.ttl_id import ttl_frame
@@ -106,6 +107,10 @@ class Devices():
         # self.dds.dds_manager = [DDSManager(self.core)]
         self.get_dds_devices()
         self.dds_list = self.dds.dds_list
+        self.dds_initializer = AD9910FastInit(core=self.core,
+                                              core_cache=self.get_device("core_cache"),
+                                              dds_list=self.dds.dds_list,
+                                              cache_key="kexp_ad9910_sync_data")
         
         self.rf = doubled_rf(dds_ch=self.dds.antenna_rf, expt_params=self.params)
 
@@ -291,12 +296,13 @@ class Devices():
             delay(self.params.t_rtio)
 
     @kernel
-    def init_all_dds(self):
-        for dds in self.dds.dds_list:
-            dds.dds_device.init()
-            dds._store_io_update_delay()
-            delay(10.e-6)
-            
+    def init_all_dds(self, force=False):
+        """Brings up every AD9910, skipping the ones that still hold their PLL /
+        SYNC setup from an earlier run (~1.4 s a run). See
+        waxx.control.ad9910_fast_init. force=True runs the full init on every
+        channel -- Base.init_kernel(force_dds_init=True)."""
+        self.dds_initializer.init(force)
+
     @kernel
     def init_all_cpld(self):
         for ddss in self.dds.dds_array:

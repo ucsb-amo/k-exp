@@ -29,7 +29,7 @@ class mag_trap(EnvExperiment, Base):
 
         # self.p.v_pd_lightsheet_rampup_end = 7.6
     
-        self.xvar('v_pd_hf_lightsheet_rampdown_end',np.linspace(.2,1.4,20))
+        # self.xvar('v_pd_hf_lightsheet_rampdown_end',np.linspace(.2,1.4,20))
         # self.p.v_pd_hf_lightsheet_rampdown_end = 2.0
 
         # self.xvar('t_hf_lightsheet_rampdown',np.linspace(500.,2000.,8)*1.e-3)
