@@ -80,6 +80,11 @@ class RydbergBeamBase():
         AO. Both beams are frequency controlled at the wavemeter purely by these
         elements, so this method is identical for every beam. The fetched siglent
         frequency is stored alongside the lock reading in a second container.
+
+        Only runs when the beam was actually switched on this shot
+        (``self._used``, reset each shot in ``reset_devices``) — the host-side
+        read is slow when the LAN link to the drivers is down, and an unused
+        beam has nothing worth recording.
         """
         # if self._used:
         #     self._core.wait_until_mu(now_mu())
