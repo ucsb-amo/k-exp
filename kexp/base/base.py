@@ -8,6 +8,7 @@ from waxa.data import DataSaver
 from waxa.config.img_types import img_types as img
 from waxx.base.expt import Expt
 from waxx.config.timeouts import INIT_KERNEL_CAMERA_CONNECTION_TIMEOUT
+from waxx.util import console
 
 from kexp.base import Devices, Cooling, Image, Cameras, Control, Clients
 from kexp.base.cameras import resolve_run_config
@@ -29,7 +30,8 @@ class Base(Expt, Devices, Cooling, Image, Cameras, Control, Clients):
                  suppress_live_od=False,
                  save_on_underflow=False,
                  override_apd_stage=None,
-                 warmup_shots=0):
+                 warmup_shots=0,
+                 verbosity=None):
 
         # camera_select picks the detector and setup_camera says whether to
         # acquire with it: liveOD frames for a camera, the pickoff stage in
@@ -42,7 +44,8 @@ class Base(Expt, Devices, Cooling, Image, Cameras, Control, Clients):
         super().__init__(setup_camera=capture_frames,
                          absorption_image=absorption_image,
                          save_data=save_data,
-                         server_talk=server_talk)
+                         server_talk=server_talk,
+                         verbosity=verbosity)
 
         if expt_params == None:
             from kexp.config.expt_params import ExptParams
@@ -83,11 +86,11 @@ class Base(Expt, Devices, Cooling, Image, Cameras, Control, Clients):
         # real shot, invisible to the camera, DataSaver and liveOD.
         self.params.N_warmup_shots = int(warmup_shots)
         if self.params.N_warmup_shots <= 0:
-            print("[warmup] No warm-up shots: first shot likely ~25% low. "
-                  "Set Base(warmup_shots=2) to fix.")
+            console.info("[warmup] none: first shot likely ~25% low "
+                         "(Base(warmup_shots=2) to fix).")
         else:
-            print(f"[warmup] {self.params.N_warmup_shots} warm-up shot(s) "
-                  "will run before the first real shot.")
+            console.info(f"[warmup] {self.params.N_warmup_shots} warm-up "
+                         "shot(s) before the first real shot.")
 
     def finish_prepare(self,N_repeats=[],shuffle=True):
         """
@@ -131,11 +134,14 @@ class Base(Expt, Devices, Cooling, Image, Cameras, Control, Clients):
 
         if self.setup_camera:
             self.wait_for_camera_ready(timeout=INIT_KERNEL_CAMERA_CONNECTION_TIMEOUT)
-            print("Camera is ready.")
+            if self._verbosity >= 2:   # console.VERBOSE
+                print("[camera] ready.")
         if setup_slm:
             self.setup_slm(self.run_info.imaging_type)
         if run_id:
-            print(self._ridstr) # prints run ID to terminal
+            # the host already printed the run id at finish_prepare
+            if self._verbosity >= 2:   # console.VERBOSE
+                print(self._ridstr)
         if setup_awg:
             self._setup_awg = setup_awg
             self.tweezer.awg_init()
@@ -279,8 +285,13 @@ class Base(Expt, Devices, Cooling, Image, Cameras, Control, Clients):
         self.reset_coils()
         self.lightsheet.off()
 
-        self.core.break_realtime()
-        self.ttl.line_trigger.clear_input_events()
+        # line_trigger (and every other TTLInOut) input FIFO is drained in
+        # cleanup_scan_kernel_wax via ttl_frame.clear_input_events().
+
+        # The raman AOs belong to the ARTIQ DDSs between shots, whatever
+        # happened inside an OPX window (an underflow there skips the
+        # hand-back that normally drops this line).
+        self.ttl.quantum_machines_raman_rf_handoff_ttl.off()
 
         self.core.break_realtime()
         self.ry_405.lock_status()

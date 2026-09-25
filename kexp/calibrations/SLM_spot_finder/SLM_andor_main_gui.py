@@ -927,10 +927,19 @@ def andor_readout_params():
     and so artiq -- a heavy import to hang a preview GUI on. kexp's camera_id
     does not override any of these four, so the values are the same either way.
     """
-    fallback = dict(hs_speed=0, vs_speed=1, vs_amp=3, preamp=2)
+    # 2026-09-23: vs_speed/vs_amp are set in kexp.config.camera_id, so the
+    # kexp values are tried first and the bare waxx defaults second.
+    # fallback = dict(hs_speed=0, vs_speed=0, vs_amp=0, preamp=2) # 2026-09-23; reverted, run 80708
+    #   (0.3 us / Normal transfers no charge: the light frames are blank)
+    fallback = dict(hs_speed=0, vs_speed=1, vs_amp=3, preamp=2) # restored 2026-09-24
     try:
-        from waxx.control.cameras.camera_param_classes import AndorParams
-        p = AndorParams()
+        try:
+            from kexp.config.camera_id import camera_frame
+            p = camera_frame().andor
+        except Exception as e:
+            print(f"[camera] kexp camera_id unavailable ({e}); using waxx AndorParams defaults")
+            from waxx.control.cameras.camera_param_classes import AndorParams
+            p = AndorParams()
         params = dict(
             hs_speed=int(p.hs_speed),
             vs_speed=int(p.vs_speed),

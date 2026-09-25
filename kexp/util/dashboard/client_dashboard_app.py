@@ -1,4 +1,4 @@
-﻿"""Client dashboard application entry point.
+"""Client dashboard application entry point.
 
 Run::
 
@@ -10,7 +10,8 @@ The client dashboard does NOT start any subprocesses; it only embeds client
 widgets that talk to remote servers (which are managed by the server
 dashboard on the lab control PC).  Panels whose body_factory fails to
 import or instantiate appear as ErrorBodyWidgets so the rest of the
-dashboard remains usable.
+dashboard remains usable.  Panels hidden by default are not built until
+they are first shown.
 """
 
 from __future__ import annotations
@@ -19,12 +20,11 @@ import argparse
 import logging
 import sys
 
-from PyQt6.QtCore import QSettings
 from PyQt6.QtWidgets import QApplication
 
 from kexp.util.dashboard.client_registry import CLIENT_SPECS
-from waxx.util.dashboard.dashboard_window import DashboardMainWindow
 from waxx.util.dashboard import host_config, logging_setup
+from waxx.util.dashboard.dashboard_window import DashboardMainWindow, PanelPlacement
 from waxx.util.dashboard.host_config import (
     hostname,
     load_layout_overrides,
@@ -32,7 +32,7 @@ from waxx.util.dashboard.host_config import (
 )
 from waxx.util.dashboard.logging_setup import configure_client_logging
 from waxx.util.dashboard.panel_container import ClientPanel
-from waxx.util.dashboard.panel_spec import ClientSpec
+from waxx.util.dashboard.panel_spec import ClientSpec, PanelSpec
 from waxx.util.dashboard.server_supervisor import install_console_signal_guard
 
 # Lab-specific wiring.
@@ -70,74 +70,70 @@ def _filter_specs(specs: list[ClientSpec], include: str, exclude: str) -> list[C
     return out
 
 
-def _resolve_placement(spec: ClientSpec, overrides: dict) -> tuple[str, str]:
-    o = overrides.get(spec.id, {})
-    return (
-        o.get("dock_area", spec.default_dock_area),
-        o.get("placement", spec.default_placement),
+def _placement_for(spec: PanelSpec, panel, layout: dict, *, realize_eagerly: bool = False) -> PanelPlacement:
+    o = layout.get(spec.id, {})
+    return PanelPlacement(
+        panel=panel,
+        area=o.get("dock_area", spec.default_dock_area),
+        placement=o.get("placement", spec.default_placement),
+        tab_group=o.get("tab_group", spec.tab_group),
+        default_visible=spec.default_visible,
+        realize_eagerly=realize_eagerly or spec.realize_eagerly,
+        warm_imports=tuple(spec.warm_imports),
     )
 
 
 def main(argv: list[str] | None = None) -> int:
-    args = _parse_args(argv or sys.argv[1:])
+    args = _parse_args(argv if argv is not None else sys.argv[1:])
 
     log_path = configure_client_logging()
     log = logging.getLogger("kexp.dashboard.client_app")
     log.info("Client dashboard starting; logs -> %s", log_path)
 
-    # Stay immune to CTRL_C / CTRL_BREAK leaking from any console-attached
-    # child processes so the GUI cannot be killed by a stray console signal.
     install_console_signal_guard()
 
     host_ip = resolve_host_ip(args.host_ip)
     log.info("Host IP resolved: %s (hostname=%s)", host_ip, hostname())
 
-    overrides = load_layout_overrides(host_ip)
+    layout = load_layout_overrides(host_ip, kind="client")
     specs = _filter_specs(CLIENT_SPECS, args.include, args.exclude)
     log.info("Building %d client panel(s): %s", len(specs), [s.id for s in specs])
 
+    app_id = "kexp.ClientDashboard"
     if sys.platform == "win32":
         try:
             import ctypes
-            ctypes.windll.shell32.SetCurrentProcessExplicitAppUserModelID(
-                "kexp.ClientDashboard"
-            )
+            ctypes.windll.shell32.SetCurrentProcessExplicitAppUserModelID(app_id)
         except Exception:
             pass
 
     app = QApplication.instance() or QApplication(sys.argv)
     app.setApplicationName("kexp Client Dashboard")
 
-    panels: list[tuple[ClientPanel, str]] = []
-    panel_by_id: dict[str, ClientPanel] = {}
+    placements: list[PanelPlacement] = []
     for spec in specs:
-        dock_area, _placement = _resolve_placement(spec, overrides)
         panel = ClientPanel(spec.id, spec.label, body_factory=spec.body_factory, icon=spec.icon)
-        panels.append((panel, dock_area))
-        panel_by_id[spec.id] = panel
+        placements.append(_placement_for(spec, panel, layout))
+
+    from waxx.util.dashboard.log_panel import LogPanel  # noqa: PLC0415
+    log_panel = LogPanel(sources=[])
+    log_panel.attach_root_logging(logging.WARNING)
+    log_dock = ClientPanel("_log", "Log", body_factory=lambda _lp=log_panel: _lp, icon="📜")
+    placements.append(_placement_for(PanelSpec(id="_log", label="Log", default_dock_area="bottom"),
+                                     log_dock, layout, realize_eagerly=True))
 
     win = DashboardMainWindow(
         kind="client",
         title=f"kexp Client Dashboard - {hostname()}",
-        panels=panels,
+        panels=placements,
         host_ip=host_ip,
         settings_org="kexp",
+        app_id=app_id,
     )
-    win.resize(1400, 900)
+    win.attach_log_panel(log_panel)
+    if win.width() < 400:
+        win.resize(1400, 900)
     win.show()
-
-    # First-run only: honor each spec's ``default_visible`` flag.  Once the
-    # user has saved a layout (geometry/state present in QSettings), respect
-    # whatever they last had visible instead.
-    _settings = QSettings("kexp", "dashboard")
-    _first_run = _settings.value(f"dashboard/client/{host_ip}/state") is None
-    if _first_run:
-        for spec in specs:
-            if not spec.default_visible:
-                pnl = panel_by_id.get(spec.id)
-                if pnl is not None:
-                    pnl.hide()
-
     return app.exec()
 
 
