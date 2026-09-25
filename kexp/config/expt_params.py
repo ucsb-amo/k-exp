@@ -435,7 +435,9 @@ class ExptParams(ExptParamsWaxx):
         # Handoff: after the trigger the OPX raises its RF blocks (~1 us);
         # ARTIQ turns its steady-state RF on at settle/2; the OPX exposes
         # nothing before settle, when the RF is on and settled.
-        self.t_opx_handoff_settle = 10.e-6
+        self.t_opx_handoff_artiq_side = 350e-9 # time for OPX to see trigger and react, +time for opx ttl (to rf switches) to ready 
+        self.t_opx_handoff_opx_side = 1e-6 # slow rf switch turnoff time w MOSFET NOT + ARTIQ DDS rf switch fall time
+
         # Handback: after its hand-back trigger the OPX holds the RF blocks
         # high for the overlap. ARTIQ resumes at overlap/2 and switches its
         # RF off there: the first half is kernel-CPU slack to learn of the
@@ -445,7 +447,7 @@ class ExptParams(ExptParamsWaxx):
         # ~10 us total is the floor, 30 us leaves 3x margin on the CPU half.
         # self.t_opx_handback_overlap = 10.e-6 # 5 us CPU slack underflowed on the full off() events, 2026-09-23
         # self.t_opx_handback_overlap = 200.e-6 # 2026-09-23, never exercised: the gate missed the edge first
-        self.t_opx_handback_overlap = 30.e-6 # 2026-09-24, switch-only take-back
+        self.t_opx_handback_overlap = 15.e-6 # 2026-09-24, switch-only take-back
 
         self.frequency_target_405_lock = 741.0928e12
         self.frequency_target_980_lock = 306.681900e12 + 60e6 # n = 45

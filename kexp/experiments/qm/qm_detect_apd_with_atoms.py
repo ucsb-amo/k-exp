@@ -10,19 +10,15 @@ from artiq.language import now_mu
 class hf_raman(EnvExperiment, Base):
 
     def prepare(self):
-        Base.__init__(self,setup_camera=True,
-                      camera_select=cameras.andor,
+        Base.__init__(self,
+                      camera_select=cameras.apd,
                       imaging_type=img_types.ABSORPTION,
                       warmup_shots=0)
-        
-        self.xvar('t_raman_pulse', np.linspace(0.,15.,15)*1.e-6)
-        self.p.t_raman_pulse = 0.
 
-        # self.xvar('t_raman_pulse',np.linspace(0.,))
+        self.xvar('make_atoms',[0,1,2])
 
         self.p.t_tweezer_hold = 100.e-3
-        self.p.t_tof = 2.0e-3
-        self.p.N_repeats = 2
+        self.p.N_repeats = 1
 
         self.finish_prepare(shuffle=False)
 
@@ -30,38 +26,30 @@ class hf_raman(EnvExperiment, Base):
     def scan_kernel(self):
 
         self.set_imaging_detuning(frequency_detuned=self.p.frequency_detuned_hf_f1m1)
-        self.imaging.set_power(self.camera_params.amp_imaging)
+        if self.p.make_atoms == 2:
+            self.imaging.set_power(0.05)
+        else:
+            self.imaging.set_power(2.)
 
-        # self.imaging.
+        if self.p.make_atoms == 1:
+            self.prepare_hf_tweezers()
+        else:
+            delay(1.)
 
-        self.prepare_hf_tweezers()
-        self.prep_raman()
-
-        # self.raman.pulse(self.p.t_raman_pulse)
-
-        # self.imaging.pulse(10.e-6)
+        delay(10.e-3)
  
         # ###
         self.handoff_to_quantum_machines()
         # ###
         self.wait_for_quantum_machines_handback()
-        
+
         delay(10.e-3)
 
-        self.ttl.raman_shutter.off()
-
-        delay(self.p.t_tweezer_hold)
         self.tweezer.off()
-
-        delay(self.p.t_tof)
-
-        self.ttl.pd_scope_trig3.pulse(1.e-6)
-        self.abs_image()
 
     @kernel
     def run(self):
         self.init_kernel()
-        self.load_2D_mot(self.p.t_2D_mot_load_delay)
         self.scan()
         
     def analyze(self):
