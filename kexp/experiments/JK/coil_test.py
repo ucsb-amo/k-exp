@@ -6,6 +6,7 @@ from kexp.util.artiq.async_print import aprint
 # from kexp.control.slm.slm import SLM
 from kexp.calibrations.tweezer import tweezer_vpd1_to_vpd2
 from kexp.calibrations.imaging import high_field_imaging_detuning
+from kexp.calibrations import magnetic_field_to_i_transducer
 
 class tweezer_load(EnvExperiment, Base):
 
@@ -14,12 +15,14 @@ class tweezer_load(EnvExperiment, Base):
 
         # self.xvar('frequency_detuned_imaging',np.arange(250.,450.,8)*1.e6)
         self.p.frequency_detuned_imaging = 290.e6
-        self.xvar('beans',[0]*1000)
+        # self.xvar('beans',[0]*1000)
 
         # self.xvar('hf_imaging_detuning', [340.e6,420.e6]*1)
-        
-       
 
+        target_b=35.
+        self.p.test_current=magnetic_field_to_i_transducer(target_b)
+       
+        
         # self.xvar('beans',[0,1])
 
         self.p.t_mot_load = 1.
@@ -37,8 +40,6 @@ class tweezer_load(EnvExperiment, Base):
     @kernel
     def scan_kernel(self):
 
-
-
         # feshbach field on, ramp up to field 1  
         self.outer_coil.on()
         # delay(1.e-3)
@@ -49,16 +50,15 @@ class tweezer_load(EnvExperiment, Base):
 
         self.outer_coil.ramp_supply(t=120.e-3,
                              i_start=0.,
-                             i_end=self.p.i_spin_mixture)
+                             i_end=self.p.test_current)
         delay(375.e-3)
 
-        self.ttl.pd_scope_trig.pulse(1.e-6)
         self.ttl.line_trigger.wait_for_line_trigger()
 
         self.outer_coil.start_pid()
-        delay(125.e-3)
-        self.ttl.test_trig.pulse(1.e-6)
-
+        delay(25.e-3)
+        self.ttl.pd_scope_trig.pulse(1.e-6)
+        self.outer_coil.ramp_pid(t=1.e-3, i_start=self.p.test_current, i_end=self.p.test_current-1)
         delay(175.e-3)
 
 
@@ -76,7 +76,7 @@ class tweezer_load(EnvExperiment, Base):
 
     @kernel
     def run(self):
-        self.init_kernel()
+        self.init_kernel(init_dds=False,dds_set=False,dds_off=False)
         self.load_2D_mot(self.p.t_2D_mot_load_delay)
         self.scan()
         # self.mot_observe()

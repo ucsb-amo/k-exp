@@ -15,6 +15,8 @@ offset_i_transducer_per_v_setpoint_pid_outer  = -0.3520810805908351
 # slope_overhead_per_i_transducer = 0.3569422
 # offset_overhead_per_i_transducer = -0.04
 
+
+#Older low field numbers (JK 14/9/26 thinks - to be confirmed)
 # slope_overhead_per_i_transducer = 0.37548
 # slope_overhead_per_i_transducer = 0.05
 # offset_overhead_per_i_transducer = -1.25112

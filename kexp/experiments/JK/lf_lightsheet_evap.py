@@ -5,32 +5,47 @@ import numpy as np
 from kexp.util.artiq.async_print import aprint
 from kexp.calibrations.tweezer import tweezer_vpd1_to_vpd2
 from kexp.calibrations.imaging import high_field_imaging_detuning
+from kexp.calibrations import low_field_imaging_detuning
 
 class tweezer_load(EnvExperiment, Base):
 
     def prepare(self):
         Base.__init__(self,setup_camera=True,
-                    camera_select=cameras.andor,
+                    camera_select=cameras.xy_basler,
                     save_data=True)
 
 
         self.p.v_pd_lf_lightsheet_rampdown_end = 1.0
+        self.p.v_pd_lf_lightsheet_rampdown_end2 = 0.3
         # self.xvar('v_pd_lf_lightsheet_rampdown_end',np.linspace(0.3,1.4,12))
-        self.p.i_lf_lightsheet_evap1_current=14.0
-        # self.xvar('i_lf_lightsheet_evap1_current',np.linspace(13.,16,8))
+        self.p.i_lf_lightsheet_evap1_current=13.0
+        self.p.i_lf_lightsheet_evap2_current=14.0
+
+
         self.p.i_lf_tweezer_load_current=14.0
         # self.xvar('i_lf_tweezer_load_current',np.linspace(12.,18,10))
-        self.camera_params.amp_imaging = 0.2
 
-        # self.xvar('t_tof',np.linspace(100.,1600.,7)*1.e-6)
-        self.p.t_tof = 700.e-6
+        self.p.offset = 111.e6
+        # self.xvar('offset',np.linspace(80.,120.,10)*1.e6)
 
+        # self.camera_params.amp_imaging = 0.2
+
+        # self.xvar('t_tof',np.linspace(100.,3600.,6)*1.e-6)
+        self.p.t_tof = 1600.e-6
+        self.camera_params.gain = 14.
+        # self.adjust('camera_params.gain',0.,15.)
         self.p.t_tweezer_hold = 1.e-3
 
         self.p.imaging_freq=324.e6
         # self.xvar('imaging_freq',np.linspace(310.,340.,8)*1.e6)
+        self.p.v_pd_lightsheet_rampdown_end = 0.9
+        self.p.v_pd_lf_lightsheet_rampdown2_end = 0.6
 
-        self.p.v_pd_lf_lightsheet_rampdown2_end = 0.9
+        self.p.t_lf_lightsheet_rampdown = 0.15
+        self.p.t_lf_lightsheet_rampdown2 = 0.3
+
+        self.p.n_lightsheet_evap1_decay_coeff = 1.5
+
         self.p.t_mot_load = 1.
         self.p.N_repeats = 1
         # self.p.imaging_state = 2.
@@ -40,8 +55,9 @@ class tweezer_load(EnvExperiment, Base):
     @kernel
     def scan_kernel(self):
 
-        self.set_imaging_detuning(frequency_detuned=self.p.imaging_freq)
-        self.imaging.set_power(self.camera_params.amp_imaging)
+        # self.set_high_field_imaging(i_outer=self.p.i_lf_tweezer_load_current)
+        self.set_imaging_detuning(frequency_detuned=low_field_imaging_detuning(self.p.i_lf_tweezer_load_current)+self.p.offset)
+        # self.imaging.set_power(self.camera_params.amp_imaging)
 
 
         self.mot(self.p.t_mot_load)
@@ -65,20 +81,25 @@ class tweezer_load(EnvExperiment, Base):
         self.set_shims(0.,0.,0.) 
 
         # # lightsheet evap 1
-        self.lightsheet.ramp(t=self.p.t_lf_lightsheet_rampdown,
+        self.lightsheet.exponential_ramp(t=self.p.t_lf_lightsheet_rampdown,
                             v_start=self.p.v_pd_lightsheet_rampup_end,
                             v_end=self.p.v_pd_lf_lightsheet_rampdown_end)
         
-        # feshbach field ramp to field 2
-        # self.outer_coil.ramp_supply(t=self.p.t_feshbach_field_ramp,
-        #                     i_start=self.p.i_lf_lightsheet_evap1_current,
-        #                     i_end=self.p.i_lf_tweezer_load_current)
+        #feshbach field ramp to field 2
+        self.outer_coil.ramp_supply(t=self.p.t_feshbach_field_ramp,
+                            i_start=self.p.i_lf_lightsheet_evap1_current,
+                            i_end=self.p.i_lf_lightsheet_evap2_current)
         
 
-        # lightsheet evap 2
-        # self.lightsheet.ramp(t=self.p.t_lf_lightsheet_rampdown,
-        #                     v_start=self.p.v_pd_lightsheet_rampdown_end,
-        #                     v_end=self.p.v_pd_lf_lightsheet_rampdown2_end)
+       #lightsheet evap 2
+        self.lightsheet.exponential_ramp(t=self.p.t_lf_lightsheet_rampdown2,
+                            v_start=self.p.v_pd_lightsheet_rampdown_end,
+                            v_end=self.p.v_pd_lf_lightsheet_rampdown2_end)
+
+        # #feshbach field ramp to field 3
+        self.outer_coil.ramp_supply(t=self.p.t_feshbach_field_ramp,
+                            i_start=self.p.i_lf_lightsheet_evap1_current,
+                            i_end=self.p.i_lf_tweezer_load_current)
         
         self.lightsheet.off()
         self.ttl.pd_scope_trig.pulse(1.e-6)
