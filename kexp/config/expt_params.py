@@ -428,6 +428,7 @@ class ExptParams(ExptParamsWaxx):
         #
         self.v_integrated_apd_adc_background = -2.1
 
+<<<<<<< HEAD
         ### OPX+ (quantum machines) handshake -- see kexp.control.opx and the
         ### timing diagram on Control.handoff_to_quantum_machines. Both sides
         ### (ARTIQ kernel, OPX program) read these two windows; each is split
@@ -436,6 +437,18 @@ class ExptParams(ExptParamsWaxx):
         # ARTIQ turns its steady-state RF on at settle/2; the OPX exposes
         # nothing before settle, when the RF is on and settled.
         self.t_opx_handoff_settle = 10.e-6
+=======
+        ### OPX+ (quantum machines) handshake -- see the timing diagram on
+        ### Control.handoff_to_quantum_machines. Both sides (ARTIQ kernel, OPX
+        ### program) read these two windows; each is split in half between
+        ### the two machines.
+        # Handoff: after the trigger the OPX raises its RF blocks (~1 us);
+        # ARTIQ turns its steady-state RF on at settle/2; the OPX exposes
+        # nothing before settle, when the RF is on and settled.
+        self.t_opx_handoff_artiq_side = 350e-9 # time for OPX to see trigger and react, +time for opx ttl (to rf switches) to ready 
+        self.t_opx_handoff_opx_side = 1e-6 # slow rf switch turnoff time w MOSFET NOT + ARTIQ DDS rf switch fall time
+
+>>>>>>> main
         # Handback: after its hand-back trigger the OPX holds the RF blocks
         # high for the overlap. ARTIQ resumes at overlap/2 and switches its
         # RF off there: the first half is kernel-CPU slack to learn of the
@@ -445,12 +458,16 @@ class ExptParams(ExptParamsWaxx):
         # ~10 us total is the floor, 30 us leaves 3x margin on the CPU half.
         # self.t_opx_handback_overlap = 10.e-6 # 5 us CPU slack underflowed on the full off() events, 2026-09-23
         # self.t_opx_handback_overlap = 200.e-6 # 2026-09-23, never exercised: the gate missed the edge first
+<<<<<<< HEAD
         self.t_opx_handback_overlap = 10.e-6 # 2026-09-24, switch-only take-back
         # OPX APD integration window (within the acquire window, which is
         # t_imaging_pulse_apd_abs long). Placeholder values, 2026-09-23 --
         # to be calibrated against the ARTIQ sampler path in OPX milestone M3.
         self.t_opx_integration_start = 0.
         self.t_opx_integration_len = 5.e-6
+=======
+        self.t_opx_handback_overlap = 15.e-6 # 2026-09-24, switch-only take-back
+>>>>>>> main
 
         self.frequency_target_405_lock = 741.0928e12
         self.frequency_target_980_lock = 306.681900e12 + 60e6 # n = 45

@@ -218,10 +218,11 @@ class Control():
         t_trigger = now_mu()
         self.ttl.quantum_machines_trigger.pulse(T_OPX_TRIGGER_PULSE)
         at_mu(t_trigger)
-        delay(self.p.t_opx_handoff_settle / 2)
+        delay(self.p.t_opx_handoff_artiq_side)
         self.ttl.quantum_machines_raman_rf_handoff_ttl.on()
         self.imaging.on()
         self.raman.on()
+        delay(self.p.t_opx_handoff_opx_side)
 
     @kernel
     def wait_for_quantum_machines_handback(self, t_timeout=T_OPX_HANDBACK_TIMEOUT):
