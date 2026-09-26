@@ -195,7 +195,7 @@ class Control():
         the ARTIQ RF on for it to gate. Pairs with
         wait_for_quantum_machines_handback().
 
-        The handshake, one shot, with the ExptParams values of 2026-09-24
+        The handshake, one shot, with the ExptParams values of 2026-09-25
         (the OPX half is framed by kexp.control.opx.builder from the channel
         map, which reads the same parameters):
 
@@ -218,13 +218,19 @@ class Control():
                     (ChannelMap.t_handoff_settle_s)
             ... sequence body on the OPX ...
             Te      hand-back edge, OPX -> ARTIQ (OPX digital 3 -> ttl41,
-                    200 ns pulse); the OPX holds both blocks from here
-            Te + t_opx_handback_overlap/2                          (7.5 us)
+                    200 ns pulse, rising edge); the OPX holds both blocks
+                    and leaves its analog drives untouched from here
+            Te + t_opx_handback_artiq_trigger_receive_latency      (1 us)
+                    ttl41 timestamps the edge (t_edge)
+            t_edge + t_opx_handback_artiq_rtio_delay               (3 us)
                     ARTIQ: imaging switch off, raman switch off, handoff
                     TTL low -- at the SAME timestamp (switch-only take-back)
-            Te + t_opx_handback_overlap                            (15 us)
-                    OPX releases the blocks (pass); ARTIQ imaging.off() /
-                    raman.off() bookkeeping (re-writes the same level)
+            ... + t_opx_handback_switch_fall_delay                 (5 us)
+                    those switches have fallen. OPX releases the blocks
+                    (pass) and only now may ramp its analog drives; ARTIQ
+                    imaging.off() / raman.off() bookkeeping (re-writes the
+                    same level). The OPX waits the SUM of the three from
+                    its edge (ChannelMap.t_handback_hold_s).
 
         The gate on quantum_machines_receive_trigger is armed BEFORE the
         trigger and closed only after the edge, so a shot with nothing to
@@ -234,11 +240,11 @@ class Control():
         the OPX analog outputs for the whole window.
 
         Crash state. After the trigger the OPX shot never waits for ARTIQ
-        again: it fires the hand-back, holds its blocks for the overlap and
+        again: it fires the hand-back, holds its blocks for the hold time and
         releases them whatever ARTIQ does. A kernel that dies between here
         and the take-back (an exception scan() does not catch, a killed
         process) therefore leaves ARTIQ RF ON on both switch AOMs and the
-        handoff TTL HIGH -- light on the atoms from Te + overlap until the
+        handoff TTL HIGH -- light on the atoms from Te + hold until the
         next run's init_kernel (switch_all_dds(0), and the handoff-TTL drop
         there), the same end state as any crash with a beam on. An
         RTIOUnderflow inside the take-back is caught by scan(), and
@@ -263,23 +269,27 @@ class Control():
         RF and the raman AOs back. Timing diagram in
         handoff_to_quantum_machines.
 
-        The timeline resumes t_opx_handback_overlap/2 (7.5 us) after the
-        edge. That half is the kernel CPU's slack to learn of the edge and
-        submit the three time-critical events, all at one timestamp: the RF
-        switches of the raman and imaging switch AOMs off (DDS.set_sw, one
-        RTIO event each) and the handoff TTL low. The other half is the
-        margin before the OPX releases its blocks at Te + overlap. The CPU
-        reaction time has not been measured on this machine: the print at
-        VERBOSE below IS the measurement (~4-7 us expected; see
-        TTL_IN.wait_for_edge) -- run it once before shrinking the overlap.
-        An underflow here is caught by scan(), and cleanup_scan_kernel
-        finishes the take-back (RF off, TTL low).
+        The timeline resumes t_opx_handback_artiq_rtio_delay (2 us) after
+        the edge's timestamp. That is the kernel CPU's slack to learn of the
+        edge and submit the three time-critical events, all at one
+        timestamp: the RF switches of the raman and imaging switch AOMs off
+        (DDS.set_sw, one RTIO event each) and the handoff TTL low.
+        t_opx_handback_switch_fall_delay later those switches have fallen,
+        and the OPX -- which waits receive latency + rtio delay + switch
+        fall from its own edge -- releases its blocks. The CPU reaction
+        time has not been measured on this machine: the print at VERBOSE
+        below IS the measurement (~4-7 us was expected when the take-back
+        had 7.5 us; see TTL_IN.wait_for_edge). If it is longer than the
+        rtio delay, every shot underflows here. An underflow here is caught
+        by scan(), and cleanup_scan_kernel finishes the take-back (RF off,
+        TTL low) -- but the OPX has released its blocks by then, so the RF
+        reaches the atoms until cleanup runs.
 
-        imaging.off() / raman.off() at the end of the overlap re-write the
+        imaging.off() / raman.off() at the end of the hold re-write the
         same switch level and keep the cached switch state honest; these
         two DDSs have no DAC channel, so each is one RTIO event, not SPI
         traffic. They are not what makes the light safe -- the set_sw
-        events inside the overlap are.
+        events inside the hold are.
 
         No edge within t_timeout of the trigger: the same take-back runs
         (the OPX released its blocks long ago, or never ran), then
@@ -289,19 +299,19 @@ class Control():
         switch-AOM RFs on and the OPX lines idle low (= pass).
         """
         t_edge = self.ttl.quantum_machines_receive_trigger.wait_for_edge(
-            self.p.t_opx_handback_overlap / 2, t_timeout)
-        # time-critical, inside the overlap
+            self.p.t_opx_handback_artiq_rtio_delay, t_timeout)
+        # time-critical, inside the OPX's hold
         self.imaging.dds_sw.set_sw(0)
         self.raman.dds_sw.set_sw(0)
         self.ttl.quantum_machines_raman_rf_handoff_ttl.off()
         if self._verbosity >= 2:   # console.VERBOSE
-            # slack left once the critical events were in: how much of the
-            # CPU-slack half was actually needed
+            # slack left once the critical events were in: how much of
+            # t_opx_handback_artiq_rtio_delay was actually needed
             slack_mu = now_mu() - self.core.get_rtio_counter_mu()
             aprint("[opx] hand-back: timeline slack after the RF-off events =",
                    slack_mu, "mu")
-        # bookkeeping, at the end of the overlap
-        delay(self.p.t_opx_handback_overlap / 2)
+        # bookkeeping, at the end of the hold (switches have fallen)
+        delay(self.p.t_opx_handback_switch_fall_delay)
         self.imaging.off()
         self.raman.off()
         if t_edge < 0:
@@ -312,9 +322,3 @@ class Control():
             raise TriggerTimeout("no OPX hand-back edge on ttl{0} within the "
                                  "timeout",
                                  np.int64(self.ttl.quantum_machines_receive_trigger.ch))
-
-    @kernel
-    def wait_for_quantum_machines_handoff(self):
-        """Old name of wait_for_quantum_machines_handback(), kept for the
-        experiments written against it."""
-        self.wait_for_quantum_machines_handback()

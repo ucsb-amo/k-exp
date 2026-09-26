@@ -846,17 +846,16 @@ class Cooling():
                            v_yshim_current=v_yshim_current,
                            v_xshim_current=v_xshim_current)
             delay(t_bias_rampup)
-        self.dds.optical_pumping.set_dds_gamma(delta=detune_optical_pumping, 
+        self.dds.optical_pumping.set_dds_gamma(delta=detune_optical_pumping,
                                        amplitude=amp_optical_pumping)
-        self.dds.op_r.set_dds_gamma(delta=detune_optical_pumping_r,
-                              amplitude=amp_optical_pumping_r)
-        
+        # 2026-09-26: the separate repump DDS (dds.op_r) is gone from dds_id;
+        # its calls were removed here.  detune/amp_optical_pumping_r are still
+        # accepted so existing callers compile, and are unused.
+
         if t:
             self.dds.optical_pumping.on()
-            self.dds.op_r.on()
             delay(t)
             self.dds.optical_pumping.off()
-            self.dds.op_r.off()
 
     @kernel
     def start_magtrap(self,v_zshim_current=dv,

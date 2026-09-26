@@ -448,25 +448,28 @@ class ExptParams(ExptParamsWaxx):
         self.t_opx_handoff_artiq_side = 350e-9 # time for OPX to see trigger and react, +time for opx ttl (to rf switches) to ready
         self.t_opx_handoff_opx_side = 1e-6 # slow rf switch turnoff time w MOSFET NOT + ARTIQ DDS rf switch fall time
 
-        # Handback, after the OPX hand-back edge: the OPX holds its RF blocks
-        # high for the whole overlap. ARTIQ resumes at overlap/2 and there
-        # switches both RF off and drops the handoff TTL at one timestamp
-        # (switch-only take-back: one RTIO event each, no DAC on these two
-        # DDSs). The first half is kernel-CPU slack to learn of the edge and
-        # submit those three events -- unmeasured on this machine, ~4-7 us
-        # expected, printed at VERBOSE by wait_for_quantum_machines_handback;
-        # the second half is the margin before the blocks release. Measure
-        # that slack before shrinking the overlap. imaging.off()/raman.off()
-        # at the end of the overlap are bookkeeping re-writes of the same
-        # switch level, not the safety event.
-
         # OPX APD integration window (within the acquire window, which is
         # t_imaging_pulse_apd_abs long). Placeholder values, 2026-09-23 --
         # to be calibrated against the ARTIQ sampler path in OPX milestone M3.
         self.t_opx_integration_start = 0.
         self.t_opx_integration_len = 5.e-6
 
-        self.t_opx_handback_overlap = 15.e-6 # 2026-09-24, switch-only take-back
+        # Handback, after the OPX hand-back trigger's rising edge (also
+        # config-time; timing diagram on handoff_to_quantum_machines):
+        #   trigger_receive_latency: until ARTIQ's ttl41 timestamps the edge.
+        #   artiq_rtio_delay: ARTIQ switches both RF off and drops the
+        #     handoff TTL this long after that timestamp, at one timestamp
+        #     (switch-only take-back). It is the kernel CPU's slack to learn
+        #     of the edge and submit those three events -- unmeasured on this
+        #     machine, printed at VERBOSE by wait_for_quantum_machines_handback;
+        #     too short and every shot underflows there.
+        #   switch_fall_delay: those switches have fallen; ARTIQ resumes.
+        # The OPX holds its RF blocks high and its analog drives untouched
+        # for the SUM of the three from its edge (ChannelMap.t_handback_hold_s),
+        # then releases the blocks and may ramp the drives.
+        self.t_opx_handback_artiq_trigger_receive_latency = 1.e-6
+        self.t_opx_handback_artiq_rtio_delay = 3.e-6 # 2026-09-24, switch-only take-back
+        self.t_opx_handback_switch_fall_delay = 2.e-6
 
         self.frequency_target_405_lock = 741.0928e12
         self.frequency_target_980_lock = 306.681900e12 + 60e6 # n = 45

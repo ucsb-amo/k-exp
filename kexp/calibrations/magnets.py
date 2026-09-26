@@ -12,6 +12,12 @@ offset_i_transducer_per_v_setpoint_supply_outer = 0.6609996609503291
 slope_i_transducer_per_v_setpoint_pid_outer  = 40.01587069690042
 offset_i_transducer_per_v_setpoint_pid_outer  = -0.3520810805908351
 
+# Inner coil supply: nominal 17 A per volt of supply setpoint, no offset --
+# not a transducer calibration like the outer coil's above.  Moved here
+# unchanged from the literal in kexp.base.devices (2026-09-25) so the device
+# and the Device Control Composite tab read the same number.
+slope_i_per_v_setpoint_supply_inner = 17.
+
 # slope_overhead_per_i_transducer = 0.3569422
 # offset_overhead_per_i_transducer = -0.04
 

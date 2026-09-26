@@ -68,7 +68,9 @@ def main():
     app.setStyle('Windows')
     try:
         gui = MonitorServerGUI(monitor_expt_path=MONITOR_EXPT_PATH,
-                               config_file_path=MONITOR_STATE_FILEPATH)
+                               config_file_path=MONITOR_STATE_FILEPATH,
+                               journal_dir=(os.path.join(LOG_DIR, "ops_journal")
+                                            if LOG_DIR else None))
     except Exception:
         log.exception("Monitor server GUI failed to start")
         return 1

@@ -14,17 +14,47 @@ from __future__ import annotations
 from waxx.util.dashboard.embed_helpers import WidgetPanelBase, embed_main_window
 
 
+def _composite_kwargs(dds, dac) -> dict:
+    """The Composite tab's definitions (kexp.config.composite_devices), its
+    scenes, what their readbacks need, and the read-only telemetry
+    (kexp...telemetry_providers).  A failure here costs the tab (or only the
+    measured values), not the whole GUI."""
+    import logging  # noqa: PLC0415
+    log = logging.getLogger(__name__)
+    try:
+        from types import SimpleNamespace  # noqa: PLC0415
+        from kexp.config.composite_devices import COMPOSITE_DEVICES, COMPOSITE_SCENES  # noqa: PLC0415
+        from kexp.config.expt_params import ExptParams  # noqa: PLC0415
+        kwargs = {"composite_devices": COMPOSITE_DEVICES,
+                  "composite_scenes": COMPOSITE_SCENES,
+                  "composite_params": ExptParams(),
+                  "composite_frames": SimpleNamespace(dds=dds, dac=dac)}
+    except Exception:
+        log.exception("Composite device definitions failed to load; the Composite tab is off.")
+        return {}
+    try:
+        from waxx.util.device_state.telemetry import TelemetryHub  # noqa: PLC0415
+        from kexp.util.guis.device_state_gui.telemetry_providers import default_providers  # noqa: PLC0415
+        kwargs["composite_telemetry"] = TelemetryHub(default_providers())
+    except Exception:
+        log.exception("Telemetry providers failed to load; the cards show no measured values.")
+    return kwargs
+
+
 class MonitorPanel(WidgetPanelBase):
     """Server-side monitor status panel (small)."""
 
     def __init__(self, parent=None):
         super().__init__(parent)
         from PyQt6.QtWidgets import QVBoxLayout  # noqa: PLC0415
+        import os  # noqa: PLC0415
         from waxx.util.guis.monitor_server_gui import MonitorServerGUI  # noqa: PLC0415
-        from kexp.config.ip import MONITOR_EXPT_PATH, MONITOR_STATE_FILEPATH  # noqa: PLC0415
+        from kexp.config.ip import MONITOR_EXPT_PATH, MONITOR_STATE_FILEPATH, LOG_DIR  # noqa: PLC0415
 
         self._gui = MonitorServerGUI(monitor_expt_path=MONITOR_EXPT_PATH,
-                                     config_file_path=MONITOR_STATE_FILEPATH)
+                                     config_file_path=MONITOR_STATE_FILEPATH,
+                                     journal_dir=(os.path.join(LOG_DIR, "ops_journal")
+                                                  if LOG_DIR else None))
         layout = QVBoxLayout(self)
         layout.setContentsMargins(0, 0, 0, 0)
         layout.addWidget(self._gui)
@@ -51,22 +81,13 @@ class MonitorClientPanel(WidgetPanelBase):
         self._gui = DeviceStateGUI(
             dds_frame=dds,
             dac_frame=dac,
+            **_composite_kwargs(dds, dac),
         )
-        from PyQt6.QtWidgets import QScrollArea, QVBoxLayout, QWidget  # noqa: PLC0415
-        from PyQt6.QtCore import Qt  # noqa: PLC0415
-        container = QWidget()
-        embed_main_window(container, self._gui)
-        scroll = QScrollArea()
-        scroll.setWidget(container)
-        scroll.setWidgetResizable(True)
-        scroll.setHorizontalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAsNeeded)
-        scroll.setVerticalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAsNeeded)
-        scroll.setFrameShape(QScrollArea.Shape.NoFrame)
-        scroll.setStyleSheet("QScrollArea { border: none; background: transparent; }")
-        layout = QVBoxLayout(self)
-        layout.setContentsMargins(0, 0, 0, 0)
-        layout.setSpacing(0)
-        layout.addWidget(scroll)
+        # Embedded directly (no scroll area), so the panel's minimum size is
+        # the size that fits every channel card: the dock cannot be shrunk
+        # to where cards would be clipped or squeezed.  The Composite tab
+        # scrolls on its own inside the GUI.
+        embed_main_window(self, self._gui)
 
 
 __all__ = ["MonitorPanel", "MonitorClientPanel"]

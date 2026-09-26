@@ -105,6 +105,12 @@ class Base(Expt, Devices, Cooling, Image, Cameras, Control, Clients):
 
         self.finish_prepare_wax(N_repeats=N_repeats,shuffle=shuffle)
 
+        # What the hardware was said to be at as this run starts (hazards
+        # printed loudly, the whole report saved with the run's data).  The
+        # monitor experiment is not a run.
+        if hasattr(self, 'monitor') and not getattr(self, '_is_monitor', False):
+            self._stamp_device_state()
+
         # self.configure_imaging_system(polmod_ao_bool=self._polmod_config)
         self.dds.stash_defaults()
 
@@ -117,6 +123,29 @@ class Base(Expt, Devices, Cooling, Image, Cameras, Control, Clients):
         # starts the job (it parks on its first wait_for_trigger). No-op
         # unless self.opx.use(...) was called in prepare().
         self.opx.on_finish_prepare()
+
+    def _stamp_device_state(self):
+        """Pre-run check: hazards and trust from the monitor server, printed
+        (warnings only, never a refusal), and the report -- device state,
+        trust, hazards, journal since the last run -- stored as the run's
+        'device_state_at_start' text.  Never raises."""
+        import json
+        from types import SimpleNamespace
+        try:
+            from waxx.util.device_state.run_stamp import pre_run_report, report_warnings
+            from kexp.config.composite_devices import COMPOSITE_DEVICES
+            report = pre_run_report(self.monitor, COMPOSITE_DEVICES, self.params,
+                                    SimpleNamespace(dds=self.dds, dac=self.dac))
+        except Exception as e:
+            print(f"[device state] WARNING: the pre-run device-state check failed ({e!r}); "
+                  f"nothing was checked and nothing is stamped.")
+            return
+        for line in report_warnings(report):
+            print(f"[device state] *** {line} ***")
+        try:
+            self._extra_file_texts["device_state_at_start"] = json.dumps(report, default=repr)
+        except Exception as e:
+            print(f"[device state] WARNING: could not store the device-state stamp ({e!r}).")
 
     @kernel
     def init_kernel(self, run_id = True,
@@ -309,7 +338,8 @@ class Base(Expt, Devices, Cooling, Image, Cameras, Control, Clients):
         # hand-back that normally drops this line).
         self.ttl.quantum_machines_raman_rf_handoff_ttl.off()
         # An RTIOUnderflow inside the take-back skips its RF-off events; the
-        # OPX releases its blocks overlap after the hand-back regardless, so
+        # OPX releases its blocks the hold time (receive latency + rtio delay
+        # + switch fall) after the hand-back regardless, so
         # RF left on here is light on the atoms. One RTIO event each (these
         # two switch DDSs have no DAC channel).
         self.imaging.off()

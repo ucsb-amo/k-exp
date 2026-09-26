@@ -28,14 +28,14 @@ class hf_raman_opx(EnvExperiment, Base):
                       warmup_shots=0)
 
         # self.p.t_raman_pulse = 0.
-        self.xvar('t_raman_pulse', np.linspace(0.,self.p.t_raman_pi_pulse,2))
+        self.xvar('t_raman_pulse', np.linspace(0.,25.,31)*1.e-6)
         # self.xvar('t_raman_pulse', [0., self.p.t_raman_pi_pulse])
 
         self.p.t_tweezer_hold = 100.e-3
         self.p.t_tof = 2.0e-3
         self.p.N_repeats = 1
 
-        self.opx.use(rabi_raman_pulse)
+        self.opx.use(rabi_raman_pulse, simulate=False)
         # self.opx.use(rabi_raman_pulse, simulate=True)  # waveform report, no run
 
         self.finish_prepare(shuffle=True)
