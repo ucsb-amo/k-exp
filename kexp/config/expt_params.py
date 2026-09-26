@@ -78,8 +78,8 @@ class ExptParams(ExptParamsWaxx):
         self.phase_slm_mask = 0.387097 * np.pi
         self.px_slm_grating_position_x = 994
         self.px_slm_grating_position_y = 824
-        self.px_slm_phase_mask_position_x = 1011
-        self.px_slm_phase_mask_position_y = 834
+        self.px_slm_phase_mask_position_x = 1022
+        self.px_slm_phase_mask_position_y = 843
         # Cooling timing
         self.t_tof = 20.e-6
         self.t_discharge_igbt = 2.e-3
@@ -163,7 +163,8 @@ class ExptParams(ExptParamsWaxx):
         # self.t_raman_pi_pulse = 7.1284e-06 #80159, 2026-09-09
         # self.t_raman_pi_pulse = 6.9144e-06 #80599, 2026-09-21
         # self.t_raman_pi_pulse = 5.7048e-06 #80622, 2026-09-22
-        self.t_raman_pi_pulse = 7.1210e-06 #80652, 2026-09-23
+        # self.t_raman_pi_pulse = 7.1210e-06 #80652, 2026-09-23
+        self.t_raman_pi_pulse = 6.5821e-06 #83102, 2026-09-26
          
         # DAC controlled AO amplitudes
         self.amp_d1_3d_c = 0.3

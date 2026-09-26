@@ -10,7 +10,8 @@ from artiq.language import now_mu
 class phase_spot(EnvExperiment, Base):
 
     def prepare(self):
-        Base.__init__(self,camera_select=cameras.apd,
+        Base.__init__(self,
+                      camera_select=cameras.apd,
                       save_data=True,
                       imaging_type=img_types.DISPERSIVE)
         
@@ -25,7 +26,7 @@ class phase_spot(EnvExperiment, Base):
         # self.p.frequency_detuned_hf_midpoint = -5.0e6
 
         # self.xvar('phase_slm_mask', 0.387097 * np.pi + np.linspace(-0.2, 0.2, 5) * np.pi)
-        self.xvar('phase_slm_mask', np.linspace(0.30,1.0,11) * np.pi)
+        self.xvar('phase_slm_mask', np.linspace(0.30,1.0,1) * np.pi)
         self.p.phase_slm_mask = 0.387097 * np.pi
 
         # self.xvar('dimension_slm_mask',np.linspace(15.e-6,250.e-6,10))
