@@ -62,6 +62,14 @@ MONITOR_STATE_FILEPATH = (
 )
 # MONITOR_EXPT_PATH = str( Path(EXPT_PACKAGE_DIR) / 'experiments' / 'tools' / 'monitor.py' )
 MONITOR_EXPT_PATH = _safe_join(EXPT_PACKAGE_DIR, 'experiments', 'tools', 'monitor.py')
+# Run by the Device Control GUI's "Run MOT Observe" button (through the monitor
+# server), e.g. when the device state is untrusted: its end state replaces the file.
+RESET_STATE_EXPT_PATH = _safe_join(EXPT_PACKAGE_DIR, 'experiments', 'tools', 'mot_observe.py')
+# Run back to back by the monitor server from the Device Control GUI's Composite
+# tab (waxx.util.device_state.run_loop): key -> (card title, experiment file).
+# Only these files can be looped.
+AUTO_TOF_EXPT_PATH = _safe_join(EXPT_PACKAGE_DIR, 'experiments', 'tools', 'auto_tof.py')
+RUN_LOOP_EXPTS = {'auto_tof': ('BEC TOF loop', AUTO_TOF_EXPT_PATH)}
 
 ### SRS control servers
 SRS_CONTROL_IP = "192.168.1.76"
@@ -105,6 +113,10 @@ DEVICE_ID_KINESIS_REF_BEAM_WAVEPLATE_ROTATOR = 27500961
 ### PDXC picomotor controller (kong, 192.168.1.76)
 PDXC_SERVER_IP = "192.168.1.76"   # kong
 PDXC_COM = "COM40"
+
+### Tweezer AWG (Spectrum DN2 netbox; takes one connection at a time -- held by
+### the monitor server between runs, see kexp.config.monitor_connections)
+AWG_IP = 'TCPIP::192.168.1.83::inst0::INSTR'
 
 ### remote control
 WHITELIST_PATH = (

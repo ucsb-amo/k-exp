@@ -16,17 +16,20 @@ from waxx.util.dashboard.embed_helpers import WidgetPanelBase, embed_main_window
 
 def _composite_kwargs(dds, dac) -> dict:
     """The Composite tab's definitions (kexp.config.composite_devices), its
-    scenes, what their readbacks need, and the read-only telemetry
-    (kexp...telemetry_providers).  A failure here costs the tab (or only the
-    measured values), not the whole GUI."""
+    scenes, the monitor's connections (the tab's connection bar), what their
+    readbacks need, and the read-only telemetry (kexp...telemetry_providers).
+    A failure here costs the tab (or only the measured values), not the
+    whole GUI."""
     import logging  # noqa: PLC0415
     log = logging.getLogger(__name__)
     try:
         from types import SimpleNamespace  # noqa: PLC0415
         from kexp.config.composite_devices import COMPOSITE_DEVICES, COMPOSITE_SCENES  # noqa: PLC0415
+        from kexp.config.monitor_connections import MONITOR_CONNECTIONS  # noqa: PLC0415
         from kexp.config.expt_params import ExptParams  # noqa: PLC0415
         kwargs = {"composite_devices": COMPOSITE_DEVICES,
                   "composite_scenes": COMPOSITE_SCENES,
+                  "composite_connections": MONITOR_CONNECTIONS,
                   "composite_params": ExptParams(),
                   "composite_frames": SimpleNamespace(dds=dds, dac=dac)}
     except Exception:
@@ -48,13 +51,20 @@ class MonitorPanel(WidgetPanelBase):
         super().__init__(parent)
         from PyQt6.QtWidgets import QVBoxLayout  # noqa: PLC0415
         import os  # noqa: PLC0415
+        from waxx.util.device_state.run_loop import loop_specs  # noqa: PLC0415
         from waxx.util.guis.monitor_server_gui import MonitorServerGUI  # noqa: PLC0415
-        from kexp.config.ip import MONITOR_EXPT_PATH, MONITOR_STATE_FILEPATH, LOG_DIR  # noqa: PLC0415
+        from kexp.config.ip import (MONITOR_EXPT_PATH, MONITOR_STATE_FILEPATH, LOG_DIR,  # noqa: PLC0415
+                                    RESET_STATE_EXPT_PATH, RUN_LOOP_EXPTS)
+        from kexp.util.guis.device_state_gui.monitor_server_headless import (  # noqa: PLC0415
+            monitor_connections)
 
         self._gui = MonitorServerGUI(monitor_expt_path=MONITOR_EXPT_PATH,
                                      config_file_path=MONITOR_STATE_FILEPATH,
                                      journal_dir=(os.path.join(LOG_DIR, "ops_journal")
-                                                  if LOG_DIR else None))
+                                                  if LOG_DIR else None),
+                                     reset_expt_path=RESET_STATE_EXPT_PATH,
+                                     run_loops=loop_specs(RUN_LOOP_EXPTS),
+                                     connections=monitor_connections())
         layout = QVBoxLayout(self)
         layout.setContentsMargins(0, 0, 0, 0)
         layout.addWidget(self._gui)

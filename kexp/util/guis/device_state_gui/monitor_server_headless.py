@@ -17,10 +17,24 @@ import os
 import sys
 
 from waxx.util.dashboard import logging_setup
+from waxx.util.device_state.run_loop import loop_specs
 from waxx.util.guis.monitor_server_headless import run
-from kexp.config.ip import MONITOR_EXPT_PATH, MONITOR_STATE_FILEPATH, LOG_DIR
+from kexp.config.ip import (MONITOR_EXPT_PATH, MONITOR_STATE_FILEPATH, LOG_DIR,
+                            RESET_STATE_EXPT_PATH, RUN_LOOP_EXPTS)
 
 log = logging.getLogger(__name__)
+
+
+def monitor_connections() -> tuple:
+    """The connections the server holds between runs (the tweezer AWG;
+    kexp.config.monitor_connections).  A failure to load them costs the
+    connections, never the server."""
+    try:
+        from kexp.config.monitor_connections import MONITOR_CONNECTIONS  # noqa: PLC0415
+    except Exception:
+        log.exception("Monitor connection definitions failed to load; the server holds none.")
+        return ()
+    return MONITOR_CONNECTIONS
 
 
 def check_config() -> list[str]:
@@ -68,7 +82,8 @@ def main() -> int:
     journal_dir = os.path.join(LOG_DIR, "ops_journal") if LOG_DIR else None
     log.info("OPS JOURNAL DIR        = %s", journal_dir)
     return run(MONITOR_EXPT_PATH, config_file_path=MONITOR_STATE_FILEPATH,
-               journal_dir=journal_dir)
+               journal_dir=journal_dir, reset_expt_path=RESET_STATE_EXPT_PATH,
+               run_loops=loop_specs(RUN_LOOP_EXPTS), connections=monitor_connections())
 
 
 if __name__ == "__main__":

@@ -43,11 +43,16 @@ Hardware notes that shaped the ops (2026-09-26):
 * The imaging PID's clear/override TTLs (ttl 86/87) are not offered: per
   ``kexp.config.ttl_id`` they "no longer do anything" since the NewFocus PID
   was removed.
-* The tweezer AWG is a host-side device (spcm).  Its ops run a host step in
-  the monitor process, which then holds the card: an experiment submitted
-  while the monitor holds it gets it back when the monitor exits (the
-  experiment's ``awg_init`` retries "in use" for ~6 s).  Disconnect first
-  to be safe.
+* Lamps are buttons.  Switch, shutter and AO lamps flip their channel as the
+  DDS/TTL tabs do; coil lamps (IGBT, PID, H-bridge, MOT coil), the z-shim
+  polarity and the tweezer servo select send their guarded ops instead, and
+  the Raman and imaging switch lamps their single-channel ops (``Lamp.ops``).
+* The tweezer AWG is held by the monitor *server* between runs
+  (``kexp.config.monitor_connections``, the pill on the tab's connection bar;
+  see ``waxx.util.device_state.connections``), not by the monitor
+  experiment.  "Apply traps" asks the server to write the tones (host step,
+  ``expt.monitor.connection_call``), then its kernel code pulses the AWG
+  trigger.
 
 Judgement calls (no measurement behind them; change freely):
 ``I_OUTER_WARN``/``I_INNER_WARN``, ``RAMAN_AO_WINDOW``, ``I_MOT_MAX``/``I_MOT_WARN``,
@@ -66,6 +71,7 @@ from waxx.util.device_state.composite import (
     Arg, Buttons, ChannelToggle, Check, CompositeDevice, FieldRow, Hold, Info, KIND_CHOICE,
     Lamp, Measured, Menu, Op, Readout, Scene, Status, Step, Table, TableRow,
 )
+from waxx.util.device_state.connections import CONNECTED
 from waxx.control.beat_lock import FREQUENCY_GS_HFS
 
 from kexp.calibrations.magnets import (
@@ -82,6 +88,7 @@ from kexp.calibrations.tweezer import (
 )
 from kexp.control.painted_lightsheet import V_LIGHTSHEET_PAINT_MIN
 from kexp.control.awg_tweezer import V_TWEEZER_PAINT_MIN
+from kexp.config.monitor_connections import AWG_CONNECTION_KEY
 
 # --- shared numbers ---------------------------------------------------------------
 
@@ -119,6 +126,9 @@ V_INNER_SUPPLY_DAC_MAX = 9.99
 
 #: A coil is "on" (hazard strip, pre-run warning) above this current.
 I_COIL_ON = 1.
+#: A coil is a "hazard" (hazard strip, Make safe) only above this current;
+#: between I_COIL_ON and this it is just on.
+I_COIL_HAZARD = 40.
 #: JUDGEMENT: GUIs warn after a coil has been on this long, and an armed
 #: watchdog then ramps it down.
 COIL_MAX_ON_S = 30 * 60.
@@ -314,7 +324,7 @@ def _imaging_detuning_check(value, ctx):
 
 def _imaging_power_default(ctx):
     from kexp.config.camera_id import cameras
-    axis = ctx.field("axis", AXIS_XY)
+    axis = ctx.field("axis", AXIS_X)
     img = int(ctx.field("img_type", IMG_ABS))
     camera = cameras.andor if int(axis) == AXIS_X else cameras.xy_basler
     key = {IMG_ABS: "__amp_absorption__", IMG_FLUOR: "__amp_fluorescence__",
@@ -327,7 +337,7 @@ def _imaging_info(ctx):
     if beat is None:
         return None
     f_ref, f_offset = beat
-    cam = "Andor" if int(ctx.field("axis", AXIS_XY)) == AXIS_X else "xy Basler"
+    cam = "Andor" if int(ctx.field("axis", AXIS_X)) == AXIS_X else "xy Basler"
     return (f"beat ref {f_ref / 1e6:.3f} MHz (offset {f_offset / 1e6:.1f} MHz) · "
             f"power default: {cam}, chosen imaging type")
 
@@ -371,8 +381,8 @@ IMAGING = CompositeDevice(
     fields=(
         Arg("axis", "Axis", kind=KIND_CHOICE,
             choices=(("x — Andor / APD", AXIS_X), ("xy — xy Basler", AXIS_XY)),
-            readback=_imaging_axis_readback, default=AXIS_XY,
-            tooltip="Which imaging shutter opens (the other closes)."),
+            readback=_imaging_axis_readback, default=AXIS_X,
+            tooltip="Which imaging shutter opens (the other closes). ↺ = x."),
         Arg("img_type", "Defaults for", kind=KIND_CHOICE,
             choices=(("absorption", IMG_ABS), ("fluorescence", IMG_FLUOR),
                      ("dispersive", IMG_DISP)),
@@ -383,12 +393,17 @@ IMAGING = CompositeDevice(
             check=_imaging_detuning_check,
             tooltip="Imaging detuning (set_imaging_detuning); ↺ = ExptParams "
                     "frequency_detuned_imaging (F1 value if imaging_state == 1)."),
+        # No soft limit.  0..V_DAC_MAX is not a choice: below 0 set_power is
+        # a silent no-op (DDS.set_dds reads v_pd < 0 as "no change"), above
+        # the DAC's max_v DAC_CH.set writes 0 V instead (beam off).
         Arg("power", "Power (v_pd)", unit="V", decimals=3, step=0.01,
-            minimum=0., maximum=V_DAC_MAX, warn_above=1.0,
+            minimum=0., maximum=V_DAC_MAX,
             default=_imaging_power_default,
             readback=lambda ctx: ctx.dds_v_pd("imaging"),
             tooltip="PID setpoint of the imaging AO (imaging.set_power). ↺ = the "
-                    "selected axis's camera amp_imaging for the chosen imaging type."),
+                    "selected axis's camera amp_imaging for the chosen imaging type. "
+                    f"0..{V_DAC_MAX:g} V is the DAC's range: outside it set_power would "
+                    "silently do something else."),
     ),
     ops=(
         Op("on", "On", args=("axis", "detuning", "power"),
@@ -430,7 +445,7 @@ expt.ttl.imaging_shutter_xy.off()
                    "PID AO back on."),
     ),
     lamps=(
-        Lamp("switch", "dds", "imaging_x_switch"),
+        Lamp("switch", "dds", "imaging_x_switch", ops=("rf_on", "rf_off")),
         Lamp("PID AO", "dds", "imaging"),
         Lamp("beat ref", "dds", "beatlock_ref"),
         Lamp("shutter x", "ttl", "imaging_shutter_x", "open", "closed"),
@@ -574,8 +589,9 @@ if s1 == 0:
         Op("shutter_close", "Shutter close (only)", code="expt.ttl.raman_shutter.off()"),
     ),
     lamps=(
-        Lamp("switch", "dds", "raman_switch"),
-        Lamp("shutter", "ttl", "raman_shutter", "open", "closed"),
+        Lamp("switch", "dds", "raman_switch", ops=("switch_on", "switch_off")),
+        Lamp("shutter", "ttl", "raman_shutter", "open", "closed",
+             ops=("shutter_open", "shutter_close")),
         Lamp("150+", "dds", "raman_150_plus"),
         Lamp("80+", "dds", "raman_80_plus"),
         Lamp("AOs", "ttl", "quantum_machines_raman_rf_handoff_ttl", "OPX", "ARTIQ", "warn",
@@ -817,6 +833,7 @@ expt.lightsheet.pid_int_zero_ttl.off()
 
 # --- tweezer -------------------------------------------------------------------------
 
+
 def _trap_rows_default(ctx):
     p = ctx.params if ctx is not None else None
     if p is None:
@@ -858,68 +875,23 @@ def _trap_position(row, ctx):
     return f"{x * 1e6:+.2f} µm" + ("" if _in_mesh(row[0]) else " (extrap.)")
 
 
-def _awg_write(tw, rows):
-    """Program static tones: one per row, and zero any tone this panel set
-    before that is no longer listed (set_static_tweezers only writes the
-    tones it is given).  Takes effect on the next AWG trigger."""
-    freqs = [float(r[0]) for r in rows]
-    amps = [float(r[1]) for r in rows]
-    if sum(amps) > 1. + 1e-9:
-        raise ValueError(f"amplitudes sum to {sum(amps):.3f} > 1")
-    n_prev = int(getattr(tw, "_panel_n_tones", 0))
-    if freqs:
-        if sum(amps) > 0.:
-            tw.set_static_tweezers(freqs, amps)
-        else:
-            # compute_tweezer_phases divides by the total amplitude.
-            tw.set_static_tweezers(freqs, amps, [0.] * len(freqs))
-    if n_prev > len(freqs):
-        for idx in range(len(freqs), n_prev):
-            tw.dds[idx].amp(0.)
-        tw.dds.exec_at_trg()
-        tw.dds.write()
-    tw._panel_n_tones = len(freqs)
-    tw._panel_traps = [[f, a] for f, a in zip(freqs, amps)]
-
-
-def awg_connect(expt, args, payload):
-    """Host step: open the AWG (awg_init: DDS mode, trigger on ext0) and load
-    the trap table; the op's kernel code then triggers it."""
-    tw = expt.tweezer
-    tw.awg_init()
-    tw._panel_n_tones = 0
-    _awg_write(tw, payload["traps"])
-
-
 def awg_apply(expt, args, payload):
-    tw = expt.tweezer
-    if getattr(tw, "card", None) is None:
-        raise RuntimeError("the AWG is not connected by this monitor -- press Connect first")
-    _awg_write(tw, payload["traps"])
-
-
-def awg_disconnect(expt, args, payload):
-    """Host step, after the kernel turned the AOD RF switch off: stop the card
-    and release the connection (TweezerController.reset_awg)."""
-    tw = expt.tweezer
-    tw.reset_awg()
-    tw._panel_n_tones = 0
-    tw._panel_traps = []
-
-
-def tweezer_host_state(expt):
-    tw = expt.tweezer
-    return {"awg_connected": getattr(tw, "card", None) is not None,
-            "traps": [list(t) for t in getattr(tw, "_panel_traps", [])]}
+    """Host step: the monitor server holds the AWG, so it writes the tones
+    (the driver's write_traps, which also zeroes tones no longer listed);
+    the op's kernel code then triggers them.  Raises -- and the trigger is
+    not sent -- when the server has no open AWG or the write failed."""
+    expt.monitor.connection_call(AWG_CONNECTION_KEY, "write_traps",
+                                 rows=[[float(f), float(a)] for f, a in payload["traps"]])
 
 
 def _awg_text(ctx):
-    st = ctx.host_state
-    if not st or not st.get("awg_connected"):
-        return "not connected by this monitor"
-    traps = st.get("traps") or []
-    return (f"connected, {len(traps)} tone(s)" +
-            (": " + ", ".join(f"{f / 1e6:.3f}" for f, _ in traps) + " MHz" if traps else ""))
+    c = ctx.connection(AWG_CONNECTION_KEY)
+    if c is None:
+        return "not reported by the monitor server"
+    detail = str(c.get("detail") or "")
+    if c.get("state") == CONNECTED:
+        return "connected" + (f", {detail}" if detail else "")
+    return str(c.get("state") or "?") + (f" -- {detail}" if detail else "")
 
 
 def _tweezer_state(ctx):
@@ -943,9 +915,11 @@ def _tweezer_state(ctx):
 
 
 def _tweezer_on_check(args, ctx):
-    if not ctx.host_state.get("awg_connected"):
-        return Check.warn("this monitor has not connected the AWG: unless it is running "
-                          "from elsewhere there is no RF on the AOD (Connect loads it)")
+    c = ctx.connection(AWG_CONNECTION_KEY) or {}
+    if c.get("state") != CONNECTED:
+        return Check.warn("the monitor server does not hold the AWG (see the connection bar "
+                          "at the top of the tab): unless it is running from elsewhere there "
+                          "is no RF on the AOD")
     return None
 
 
@@ -1007,16 +981,11 @@ TWEEZER = CompositeDevice(
                       "frequency_tweezer_list / amp_tweezer_list."),
     ),
     ops=(
-        Op("awg_connect", "Connect AWG + load", payload=("traps",), host=awg_connect,
-           code="expt.tweezer.trigger()",
-           tooltip="Host: awg_init() and load the trap table; then trigger the AWG. "
-                   "The AOD RF switch is not touched."),
         Op("awg_apply", "Apply traps", payload=("traps",), host=awg_apply,
            code="expt.tweezer.trigger()",
-           tooltip="Rewrite the static tones (removed rows go to zero amplitude), trigger."),
-        Op("awg_disconnect", "Disconnect AWG", host=awg_disconnect, host_after=True,
-           code="expt.tweezer.sw_ttl.off()", confirm="Stops the AWG output.",
-           tooltip="AOD RF switch off, then reset_awg() (stop + release the card)."),
+           tooltip="Rewrite the static tones (removed rows go to zero amplitude), trigger. "
+                   "Needs the AWG connected (the connection bar at the top of the tab). "
+                   "The AOD RF switch is not touched."),
         Op("trigger", "Trigger AWG", code="expt.tweezer.trigger()"),
         Op("on", "On", args=("v_pd1", "paint"), check=_tweezer_on_check,
            tooltip="PID AO setpoints made explicit (AO1 at 0 V, AO2 at the PID2 "
@@ -1059,11 +1028,11 @@ expt.tweezer.set_power({v_pd1})
         Lamp("RF switch", "ttl", "aod_rf_sw"),
         Lamp("AO1", "dds", "tweezer_pid_1"),
         Lamp("AO2", "dds", "tweezer_pid_2"),
-        Lamp("servo", "ttl", "tweezer_pid2_enable", "PID2 (low)", "PID1 (high)", "ok"),
+        Lamp("servo", "ttl", "tweezer_pid2_enable", "PID2 (low)", "PID1 (high)", "ok",
+             ops=("servo_low", "servo_high")),
     ),
     readouts=(Readout("AWG:", _awg_text),),
     state=_tweezer_state,
-    host_state=tweezer_host_state,
     layout=(
         Buttons(("on", "off"), main=True),
         FieldRow(("v_pd1",), ("set_pd1", "ramp_pd1")),
@@ -1079,8 +1048,8 @@ expt.tweezer.set_power({v_pd1})
                       tooltip="tweezer_pid1_int_hold_zero: high holds PID1's integrator at "
                               "zero (tweezer.off leaves it high), low lets it integrate."),
         Buttons(("pid1_clear",)),
-        TableRow("traps", ("awg_connect", "awg_apply")),
-        Menu(("trigger", "awg_disconnect")),
+        TableRow("traps", ("awg_apply",)),
+        Menu(("trigger",)),
     ),
 )
 
@@ -1288,18 +1257,21 @@ def _coil_device(key, title, attr, supply_dac, pid_dac, igbt_ttl, pid_ttl,
         if not igbt:
             m = measured_now(ctx)
             if m is not None and m > I_COIL_ON:
-                return Status("hazard", f"measured {m:.1f} A",
-                              "the state file says the IGBT is open, but the Keysight "
-                              f"measures {m:.1f} A")
+                detail = ("the state file says the IGBT is open, but the Keysight "
+                          f"measures {m:.1f} A")
+                return Status("hazard" if m > I_COIL_HAZARD else "on",
+                              f"{m:.0f} A (IGBT open?)", detail)
             return Status("off", "off")
-        text = f"ON {i:.1f} A" if i is not None else "ON"
+        text = f"{i:.0f} A" if i is not None else "on"
         detail = "IGBT closed" + (f", supply setpoint {i:.2f} A" if i is not None else "")
         if pid_on:
-            text += " · PID"
+            text += " PID"
             p = pid_setpoint(ctx)
             detail += ", PID on" + (f" at {p:.2f} A" if p is not None else "")
-        if (i or 0.) > I_COIL_ON:
+        if (i or 0.) > I_COIL_HAZARD:
             return Status("hazard", text, detail)
+        if (i or 0.) > I_COIL_ON:
+            return Status("on", text, detail)
         return Status("partial", text, detail + " (no current)")
 
     def hazard(ctx):
@@ -1373,11 +1345,18 @@ def _coil_device(key, title, attr, supply_dac, pid_dac, igbt_ttl, pid_ttl,
             op = replace(op, check=check)
         ops.append(op)
 
-    lamps = [Lamp("IGBT", "ttl", igbt_ttl, "closed", "open", "warn"),
-             Lamp("PID", "ttl", pid_ttl, "on", "off", "ok")]
+    # Clicking a coil lamp never flips the line itself: opening the IGBT or
+    # the PID under current, or switching the H-bridge, is what the ops'
+    # ramps and checks exist for.  Closing the IGBT needs a current -- Ramp to I.
+    lamps = [Lamp("IGBT", "ttl", igbt_ttl, "closed", "open", "warn", ops=("", "off")),
+             Lamp("PID", "ttl", pid_ttl, "on", "off", "ok",
+                  ops=("pid_on", "pid_off") if pid else ("", ""),
+                  tooltip=f"ttl.{pid_ttl}" + ("" if pid else
+                                              " -- shown only; PID control is offered for "
+                                              "the outer coil"))]
     if hbridge:
         lamps.append(Lamp("H-bridge", "ttl", "hbridge_helmholtz", "Helmholtz",
-                          "anti-Helmholtz", "ok"))
+                          "anti-Helmholtz", "ok", ops=("helmholtz", "antihelmholtz")))
     readouts = [Readout("supply", lambda ctx: None if current(ctx) is None
                         else f"{current(ctx):.2f} A")]
     if pid:
@@ -1547,7 +1526,10 @@ SHIMS = CompositeDevice(
            confirm="Reverse the z shim's polarity?",
            tooltip="zshim_hbridge_flip high. Needs the z shim at 0 V."),
     ),
-    lamps=(Lamp("z polarity", "ttl", "zshim_hbridge_flip", "flipped", "normal", "warn"),),
+    lamps=(Lamp("z polarity", "ttl", "zshim_hbridge_flip", "flipped", "normal", "warn",
+                ops=("z_flipped", "z_normal")),),
+    # Nothing to switch "on"; while any shim is set the pill zeroes them.
+    pill_ops=("", "zero"),
     state=_shims_state,
     layout=(
         FieldRow(("x",), ("set",)),
@@ -1659,7 +1641,7 @@ expt.dac.supply_current_2dmot.set(v=0.)
         Lamp("3D", "dds", "d2_3d_c"),
         Lamp("2D", "dds", "d2_2dh_c"),
         Lamp("push", "dds", "push"),
-        Lamp("coil", "ttl", "inner_coil_igbt", "on", "off", "warn"),
+        Lamp("coil", "ttl", "inner_coil_igbt", "on", "off", "warn", ops=("", "inner_coil.off")),
     ),
     readouts=(Readout("2D current", lambda ctx: None
                       if ctx.dac_voltage("supply_current_2dmot") is None
