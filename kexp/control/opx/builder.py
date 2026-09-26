@@ -7,36 +7,60 @@ The generated program is one job per run:
     for shot in range(N_shots):                # N = N_shots_with_repeats
         [re-point Raman IFs at this shot's transition, if it is scanned]
         wait_for_trigger                       # ARTIQ handoff (control.py)
-        assert RF blocks on guarded channels   # within ~100 ns of the trigger
-        wait t_opx_handoff_settle              # ARTIQ RF on at settle/2, settled by settle
+        save(shot) -> opx_shot_index           # counter echo (see below)
+        align                                  # A1: everything follows the trigger
+        assert RF blocks on guarded channels   # 16 ns marker plays, sticky-held
+        wait settle on every guarded switch    # settle = artiq_side + opx_side
+        align                                  # A3: body starts after the settle
         <sequence body>                        # user code, params per shot
-        hand-back trigger; hold blocks for t_opx_handback_overlap; release
-        [restore Raman IFs to the run's transition, if the body moved them]
+        hand-back: align (A4); trigger; hold blocks t_opx_handback_overlap; release
+        [align (A5); restore Raman IFs -- only if the body moved a drive]
     ramp analog drives to zero
-    stream_processing: buffer per-shot saves
+    stream_processing: buffer per-shot saves (shape per declared key)
 
 Handoff framing is owned here, not by sequences, so it cannot be gotten
 wrong per experiment (the ARTIQ half is Control.handoff_to_quantum_machines
 / wait_for_quantum_machines_handback in kexp/base/control.py, which carries
-the timing diagram):
+the timing diagram). The contract, with today's ExptParams values:
 
-* The blocks go up within ~a hundred ns of the trigger. ARTIQ turns its
-  steady-state RF on t_opx_handoff_settle/2 after the trigger, and the body
-  only starts t_opx_handoff_settle after it, so no exposure runs before the
-  RF is on and settled. The two timing numbers come from ExptParams through
-  the channel map -- the same source control.py reads.
-* The hand-back edge may come any time after the trigger (a body with
-  nothing to play hands back within a microsecond): ARTIQ arms its gate
-  before triggering, so no minimum shot length is imposed here.
-* The switch elements are sticky-digital: an ARTIQ crash mid-window (no
-  ARTIQ cleanup runs) leaves the blocks HIGH, and the light off the atoms,
-  until the ARTIQ process exits. The manager then halts the job and the OPX
-  lines idle low (pass), so whatever ARTIQ RF was on passes until the next
-  run's init_kernel or a Monitor restart -- the same end state as any crash
-  with a beam on. (A block left stuck high would instead silently darken
-  every following non-OPX run.)
+    t = 0                 ARTIQ trigger edge (ttl32)
+    t < artiq_side        OPX has seen the trigger and driven both RF blocks
+                          HIGH (350 ns budget: trigger input latency + A1 +
+                          one 16 ns marker play). THIS IS AN UNMEASURED
+                          HARDWARE ASSUMPTION (milestone M1): if the OPX is
+                          slower than t_opx_handoff_artiq_side, ARTIQ's RF
+                          passes to the atoms until the block lands.
+    t = artiq_side        ARTIQ turns its steady-state Raman + imaging RF on
+                          and raises the handoff TTL (350 ns)
+    t = artiq_side
+        + opx_side        ARTIQ returns to the caller (1.35 us); the OPX body
+                          may start: settle = artiq_side + opx_side is what
+                          ChannelMap.t_handoff_settle_s holds (the lab map
+                          fills it with that sum) and what the builder waits
+                          after the block plays
+    t_e                   OPX hand-back edge (any time after the settle; a
+                          body with nothing to play hands back within a
+                          microsecond -- ARTIQ arms its gate before the
+                          trigger, so no minimum shot length is imposed)
+    t_e + overlap/2       ARTIQ switch-only take-back (RF off, TTL low)
+    t_e + overlap         OPX releases the blocks (pass); ARTIQ's timeline
+                          resumes
+
+* The switch elements are sticky-digital. The OPX program itself releases
+  the blocks at t_e + overlap regardless of what ARTIQ does; a crash on the
+  ARTIQ side mid-window therefore ends with the blocks released and
+  ARTIQ's RF still ON on both switch AOMs (handoff TTL HIGH) until
+  cleanup_scan_kernel / the next init_kernel turns them off. A job halted
+  mid-block (the OPX side crashing) is the case the M1 scope check must
+  settle: what the digital lines do after job.halt is not documented.
 * Between shots every block is released (pass), so ARTIQ gates its own
   light for preparation and camera imaging exactly as in a non-OPX run.
+
+Shot-index echo: the loop counter is saved once per shot into the stream
+'opx_shot_index'. ARTIQ and the OPX visit shots in the same order only by
+construction (one trigger per scan_kernel); the echo lets fill_containers
+verify the stream really holds shots 0, 1, 2, ... and cut the valid mask at
+the first mismatch instead of silently mislabeling data.
 
 Future extensions plug in here (see on_finish_prepare in manager.py for the
 other half):
@@ -53,7 +77,10 @@ methods only.
 
 from typing import TYPE_CHECKING
 
+import numpy as np
+
 from kexp.control.opx.context import OPXShotContext
+from kexp.control.opx.sequence import Stream
 from kexp.control.opx.units import s_to_cc
 from kexp.control.opx.trace_log import (OpLog, PHASE_PROLOGUE,
                                         PHASE_HANDSHAKE, PHASE_EPILOGUE)
@@ -62,16 +89,59 @@ if TYPE_CHECKING:
     # static-analysis only -- qm must not import at runtime until trace()
     from qm.program import Program
 
+# stream / container key of the per-shot loop-counter echo (int, 1/shot)
+SHOT_INDEX_KEY = 'opx_shot_index'
+SHOT_INDEX_STREAM = Stream((1,), int)
+# every stream the builder itself saves (a sequence may not declare these)
+RESERVED_STREAMS = {SHOT_INDEX_KEY: SHOT_INDEX_STREAM}
+
+
+class _TablesParamsView:
+    """Stand-in params for resolving callable shape specs when no live
+    params object is given: attribute -> the run-constant value of that
+    column (a varying column is refused, as ctx.const would)."""
+
+    def __init__(self, tables):
+        object.__setattr__(self, '_tables', tables)
+
+    def __getattr__(self, key):
+        t = self._tables
+        if key.startswith('_') or not t.has(key):
+            raise AttributeError(
+                f"[opx] shape spec reads params.{key}, which is not a scalar "
+                f"parameter of the run.")
+        col = t.column(key)
+        if not t.is_constant(key):
+            raise RuntimeError(
+                f"[opx] shape spec reads params.{key}, which varies per "
+                f"shot ({np.min(col):g} .. {np.max(col):g}); a per-shot "
+                f"data shape must be fixed for the run.")
+        v = float(col[0])
+        return int(v) if v == int(v) else v
+
 
 class OPXProgramBuilder:
 
-    def __init__(self, sequence, channel_map, tables, n_shots):
+    def __init__(self, sequence, channel_map, tables, n_shots, params=None):
         self.sequence = sequence
         self.map = channel_map
         self.tables = tables
         self.n_shots = int(n_shots)
         self.log: 'OpLog | None' = None   # filled by trace()
         self.skip_triggers = False
+        # declared per-shot shapes, resolved against the live params (the
+        # manager passes expt.params); without them, against the tables
+        p = params if params is not None else _TablesParamsView(tables)
+        self.measurements = sequence.resolve_measurements(p)
+        self.host_data = sequence.resolve_host_data(p)
+        self.echo_stream = None
+
+    def stream_specs(self) -> dict:
+        """{key: Stream} of every stream the program saves: the declared
+        measurements plus the shot-index echo."""
+        out = dict(self.measurements)
+        out.update(RESERVED_STREAMS)
+        return out
 
     def trace(self, skip_triggers=False
               ) -> 'tuple[Program, OPXShotContext]':
@@ -96,9 +166,10 @@ class OPXProgramBuilder:
             if role not in guard_roles:
                 guard_roles.append(role)
         guarded_specs = [cmap.spec(r) for r in guard_roles]
+        guarded_switches = [s.switch_element for s in guarded_specs]
         sync_el = cmap.spec(cmap.sync_channel).switch_element
         settle_cc = s_to_cc(cmap.t_handoff_settle_s,
-                            key='t_opx_handoff_settle')
+                            key='t_handoff_settle_s')
         overlap_cc = s_to_cc(cmap.t_handback_overlap_s,
                              key='t_opx_handback_overlap')
 
@@ -108,8 +179,12 @@ class OPXProgramBuilder:
 
         with qua.program() as prog:
             shot = qua.declare(int)
+            echo = qua.declare_output_stream()
+            self.echo_stream = echo
             ctx = OPXShotContext(cmap, self.tables, seq, shot,
-                                 overlap_cc, guarded_specs, log=log)
+                                 overlap_cc, guarded_specs, log=log,
+                                 measurements=self.measurements,
+                                 host_data=self.host_data)
 
             # run prologue: latch the sticky analog drives once. Sticky
             # plays accumulate on the held value, so this is the only place
@@ -146,6 +221,13 @@ class OPXProgramBuilder:
                                phase=PHASE_HANDSHAKE, macro='handoff',
                                note='park until the ARTIQ trigger')
                     qua.wait_for_trigger(sync_el)
+                # counter echo: which shot the OPX thinks this is
+                log.record('save', None, phase=PHASE_HANDSHAKE,
+                           macro='handoff', data_key=SHOT_INDEX_KEY,
+                           note='shot counter echoed to the host (order '
+                                'check at fill time)')
+                qua.save(shot, echo)
+                # A1: nothing runs ahead of the trigger
                 log.record('align', None, phase=PHASE_HANDSHAKE,
                            macro='handoff')
                 qua.align()
@@ -156,16 +238,19 @@ class OPXProgramBuilder:
                                note='RF blocked before ARTIQ turns its '
                                     'steady-state RF on')
                     qua.play(spec.block_op, spec.switch_element)
-                log.record('align', None, phase=PHASE_HANDSHAKE,
-                           macro='handoff')
-                qua.align()
-                # ARTIQ's RF comes on at settle/2 and is settled by settle:
-                # nothing exposes before then (control.py timing diagram)
-                log.record('wait', sync_el, phase=PHASE_HANDSHAKE,
-                           macro='handoff', label='t_opx_handoff_settle',
+                # ARTIQ's RF comes on at artiq_side and the kernel returns
+                # at artiq_side + opx_side = settle: nothing exposes before
+                # then. Waited on every guarded switch (they were aligned
+                # by A1 and the block plays are equal-length), then one
+                # align brings the drives and detector to the body start.
+                log.record('wait', guarded_switches[0], phase=PHASE_HANDSHAKE,
+                           macro='handoff', label='t_handoff_settle_s',
                            duration_cc=settle_cc, values=settle_cc * 4e-9,
-                           note='ARTIQ RF on at settle/2, settled by settle')
-                qua.wait(settle_cc, sync_el)
+                           elements=list(guarded_switches),
+                           note='ARTIQ RF on at artiq_side, settled by '
+                                'artiq_side + opx_side')
+                qua.wait(settle_cc, *guarded_switches)
+                # A3
                 log.record('align', None, phase=PHASE_HANDSHAKE,
                            macro='handoff')
                 qua.align()
@@ -174,18 +259,22 @@ class OPXProgramBuilder:
 
                 if not ctx._handback_done:
                     ctx.handback_to_artiq()
-                log.new_call('shot_end')
-                log.record('align', None, phase=PHASE_HANDSHAKE,
-                           macro='handback')
-                qua.align()
                 # the body moved a drive off the run's transition (Ramsey
                 # detuning, ...): point it back so the next shot starts
                 # there. A varying transition is re-pointed at the top of
-                # the next shot anyway.
-                for role in sorted(ctx._if_touched):
-                    base = transitions.get(role)
-                    if base is not None and base.is_constant:
-                        ctx._point_transition(role, base,
+                # the next shot anyway. A5 (align) only when needed: the
+                # update must follow the hand-back on the drives' own
+                # timelines, whose cursor otherwise sits at the last align.
+                restore = [role for role in sorted(ctx._if_touched)
+                           if transitions.get(role) is not None
+                           and transitions[role].is_constant]
+                if restore:
+                    log.new_call('shot_end')
+                    log.record('align', None, phase=PHASE_HANDSHAKE,
+                               macro='handback')
+                    qua.align()
+                    for role in restore:
+                        ctx._point_transition(role, transitions[role],
                                               macro='transition_restore',
                                               phase=PHASE_HANDSHAKE)
 
@@ -202,22 +291,35 @@ class OPXProgramBuilder:
             log.record('align', None, phase=PHASE_EPILOGUE, macro='epilogue')
             qua.align()
 
-            if ctx._streams:
-                with qua.stream_processing():
-                    for key, (stream, _ivar) in ctx._streams.items():
-                        n_per_shot = seq.measurements[key]
-                        stream.buffer(n_per_shot).save_all(key)
+            with qua.stream_processing():
+                for key, stream in ctx._streams.items():
+                    spec = self.measurements[key]
+                    st = stream
+                    # (n1, n2) per shot -> buffer(n2).buffer(n1): the saves
+                    # come row-major, the inner buffer groups a row
+                    for n in reversed(spec.shape):
+                        st = st.buffer(int(n))
+                    st.save_all(key)
+                echo.save_all(SHOT_INDEX_KEY)
 
         self._validate(ctx)
         return prog, ctx
 
     def _validate(self, ctx):
         seq = self.sequence
-        for key, n_declared in seq.measurements.items():
+        for key, spec in self.measurements.items():
             n_traced = ctx._save_counts.get(key, 0)
-            if n_traced != n_declared:
+            if n_traced != spec.n:
                 raise RuntimeError(
-                    f"[opx] sequence {seq.name!r} declares {n_declared} "
-                    f"saves per shot into {key!r} but the traced body "
-                    f"performs {n_traced}. The data container shape comes "
-                    f"from the declaration -- make them agree.")
+                    f"[opx] sequence {seq.name!r} declares {spec.n} "
+                    f"saves per shot into {key!r} (shape {spec.shape}) but "
+                    f"the traced body performs {n_traced} (saves inside "
+                    f"ctx.for_range(n) count n times; a timestamp_key "
+                    f"play/measure counts once). The data container shape "
+                    f"comes from the declaration -- make them agree.")
+        for key in self.host_data:
+            if key not in ctx._host_data_values:
+                raise RuntimeError(
+                    f"[opx] sequence {seq.name!r} declares host_data "
+                    f"{key!r} but never wrote it with ctx.host_data({key!r}, "
+                    f"values).")

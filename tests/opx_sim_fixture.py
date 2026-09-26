@@ -107,9 +107,19 @@ def fake_config(a_80=0.25, a_150=0.3, f_80=80.e6, f_150=150.e6,
     p.t_imaging_pulse_apd_abs = t_acquire
     p.t_opx_integration_start = 0.
     p.t_opx_integration_len = t_acquire
-    p.t_opx_handoff_settle = 10.e-6
+    # the handshake params (read by kexp_channel_map, not by the config);
+    # the two-sided split of ExptParams, 2026-09-24
+    p.t_opx_handoff_artiq_side = 350.e-9
+    p.t_opx_handoff_opx_side = 1.e-6
     p.t_opx_handback_overlap = 10.e-6
     return build_opx_config(ex)
+
+
+def config_pulse(config, element, op):
+    """The pulse dict an element's operation plays (pulse names follow the
+    <element>.<op>.pulse rule; look them up through the element, never by
+    literal name)."""
+    return config['pulses'][config['elements'][element]['operations'][op]]
 
 
 def fake_dds(frequency, amplitude, aom_order=1):
@@ -184,7 +194,9 @@ def _const_sample(config, wf_name):
 def _stream(log: OpLog, n_shots):
     """(record, shot) in execution order: prologue once, per-shot records
     (handshake + body) for each shot honoring the executes mask, epilogue
-    once. 'if' records are no-ops and dropped here."""
+    once. 'if' records are no-ops and dropped here (other control-flow
+    kinds -- 'for', 'assign', 'declare', 'save' -- are skipped by the
+    scheduler)."""
     pre = [r for r in log.records if r.phase == PHASE_PROLOGUE]
     per = [r for r in log.records if r.phase in (PHASE_HANDSHAKE, PHASE_BODY)]
     post = [r for r in log.records if r.phase == PHASE_EPILOGUE]
@@ -316,7 +328,10 @@ def simulate_offline(log, config, n_shots, duration_ns, skip_triggers=True,
                 clk[x] += 4 * int(d)
             continue
 
-        if k in ('save', 'if'):
+        if k in ('save', 'if', 'for', 'assign', 'declare'):
+            # no timeline effect: QUA control flow / variable bookkeeping
+            # (ctx.for_range, ctx.save, ctx.assign) is replayed by the
+            # OpLog's executes mask, not scheduled
             continue
 
         ec = els[e]
@@ -647,7 +662,7 @@ def _exposures(rep, element='raman_switch'):
     """'pass' plays longer than one 16 ns edge: body exposures (the
     hand-back release is a 16 ns pass)."""
     return [w for w in rep.digital_waveforms
-            if w.element == element and w.pulse_name.endswith('pass_pulse')
+            if w.element == element and w.pulse_name.endswith('.pass.pulse')
             and w.length > 16]
 
 
@@ -702,7 +717,7 @@ def test_adc_window_is_time_of_flight_after_marker():
                              duration_ns=1_000_000)
     rep = job.get_simulated_waveform_report()
     tof = job.config['elements']['apd']['time_of_flight']
-    acq_len = job.config['pulses']['apd_acquire']['length']
+    acq_len = config_pulse(job.config, 'apd', 'acquire')['length']
     markers = [w for w in rep.digital_waveforms if w.element == 'apd']
     adcs = rep.adc_acquisitions
     assert len(markers) == len(adcs) == 4 * 3
@@ -745,7 +760,7 @@ def test_sticky_digital_level_holds_between_plays():
     d1 = job.get_simulated_samples().con1.digital['1']
     sw = [w for w in rep.digital_waveforms if w.element == 'raman_switch']
     for a, b in zip(sw, sw[1:]):
-        level = a.pulse_name.endswith('block_pulse')
+        level = a.pulse_name.endswith('.block.pulse')
         seg = d1[a.timestamp:b.timestamp]
         assert seg.size > 0 and (seg.all() if level else not seg.any()), \
             (a.pulse_name, a.timestamp, b.timestamp)

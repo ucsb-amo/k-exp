@@ -27,22 +27,28 @@ Usage in an experiment:
 # (qm only loads inside method bodies), so this stays qm-free AND static
 # analysis (Pylance/jedi) sees every name for highlighting and completion.
 from kexp.control.opx.manager import OPXManager
-from kexp.control.opx.builder import OPXProgramBuilder
-from kexp.control.opx.context import OPXShotContext
-from kexp.control.opx.sequence import OPXSequence, opx_sequence, get_sequence
+from kexp.control.opx.builder import OPXProgramBuilder, SHOT_INDEX_KEY
+from kexp.control.opx.context import OPXShotContext, ShotArray
+from kexp.control.opx.sequence import (OPXSequence, opx_sequence,
+                                       get_sequence, Stream)
 from kexp.control.opx.channels import ChannelMap, ChannelSpec
 from kexp.control.opx.params_bridge import (build_shot_tables, ShotTables,
                                             ParamRef)
 from kexp.control.opx.opx_config import (make_opx_manager, build_opx_config,
                                          kexp_channel_map, KexpShotContext)
+from kexp.control.opx.components import (Machine, Element, DigitalLine,
+                                          AnalogDrive, IntegratedInput,
+                                          Sticky)
 from kexp.control.opx.bench import OPXBench
 
 __all__ = [
-    'OPXManager', 'OPXProgramBuilder', 'OPXShotContext',
-    'OPXSequence', 'opx_sequence', 'get_sequence',
+    'OPXManager', 'OPXProgramBuilder', 'OPXShotContext', 'ShotArray',
+    'OPXSequence', 'opx_sequence', 'get_sequence', 'Stream',
     'ChannelMap', 'ChannelSpec',
     'build_shot_tables', 'ShotTables', 'ParamRef',
     'make_opx_manager', 'build_opx_config', 'kexp_channel_map',
-    'KexpShotContext',
+    'KexpShotContext', 'SHOT_INDEX_KEY',
     'OPXBench',
+    'Machine', 'Element', 'DigitalLine', 'AnalogDrive', 'IntegratedInput',
+    'Sticky',
 ]

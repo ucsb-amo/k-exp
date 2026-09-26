@@ -69,12 +69,24 @@ class ChannelMap:
         otherwise (kexp handoff_to_quantum_machines turns on both raman and
         imaging RF unconditionally).
     t_handoff_settle_s / t_handback_overlap_s: the two handshake windows
-        (SI seconds). The body waits t_handoff_settle_s after the trigger
-        before anything exposes (ARTIQ's RF comes on halfway through it);
-        the blocks stay high t_handback_overlap_s after the hand-back
-        trigger (ARTIQ's RF goes off halfway through it). The lab's map
-        builder fills both from ExptParams so both sides of the handshake
-        read the same numbers; there are no defaults on purpose.
+        (SI seconds), filled by the lab's map builder from the same
+        ExptParams the ARTIQ kernel reads; there are no defaults on purpose.
+        Settle: the builder waits it after its block plays before anything
+        exposes. It is the ARTIQ-side SUM t_opx_handoff_artiq_side (ARTIQ
+        turns its steady-state RF on) + t_opx_handoff_opx_side (that RF
+        settles) -- ARTIQ returns to its caller at the same point. That
+        the OPX blocks are complete before ARTIQ's RF arrives (within
+        artiq_side) is a hardware assumption nobody has measured (M1).
+        Overlap: the blocks stay high t_handback_overlap_s after the
+        hand-back trigger; ARTIQ switches its RF off and drops the handoff
+        TTL at overlap/2.
+    config_time_params: ExptParams keys compiled into the config / this map
+        once per run (kexp opx_config.CONFIG_TIME_PARAMS). The manager
+        refuses them as xvars and as adjust() keys: a scan of one would
+        bake one shot's value into every shot.
+    machine: the component tree the config was generated from
+        (kexp.control.opx.components.Machine), or None. The manager saves
+        machine.to_dict() as run provenance ('opx_machine') when present.
     """
     channels: dict = field(default_factory=dict)
     sync_channel: str = ''
@@ -83,6 +95,8 @@ class ChannelMap:
     guarded_channels: tuple = ()
     t_handoff_settle_s: float = None
     t_handback_overlap_s: float = None
+    config_time_params: tuple = ()
+    machine: object = None
 
     def __post_init__(self):
         for name in ('t_handoff_settle_s', 't_handback_overlap_s'):

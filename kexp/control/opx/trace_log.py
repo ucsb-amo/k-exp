@@ -27,10 +27,12 @@ import numpy as np
 
 
 # statement kinds, one per QUA call the builder/context can emit; the QUA
-# line mapper matches these against the serialized program text
+# line mapper matches these against the serialized program text. 'for' and
+# 'assign' are opaque bookkeeping records (a ctx.for_range loop head, a
+# raw assign): no pulse, no time, not line-mapped.
 KINDS = ('play', 'wait', 'align', 'measure', 'save', 'wait_for_trigger',
          'ramp_to_zero', 'reset_if_phase', 'reset_frame', 'update_frequency',
-         'frame_rotation_2pi', 'if')
+         'frame_rotation_2pi', 'if', 'for', 'assign')
 
 # kinds that show up as a point event marker on an analog lane (no pulse)
 EVENT_KINDS = ('reset_if_phase', 'reset_frame', 'update_frequency',
@@ -121,6 +123,11 @@ class OpLog:
         self._capture_source()
         self._call = 0
         self.calls: dict[int, str] = {}   # call id -> macro name
+        # > 1 while tracing inside ctx.for_range loops: the product of the
+        # enclosing loop counts. A record made then executes that many
+        # times per shot; it is stamped into rec.extra['loop'] (the log
+        # holds one record per traced statement, not per execution).
+        self.loop_scale = 1
 
     def new_call(self, macro) -> int:
         """Start a new macro-call group: every record until the next
@@ -194,6 +201,9 @@ class OpLog:
             raise ValueError(f"[opx] unknown op kind {kind!r}")
         if source is None and capture and phase == PHASE_BODY:
             source = self.capture_source(skip=2)
+        if self.loop_scale > 1:
+            extra = dict(extra)
+            extra.setdefault('loop', int(self.loop_scale))
         rec = OpRecord(
             index=len(self.records), kind=kind, element=element, op=op,
             phase=phase, macro=macro, label=label,

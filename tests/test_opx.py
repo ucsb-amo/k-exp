@@ -40,7 +40,10 @@ class FakeParams:
         self.t_raman_pulse = 0.
         self.t_raman_pi_pulse = 8.8e-6
         self.t_fixed = 5.e-6
-        self.t_opx_handoff_settle = 10.e-6
+        # the handoff contract (D1): the OPX settle wait is the sum of the
+        # two ARTIQ-side windows; make_map() below hard-codes 10 us
+        self.t_opx_handoff_artiq_side = 350.e-9
+        self.t_opx_handoff_opx_side = 1.e-6
         self.t_opx_handback_overlap = 10.e-6
         self.frequency_raman_transition = 119.4639e6
         self.a_list = np.array([1., 2.])   # non-scalar: must not become a column
@@ -384,9 +387,11 @@ def test_trace_generates_qua_source():
         assert token in src
 
 def test_trace_settles_before_the_body():
-    # ARTIQ turns its RF on halfway through t_opx_handoff_settle: the body's
-    # first exposure must come after the settle wait, and the wait after the
-    # trigger and the block plays
+    # ARTIQ turns its RF on t_opx_handoff_artiq_side after the trigger and
+    # returns at artiq_side + opx_side = the map's settle: the body's first
+    # exposure must come after the settle wait (issued on every guarded
+    # switch), the wait after the trigger, the echo save, and the block
+    # plays on both switches
     from qm import generate_qua_script
 
     @opx_sequence('_t_settle', claims=('raman',))
@@ -396,11 +401,20 @@ def test_trace_settles_before_the_body():
     prog, _ctx = _trace(s)
     src = generate_qua_script(prog)
     i_trigger = src.index("wait_for_trigger('raman_switch')")
-    i_block = src.index("play('block', 'raman_switch')", i_trigger)
-    i_settle = src.index("wait(2500, 'raman_switch')", i_block)   # 10 us
+    i_echo = src.index("save(v1, ", i_trigger)               # shot echo
+    i_block = src.index("play('block', 'raman_switch'", i_echo)   # + timestamp_stream
+    i_block2 = src.index("play('block', 'imaging_switch')", i_block)
+    i_settle = src.index("wait(2500, 'raman_switch', 'imaging_switch')",
+                         i_block2)                            # 10 us
     i_expose = src.index("play('pass', 'raman_switch', duration=1250)",
                          i_settle)
-    assert i_trigger < i_block < i_settle < i_expose
+    assert i_trigger < i_echo < i_block < i_block2 < i_settle < i_expose
+    # framing aligns per shot: A1 (after trigger), A3 (after settle), A4
+    # (hand-back) -- no align between the block plays and the settle wait,
+    # and no A5 since no drive was re-pointed; plus the epilogue's one
+    body = src[src.index('with for_('):src.index('ramp_to_zero')]
+    assert body.count('align()') == 3
+    assert src.count('align()') == 4
 
 def test_trace_records_accessed_params():
     @opx_sequence('_t_acc', claims=('raman',))
@@ -527,35 +541,59 @@ def _config_stub(a_80=0.337, frequency_raman_transition=119.4639e6):
     p.t_imaging_pulse_apd_abs = 5.e-6
     p.t_opx_integration_start = 0.
     p.t_opx_integration_len = 5.e-6
-    p.t_opx_handoff_settle = 10.e-6
+    p.t_opx_handoff_artiq_side = 4.e-6
+    p.t_opx_handoff_opx_side = 6.e-6
     p.t_opx_handback_overlap = 10.e-6
     return ex
 
 def test_build_opx_config_shape():
-    from kexp.control.opx.opx_config import build_opx_config
-    cfg = build_opx_config(_config_stub())
+    # element names and ops are fixed (D3); pulse/waveform/weight names
+    # follow the config, so they are looked up through the element's ops
+    from kexp.control.opx.opx_config import build_opx_config, kexp_channel_map
+    stub = _config_stub()
+    cfg = build_opx_config(stub)
     els = cfg['elements']
     for el in ('raman_80', 'raman_150', 'raman_switch', 'imaging_switch',
                'artiq_handback', 'apd'):
         assert el in els
     # IFs at the Raman resonance, split like the kernel -- not the dds
     # centers (80/150 MHz is the 140 MHz two-photon point)
-    f150, f80 = _config_stub().raman.ao_frequencies(119.4639e6)
+    f150, f80 = stub.raman.ao_frequencies(119.4639e6)
     assert els['raman_80']['intermediate_frequency'] == hz_to_int(f80)
     assert els['raman_150']['intermediate_frequency'] == hz_to_int(f150)
     assert els['raman_80']['intermediate_frequency'] != 80_000_000
-    assert cfg['waveforms']['raman_80_wf']['sample'] == 0.337
-    assert cfg['pulses']['apd_acquire']['length'] == 5000
+    spec_r = kexp_channel_map(stub).spec('raman')
+    spec_i = kexp_channel_map(stub).spec('imaging')
+    latch = cfg['pulses'][els['raman_80']['operations'][spec_r.analog_latch_op]]
+    assert cfg['waveforms'][latch['waveforms']['single']]['sample'] == 0.337
+    acq = cfg['pulses'][els['apd']['operations'][spec_i.acquire_op]]
+    assert acq['length'] == 5000
     # integration window covers exactly the acquire length
-    w = cfg['integration_weights']['integration_window']['cosine']
-    assert sum(ns for _v, ns in w) == 5000
+    iw = cfg['integration_weights'][acq['integration_weights'][spec_i.integration_weight]]
+    assert sum(ns for _v, ns in iw['cosine']) == 5000
 
 def test_kexp_channel_map_reads_handshake_params():
     from kexp.control.opx.opx_config import kexp_channel_map
-    cmap = kexp_channel_map(_config_stub())
-    assert cmap.t_handoff_settle_s == 10.e-6
+    stub = _config_stub()
+    cmap = kexp_channel_map(stub)
+    p = stub.params
+    # D1: settle = the ARTIQ-side sum
+    assert cmap.t_handoff_settle_s == pytest.approx(
+        p.t_opx_handoff_artiq_side + p.t_opx_handoff_opx_side)
+    assert cmap.t_handoff_settle_s == pytest.approx(10.e-6)
     assert cmap.t_handback_overlap_s == 10.e-6
     assert cmap.guarded_channels == ('raman', 'imaging')
+    # D2: the config-time keys travel on the map (the manager refuses them
+    # as xvars / adjusts); the machine tree is provenance
+    cfg_keys = getattr(cmap, 'config_time_params', ())
+    for key in ('t_imaging_pulse_apd_abs', 't_opx_integration_len',
+                't_opx_handoff_artiq_side', 't_opx_handoff_opx_side',
+                't_opx_handback_overlap'):
+        assert key in cfg_keys
+    machine = getattr(cmap, 'machine', None)
+    if machine is not None:
+        import json
+        json.loads(json.dumps(machine.to_dict()))
 
 def test_build_opx_config_amp_guard():
     from kexp.control.opx.opx_config import build_opx_config

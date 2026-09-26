@@ -20,7 +20,8 @@ from a notebook:
 Every simulate() call starts fresh (new manager, new DataVault), so it can
 be re-run cell-by-cell while editing a sequence. Xvar values run in the
 order given -- no shuffle, no repeats -- so shot k of the simulation is
-values[k], deterministically.
+values[k], deterministically. The QMM connection is made at use() (inside
+simulate()), so the OPX must be reachable before the program is built.
 
 kexp-specific (imports the lab config); the machinery it drives is the
 same manager/builder an experiment uses.
@@ -53,6 +54,16 @@ class OPXBench:
                                      else ExptParams())
         self.p: 'ExptParams' = self.params
         self.dds: 'dds_frame' = dds_frame(expt_params=self.params)
+        # the Raman pair the OPX config splits the transition with (same
+        # wiring as kexp.base.devices: dds0 = 150, dds1 = 80, switch); the
+        # bench never drives it, it only supplies ao_frequencies()
+        from waxx.control.raman_beams import RamanBeamPair
+        self.raman = RamanBeamPair(
+            dds0=self.dds.raman_150_plus, dds1=self.dds.raman_80_plus,
+            dds_sw=self.dds.raman_switch,
+            frequency_transition=self.params.frequency_raman_transition,
+            fraction_power=self.params.fraction_power_raman,
+            params=self.params)
 
         self.scan_xvars = []
         self.xvardims = []
@@ -70,6 +81,10 @@ class OPXBench:
 
     def compute_new_derived(self):
         pass
+
+    @property
+    def xvarnames(self):
+        return [xv.key for xv in self.scan_xvars]
 
     def xvar(self, key, values):
         """Declare a scanned parameter, exactly as in an experiment's
