@@ -183,6 +183,49 @@ def test_imaging_power_default_follows_axis_and_type(config, params, frames):
     assert arg.default_value(xy) == pytest.approx(cameras.xy_basler.__amp_fluorescence__)
 
 
+def test_imaging_defaults_to_x_and_its_power_asks_nothing(config, params, frames):
+    imaging = _device("imaging")
+    assert imaging.get_field("axis").default == kc.AXIS_X
+    # both shutters closed: no readback, so the card starts on the default
+    for name in ("imaging_shutter_x", "imaging_shutter_xy"):
+        config["ttl"][name]["ttl_state"] = 0
+    ctx = _ctx(config, params, frames)
+    assert imaging.get_field("axis").readback_value(ctx) is None
+    power = imaging.get_field("power")
+    assert power.warn_below is None and power.warn_above is None and power.check is None
+    assert power.checks(5.0) == []
+    # the remaining bounds are the DAC's range, where set_power does what it says
+    assert power.maximum == frames.dac.imaging_pid.max_v and power.minimum == 0.
+
+
+GUARDED_LINES = {"outer_coil_igbt", "inner_coil_igbt", "outer_coil_pid_ttl",
+                 "inner_coil_pid_ttl", "hbridge_helmholtz", "zshim_hbridge_flip"}
+
+
+def test_no_lamp_flips_a_coil_or_polarity_line_directly():
+    for device in kc.COMPOSITE_DEVICES:
+        for lamp in device.lamps:
+            if lamp.name in GUARDED_LINES:
+                assert lamp.ops, f"{device.key} lamp {lamp.label} would flip {lamp.name}"
+
+
+def test_lamp_and_pill_ops_resolve_and_coil_lamps_only_switch_off():
+    table = OpTable(kc.COMPOSITE_DEVICES)           # raises on an unknown reference
+    for device in kc.COMPOSITE_DEVICES:
+        for _, ref in device.click_refs():
+            name = ref if "." in ref else f"{device.key}.{ref}"
+            assert table.get(name) is not None, f"{device.key}: {ref}"
+    for key in ("outer_coil", "inner_coil"):
+        coil = _device(key)
+        igbt = next(lamp for lamp in coil.lamps if lamp.label == "IGBT")
+        assert igbt.ops == ("", "off")              # never closes an IGBT from a lamp
+        assert coil.pill_click_ops() == ("", "off")
+    mot_coil = next(lamp for lamp in _device("mot").lamps if lamp.name == "inner_coil_igbt")
+    assert mot_coil.ops == ("", "inner_coil.off")
+    inner_pid = next(lamp for lamp in _device("inner_coil").lamps if lamp.label == "PID")
+    assert inner_pid.ops == ("", "")                                # shown only
+
+
 # --- coils -------------------------------------------------------------------------
 
 def test_coil_current_limits_stay_below_the_supply_dac_max(frames):
@@ -442,59 +485,61 @@ def test_trap_checks(config, params, frames):
                                        zip(params.frequency_tweezer_list, params.amp_tweezer_list)]
 
 
-class FakeCore:
-    def __init__(self, log, idx):
-        self.log, self.idx = log, idx
+class FakeMonitor:
+    """The monitor's connection_call: records what the op asks the server."""
 
-    def amp(self, a):
-        self.log.append(("amp", self.idx, a))
+    def __init__(self, error=None):
+        self.calls = []
+        self.error = error
 
-
-class FakeDDS:
-    def __init__(self):
-        self.log = []
-
-    def __getitem__(self, idx):
-        return FakeCore(self.log, idx)
-
-    def exec_at_trg(self):
-        self.log.append(("exec",))
-
-    def write(self):
-        self.log.append(("write",))
+    def connection_call(self, key, cmd, **kwargs):
+        self.calls.append((key, cmd, kwargs))
+        if self.error:
+            raise RuntimeError(self.error)
+        return {"tones": len(kwargs.get("rows", []))}
 
 
-class FakeTweezer:
-    def __init__(self):
-        self.dds = FakeDDS()
-        self.static = []
-        self.card = object()
-
-    def set_static_tweezers(self, freqs, amps, phases=None):
-        self.static.append((list(freqs), list(amps), phases))
-
-
-def test_awg_write_zeroes_tones_that_were_removed():
-    tw = FakeTweezer()
-    kc._awg_write(tw, [[72.e6, 0.2], [73.e6, 0.2], [74.e6, 0.2]])
-    assert tw._panel_n_tones == 3
-    tw.dds.log.clear()
-    kc._awg_write(tw, [[72.e6, 0.3]])
-    assert tw.static[-1] == ([72.e6], [0.3], None)
-    assert ("amp", 1, 0.) in tw.dds.log and ("amp", 2, 0.) in tw.dds.log
-    assert tw.dds.log[-2:] == [("exec",), ("write",)]
-    assert kc.tweezer_host_state(SimpleNamespace(tweezer=tw)) == {
-        "awg_connected": True, "traps": [[72.e6, 0.3]]}
+def test_apply_traps_asks_the_monitor_server_to_write_the_tones():
+    mon = FakeMonitor()
+    kc.awg_apply(SimpleNamespace(monitor=mon), {}, {"traps": [[72.e6, 0.2], [73.e6, 0.1]]})
+    assert mon.calls == [(kc.AWG_CONNECTION_KEY, "write_traps",
+                          {"rows": [[72.e6, 0.2], [73.e6, 0.1]]})]
+    mon = FakeMonitor(error="the Tweezer AWG is not connected (failed)")
+    with pytest.raises(RuntimeError, match="not connected"):        # no trigger then
+        kc.awg_apply(SimpleNamespace(monitor=mon), {}, {"traps": [[72.e6, 0.1]]})
 
 
-def test_awg_write_all_zero_amplitudes_passes_explicit_phases():
-    tw = FakeTweezer()
-    kc._awg_write(tw, [[72.e6, 0.0], [73.e6, 0.0]])
-    assert tw.static[-1][2] == [0., 0.]       # compute_tweezer_phases would divide by 0
+def test_the_awg_connection_definition():
+    from kexp.config import monitor_connections as mc
+    from kexp.config.ip import AWG_IP
+    from kexp.control.awg_tweezer import AWG_IP as AWG_IP_OF_THE_TWEEZER
+    from waxx.util.device_state.connection_agent import load_factory
+    from waxx.util.device_state.connections import validate_connections
+    assert mc.MONITOR_CONNECTIONS == (mc.AWG_CONNECTION,)
+    validate_connections(mc.MONITOR_CONNECTIONS)
+    conn = mc.AWG_CONNECTION
+    assert conn.key == kc.AWG_CONNECTION_KEY
+    assert conn.driver_kwargs["awg_ip"] == AWG_IP == AWG_IP_OF_THE_TWEEZER   # one address
+    assert conn.open_timeout_s > conn.driver_kwargs["t_wait_in_use"]
+    factory = load_factory(conn.driver)                 # importable; not built (no card)
+    assert set(factory.COMMANDS) >= {"write_traps"}
 
 
-def test_awg_apply_needs_a_connection():
-    tw = FakeTweezer()
-    tw.card = None
-    with pytest.raises(RuntimeError, match="not connected"):
-        kc.awg_apply(SimpleNamespace(tweezer=tw), {}, {"traps": [[72.e6, 0.1]]})
+def test_the_tweezer_card_leaves_connecting_to_the_bar():
+    keys = {op.key for op in kc.TWEEZER.ops}
+    assert "awg_apply" in keys
+    assert not keys & {"awg_connect", "awg_disconnect"}
+    assert kc.TWEEZER.host_state is None                # the monitor holds no AWG state
+
+
+def test_awg_readout_and_on_check_read_the_connection_state():
+    report = {kc.AWG_CONNECTION_KEY: {"state": "connected", "detail": "no tones loaded"}}
+    ctx = Context(connections=report)
+    assert kc._awg_text(ctx) == "connected, no tones loaded"
+    assert kc._tweezer_on_check({}, ctx) is None
+    released = {kc.AWG_CONNECTION_KEY: {"state": "disconnected",
+                                        "detail": "released for run 81234 (hf_bec)"}}
+    ctx = Context(connections=released)
+    assert kc._awg_text(ctx) == "disconnected -- released for run 81234 (hf_bec)"
+    assert kc._tweezer_on_check({}, ctx).message.startswith("the monitor server does not hold")
+    assert kc._awg_text(Context()) == "not reported by the monitor server"

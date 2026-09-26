@@ -22,7 +22,7 @@ dv = -1000.
 # the RF chain in front of each FM source has its own attenuation.
 V_TWEEZER_PAINT_MIN = -4.985
 
-AWG_IP = 'TCPIP::192.168.1.83::inst0::INSTR'
+from kexp.config.ip import AWG_IP  # noqa: E402  (the netbox address, one place)
 from kexp.calibrations.tweezer import tweezer_xmesh as KEXP_TWEEZER_XMESH
 
 class TweezerTrap(wax_tweezer.TweezerTrap):

@@ -84,6 +84,8 @@ def test_monitor_with_composite_ops_compiles(monkeypatch, tmp_path):
     try:
         assert exp.monitor._composites_enabled
         assert len(exp.monitor.op_kernels) == len(OpTable(COMPOSITE_DEVICES))
+        # The monitor never opens the AWG: the monitor server holds it.
+        assert getattr(exp.tweezer, "card", None) is None
         _compile(cls, exp)
     finally:
         device_mgr.close_devices()

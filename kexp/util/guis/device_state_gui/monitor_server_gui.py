@@ -15,7 +15,10 @@ from PyQt6.QtWidgets import QApplication
 from waxx.util.guis.monitor_server_gui import MonitorServerGUI
 from waxx.util.dashboard import logging_setup
 
-from kexp.config.ip import MONITOR_EXPT_PATH, MONITOR_STATE_FILEPATH, LOG_DIR
+from waxx.util.device_state.run_loop import loop_specs
+from kexp.config.ip import (MONITOR_EXPT_PATH, MONITOR_STATE_FILEPATH, LOG_DIR,
+                            RESET_STATE_EXPT_PATH, RUN_LOOP_EXPTS)
+from kexp.util.guis.device_state_gui.monitor_server_headless import monitor_connections
 
 log = logging.getLogger(__name__)
 
@@ -70,7 +73,10 @@ def main():
         gui = MonitorServerGUI(monitor_expt_path=MONITOR_EXPT_PATH,
                                config_file_path=MONITOR_STATE_FILEPATH,
                                journal_dir=(os.path.join(LOG_DIR, "ops_journal")
-                                            if LOG_DIR else None))
+                                            if LOG_DIR else None),
+                               reset_expt_path=RESET_STATE_EXPT_PATH,
+                               run_loops=loop_specs(RUN_LOOP_EXPTS),
+                               connections=monitor_connections())
     except Exception:
         log.exception("Monitor server GUI failed to start")
         return 1
