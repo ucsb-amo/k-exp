@@ -1,0 +1,298 @@
+\section{How xvars become OPX values}
+\label{sec:xvars}
+
+The central promise of the framework is: \emph{shot $k$ on ARTIQ and shot $k$
+on the OPX use the same parameter values}, including repeats, shuffling and
+derived parameters, without any per-shot host traffic. This section follows
+one parameter from \code{self.xvar(...)} to the QUA array the OPX reads.
+
+\subsection{Declaring an xvar}
+
+\begin{lstlisting}[style=py]
+self.xvar('t_raman_pulse', np.linspace(0., 50., 20) * 1.e-6)
+self.p.N_repeats = 1
+\end{lstlisting}
+
+\code{Scanner.xvar(key, values)} appends an \code{xvar} record (\code{key},
+\code{values}, \code{position} = declaration index, \code{counter} = 0) and
+creates the attribute on \code{ExptParams} if it does not exist, holding the
+first value as a scalar.\footnote{\file{wax/waxx-src/waxx/base/scanner.py},
+\code{xvar} (lines 103--119) and \code{new\_param\_check}.} Two xvars declared
+$\to$ a 2-D grid, the \emph{last declared} innermost.
+
+\subsection{\code{finish\_prepare}: repeats, then shuffle}
+\label{sec:xvars:shuffle}
+
+\code{Scanner.init\_xvars}\footnote{\file{scanner.py} lines 562--591.} runs,
+in this order:
+
+\begin{enumerate}[nosep]
+  \item \code{plug\_in\_xvars}: \code{params.<key> = values[0]} so the kernel
+    compiles against the scalar's type. This is the value every
+    \emph{config-time} read sees (section~\ref{sec:program:config}).
+  \item \code{repeat\_xvars}: \code{xvar.values = np.repeat(values,
+    N\_repeats[position])}. With an integer \code{N\_repeats} only position 0
+    -- the \textbf{outermost} (first-declared) axis -- is repeated; each value
+    appears $N$ times \emph{consecutively}: $[a, b] \to [a, a, b, b]$.
+    \code{params.N\_repeats} collapses back to the scalar. Repeats are not a
+    separate axis.\footnote{\file{wax/waxa-src/waxa/base/dealer.py},
+    \code{repeat\_xvars}, lines 36--75.}
+  \item \code{shuffle\_xvars}: per axis, sort the values, draw one permutation
+    of \code{arange(len)}, and \code{values.take(perm)}. Any later xvar of the
+    same length \emph{reuses the same permutation}. The distinct lengths and
+    their permutations are recorded as \code{sort\_N} / \code{sort\_idx} for the
+    end-of-run unshuffle.\footnote{\file{dealer.py}, \code{shuffle\_xvars},
+    lines 77--126. Note the equal-length rule at lines 105--107: a 2-xvar scan
+    with equal lengths is \emph{correlated} in its shuffle.}
+  \item \code{get\_N\_img}, \code{compute\_derived}, \code{compute\_new\_derived}
+    at the first scheduled values; \code{xvardims = [len(values) ...]},
+    repeats included; \code{generate\_assignment\_kernels}.
+\end{enumerate}
+
+\statusbox{Which shuffle scheme this is.}{The per-axis scheme above
+(\code{Dealer.shuffle\_xvars} + \code{sort\_idx}/\code{sort\_N}) is what the
+tree contains. The wiki page \emph{Scan loop and parameter scanning} and the
+memory note \emph{random-scan-order} describe a full-grid random order with a
+\code{run\_info/shot\_order} dataset; that work lives in a git stash on the
+branch \code{jep/random-scan-order-new} and is \textbf{not} in this checkout
+(\code{wax} is on \code{main}; \code{grep shot\_order} over \code{wax/} finds
+nothing). Everything in this document assumes the per-axis scheme. If the
+stash lands, \code{build\_shot\_tables} must sweep \code{shot\_order} instead
+of \code{np.ndindex}, and \code{fill\_containers} must scatter instead of
+reshape.}
+
+\subsection{The scan loop on ARTIQ: reassign, never index}
+\label{sec:xvars:scanloop}
+
+\code{Scanner.scan()} is a compiled \code{@kernel} \code{while} loop. Per
+iteration:\footnote{\file{scanner.py} lines 282--378.}
+
+\begin{lstlisting}[style=py]
+aborted_bool = self._check_for_abort_signal()     # RPC
+self.update_params_from_xvars()                   # RPC: host params <- xvar values, adjust, derived
+self.write_host_params_to_kernel()                # kernel: one RPC fetch + writer per param
+self.core.break_realtime()
+self.init_scan_kernel()
+try:
+    self.scan_kernel()                            # the experiment
+except RTIOUnderflow / TriggerTimeout / RTIOOverflow:
+    aborted_bool = True                           # cleanup still runs
+self.cleanup_scan_kernel()                        # put_shot_data, SHOT_COMPLETE
+delay(self.params.t_recover)
+scanning = self.step_scan()                       # RPC: odometer on the host counters
+self.update_scan_xvar_counters()                  # kernel mirrors the counters
+\end{lstlisting}
+
+\code{update\_params\_from\_xvars} is the host side:
+
+\begin{lstlisting}[style=py]
+for xvar in self.scan_xvars:
+    vars(self.params)[xvar.key] = xvar.values[xvar.counter]
+self.apply_pending_adjust_values()
+self.params.compute_derived()
+self.compute_new_derived()
+\end{lstlisting}
+
+So on the host the scanned attribute \textbf{is a scalar that is reassigned
+every shot} from the repeated, shuffled list. The kernel copy is then
+refreshed by \code{write\_host\_params\_to\_kernel}: for each int32/int64/float/
+array attribute of \code{ExptParams}, one RPC fetch and one pre-generated
+writer kernel whose source is literally \code{self.params.<key> = value}
+(\code{generate\_assignment\_kernels}, \file{scanner.py} lines 490--514). The
+kernel never indexes \code{xvar.values}; the counters on the kernel are only
+a mirror for \code{put\_shot\_data}. \code{step\_scan} increments the host
+counters like an odometer starting from the last-declared xvar (C order).
+
+\subsection{\code{build\_shot\_tables}: the same sweep, on a copy}
+\label{sec:xvars:tables}
+
+The OPX cannot run \code{update\_params\_from\_xvars}. Instead, at
+\code{on\_finish\_prepare}, \code{build\_shot\_tables(expt)} replays the
+sweep once on a deep copy of \code{ExptParams}:\footnote{\file{k-exp/kexp/control/opx/params\_bridge.py},
+\code{build\_shot\_tables} (lines 315--344) and \code{working\_params}.}
+
+\begin{lstlisting}[style=py]
+with working_params(expt) as work:            # deep copy; expt.params/expt.p swapped for the block
+    for idx in np.ndindex(*xvardims):         # C order = last xvar innermost = step_scan's order
+        for xvar, i in zip(expt.scan_xvars, idx):
+            vars(work)[xvar.key] = xvar.values[i]
+        work.compute_derived()
+        expt.compute_new_derived()            # runs on the copy (expt.params is swapped)
+        # snapshot every scalar numeric attribute -> columns[key][flat]
+\end{lstlisting}
+
+The result, \code{ShotTables}, holds \code{columns[key]}: a float array of
+length \code{n\_shots} in \textbf{execution order} for every scalar numeric
+attribute (bool, int, float, numpy scalars). Arrays and strings are not
+shipped; a vector-valued xvar is therefore invisible to \code{ctx.p} and
+raises \code{AttributeError} there. \code{tables.accessed} records which
+columns the sequence read. Cost, measured on the 298-attribute
+\code{ExptParams}: one deep copy (0.11\,ms) and 0.056\,ms per shot -- about
+0.6\,s for a 10\,000-shot scan.
+
+\subsection{\code{ParamRef}: a column that refuses to be a number}
+\label{sec:xvars:paramref}
+
+\code{ctx.p} is a \code{ParamsProxy}; \code{ctx.p.t\_raman\_pulse} returns a
+\code{ParamRef(key, column, tables)} and marks the key accessed. A
+\code{ParamRef} supports ordinary arithmetic and numpy ufuncs \emph{column-wise
+on the host}: \code{ctx.p.t\_raman\_pi\_pulse / 2} is a new \code{ParamRef}
+labelled \code{(t\_raman\_pi\_pulse / 2)} whose column is computed shot by
+shot. What it cannot do is collapse to one Python number:
+\code{float()}, \code{int()}, \code{bool()} -- and with them \code{if},
+\code{max()}, \code{in}, \code{np.sum()} -- raise a \code{TypeError} with a
+hint.\footnote{\file{params\_bridge.py}, class \code{ParamRef}, lines
+102--251.} The reason is the trace-once model of section~\ref{sec:program}:
+the body runs \emph{once} on the host to emit QUA; a Python \code{if} on a
+scanned value would pick one shot's branch and bake it into every shot,
+silently mislabelling the scan.
+
+\code{ctx.const(x)} is the explicit escape: it returns a float for a number
+or for a \code{ParamRef} whose column is the same on every shot (a loop
+count, a toggle), and refuses one that varies:
+
+\begin{lstlisting}[style=txt]
+[opx] sequence 'bayesian_feedback': ctx.const('N_pulses') but it varies per shot
+(17 .. 20) -- it is scanned, or derived from a scanned parameter. ctx.const gives
+one number the whole program is built with; a per-shot value must reach the OPX
+through a ctx method (or ctx.cc/ctx.hz/ctx.f).
+\end{lstlisting}
+
+\subsection{Materialisation: baked constant or QUA array indexed by the shot counter}
+\label{sec:xvars:resolve}
+
+Every context macro ends in \code{OPXShotContext.\_resolve(x, transform,
+tag, qua\_dtype, what)}:\footnote{\file{k-exp/kexp/control/opx/context.py},
+\code{\_resolve}, lines 119--152.}
+
+\begin{lstlisting}[style=py]
+col = np.atleast_1d(np.asarray(transform(raw)))   # SI -> cc / integer Hz / fixed, per shot
+# finite check; int32 range check (|v| < 2^31) or fixed range check ([-8, 8))
+if np.all(col == col[0]):
+    v = col[0]
+    return int(v) if qua_dtype is int else float(v)        # baked constant
+values = [int(v) for v in col]  (or floats)
+cache_key = (tag, tuple(values))                            # keyed by value
+if cache_key not in self._qua_arrays:
+    self._qua_arrays[cache_key] = qua.declare(int or qua.fixed, value=values)
+return self._qua_arrays[cache_key][self._shot]              # QUA array cell, indexed by the shot counter
+\end{lstlisting}
+
+A constant and a per-shot column take the same path (transform, then range
+checks), so whether a value is valid never depends on whether it happens to
+be scanned this run. A per-shot column becomes one \code{qua.declare(...,
+value=[...])} array of length \code{n\_shots} and the program reads
+\code{arr[shot]}, where \code{shot} is the loop variable of the builder's
+\code{for\_(shot, 0, shot < n\_shots, shot + 1)}. Two expressions with
+identical columns share one array. \code{ctx.cc()}, \code{ctx.hz()} and
+\code{ctx.f()} also accept a QUA expression and return it unchanged
+(\code{is\_qua\_expr}: taken to be clock cycles / integer Hz / fixed already,
+no host checks, no value column in the op log), which is how a real-time loop
+feeds a value the OPX computed into a macro.
+
+\subsection{Derived parameters}
+
+Because the sweep runs the real \code{compute\_derived()} and the
+experiment's \code{compute\_new\_derived()} per shot, a parameter derived from
+an xvar varies per shot on the OPX \emph{by construction}, not by a parallel
+reimplementation. The offline check below includes \code{t\_double = 2 t\_a}
+defined in \code{compute\_new\_derived}. The caveat: \code{compute\_new\_derived}
+is called on the copy, but anything it reads that is \emph{not} on
+\code{ExptParams} (an attribute of the experiment, a random draw) is whatever
+it was at \code{finish\_prepare} (section~\ref{sec:midloop:holes}).
+
+\subsection{The offline order-equivalence check}
+\label{sec:xvars:check}
+
+The phase-1 audit drove the real \code{Scanner}, \code{Dealer},
+\code{DataVault}, \code{build\_shot\_tables} and \code{fill\_containers} with no
+core device for a 3\,$\times$\,2 scan, \code{N\_repeats = 2}, default per-axis
+shuffle, plus a derived parameter. Its output, verbatim:\footnote{\code{scratchpad/phase1/check\_scan\_order.py},
+run with the workspace venv on 2026-09-24. The \code{np.float64(...)} wrappers
+are numpy~2's scalar repr.}
+
+\begin{lstlisting}[style=txt]
+xvardims after repeats: [6, 2]  N_repeats -> 2
+  xvar 't_a' (position 0) execution values: [3.e-06 1.e-06 2.e-06 2.e-06 1.e-06 3.e-06]
+  xvar 'i_b' (position 1) execution values: [20. 10.]
+sort_N: [6, 2]  sort_idx: [[np.int64(4), np.int64(0), np.int64(3), np.int64(2), np.int64(1), np.int64(5)], [np.int64(1), np.int64(0)]]
+
+12 shots.  shot | ARTIQ (t_a, i_b, t_double) counters | OPX tables (t_a, i_b, t_double) ndindex
+   0 | (np.float64(3e-06), np.float64(20.0), np.float64(6e-06)) (0, 0) | (np.float64(3e-06), np.float64(20.0), np.float64(6e-06)) (0, 0)
+   1 | (np.float64(3e-06), np.float64(10.0), np.float64(6e-06)) (0, 1) | (np.float64(3e-06), np.float64(10.0), np.float64(6e-06)) (0, 1)
+   2 | (np.float64(1e-06), np.float64(20.0), np.float64(2e-06)) (1, 0) | (np.float64(1e-06), np.float64(20.0), np.float64(2e-06)) (1, 0)
+   3 | (np.float64(1e-06), np.float64(10.0), np.float64(2e-06)) (1, 1) | (np.float64(1e-06), np.float64(10.0), np.float64(2e-06)) (1, 1)
+   4 | (np.float64(2e-06), np.float64(20.0), np.float64(4e-06)) (2, 0) | (np.float64(2e-06), np.float64(20.0), np.float64(4e-06)) (2, 0)
+   5 | (np.float64(2e-06), np.float64(10.0), np.float64(4e-06)) (2, 1) | (np.float64(2e-06), np.float64(10.0), np.float64(4e-06)) (2, 1)
+   6 | (np.float64(2e-06), np.float64(20.0), np.float64(4e-06)) (3, 0) | (np.float64(2e-06), np.float64(20.0), np.float64(4e-06)) (3, 0)
+   7 | (np.float64(2e-06), np.float64(10.0), np.float64(4e-06)) (3, 1) | (np.float64(2e-06), np.float64(10.0), np.float64(4e-06)) (3, 1)
+   8 | (np.float64(1e-06), np.float64(20.0), np.float64(2e-06)) (4, 0) | (np.float64(1e-06), np.float64(20.0), np.float64(2e-06)) (4, 0)
+   9 | (np.float64(1e-06), np.float64(10.0), np.float64(2e-06)) (4, 1) | (np.float64(1e-06), np.float64(10.0), np.float64(2e-06)) (4, 1)
+  10 | (np.float64(3e-06), np.float64(20.0), np.float64(6e-06)) (5, 0) | (np.float64(3e-06), np.float64(20.0), np.float64(6e-06)) (5, 0)
+  11 | (np.float64(3e-06), np.float64(10.0), np.float64(6e-06)) (5, 1) | (np.float64(3e-06), np.float64(10.0), np.float64(6e-06)) (5, 1)
+
+values identical shot-for-shot: True
+counter tuples == np.ndindex tuples: True
+tables.n_shots == shots the loop ran: True
+[opx] NOTE: 'sig' stored as raw integration units (no integration window length known).
+[opx] data complete: 12/12 shots.
+kernel-path _run_data shape: (6, 2)  fill_containers _run_data shape: (6, 2)
+kernel-path == fill_containers, cell for cell: True
+valid mask: [[1 1]
+ [1 1]
+ [1 1]
+ [1 1]
+ [1 1]
+ [1 1]]
+unshuffled arrays equal: True
+every unshuffled cell holds a shot taken at that (t_a, i_b): True
+
+RESULT: ORDER EQUIVALENT
+\end{lstlisting}
+
+Read-offs: the repeat is folded into the outer axis as consecutive
+duplicates \emph{before} shuffling, so after the per-axis shuffle repeats of
+the same value are no longer adjacent ($3, 1, 2, 2, 1, 3$); the inner xvar
+changes every shot; the derived column follows the xvar; the DataContainer
+cell index equals the \code{ndindex} tuple; and the flat execution-order
+stream that \code{fill\_containers} writes lands in the same cells as the
+kernel's per-shot writes, so the single end-of-run unshuffle treats both
+identically.
+
+What the check does \emph{not} cover, because no code covers it: the ARTIQ
+shot index and the OPX \code{shot} counter are tied only by one
+\code{wait\_for\_trigger} per \code{scan\_kernel}. A \code{scan\_kernel} that
+skips \code{handoff\_to\_quantum\_machines} on some shots, or triggers twice,
+desynchronises the counters for the rest of the run. The shot-index echo of
+section~\ref{sec:data:echo} detects this after the fact; nothing prevents
+it. (The warm-up shots of \code{Base.pre\_scan} do not hand off and are safe.)
+
+\subsection{Shot arrays and host data}
+\label{sec:xvars:shotarrays}
+
+A per-shot \emph{scalar} is a column; some sequences need a per-shot
+\emph{vector} -- the feedback loop draws $N$ pulse durations per shot. Two
+context calls exist for that:\footnote{\file{context.py}, \code{ShotArray},
+\code{OPXShotContext.shot\_array}, \code{host\_data}.}
+
+\begin{itemize}[nosep]
+  \item \code{ctx.shot\_array(key, values, dtype=float)}: \code{values} is an
+    array of shape \code{(n\_shots,)} or \code{(n\_shots, M)} in execution
+    order, validated finite and in range (integral and int32 for
+    \code{dtype=int}, fixed $[-8, 8)$ for float); it becomes \emph{one} flat
+    QUA array and \code{ShotArray.at(i)} returns \code{qua\_array[ctx.shot * M
+    + i]} (\code{i} a Python int, bounds-checked, or a QUA int expression, not
+    checked -- QUA does no bounds checking either). QUA arrays are 1-D only,
+    which is why the 2-D table is flattened. Declaring a key twice is
+    refused; the shapes are recorded in \code{opx\_shot\_tables}.
+  \item \code{ctx.host\_data(key, values)}: \code{values} of shape
+    \code{(n\_shots, *shape)} are written straight into a container declared
+    in the sequence's \code{host\_data=\{key: shape\}} at \code{finish()}, in
+    execution order, never volts-converted. This is how the run file records
+    exactly what the OPX was given (section~\ref{sec:feedback:data}).
+\end{itemize}
+
+The spec's decision D6: per-shot arrays are pre-drawn on the host at trace
+time and shipped as baked arrays; QUA input streams (host pushes per shot)
+are \emph{not} used in v1 because the simulator cannot run them. The hook
+for them is the top of the shot loop, before \code{wait\_for\_trigger}.

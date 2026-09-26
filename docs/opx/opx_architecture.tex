@@ -1,0 +1,141 @@
+% opx_architecture.tex -- the ARTIQ <-> Quantum Machines OPX+ integration of
+% the K-machine (kexp) codebase, written for a physicist who knows ARTIQ but
+% not QUA. Build: latexmk -pdf opx_architecture.tex (see README.md).
+%
+% Conservative LaTeX on purpose: article class, the packages below only, TikZ
+% drawn with plain \draw/\node/\fill (no tikz-timing, no pgfplots). No TeX
+% toolchain was available where this was written, so the file was checked
+% for environment/brace balance by script only -- if a compile error shows
+% up, it is a typo, not a missing package.
+
+\documentclass[11pt,a4paper]{article}
+
+\usepackage[T1]{fontenc}
+\usepackage[utf8]{inputenc}
+\usepackage{amsmath}
+\usepackage{amssymb}
+\usepackage[margin=2.3cm]{geometry}
+\usepackage{booktabs}
+\usepackage{listings}
+\usepackage{xcolor}
+\usepackage{tikz}
+\usepackage{enumitem}
+\usepackage[colorlinks=true,linkcolor=blue!50!black,urlcolor=blue!50!black,citecolor=blue!50!black]{hyperref}
+
+% ---------------------------------------------------------------------------
+% macros
+% ---------------------------------------------------------------------------
+\newcommand{\code}[1]{\texttt{#1}}
+\newcommand{\file}[1]{\texttt{#1}}
+\newcommand{\planned}{\textcolor{red!70!black}{\textbf{[planned]}}}
+\newcommand{\micro}{\ensuremath{\mu}}
+\newcommand{\us}{\ensuremath{\,\mu\mathrm{s}}}
+\newcommand{\nsu}{\ensuremath{\,\mathrm{ns}}}
+\newcommand{\cc}{\ensuremath{\,\mathrm{cc}}}
+
+% a plain framed box for status / warnings (no extra packages)
+\newcommand{\statusbox}[2]{%
+  \noindent\fbox{\begin{minipage}{\dimexpr\linewidth-2\fboxsep-2\fboxrule\relax}%
+  \textbf{#1}\quad #2%
+  \end{minipage}}\par\medskip}
+
+% ---------------------------------------------------------------------------
+% listings
+% ---------------------------------------------------------------------------
+\definecolor{lstbg}{gray}{0.96}
+\definecolor{lstcomment}{rgb}{0.35,0.45,0.35}
+\definecolor{lstkw}{rgb}{0.10,0.20,0.60}
+\lstset{
+  basicstyle=\small\ttfamily,
+  backgroundcolor=\color{lstbg},
+  columns=fullflexible,
+  keepspaces=true,
+  breaklines=true,
+  breakatwhitespace=true,
+  frame=single,
+  framerule=0.2pt,
+  xleftmargin=4pt,
+  xrightmargin=4pt,
+  showstringspaces=false,
+  tabsize=4,
+  commentstyle=\color{lstcomment}\itshape,
+  keywordstyle=\color{lstkw}\bfseries,
+  stringstyle=\color{black},
+  numbers=none,
+}
+\lstdefinestyle{py}{language=Python}
+\lstdefinestyle{qua}{language=Python}
+\lstdefinestyle{txt}{language={},basicstyle=\scriptsize\ttfamily,commentstyle=\ttfamily,keywordstyle=\ttfamily}
+
+% ---------------------------------------------------------------------------
+\title{Two controllers, one shot:\\
+  the ARTIQ\,$\leftrightarrow$\,OPX+ integration of the K-machine codebase\\[1ex]
+  \large \file{kexp.control.opx}, the handshake kernels, the data path,\\
+  and the on-OPX Bayesian feedback port}
+\author{Weld lab, K-39 experiment\\
+  \small documentation written 2026-09-24 against the phase-2 rebuild (design spec of the same day);\\
+  \small feedback section updated 2026-09-25 to the speed pass ``3b''}
+\date{}
+
+\begin{document}
+\maketitle
+
+\statusbox{Status.}{%
+This document describes the OPX integration \emph{as it exists after the
+phase-2 rebuild} (the design spec of 2026-09-24: framework fixes in
+\file{kexp/control/opx}, the config-time parameter guard, the component
+layer, the context additions, and the Bayesian-feedback port), with the
+feedback port as of its speed pass ``3b'' (2026-09-25: argmax control law,
+grid-index drive with exact integer-Hz IFs, co-rotating frame, $L/32$ log
+weights, sine table, optional discrete durations). Everything in it has been
+\textbf{offline-tested only}: traced with the qm-qua DSL, checked by 126 unit
+tests (\file{test\_opx.py} 39, \file{test\_opx\_ctx.py} 24,
+\file{test\_opx\_config.py} 19, \file{test\_opx\_viewer.py} 8,
+\file{opx\_sim\_fixture.py} 8, \file{test\_feedback\_opx.py} 28) and, for the
+feedback port, compiled and timed on the QOP simulator (7.75\us\ of compute
+per pulse for $m = 21$). \textbf{No part of this design has run against
+atoms.} The hardware milestones M1--M4 (appendix~\ref{sec:milestones}) are
+open; M4 is needed only for the remesh. One item is a design, not code: the
+remesh with pole return (section~\ref{sec:feedback:remesh}), marked
+\planned. Every number quoted is the value in the code, the parameter file or
+the simulator record on the date of its section, with the file named where
+it matters.}
+
+\tableofcontents
+\clearpage
+
+\section*{How to read this}
+\addcontentsline{toc}{section}{How to read this}
+
+You know ARTIQ: the RTIO timeline, \code{delay()}, \code{now\_mu()}, kernels
+compiled for the Kasli core device, RPCs to the host, and the lab's
+\code{Base}/\code{scan\_kernel}/\code{xvar} conventions. You may not know QUA,
+the language of the Quantum Machines OPX+. This document tries to teach the
+integration \emph{by mechanism}: every diagram shows what the code actually
+emits or schedules, with the real numbers, and every claim names its file.
+Sections~\ref{sec:why}--\ref{sec:handoff} are the framework as a whole,
+\ref{sec:data}--\ref{sec:midloop} are the data and parameter plumbing,
+\ref{sec:tutorial} is a tutorial for writing a new per-shot sequence,
+\ref{sec:quam} maps our objects onto QUA's own abstraction layer (QUAM),
+and \ref{sec:feedback} is the Bayesian feedback loop ported to run on the OPX,
+with its timing, numerics and speed work, and the planned remesh.
+
+Two vocabulary notes up front. A \emph{shot} is one ARTIQ \code{scan\_kernel}
+iteration; on the OPX it is one iteration of the program's shot loop, and the
+two are tied together by exactly one trigger per shot. A \emph{sequence} is
+the OPX-side body of one shot, written as a Python function traced once into
+QUA (section~\ref{sec:program}).
+
+\input{sections/01_two_controllers.tex}
+\input{sections/02_manager.tex}
+\input{sections/03_xvars.tex}
+\input{sections/04_program.tex}
+\input{sections/05_handoff.tex}
+\input{sections/06_data.tex}
+\input{sections/07_midloop.tex}
+\input{sections/08_tutorial.tex}
+\input{sections/09_quam.tex}
+\input{sections/10_feedback.tex}
+\input{sections/11_appendix.tex}
+
+\end{document}

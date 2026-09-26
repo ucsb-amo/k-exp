@@ -1,0 +1,255 @@
+\section{How the QUA program is constructed}
+\label{sec:program}
+
+\subsection{Trace once, execute per shot}
+
+A sequence is a plain Python function of one argument, the context
+\code{ctx}, decorated with \code{@opx\_sequence}:\footnote{\file{k-exp/kexp/experiments/opx\_sequences/rabi.py};
+\file{k-exp/kexp/control/opx/sequence.py}.}
+
+\begin{lstlisting}[style=py]
+@opx_sequence('rabi_raman_pulse', claims=('raman',))
+def rabi_raman_pulse(ctx: KexpShotContext):
+    ctx.raman_pulse(ctx.p.t_raman_pulse)
+\end{lstlisting}
+
+The function body is executed \textbf{exactly once}, on the host, inside
+\code{with qua.program()}. Every \code{ctx} call emits QUA statements into
+that program. The OPX then executes the program's shot loop \code{n\_shots}
+times. This is what ``trace-time'' means throughout this document: the
+sequence author writes what looks like one shot; the builder wraps it in the
+loop and the context turns every parameter into either a constant or an
+\code{arr[shot]} lookup (section~\ref{sec:xvars:resolve}). Consequently a
+Python \code{for i in range(int(ctx.const(ctx.p.N)))} unrolls $N$ copies of
+its body into the program, while \code{with ctx.for\_range(n) as i:} emits a
+QUA loop (section~\ref{sec:tutorial}).
+
+The decorator records the sequence's \code{claims} (which roles it may touch:
+\code{'raman'}, \code{'imaging'}), its \code{measurements} (which data keys it
+saves, and its per-shot shape), its \code{host\_data} keys and an optional
+\code{finish} hook. Ops on an unclaimed role, saves
+to an undeclared key, and a save count that disagrees with the declaration
+are trace-time errors.
+
+\subsection{The emitted statement skeleton}
+\label{sec:program:skeleton}
+
+What \code{OPXProgramBuilder.trace()} emits after the rebuild, with the real
+numbers for the default parameters:\footnote{\file{k-exp/kexp/control/opx/builder.py},
+\code{trace}; hand-back in \file{context.py}, \code{handback\_to\_artiq}.
+Settle and overlap from \file{k-exp/kexp/config/expt\_params.py} lines
+438--439 and 455.}
+
+\begin{lstlisting}[style=qua]
+with program():
+    shot = declare(int)
+    echo = declare_output_stream()                            # the shot-index echo stream
+    # one declare(int|fixed, value=[...N_shots...]) per distinct per-shot column (at first use)
+    # one declare_output_stream() (+ a fixed variable for measure keys) per data key (at first use)
+
+    # ---- prologue, once per run ----
+    play('cw', 'raman_80'); play('cw', 'raman_150')           # 1000 ns sticky latch; tone holds all run
+
+    with for_(shot, 0, shot < N_shots, shot + 1):             # implicit align at loop entry
+        [update_frequency('raman_150', ifs150[shot]); update_frequency('raman_80', ifs80[shot])]
+                                                              #   only if frequency_raman_transition varies
+        wait_for_trigger('raman_switch')                      # park until ARTIQ's ttl32 edge
+        save(shot, echo)                                      # counter echo -> 'opx_shot_index'
+        align()                                               # A1: everyone else catches up
+        play('block', 'raman_switch'); play('block', 'imaging_switch')   # 16 ns markers, sticky-held HIGH
+        wait(338, 'raman_switch', 'imaging_switch')           # settle = artiq_side + opx_side = 1.35 us, both guarded switches
+        align()                                               # A3: body starts on every element together
+
+        <sequence body>                                       # e.g. play('pass','raman_switch',duration=d[shot]); play('block','raman_switch')
+
+        align()                                               # A4: trigger follows the body's last statement
+        play('trigger', 'artiq_handback')                     # 200 ns rising edge -> ttl41
+        wait(3750, 'raman_switch', 'imaging_switch')          # overlap = 15 us; ARTIQ takes RF back at 7.5 us
+        play('pass', 'raman_switch'); play('pass', 'imaging_switch')     # blocks released
+        [align(); update_frequency(... run transition ...)]   # A5, only if the body moved a drive
+
+    # ---- epilogue, once per run ----
+    ramp_to_zero('raman_80'); ramp_to_zero('raman_150')       # 100 ns ramp
+    align()
+
+    with stream_processing():
+        <stream>.buffer(n).save_all(key)                      # per key; 2-D (n1, n2): .buffer(n2).buffer(n1)
+        echo.save_all('opx_shot_index')                       # one int per shot
+\end{lstlisting}
+
+Before the rebuild the framing had two more global aligns (one between the
+block plays and the settle wait, one inside every \code{wait\_s}), waited the
+settle on the sync element only, and read the settle from a parameter that no
+longer exists (\code{t\_opx\_handoff\_settle}; section~\ref{sec:handoff}).
+\code{settle\_cc = s\_to\_cc(1.35e-6) = 338}: $1350/4 = 337.5$ rounds to 338,
+i.e.\ 1352\nsu, a 0.15\,\% rounding, below the 1\,\% warning threshold.
+
+\subsubsection{Why each align exists}
+
+\code{align()} with no arguments makes every element used in the program wait
+for all the others to finish their current statement. A deterministic align
+(no QUA-variable dependence upstream) compiles to a plain wait with no gap; one
+that follows a trigger, a variable-duration play or a branch costs ``a few
+cycles'' of hardware synchronisation (QM publishes no number).
+
+\begin{table}[htbp]
+\centering
+\small
+\begin{tabular}{@{}lll@{}}
+\toprule
+align & needed? & why \\
+\midrule
+A1 after \code{wait\_for\_trigger} & yes & only \code{raman\_switch} waited; \code{imaging\_switch}, the drives and \code{apd} must not run ahead \\
+(old A2 after the block plays) & no, removed & both switches were aligned by A1; the settle wait is now issued on both switches \\
+A3 after the settle wait & yes & brings \code{apd}, \code{raman\_80/150} to the body start; a body \code{set\_transition} relies on it \\
+inside \code{measure} & element-scoped & \code{align(switch, apd)} so the ADC window starts with the exposure \\
+A4 before the hand-back & yes & the trigger must follow the body's last play/measure on every element \\
+A5 after the release & only if a drive was re-pointed & a following \code{update\_frequency} runs at the drive element's own cursor, which otherwise sits at the last align \\
+\bottomrule
+\end{tabular}
+\caption{Aligns in the per-shot framing. A body may add its own:
+\code{ctx.align(*names)}; \code{ctx.wait\_s} (one global align, then a
+\code{wait} on every element the map names); \code{ctx.measure} (one
+element-scoped align of switch and detector); \code{phase\_reset=True} (one
+align of the two drives with the switch, where the resets land).}
+\label{tab:aligns}
+\end{table}
+
+\subsection{The element / core model}
+
+Each QUA \emph{element} is a named logical channel bound to ports and running
+on its own core; statements on different elements execute in parallel and are
+ordered only by aligns, waits on named elements, and the implicit aligns at
+loop/branch entry. Our program uses seven elements (well inside the 18-core
+limit):
+
+\begin{table}[htbp]
+\centering
+\small
+\begin{tabular}{@{}llll@{}}
+\toprule
+element & ports & sticky & ops \\
+\midrule
+\code{raman\_80} & analog out 1 & analog, 100\nsu\ ramp & \code{cw} (1000\nsu\ latch, constant waveform = dds default 0.337\,V) \\
+\code{raman\_150} & analog out 2 & analog, 100\nsu\ ramp & \code{cw} (0.324\,V) \\
+\code{raman\_switch} & digital 1 & analog+digital, 16\nsu & \code{block} $[(1,0)]$, \code{pass} $[(0,0)]$, both 16\nsu\ long \\
+\code{imaging\_switch} & digital 2 & analog+digital, 16\nsu & \code{block}, \code{pass} \\
+\code{artiq\_handback} & digital 3 & none & \code{trigger} $[(1,0)]$, 200\nsu \\
+\code{apd} & analog in 1, marker digital 4 & none & \code{acquire}: measurement pulse of \code{t\_imaging\_pulse\_apd\_abs}, \code{time\_of\_flight} 200\nsu, weights \code{integration\_window} (\code{t\_opx\_integration\_start/len}) and \code{full\_pulse} \\
+\bottomrule
+\end{tabular}
+\caption{Elements of the K-machine OPX config.
+\file{k-exp/kexp/control/opx/opx\_config.py}, \code{build\_machine}: a
+\code{components.Machine} whose \code{generate\_config()} emits this
+\code{elements} block; the pulse, waveform, marker and weight entries behind
+it are named \code{<element>.<label>.pulse|wf|dm} and
+\code{<element>.<label>.<weight>.iw} (the golden test compares the
+\code{elements} block with the previous hand-written config). Amplitudes from
+\file{kexp/config/dds\_id.py} lines 84--86 and 110--112.}
+\label{tab:elements}
+\end{table}
+
+The sync element is \code{raman\_switch}: it alone executes
+\code{wait\_for\_trigger}; A1 brings the rest to it. The sticky drives
+\code{raman\_80/150} and \code{apd} are only ever moved by aligns and by
+their own few statements (latch, \code{update\_frequency},
+\code{reset\_if\_phase}, \code{measure}), so their element clocks sit at the
+last align -- the reason A5 exists.
+
+\subsection{Units: SI in, clock cycles / integer Hz out}
+\label{sec:program:units}
+
+Everything a sequence writes is SI. Conversion is host-side, per shot, in
+\file{units.py}:\footnote{\file{k-exp/kexp/control/opx/units.py}.}
+
+\begin{itemize}[nosep]
+  \item \code{s\_to\_cc(t)}: seconds $\to$ integer clock cycles,
+    \code{np.rint(ns / 4)}. Prints an unconditional warning when the 4\nsu\
+    grid moves any value by more than 1\,\% (\code{GRID\_WARN\_REL}) of what
+    was requested; \textbf{raises} when a nonzero duration rounds below the
+    16\nsu\ minimum (\code{MIN\_PULSE\_CC = 4}) -- silently stretching a
+    pulse would misreport what the machine did. A zero is allowed (the
+    macros then play nothing or guard with \code{if\_}).
+  \item \code{s\_to\_ns(t)}: for config pulse lengths (integer ns).
+  \item \code{hz\_to\_int(f)}: integer Hz for \code{update\_frequency} and
+    config IFs (1\,Hz resolution; the AD9910 FTW quantum is 0.23\,Hz).
+  \item \code{ctx.f(x)}: a plain float that must fit QUA fixed $[-8, 8)$.
+\end{itemize}
+
+The context then range-checks: \code{\_check\_finite} (NaN/inf name the
+offending shots), \code{\_check\_int32} ($|v| < 2^{31}$: ``durations of 8.6\,s
+or more, frequencies of 2.1\,GHz or more. A seconds-vs-microseconds slip?''),
+\code{\_check\_fixed}. Note the difference from the customer scripts, which
+\emph{floor} to the grid (\code{//4}) and add a 4\nsu\ ramp to every exposure;
+the builder's \code{pass} play has no such offset.
+
+\subsection{Config-time versus shot-time parameters, and the guard}
+\label{sec:program:config}
+
+Some numbers are compiled into the QUA \emph{config} once per run and cannot
+change per shot: the Raman drive IFs and amplitudes, the APD acquire pulse
+length, the integration weights, and the two handshake windows. Everything
+else -- pulse durations, detunings, phases -- is shot-time and scans freely.
+
+\paragraph{The Raman IFs have a shot-time route built in.} The config IFs are
+computed at the \emph{first executed shot's} \code{frequency\_raman\_transition}
+(\code{raman\_config\_transition}, which reads \code{tables.column(key)[0]}) by
+\code{expt.raman.ao\_frequencies}, the same \code{state\_splitting\_to\_ao\_frequency}
+split \code{RamanBeamPair.set} runs in the kernel. For the default transition
+$\Delta = 119.4639$\,MHz: $f_{150} = 143.303446$\,MHz, $f_{80} =
+83.571496$\,MHz, with $2(f_{150} - f_{80}) = \Delta$ (double pass). When the
+transition varies per shot the builder re-points both drives at the top of
+every shot (\code{update\_frequency} with \code{ifs[shot]}); a body that moves
+a drive (\code{ctx.set\_transition} for a Ramsey detuning) is restored after
+the hand-back.\footnote{\file{opx\_config.py}, \code{raman\_transition\_to\_ifs},
+\code{raman\_config\_transition}; \file{wax/waxx-src/waxx/control/raman\_beams.py},
+\code{ao\_frequencies}.}
+
+\paragraph{The others are refused as xvars and as adjust keys (D2).} At the
+moment \code{build\_machine} reads them, a scanned key holds
+\code{values[0]} from \code{plug\_in\_xvars} -- the smallest declared value --
+so the acquire window would be baked at that value while ARTIQ scans it.
+\file{opx\_config.py} defines\footnote{\file{opx\_config.py},
+\code{CONFIG\_TIME\_PARAMS} and \code{config\_time\_params(expt, tables)};
+carried on \code{ChannelMap.config\_time\_params};
+\code{check\_config\_time\_xvars} in \file{manager.py}.}
+\begin{lstlisting}[style=py]
+CONFIG_TIME_PARAMS = ('t_imaging_pulse_apd_abs', 't_opx_integration_start',
+                      't_opx_integration_len', 't_opx_handoff_artiq_side',
+                      't_opx_handoff_opx_side', 't_opx_handback_overlap')
+\end{lstlisting}
+(\code{frequency\_raman\_transition} is deliberately \emph{not} in the list:
+it is compiled at the first executed shot's value but re-pointed per shot,
+and it is still recorded as accessed so it cannot be live-adjusted). Three
+checks enforce the list: \code{check\_config\_time\_xvars} refuses any of them
+in \code{expt.xvarnames}, at \code{use()} (before a run id exists) and again
+at \code{on\_finish\_prepare}; \code{config\_time\_params(expt, tables)},
+called from \code{build\_machine}, adds every key to \code{tables.accessed}
+(so \code{check\_live\_adjust\_conflicts} covers them) and raises if a key's
+column varies per shot -- which also catches a config-time parameter
+\emph{derived} from a scanned one; and the manager adds the keys to
+\code{accessed} itself. Scanning the acquire length therefore needs a
+shot-time route (\code{ctx.measure(t\_expose=...)} for the exposure; the ADC
+window itself is fixed per run).
+
+\paragraph{Amplitudes.} The OPX drives the AOs at the dds-frame defaults used
+directly as waveform sample volts (0.337\,V / 0.324\,V, guarded against the
+0.499\,V full scale), whereas the ARTIQ path programs
+$\sqrt{\code{fraction\_power\_raman}}\times$default $= 0.548\times$default. The
+Rabi rate, hence \code{t\_raman\_pi\_pulse} and every $\Omega$-scaled quantity
+in section~\ref{sec:feedback}, depends on this and must be re-measured on the
+OPX drive (M2).
+
+\subsection{The op log and the pulse viewer}
+
+Every statement the context or builder emits is also appended to an
+\code{OpLog} as an \code{OpRecord}: kind, element, op, phase (prologue /
+handshake / body / epilogue), the macro that produced it, the parameter
+expression and its per-shot values, the requested duration per shot, the
+shots on which it executes (a per-shot \code{if\_} guard), and the source line
+chain in the sequence file.\footnote{\file{k-exp/kexp/control/opx/trace\_log.py}.}
+Nothing here changes the program; the pulse viewer (\code{waxx.util.seqview}
+via \code{kexp.control.opx.viewer}) matches the log against the simulator's
+waveform report so every simulated pulse points back at the Python line and
+the generated QUA line that made it. This is a provenance feature QUAM does
+not have (section~\ref{sec:quam}).

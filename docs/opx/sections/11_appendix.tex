@@ -1,0 +1,183 @@
+\appendix
+
+\section{Glossary}
+\label{sec:glossary}
+
+\begin{description}[nosep, font=\normalfont\ttfamily]
+  \item[align] QUA statement: the named elements (all, if none) wait for each
+    other's current statement to finish. Deterministic aligns compile to
+    waits; non-deterministic ones add a few cycles.
+  \item[cc] clock cycle, 4\nsu\ on the OPX+. Minimum play/wait 4\,cc = 16\nsu.
+  \item[claims] the roles (\code{'raman'}, \code{'imaging'}) a sequence
+    declares it uses; ops on unclaimed roles are trace-time errors.
+  \item[config-time parameter] compiled into the QUA config once per run;
+    refused as an xvar or adjust key (\code{CONFIG\_TIME\_PARAMS}).
+  \item[co-rotating frame] the feedback port's storage of each hypothesis's
+    Bloch vector in the frame of its next pulse's axis, $R_z(-\phi_{j,i})\,s$;
+    the frame change and the $z$-rotations merge into one phasor.
+  \item[ctx] the \code{OPXShotContext} a sequence receives; every method is
+    trace-time and emits QUA.
+  \item[drive index] the grid point $d$ the feedback loop drives; its two
+    integer IFs come from a host table, so the applied frequency is exact
+    (\code{drive\_index}, \code{if\_table\_hz}).
+  \item[element] a QUA logical channel on its own core; ours:
+    \code{raman\_80}, \code{raman\_150}, \code{raman\_switch},
+    \code{imaging\_switch}, \code{artiq\_handback}, \code{apd}.
+  \item[fixed] QUA 4.28 fixed point, $[-8, 8)$, wraps modulo 16.
+  \item[handoff / hand-back] ARTIQ $\to$ OPX trigger (ttl32) with RF on after
+    350\nsu; OPX $\to$ ARTIQ edge (ttl41) with RF off after 7.5\us\ and blocks
+    released after 15\us.
+  \item[host\_data] a container filled from host-side values recorded at
+    trace time, never from the OPX.
+  \item[mu] ARTIQ machine unit, 1\nsu\ here; \code{seconds\_to\_mu} floors.
+  \item[opx\_data\_valid] int32 mask: 1 where the OPX streamed a complete
+    buffer for that shot.
+  \item[ParamRef] a per-shot column handed out by \code{ctx.p}; never one
+    number.
+  \item[pass / block] the two level-set ops on a switch element: low = ARTIQ
+    RF passes, high = blocked.
+  \item[QUAM] Quantum Abstract Machine, QM's component layer over QUA; not a
+    dependency.
+  \item[remesh (pole return)] planned: a corrective pulse to the pole, a
+    reset of every hypothesis and a finer grid (section~\ref{sec:feedback:remesh}).
+  \item[reset model] the feedback port's phase model: \code{reset\_if\_phase}
+    on both drives before every pulse; hypothesis phase $-\omega_j t_i$, so
+    the pulse starts must be exact to the cycle (0.478 turns per cycle).
+  \item[role] a lab beam channel name the generic builder speaks in; the
+    channel map binds it to elements.
+  \item[sequence] the OPX body of one shot, \code{@opx\_sequence}, traced
+    once.
+  \item[shot array] a per-shot vector shipped as one flat QUA array indexed
+    \code{shot*M + i}.
+  \item[shot tables] \code{ShotTables}: every scalar param per shot, in
+    execution order, from one sweep of \code{compute\_derived}.
+  \item[sticky] an element that holds its last analog sample / digital level
+    between pulses; analog plays add.
+  \item[sync element] \code{raman\_switch}: the one that executes
+    \code{wait\_for\_trigger}.
+  \item[trace time] when the sequence function runs on the host, once, to
+    emit the program.
+  \item[xvardims] \code{[len(values) per xvar]}, repeats included; the leading
+    axes of every container.
+\end{description}
+
+\section{Hardware milestones M1--M4}
+\label{sec:milestones}
+
+All open on 2026-09-25. From the wiki page
+\emph{OPX integration -- Quantum Machines OPX+}, the phase-1 audits, and (M4)
+the remesh plan.
+
+\paragraph{M1 -- the handshake on a scope, no atoms.}
+\begin{enumerate}[nosep]
+  \item Trigger (ttl32) $\to$ OPX digital 1/2 edge; digital edge $\to$ RF
+    envelope at the switch AOM actually blocked (MOSFET + RF switch
+    turn-off). Compare with the 350\nsu\ assumption; both beams leak if it is
+    longer. If longer, raise \code{t\_opx\_handoff\_artiq\_side} to the
+    measured value.
+  \item ARTIQ \code{sw} event $\to$ RF envelope on at the AOM (rise of the
+    chain); confirm \code{t\_opx\_handoff\_opx\_side} = 1\us\ covers it.
+  \item Hand-back edge $\to$ ARTIQ RF off: read the VERBOSE slack print in
+    \code{wait\_for\_quantum\_machines\_handback} for the first shots; scope
+    $T_e$ $\to$ RF envelope. Then set the overlap to $t_{\rm cpu,max} + 1\us +
+    1\us$ (expected $\sim$8.5--10\us\ total).
+  \item Run once with no OPX job: every shot ends in \code{TriggerTimeout},
+    never a false edge on ttl41.
+  \item Halt a job mid-block and look at digital 1/2: do they return low?
+  \item Does \code{open\_qm} accept the port-less sticky digital elements?
+    If not, add the dummy analog port.
+  \item Does the sticky analog hold keep the IF tone oscillating? (Expected
+    yes.)
+  \item Does the imaging intensity servo wind up while its switch is
+    blocked?
+  \item Does \code{reset\_if\_phase} on the sticky drives disturb the servo?
+\end{enumerate}
+
+\paragraph{M2 -- the OPX Rabi flop.} \code{qm\_rabi\_frequency\_opx.py} /
+\code{check\_rabi\_frequency\_apd\_opx.py} against the ARTIQ-native and
+manual-OPX flops at the same settings. Resolve the amplitude gap (OPX drives
+at the bare dds defaults 0.337/0.324\,V versus ARTIQ's $\sqrt{0.3}\times$
+default) and re-measure \code{t\_raman\_pi\_pulse} for the OPX drive. Measure
+the OPX switch-path turn-on latency (replaces 127\nsu).
+
+\paragraph{Timing of the feedback cycle (simulator done, hardware owed).}
+With the pass-3b structure the QOP simulator gave a constant per-pulse sync
+overhead of 82 cycles (328\nsu, \code{t\_opx\_feedback\_align\_overhead}; 86
+cycles with discrete durations, \code{\_levels}) and 1938\,cc = 7.75\us\ of
+compute for $m = 21$ against the 10\us\ budget, with zero slip on every
+simulated pulse. The flat-rule structure is untimed. On hardware the finish
+hook recomputes the schedule from the saved durations and compares it with
+\code{t\_pulse\_start\_cc} every shot (the \code{[opx feedback] slip} line, and
+\code{***} when a pulse is off by more than half a cycle). Run the open-loop
+sweep first and require zero slip before trusting a closed-loop run.
+
+\paragraph{M3 -- the APD readout in OPX units.} Calibrate \code{demod2volts}
+(factor 2 convention), \code{time\_of\_flight} and the \emph{sign} (on the
+simulator a $+0.16$\,V DC input integrated to raw $-0.195$) against the ARTIQ
+sampler path; re-take the $S_z$ endpoints \code{v\_apd\_all\_up/down\_opx} and
+the width \code{std\_photon\_fraction\_opx} through an OPX \code{measure};
+\code{t\_opx\_integration\_start/len} are placeholders. Then refit the light
+shift and coherence pair jointly. Only then run \code{feedback\_opx.py}.
+
+\paragraph{M4 -- the Ramsey phase scan (prerequisite for the remesh only).}
+A $\pi/2$ -- wait -- $\pi/2$ sequence on the OPX with a
+\code{frame\_rotation\_2pi} applied to the Raman drive(s) before the second
+pulse, scanned over the rotation. It fixes which drive's frame to rotate, the
+factor 2 of the double pass, and the sign that maps a frame rotation onto the
+model's azimuth -- the mapping the pole-return pulse of
+section~\ref{sec:feedback:remesh} needs for its axis $\psi^*$. Pair it with the
+offline unit test that the model's own rotation takes a sharp posterior's
+state to the pole. Not needed for the argmax loop as it stands.
+
+\section{File map}
+\label{sec:filemap}
+
+\begin{center}\small
+\begin{tabular}{@{}lp{9.4cm}@{}}
+\toprule
+file & role \\
+\midrule
+\multicolumn{2}{@{}l}{\emph{framework (generic; no kexp / qm imports at module level)}} \\
+\file{k-exp/kexp/control/opx/manager.py} & \code{OPXManager}: \code{use}, \code{on\_finish\_prepare}, \code{finish}, \code{fill\_containers}, \code{check\_live\_adjust\_conflicts} \\
+\file{.../builder.py} & \code{OPXProgramBuilder.trace}: the shot loop and handshake framing; \code{\_validate} \\
+\file{.../context.py} & \code{OPXShotContext}: the \code{ctx} macros, \code{\_resolve} \\
+\file{.../params\_bridge.py} & \code{ShotTables}, \code{ParamRef}, \code{ParamsProxy}, \code{build\_shot\_tables}, \code{derived\_dependents} \\
+\file{.../sequence.py} & \code{OPXSequence}, \code{@opx\_sequence}, registry \\
+\file{.../channels.py} & \code{ChannelSpec}, \code{ChannelMap} (roles $\to$ elements, handshake windows) \\
+\file{.../components.py} & \code{Sticky}, \code{Element}, \code{DigitalLine}, \code{AnalogDrive}, \code{IntegratedInput}, \code{Machine} (QUAM-shaped; generates the config, serialises for provenance) \\
+\file{.../units.py} & \code{s\_to\_cc}, \code{s\_to\_ns}, \code{hz\_to\_int}, \code{demod2volts}, limits \\
+\file{.../trace\_log.py} & \code{OpLog}, \code{OpRecord}: provenance for the viewer \\
+\file{.../viewer.py}, \file{.../bench.py} & pulse viewer bundle; \code{OPXBench} for notebooks \\
+\multicolumn{2}{@{}l}{\emph{lab wiring}} \\
+\file{.../opx\_config.py} & ports, truth table, \code{kexp\_channel\_map}, \code{build\_machine}/\code{build\_opx\_config}, \code{CONFIG\_TIME\_PARAMS}, \code{make\_opx\_manager} \\
+\file{k-exp/kexp/base/control.py} & \code{prep\_raman}, \code{handoff\_to\_quantum\_machines}, \code{wait\_for\_quantum\_machines\_handback} \\
+\file{k-exp/kexp/base/base.py} & \code{self.opx} construction; \code{finish\_prepare}; \code{cleanup\_scan\_kernel}; \code{end} \\
+\file{k-exp/kexp/config/expt\_params.py} & the \code{t\_opx\_*} block (lines 431--469) \\
+\file{k-exp/kexp/config/ttl\_id.py} & ttl32 / ttl41 / ttl33 (lines 64--66) \\
+\file{k-exp/kexp/config/ip.py} & \code{QM\_OPX\_IP}, \code{QM\_OPX\_CLUSTER} \\
+\multicolumn{2}{@{}l}{\emph{scan / data plumbing (waxx / waxa)}} \\
+\file{wax/waxx-src/waxx/base/scanner.py} & \code{scan}, \code{update\_params\_from\_xvars}, \code{write\_host\_params\_to\_kernel}, \code{step\_scan}, \code{init\_xvars} \\
+\file{wax/waxa-src/waxa/base/dealer.py} & \code{plug\_in\_xvars}, \code{repeat\_xvars}, \code{shuffle\_xvars}, unshuffle \\
+\file{wax/waxx-src/waxx/config/data\_vault.py} & containers, \code{set\_container\_size}, \code{put\_shot\_data} \\
+\file{wax/waxx-src/waxx/base/expt.py} & \code{finish\_prepare\_wax}, \code{\_notify\_shot\_complete}, \code{end\_wax}, the END payload \\
+\file{wax/waxa-src/waxa/data/data\_saver.py} & liveOD side: INIT/END writes, unshuffle, extra-file attrs \\
+\file{wax/waxx-src/waxx/control/artiq/TTL.py} & \code{arm}, \code{wait\_for\_edge}, \code{clear\_input\_events} \\
+\multicolumn{2}{@{}l}{\emph{sequences and experiments}} \\
+\file{k-exp/kexp/experiments/opx\_sequences/rabi.py} & \code{rabi\_raman\_pulse}, \code{rabi\_raman\_apd} \\
+\file{.../opx\_sequences/feedback.py} & \code{bayesian\_feedback}, \code{bayesian\_feedback\_open\_loop} (\code{make\_feedback\_sequence}, \code{feedback\_constants}/\code{FeedbackConstants}, \code{build\_feedback\_shot\_tables}, \code{\_feedback\_body}, \code{feedback\_finish}); the table helpers \code{axis\_tables}, \code{level\_matrix\_tables}, \code{level\_seed\_tables}, \code{corotating\_phase\_tables}, \code{extend\_schedule\_cc}, \code{if\_tables\_hz}, \code{applied\_frequency\_hz}, \code{sincos\_lut\_table}/\code{\_emulation}, \code{exp\_lut\_table}/\code{\_emulation}, \code{feedback\_step\_gaps\_cc}, \code{scheduled\_pulse\_starts\_s}; the module docstring holds the statement list, the numerics and the simulator tables \\
+\file{k-exp/kexp/experiments/qm/check\_rabi\_frequency\_apd\_opx.py} & the reference OPX experiment (\code{scan\_kernel} structure) \\
+\file{.../HF\_experiments/feedback/expt\_params\_feedback\_opx.py} & the OPX feedback params (calibration placeholders, budget, the two overheads, log-weight scale, flat-rule flag, table bits, duration levels, forced flags) \\
+\file{.../HF\_experiments/feedback/feedback\_opx.py}, \file{feedback\_opx\_deterministic.py} & the port's experiments (closed loop; open-loop grid sweep) \\
+\file{k-exp/kexp/base/feedback.py} & the ARTIQ posterior (\code{generate\_posterior}, lines 147--368; \code{re\_initalize\_spin\_vector}, \code{remesh\_to\_centered}, \code{maybe\_remesh}, lines 470--777) and the additive host helpers for the port \code{feedback\_grid\_omega}, \code{hypothesis\_phase\_tables}, \code{schedule\_pulse\_starts}, \code{t\_raman\_pulse\_level\_set}, \code{draw\_t\_raman\_pulse\_list\_levels} (lines 1401--1556) \\
+\file{k-exp/kexp/analysis/feedback\_opx.py} & \code{FeedbackOPXReplay}, \code{FeedbackOPXReplayResult}, \code{FixedPointState}, \code{posterior\_update\_fixed\_point\_emulation}, \code{run\_shot\_fixed\_point\_emulation}, \code{true\_bloch\_step}, \code{ARGMAX\_AGREEMENT\_EXPECTED} \\
+\multicolumn{2}{@{}l}{\emph{tests (126 offline items in total)}} \\
+\file{k-exp/tests/test\_opx.py} (39), \file{test\_opx\_ctx.py} (24), \file{test\_opx\_config.py} (19), \file{test\_opx\_viewer.py} (8), \file{opx\_sim\_fixture.py} (8), \file{test\_feedback\_opx.py} (28) & framework, context additions, config/components/handshake map, viewer, the offline simulator fixture, the feedback port \\
+\multicolumn{2}{@{}l}{\emph{reports and references}} \\
+\file{k-exp/docs/opx/feedback\_port\_report.md} & the feedback port in short form: phase model, exact frequency, numerics, speed, data, placeholders \\
+\file{k-exp/docs/opx/remesh\_plan.md} & the remesh-with-pole-return design (section~\ref{sec:feedback:remesh}); not implemented \\
+\file{k-exp/docs/opx/opx\_assessment\_2026-09-24.md} & QUAM assessment, handoff timing as coded, waste/risk findings \\
+\file{k-exp.wiki/OPX-integration---Quantum-Machines-OPX+.md} & the wiki page (timeline, milestones) \\
+\file{customer-weld-ucsb/} & QM's scripts for this lab (\code{configuration.py}, \code{00d/00e/00f/00g}, \code{05\_bayesian\_feedback.py}) -- superseded, kept for comparison \\
+\bottomrule
+\end{tabular}
+\end{center}

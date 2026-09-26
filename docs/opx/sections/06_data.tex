@@ -1,0 +1,206 @@
+\section{Data containers}
+\label{sec:data}
+
+OPX results reach the run file through the same \code{DataVault} containers
+every kexp experiment uses, so \code{atomdata} sees them as ordinary
+\code{ad.data.<key>} arrays, unshuffled with everything else. This section
+follows one value from \code{qua.save} to \code{ad.data.apd\_qm}.
+
+\subsection{DataVault shapes}
+\label{sec:data:shapes}
+
+\code{add\_data\_container(per\_shot\_shape, dtype)} dispatches to one of six
+concrete classes by (ndim $\in \{1, 2\}$) $\times$ (float64, int32,
+int64).\footnote{\file{wax/waxx-src/waxx/config/data\_vault.py},
+\code{add\_data\_container} and the \code{\_registry} dict.} At
+\code{data.init()} (inside \code{finish\_prepare\_wax}) every container's
+\code{\_run\_data} is patterned to \code{(*xvardims, *per\_shot\_shape)} and
+\emph{trailing} size-1 per-shot axes are dropped:
+
+\begin{center}\small
+\begin{tabular}{@{}lll@{}}
+\toprule
+declared per-shot shape & \code{xvardims} & \code{\_run\_data.shape} \\
+\midrule
+\code{(1,)} & \code{[20]} & \code{(20,)} \\
+\code{(4,)} & \code{[20]} & \code{(20, 4)} \\
+\code{(N, m)} & \code{[10, 5]} & \code{(10, 5, N, m)} \\
+\code{(1,)}, 3 repeats of 10 values & \code{[30]} & \code{(30,)} -- repeats fold into the axis \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+A kernel-written container is filled per shot by \code{put\_shot\_data}: the
+cell index is the tuple of \emph{host} xvar counters, i.e.\ the execution-order
+\code{ndindex} tuple (\code{\_put\_shot\_data\_to\_run\_data}). The OPX
+containers are never touched on the kernel; they stay zero with
+\code{\_data\_gotten = False} until \code{end()}.
+
+\subsection{Streams $\to$ buffers $\to$ \code{fill\_containers} $\to$ unshuffle}
+\label{sec:data:fill}
+
+On the OPX side every \code{measurements} key is one output stream. The
+context declares it on first use, and \code{ctx.measure(key)} / \code{ctx.save(key,
+expr)} emit \code{qua.save(var, stream)} once per value.\footnote{\file{context.py},
+\code{\_get\_stream}, \code{measure}.} In \code{stream\_processing} the builder
+groups the saves per shot:
+
+\begin{lstlisting}[style=qua]
+stream.buffer(n).save_all(key)               # per-shot shape (n,)   -> fetched as (N_shots, n)
+stream.buffer(n2).buffer(n1).save_all(key)   # per-shot shape (n1, n2) -> (N_shots, n1, n2): saves come row-major
+\end{lstlisting}
+
+\code{save\_all} keeps the history; \code{fetch\_all()} returns a structured
+array whose \code{['value']} field is stripped. Then
+\code{OPXManager.fill\_containers} (a static, side-effect-free function, so it
+is tested without a job):\footnote{\file{manager.py}, \code{fill\_containers}.}
+
+\begin{lstlisting}[style=py]
+n_valid = min(counts[k] for k in seq.measurements)          # smallest stream count
+for key, shape in seq.measurements.items():
+    target = np.full((n_shots, *shape), np.nan)              # NaN = the OPX never ran this shot
+    vals = fetched[key].reshape(-1, *shape)
+    if key produced by ctx.measure:  vals = demod2volts(vals, t_integration_s)   # volts; else raw
+    target[:n] = vals[:n]
+    dc._run_data = target.reshape(dc._run_data.shape)         # execution order -> (*xvardims, *shape), C order
+    dc._data_gotten = True
+mask[:n_valid] = 1                                           # opx_data_valid
+\end{lstlisting}
+
+A C-order reshape of \code{(n\_shots, ...)} into \code{(*xvardims, ...)} puts
+flat index $k$ at \code{np.unravel\_index(k, xvardims)}, which is the
+\code{ndindex} tuple, which is the counter tuple the kernel path would have
+used. So at \code{end\_wax} an OPX container is indistinguishable from a
+kernel-written one, and the single server-side unshuffle
+(\code{Dealer.\_unshuffle\_ndarray} along every leading axis whose length is
+in \code{sort\_N}) is correct for both -- the offline check of
+section~\ref{sec:xvars:check} verified this cell for cell.
+
+\paragraph{Volts conversion.} \code{demod2volts(raw, t) = 4096 $\cdot$ raw /
+t\_ns}, the same as \code{qualang\_tools.units.unit.demod2volts} without
+\code{single\_demod}. QM's own scripts for this lab used
+\code{single\_demod=True} (a factor 2) on the same \code{integration.full}
+measurement; which is right for a bare integration with unit weights has not
+been checked against the ARTIQ sampler -- M3. Only streams produced by
+\code{ctx.measure} are converted (via the context's \code{\_stream\_roles});
+everything saved with \code{ctx.save} is stored raw.
+
+\subsection{\code{opx\_data\_valid} and the shot-index echo}
+\label{sec:data:echo}
+
+\code{ad.data.opx\_data\_valid} (int32, one per shot) means ``the OPX streamed
+a complete buffer for every declared key on this shot''. Shots the OPX never
+ran are NaN in the value containers and 0 here. It does \emph{not} mean the
+ARTIQ half of that shot completed: an ARTIQ shot that underflows after the
+hand-back still has a valid OPX buffer (the OPX shot ends before its ARTIQ
+shot does), and \code{\_shot\_complete\_count} is incremented in
+\code{cleanup\_scan\_kernel}, after the shot.
+
+The \textbf{shot-index echo}: right after \code{wait\_for\_trigger} the
+builder saves the QUA \code{shot} counter into a dedicated stream,
+\code{opx\_shot\_index} (\code{save\_all}, one int per shot, no buffer);
+\code{fill\_containers} checks the fetched echo equals \code{arange(n)},
+prints a loud \code{***} line naming the first mismatching shot and cuts the
+valid mask there (values are kept as fetched).\footnote{\file{builder.py},
+\code{SHOT\_INDEX\_KEY}; \file{manager.py}, \code{fill\_containers}.} This is
+the only detector for a desynchronised counter
+(section~\ref{sec:xvars:check}); before the rebuild there was none.
+
+\subsection{2-D, int and host-filled containers; timestamps}
+\label{sec:data:kinds}
+
+A sequence declares its data in four kinds:\footnote{\file{sequence.py},
+\code{Stream}, \code{resolve\_stream}, \code{OPXSequence}.}
+
+\begin{center}\small
+\begin{tabular}{@{}llll@{}}
+\toprule
+declaration & container dtype & filled from & volts? \\
+\midrule
+\code{measurements=\{key: N\}} & float64 (missing: NaN) & stream, \code{buffer(N)} & only if from \code{ctx.measure} \\
+\code{measurements=\{key: (N, m)\}} & float64 & stream, \code{buffer(m).buffer(N)} & only if from \code{ctx.measure} \\
+\code{measurements=\{key: Stream(N, int)\}} & int64 (missing: $-1$) & stream (a QUA int, or a timestamp stream) & no \\
+\code{host\_data=\{key: shape\}} & float64 (\code{Stream(..., int)}: int64) & \code{ctx.host\_data(key, values)} at trace time, written at \code{finish()} & no \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+A callable value (\code{lambda p: p.N\_pulses}, or \code{lambda p:
+Stream(p.N\_pulses, int)}) is resolved at \code{use()} against the live
+params; shapes are 1-D or 2-D (DataVault containers are). Missing shots are
+NaN in float containers and \code{INT\_MISSING} $= -1$ in int containers;
+\code{opx\_data\_valid} is the authoritative flag. \textbf{Timestamps}: \code{play(...,
+timestamp\_stream=s)} and \code{measure(..., timestamp\_stream=s)} record the
+statement's start time in clock cycles from program start (QOP $\ge$ 2.2, int
+stream); in the context a \code{timestamp\_key} argument on
+\code{ctx.raman\_pulse}/\code{ctx.imaging\_pulse}/\code{ctx.measure} names the
+declared int key and counts as one save on it. They are what the feedback
+port uses to know the \emph{actual} pulse start times
+(section~\ref{sec:feedback:schedule}). A timestamped pulse that is skipped
+on some shots by its per-shot duration guard ($d < 16\nsu$) saves the
+placeholder \code{TIMESTAMP\_SKIPPED} $= -1$ in the \code{else\_} branch
+instead, so the stream keeps exactly one entry per declared save and the
+buffers stay aligned; a constant zero-length timestamped pulse is refused
+at trace time, and a \code{measure()} key cannot double as a timestamp key.
+
+\paragraph{Validation.} \code{\_validate} requires, per key, that the traced
+saves per shot equal \code{prod(shape)}; saves inside \code{ctx.for\_range(n)}
+count $n$ times; timestamp plays count as saves; and every declared
+\code{host\_data} key must have been written with \code{ctx.host\_data}. A
+mismatch is a trace-time \code{RuntimeError} naming both numbers.
+
+\subsection{What the run file holds, and how to read it back}
+\label{sec:data:file}
+
+Besides the containers under \code{data/}, the OPX adds three attributes
+through \code{expt.\_extra\_file\_texts}, which \code{end\_wax} ships in the
+\code{END\_RUN} payload and the liveOD \code{DataSaver} writes as one HDF5
+attribute per key:\footnote{\file{manager.py} (\code{QUA\_SOURCE\_ATTR});
+\file{wax/waxx-src/waxx/base/expt.py} \code{\_serialize\_end\_payload};
+\file{wax/waxa-src/waxa/data/data\_saver.py} \code{\_write\_end\_run\_outputs}.}
+
+\begin{center}\small
+\begin{tabular}{@{}lp{10.5cm}@{}}
+\toprule
+attribute & content \\
+\midrule
+\code{opx\_qua\_program} & \code{generate\_qua\_script(prog, config)}: the full QUA program text including every \code{declare(..., value=[...])} per-shot array (in cc / integer Hz / fixed, keyed by value) and the config dict (ports, IFs at the first executed shot's transition, amplitudes, acquire and integration windows). Generated \emph{before} \code{open\_qm}; the simulated (sliced) program is not saved. \\
+\code{opx\_machine} & JSON of the component tree (\code{Machine.to\_dict()}): every element as a dataclass dict plus \code{\_\_class\_\_}, the machine's \code{extra} dict (the transition and windows it was compiled from, the handshake windows, the guarded channels), the qm-qua version (from package metadata, no \code{qm} import) and a generation timestamp. \\
+\code{opx\_shot\_tables} & JSON: \code{sequence}, \code{n\_shots}, \code{xvardims}, \code{xvarnames}, the sorted \code{accessed} keys, \code{config\_time\_params}, \code{columns} (the SI value of every accessed key on every shot, execution order), \code{shot\_arrays} (shapes), the resolved \code{measurements} and \code{host\_data} specs, \code{qm\_version}, \code{host}, \code{cluster}, \code{simulate}, and \code{job\_id} once the job is executed (the text is written again then). \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+Reading it back:
+
+\begin{lstlisting}[style=py]
+import json, h5py, numpy as np
+from kexp import atomdata
+
+ad = atomdata(run_id, roi_id='auto')
+valid = ad.data.opx_data_valid.astype(bool)          # (*xvardims,)
+apd = ad.data.apd_qm                                  # (*xvardims, 4), volts, NaN where invalid
+
+with h5py.File(ad.run_info.filepath[0], 'r') as f:
+    qua_text = f.attrs['opx_qua_program']             # str: the exact program
+    machine = json.loads(f.attrs['opx_machine'])      # dict: elements, ports, sticky, IFs
+    tables = json.loads(f.attrs['opx_shot_tables'])   # dict: 'columns' -> {key: [SI per shot, execution order]}
+
+# the value each accessed parameter had on OPX shot k (execution order);
+# to place it on the unshuffled grid use data/sort_idx, data/sort_N as DataSaver does
+t_pulse_exec = np.asarray(tables['columns']['t_raman_pulse'])
+\end{lstlisting}
+
+\code{waxa} has no reader for these attributes yet; they are write-only
+provenance, by design small (accessed keys only).
+
+\paragraph{Two pre-existing footguns of the per-axis scheme, not OPX-specific
+but relevant.} (i) At \code{END\_RUN} the server unshuffles \emph{any}
+numeric array-valued param whose axis length equals one of \code{sort\_N}
+(\code{data\_saver.py} lines 730--744): an unrelated array stashed on
+\code{ExptParams} with a matching length is silently permuted. Do not stash
+per-shot tables on \code{ExptParams}; use \code{host\_data}. (ii) A container
+whose values are all exactly zero never sets \code{\_data\_gotten} and is
+never written, so ``not saved'' and ``all zeros'' are indistinguishable for
+kernel-written containers; the OPX path sets \code{\_data\_gotten = True}
+explicitly.

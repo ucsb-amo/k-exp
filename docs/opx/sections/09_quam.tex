@@ -1,0 +1,91 @@
+\section{Mapping to QUA and QUAM}
+\label{sec:quam}
+
+QUAM (Quantum Abstract Machine, \url{https://qua-platform.github.io/quam/})
+is QM's own abstraction layer over QUA: a tree of Python dataclasses rooted
+in a \code{QuamRoot}, each component contributing its slice of the QUA config
+through \code{apply\_to\_config(config)}, the root emitting the whole dict via
+\code{generate\_config()}; channels carry their pulses in an
+\code{operations} dict and expose thin wrappers \code{play/measure/wait/align/
+update\_frequency/reset\_if\_phase}; the whole tree serialises to JSON with
+\code{\_\_class\_\_} stamps. The phase-1 reader went through the QUAM source
+(v0.6.0 on \code{main}) and documentation; the comparison below is the
+result.\footnote{Phase-1 report \code{quam\_docs.md}; local copies of the
+QUAM sources it cites in \code{scratchpad/phase1/quam\_src/}.}
+
+\subsection{Side by side}
+
+\begin{table}[htbp]
+\centering
+\scriptsize
+\begin{tabular}{@{}p{3.6cm}p{3.8cm}p{7.2cm}@{}}
+\toprule
+ours (\file{kexp/control/opx/components.py}) & QUAM & remarks \\
+\midrule
+\code{Machine(con, controller\_type, elements, extra)} with \code{validate()}, \code{generate\_config()}, \code{to\_dict()} & \code{QuamRoot} with \code{generate\_config()}, \code{to\_dict()}/\code{save()} & same protocol: template + \code{apply\_to\_config} over elements in order. \code{validate()} checks duplicate names, two elements on one output port, and each element (amplitude $\le$ \code{MAX\_ANALOG\_V}, lengths on the 4\nsu\ grid and $\ge 16\nsu$, window fit). \code{to\_dict()} stamps \code{qm\_qua\_version} (from package metadata) and a timestamp; QUAM stamps \code{\_\_package\_versions\_\_}. No \code{load()}: ours is provenance, not a round trip. \\
+\code{Element(name, con, sticky, core)} with \code{op\_name}, \code{pulse\_name}, \code{waveform\_name}, \code{marker\_name}, \code{weight\_name}, \code{labels}, \code{operations()} & \code{Channel} with \code{name} derived from \code{id} or the tree path, \code{operations} dict, \code{pulse\_mapping} & we borrowed the naming rule \code{<element>.<label>.pulse|wf|dm} and \code{<element>.<label>.<weight>.iw} so a second acquire length or a second tone can never collide; names may not contain a dot so the rule stays reversible. Visible element and op names (\code{raman\_switch}, \code{block}/\code{pass}, ...) stay as before (D3). \\
+\code{DigitalLine(port, levels=\{'block': 1, 'pass': 0\}, edge\_ns=16)} & \code{Channel} + \code{DigitalOutputChannel} + \code{Pulse(digital\_marker=[(1, 0)])} & QUAM supports purely digital elements explicitly; the hand-back line is \code{levels=\{'trigger': 1\}, edge\_ns=200}. \\
+\code{Sticky(duration\_ns, analog=True, digital=True)} & \code{StickyChannelAddon(duration, analog, digital)} & one-to-one, including the \code{analog: True} the QOP demands on digital-only elements. \\
+\code{AnalogDrive(port, if\_hz, amplitude\_v, latch\_ns=1000, op='cw')} & \code{SingleChannel(opx\_output, intermediate\_frequency, operations=\{'cw': SquarePulse(...)\})} & QUAM's IF is a static number or a string reference; ours is set per run by the map and re-pointed per shot by the builder from a \code{ParamRef} column -- something references cannot express. \\
+\code{IntegratedInput(in\_port, marker\_port, acquire\_ns, window\_start/len\_ns, time\_of\_flight\_ns=200, gain\_db=0, acquire\_op, weight, full\_weight)} & \code{InSingleChannel} + \code{ReadoutPulse} & QUAM's \code{measure} always emits \code{demod.full} with \code{iw1/iw2}; ours emits \code{integration.full} with a cosine-only window (\code{integration\_window}) or the whole pulse (\code{full\_pulse}). A QUAM user would subclass and override. \\
+\code{ChannelSpec}/\code{ChannelMap} (roles $\to$ elements, handshake windows, \code{config\_time\_params}, \code{machine}) & no equivalent & kept as the adapter the builder/context use, so \code{ctx.raman\_pulse} etc.\ do not change; \code{\_check\_map\_against\_machine} verifies every element and op the map names exists on the machine (QUAM's \code{play(validate=True)}, done once at \code{use()}). \\
+\code{OPXShotContext} macros (\code{raman\_pulse}, \code{measure}, ...) & \code{QuamMacro} / \code{@register\_macro} methods on \code{QuantumComponent}, dispatched by an \code{OperationsRegistry} & the same idea: trace-time functions that emit QUA and may return QUA variables. QUAM's kwargs are per-call overrides, persistent values are dataclass fields; ours are \code{ParamRef} columns. \\
+\code{ParamRef}, \code{ShotTables}, \code{build\_shot\_tables} & no equivalent & QUAM has no concept of a scan; its values are single calibrated numbers on the tree. \\
+\code{OpLog} + pulse viewer & no equivalent & provenance from pulse to source line. \\
+\code{opx\_machine} JSON in the run file & \code{machine.save("state.json")} & same spirit; ours is per run, next to \code{opx\_qua\_program}. \\
+\bottomrule
+\end{tabular}
+\caption{Our component layer against QUAM's. The left column is
+\file{kexp/control/opx/components.py} as landed by the rebuild (the spec's
+\S2.3), used by \code{build\_machine} in \file{opx\_config.py} and exported
+from \code{kexp.control.opx} (\code{from kexp.control.opx import Machine,
+DigitalLine, AnalogDrive, IntegratedInput, Sticky}).}
+\label{tab:quam}
+\end{table}
+
+\subsection{What we borrowed}
+
+\begin{itemize}[nosep]
+  \item Elements as objects that generate their own config
+    (\code{apply\_to\_config}), instead of the element name appearing in the
+    role map \emph{and} the hand-written dict \emph{and} the op log.
+  \item The pulse/waveform/weight naming rule.
+  \item The sticky addon as a declared, checked property rather than a
+    comment.
+  \item A machine root with a JSON dump written into the run file as
+    provenance, with a version stamp.
+  \item \code{validate}-style trace-time checks that an op label exists on the
+    element (ours: the role is claimed; the components make the op names
+    data).
+\end{itemize}
+
+\subsection{What we kept that QUAM does not have}
+
+Per-shot parameter binding to the ARTIQ scan (\code{ParamRef} refusing to
+become one number, \code{ctx.const} as the explicit opt-in); the handshake
+framing owned by the builder so no sequence can get it wrong; SI units at the
+API with grid and range checks; trace-time validation of claims, save counts,
+``nothing after hand-back'', cross-run \code{ParamRef} mixing, NaN/inf, live
+Adjust conflicts; the op log; the DataVault path with NaN and the validity
+mask; and the lab-agnostic import hygiene -- none of
+\file{channels/context/builder/manager/params\_bridge/units/components} imports
+\code{kexp} or \code{qm} at module level, so \code{kexp} imports on machines
+without qm-qua.
+
+\subsection{Why \code{quam} is not a dependency (D3)}
+
+Facts bearing on it: QUAM 0.6.0 requires Python $\ge$3.10, $<$3.15 and
+qm-qua $\ge$1.2.3 (our venv: 3.13, qm-qua 1.4.1 -- compatible in principle),
+plus \code{typeguard} and \code{qualibrate-config}, neither installed, the
+latter pulling in a configuration ecosystem we would never use. QUAM imports
+\code{qm} at module import. Its \code{measure} does \code{demod.full}, not
+\code{integration.full}. Its references resolve on the host at trace time and
+cannot express ``this IF is a per-shot function of a scanned parameter'',
+which is our central feature. Its \code{Channel.wait/align} pass channel
+objects through \code{str()} (the dataclass repr, not the element name). And
+it is in active refactor (v0.5.0 deprecated channel-level port properties,
+v0.6.0 deprecated every shaped pulse to \code{quam-builder}). Of its value we
+would use perhaps a fifth. So: borrow the shapes into $\sim$300 lines of our
+own, and keep the door open by matching them, so that a later switch to real
+QUAM -- an Octave or an OPX1000 arriving -- or importing a QUAM-generated
+config is mechanical.

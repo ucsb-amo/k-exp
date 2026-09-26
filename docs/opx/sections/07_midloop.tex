@@ -1,0 +1,134 @@
+\section{Parameters in the loop, and what happens if they change}
+\label{sec:midloop}
+
+The user's question, verbatim: \emph{``how are warnings/errors implemented if
+parameters are changed mid-loop? Should we be reassigning to xvar list
+elements? Is this what we are doing?''}
+
+\subsection{The short answer}
+
+\textbf{No, and no.} Nothing in the tree reassigns to xvar list elements, and
+nothing should. On the ARTIQ side the scanned attribute \code{self.p.<key>} is
+a \emph{scalar} that the host \emph{reassigns} every shot from the (repeated,
+shuffled) value list -- \code{vars(self.params)[xvar.key] =
+xvar.values[xvar.counter]} -- and the kernel copy is refreshed by a generated
+writer whose source is \code{self.params.<key> = value}
+(section~\ref{sec:xvars:scanloop}). The list \code{xvar.values} is written
+exactly once, by \code{shuffle\_xvars} at \code{finish\_prepare}, and only
+\emph{read} thereafter; after the run \code{cleanup\_scanned} replaces the
+scalar with the whole execution-order list so \code{atomdata} sees arrays.
+On the OPX side nothing is reassigned at all: the whole column is baked into
+a QUA array at \code{finish\_prepare} and read as \code{arr[shot]}
+(section~\ref{sec:xvars:resolve}).
+
+So the two machines agree by construction because both derive every shot's
+value from the same frozen list in the same order -- not because anything
+checks it at run time. What \emph{is} checked, and what is not, follows.
+
+\subsection{What is protected: the liveOD Adjust panel}
+\label{sec:midloop:adjust}
+
+The only live-change path the framework offers is \code{adjust()}: the liveOD
+Adjust panel rewrites host params between shots. Runtime:
+\code{\_notify\_shot\_complete} receives the current values with each
+\code{SHOT\_COMPLETE} reply, and \code{update\_params\_from\_xvars} applies them
+on the \emph{next} shot before \code{compute\_derived}, so an adjusted value
+takes effect one shot later and flows into derived quantities.\footnote{\file{wax/waxx-src/waxx/base/expt.py}
+\code{\_notify\_shot\_complete}, \code{apply\_pending\_adjust\_values}.} The OPX
+cannot follow it: its values were baked. So \code{check\_live\_adjust\_conflicts(expt,
+tables)} refuses the run at \code{on\_finish\_prepare}:\footnote{\file{manager.py}
+lines 67--96; \code{derived\_dependents} in \file{params\_bridge.py}.}
+
+\begin{itemize}[nosep]
+  \item \code{RuntimeError} if an adjust key is in \code{tables.accessed}
+    (the sequence read \code{ctx.p.<key>}): ``the OPX baked its per-shot
+    values at finish\_prepare and would not follow the Adjust panel. Drop the
+    adjust() or scan it as an xvar.''
+  \item \code{RuntimeError} if \code{derived\_dependents(expt, key, accessed)}
+    is non-empty: nudging the key by 1\,\% on a working copy and re-running
+    \code{compute\_derived}/\code{compute\_new\_derived} moves an accessed
+    column. This is ``a safety net, not a proof'': a derived value that only
+    reacts to a larger change, or through a threshold, is missed.
+  \item The config-time keys (section~\ref{sec:program:config}) are in
+    \code{accessed} too, so adjusting the acquire window or a handshake
+    number is refused the same way.
+\end{itemize}
+
+Two caveats. The check runs \emph{after} \code{finish\_prepare\_wax} has
+claimed a run id and created the file, so a refused run leaves a stub file
+(\code{run\_complete = False}) that nothing aborts (the config-time
+\emph{xvar} refusal, by contrast, already runs at \code{use()}, before
+\code{INIT\_RUN}). And Adjust-panel changes
+are not recorded per shot anywhere in the saved data (the code says so:
+``Values changed in the Adjust panel between shots will NOT be reflected in
+saved data''); the final \code{params/} group holds whatever value the param
+had at \code{end()}. That is a provenance gap independent of the OPX.
+
+\subsection{What is not protected}
+\label{sec:midloop:holes}
+
+\begin{center}\small
+\begin{tabular}{@{}p{4.6cm}p{9.9cm}@{}}
+\toprule
+hole & what happens \\
+\midrule
+a kernel writes \code{self.p.<x> = ...} inside \code{scan\_kernel} & effective for the rest of that shot; overwritten at the top of the next by \code{write\_host\_params\_to\_kernel}; copied back to the host at kernel exit by ARTIQ's attribute write-back, so the saved \code{params/} can hold a kernel-mutated value for a non-scanned param with no warning. The OPX used the baked value. The lab counts $\sim$23 such writes (\code{p.t\_tof} in 7 files, ...). \\
+an RPC mutates params mid-run & the ARTIQ feedback experiment does this every shot (\code{self.p.omega\_pulse\_list = self.get\_new\_pulse\_list(...)}, \code{t\_raman\_pulse\_list}). These are arrays, so \code{build\_shot\_tables} never sees them: no column, no conflict check, no route to the OPX except \code{shot\_array}/\code{host\_data}. \\
+host edits after \code{finish\_prepare} & anything an experiment sets on \code{self.p} after \code{super().finish\_prepare()} diverges silently; nothing diffs at shot time. \\
+\code{compute\_new\_derived} reading non-param state & the sweep calls it on the working copy; an attribute of the experiment that the kernel later changes, or a random draw, is whatever it was at \code{finish\_prepare}. \\
+Adjust panel on the ARTIQ side & allowed, applied next shot, never recorded per shot. \\
+counter desynchronisation & one trigger per shot is the only ARTIQ$\leftrightarrow$OPX index link; detected after the fact by the shot-index echo (section~\ref{sec:data:echo}), never prevented. \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+\subsection{Why \code{kernel\_invariants} cannot do this job}
+
+ARTIQ's \code{kernel\_invariants} marks an attribute as never changing while
+the kernel runs: loads are hoisted, an assignment in a kernel is a
+\emph{compile} error, and the attribute is excluded from write-back. It is an
+optimisation and a compile-time write guard on device objects
+(\code{Feedback} declares 16, the LUTs and calibrations). Anything on
+\code{ExptParams} can never be invariant, because the generated writers
+assign \code{self.params.<key>} every shot and \code{vars(self.params)} is
+archived through write-back. So it cannot be the mechanism that keeps a
+scanned parameter fixed within a shot.\footnote{\file{artiq/doc/manual/compiler.rst}
+lines 229--273; \file{k-exp/kexp/util/profiling/KERNEL\_INVARIANTS\_PLAN.md}.}
+
+\subsection{Proposed guards (not implemented)}
+\label{sec:midloop:guards}
+
+In order of leverage; each is a small change and none is in the rebuild
+scope:
+
+\begin{enumerate}[nosep]
+  \item \textbf{Freeze-and-diff.} Keep \code{tables} after the trace and, in
+    \code{Scanner.update\_params\_from\_xvars} (a kexp hook), compare the
+    live scalars for every key in \code{tables.accessed} against
+    \code{tables.column(key)[np.ravel\_multi\_index(counters, xvardims)]}.
+    Mismatch $\to$ \code{RuntimeError} naming the key, the shot and both
+    values. One dict compare per shot, negligible next to the $\sim$270 RPC
+    fetches. Always-on for accessed keys.
+  \item \textbf{Refuse kernel/RPC writes to accessed params.} At trace time,
+    \code{inspect.getsource} every \code{@kernel}/\code{@rpc} method of
+    \code{type(expt)} for \code{self.p.<key> =} / \code{self.params.<key> =}
+    with \code{<key>} in \code{accessed}, and raise. Cannot catch
+    \code{setattr}; catches the 23 known direct writes.
+  \item \textbf{End-of-run hash.} At \code{finish()}, rebuild the accessed
+    columns from the final host params (after write-back, before
+    \code{cleanup\_scanned}) and compare with the tables the program was built
+    from; on mismatch print \code{***} and write
+    \code{f.attrs['opx\_params\_drift']}. The honest ``the OPX did not run what
+    the file says'' flag.
+  \item \textbf{Run the guards before \code{INIT\_RUN}}, or call
+    \code{abort\_run} on failure, so a refused run does not burn a run id.
+  \item \textbf{Record Adjust values per shot} (ARTIQ side): a container per
+    adjust key written from \code{apply\_pending\_adjust\_values}.
+  \item \textbf{Counter handshake, stronger form:} ARTIQ pushes the shot index
+    through an input stream and the OPX assigns its counter from it -- the
+    route reserved at the top of the shot loop, not simulatable.
+\end{enumerate}
+
+The \code{opx\_shot\_tables} provenance attribute (section~\ref{sec:data:file})
+is item 4 of the audit's list and is implemented: with it, any later reader
+can reconstruct exactly what the OPX used without parsing the QUA text.

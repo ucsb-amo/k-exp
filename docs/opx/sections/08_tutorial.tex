@@ -1,0 +1,222 @@
+\section{Tutorial: adding a new per-shot sequence}
+\label{sec:tutorial}
+
+\subsection{From a physics description to a sequence}
+
+Take a Ramsey measurement: two $\pi/2$ pulses separated by a variable delay,
+with a scanned two-photon detuning, read out by the ARTIQ camera after the
+hand-back. In words: \emph{reset the two-photon phase, expose for
+$t_\pi/2$, wait $t_{\rm Ramsey}$, expose for $t_\pi/2$ again, at a transition
+frequency offset by $\delta$}. The ARTIQ half of the shot (tweezer prep,
+\code{prep\_raman}, handoff, hand-back, TOF, image) is the reference
+experiment's \code{scan\_kernel} unchanged; the OPX half is:
+
+\begin{lstlisting}[style=py]
+# kexp/experiments/opx_sequences/ramsey.py
+from kexp.control.opx import opx_sequence, KexpShotContext
+
+@opx_sequence('ramsey_raman', claims=('raman',))
+def ramsey_raman(ctx: KexpShotContext):
+    ctx.set_transition('raman', ctx.p.frequency_raman_transition
+                                 + ctx.p.frequency_ramsey_detuning)   # per shot if scanned
+    ctx.raman_phase_reset()                                          # both drives, phase 0 at the next play/align
+    ctx.raman_pulse(ctx.p.t_raman_pi_pulse / 2)                      # host arithmetic on a ParamRef
+    ctx.wait_s(ctx.p.t_ramsey)
+    ctx.raman_pulse(ctx.p.t_raman_pi_pulse / 2)
+\end{lstlisting}
+
+And in the experiment's \code{prepare()}:
+
+\begin{lstlisting}[style=py]
+self.p.frequency_ramsey_detuning = 0.            # must exist on ExptParams before xvar()
+self.xvar('frequency_ramsey_detuning', np.linspace(-50.e3, 50.e3, 21))
+self.p.t_ramsey = 200.e-6
+self.opx.use(ramsey_raman)
+self.finish_prepare(shuffle=True)
+\end{lstlisting}
+
+The rules the decorator enforces: \code{claims} lists every role the body
+touches (\code{'raman'}, \code{'imaging'}); \code{measurements} lists every
+key the body saves into and the per-shot shape; \code{host\_data} lists the
+host-filled keys; a body that violates any of these fails at trace time,
+inside \code{finish\_prepare}, before the run starts (but after the run id is
+claimed -- section~\ref{sec:midloop:adjust}).
+
+\subsection{What each \code{ctx} call emits}
+\label{sec:tutorial:macros}
+
+\begin{table}[htbp]
+\centering
+\scriptsize
+\begin{tabular}{@{}p{4.6cm}p{9.9cm}@{}}
+\toprule
+\code{ctx} call & QUA emitted (\code{d} = clock cycles: a Python int if constant, \code{arr[shot]} if per shot, or a QUA int expression) \\
+\midrule
+\code{ctx.raman\_pulse(t)} & \code{play('pass', 'raman\_switch', duration=d); play('block', 'raman\_switch')}. Constant $d = 0$: nothing. Per-shot $d$: both plays inside \code{with if\_(d >= 4)}. \\
+\code{ctx.raman\_pulse(t, phase\_reset=True)} & \code{reset\_if\_phase('raman\_80'); reset\_if\_phase('raman\_150'); align('raman\_80', 'raman\_150', 'raman\_switch')} then the two plays, nothing in between on the switch element. The reset takes effect at that align. Inside the \code{if\_} guard when $d$ varies. \\
+\code{ctx.raman\_pulse(t, timestamp\_key='k')} & the pass play gets \code{timestamp\_stream=<stream k>}; counts as one save on \code{k} (a declared int key); on shots where the guard skips the pulse, \code{save(-1, stream k)} in the \code{else\_} branch. \\
+\code{ctx.raman\_pulse(d\_qua, min\_cc=k)} & for a QUA-expression duration with a host-known lower bound $k \ge 4$\,cc: the \code{if\_} guard is omitted, so the pulse (and its phase-reset align) is emitted with no run-time branch and no implicit align. Ignored for host values; $k < 4$ is refused. \\
+\code{ctx.imaging\_pulse(t, timestamp\_key=None, min\_cc=None)} & same on \code{imaging\_switch} (no phase reset: it has no analog drives). \\
+\code{ctx.raman\_phase\_reset()} & \code{reset\_if\_phase} on both drives, no align (takes effect at the next play/align on each element). \\
+\code{ctx.set\_frequency('raman', f, which=None, keep\_phase=False)} & \code{update\_frequency(el, hz)} on the selected drive(s): \code{which} picks one drive by index or element name (default: every drive of the role); \code{f} in Hz as a number, a \code{ParamRef} (per shot) or a QUA int expression (integer Hz, e.g.\ a table cell \code{if80T[d]}); marks the role for IF restore after the body. \\
+\code{ctx.set\_transition('raman', f)} & \code{update\_frequency} on both drives with \code{transition\_to\_ifs(f)} (the \code{RamanBeamPair} split); per shot if \code{f} varies. \\
+\code{ctx.set\_transition\_offset('raman', df\_hz)} & for a QUA int \code{df}: \code{update\_frequency(el, IF0\_el + Cast.mul\_int\_by\_fixed(df, slope\_el))} per drive, \code{IF0\_el} the run transition's IF and \code{slope\_el} = $\partial\,\mathrm{IF}_{el}/\partial f$ from \code{transition\_to\_ifs} at $f \pm 1$\,kHz, asserted linear to $10^{-9}$ over $\pm 2$\,MHz; for a host value or \code{ParamRef}: the exact split at $f_{\rm run} + \delta f$, per shot. Refuses a transition that varies per shot. \\
+\code{ctx.transition\_offset\_terms('raman')} & nothing on the OPX: returns \code{\{element: (IF0 int Hz, slope)\}} for the run's transition, the terms \code{set\_transition\_offset} uses, so a sequence can form the integer IFs itself (host tables, exact applied frequency) and apply them with \code{set\_frequency(..., which=element)}. Same run-constant transition rule. \\
+\code{ctx.frame\_rotation('raman', turns)} & \code{frame\_rotation\_2pi(x, el)} per drive. \\
+\code{ctx.reset\_frame('raman')} & \code{reset\_frame(el)} per drive. \\
+\code{ctx.measure(key, role='imaging', expose=True, t\_expose=None, timestamp\_key=None, expose\_timestamp\_key=None)} & \code{align('imaging\_switch', 'apd')}; if \code{expose}: \code{play('pass', 'imaging\_switch', duration=d); play('block', ...)} with $d$ = \code{t\_expose} or the config acquire length; then \code{measure('acquire', 'apd', integration.full('integration\_window', v, 'out1')); save(v, stream)}. Returns the QUA fixed \code{v} (one per key). \code{expose=False}: the ADC window runs with the beam blocked (a dark shot). \code{timestamp\_key} timestamps the measure, \code{expose\_timestamp\_key} the exposure's pass play (each one save on a declared int key). Refused on a key declared as an int stream. \\
+\code{ctx.wait\_s(t)} & \code{align(); wait(d, <every element the map names>)}; a constant 0 emits nothing; a per-shot column containing 0 is guarded with \code{if\_(d >= 4)}. \\
+\code{ctx.wait\_cc(d, *names)} & raw \code{wait(d, *elements)} on the named roles/elements only (at least one name); \code{d} a Python int ($0$ or $\ge 4$) or a QUA int. \\
+\code{ctx.align(*names)} & \code{align(...)}; role names translate to their switch element; no args = global. \\
+\code{ctx.handback\_to\_artiq()} & \code{align(); play('trigger', 'artiq\_handback'); wait(3750, switches); play('pass', ...)}. Auto-appended if the body never calls it; must be the body's last act on the beams. \\
+\code{ctx.stream(key)}, \code{ctx.save(key, expr)} & \code{qua.save(expr, stream)}; one save per call, multiplied by enclosing \code{for\_range} counts. \\
+\code{with ctx.for\_range(n) as i:} & \code{with for\_(i, 0, i < n, i + 1):}; \code{n} a Python int or a run-constant \code{ParamRef} (\code{ctx.const} rules); a QUA bound is refused (use \code{ctx.qua.for\_} and a fixed declared shape). \\
+\code{ctx.shot\_array(key, values, dtype=float)} & one \code{declare(int|fixed, value=flat)}; \code{.at(i)} $\to$ \code{arr[ctx.shot * M + i]} (\code{arr[ctx.shot + i]} when $M = 1$). \\
+\code{ctx.host\_data(key, values)} & nothing on the OPX; values go to the declared container at \code{finish()}. \\
+\code{ctx.elements(role)} & \code{dict(switch=..., analog=(...), measure=...)} -- the element names, for \code{ctx.qua} code. \\
+\code{ctx.const(x)}, \code{ctx.cc(t)}, \code{ctx.hz(f)}, \code{ctx.f(x)} & host-side resolution (section~\ref{sec:xvars:resolve}); \code{cc}/\code{hz}/\code{f} pass a QUA expression through unchanged; \code{const} refuses one. \\
+\code{ctx.qua}, \code{ctx.shot}, \code{ctx.n\_shots} & the \code{qm.qua} module (imported on first access), the loop counter, the shot count. \\
+\bottomrule
+\end{tabular}
+\caption{The context API (\file{k-exp/kexp/control/opx/context.py}, after
+the rebuild).}
+\label{tab:ctx}
+\end{table}
+
+\subsection{Per-shot arrays and loops: the feedback shape}
+
+A real-time loop uses these calls together:
+
+\begin{lstlisting}[style=py]
+from kexp.control.opx import opx_sequence, Stream
+from kexp.control.opx.units import s_to_cc
+
+@opx_sequence('n_pulses_demo', claims=('raman', 'imaging'),
+              measurements={'apd_raw': lambda p: int(p.N_pulses),               # (N,) float
+                            't_pulse_start_cc': lambda p: Stream(int(p.N_pulses), int)},
+              host_data={'t_raman_pulse': lambda p: int(p.N_pulses)})
+def n_pulses_demo(ctx):
+    N = int(ctx.const(ctx.p.N_pulses))                       # run-level constant
+    d_s = draw_durations(ctx, N)                             # host: (n_shots, N) seconds
+    d = ctx.shot_array('d_cc', s_to_cc(d_s), dtype=int)      # one flat QUA array
+    ctx.host_data('t_raman_pulse', d.values * 4e-9)          # what the OPX will use, rounded
+    with ctx.for_range(N) as i:
+        ctx.raman_pulse(d.at(i), phase_reset=True, timestamp_key='t_pulse_start_cc')
+        v = ctx.measure('apd_raw')                           # exposure + ADC, returns the QUA fixed
+        ctx.wait_cc(budget_cc, ctx.elements('raman')['switch'])
+\end{lstlisting}
+
+The validator counts one save on \code{apd\_raw} and one timestamp save on
+\code{t\_pulse\_start\_cc} per loop iteration, times $N$ -- equal to the
+declared shapes. Host-side arithmetic on \code{ParamRef}s is still the way
+to build \emph{per-shot scalars}; \code{shot\_array} is for per-shot vectors.
+
+\subsection{Saving variables, timestamps, phase reset, transition offset}
+
+\begin{itemize}[nosep]
+  \item \textbf{Saving a QUA variable.} Declare the key in \code{measurements}
+    (int or float; e.g.\ \code{'drive\_index': Stream(N, int)}), then
+    \code{ctx.save('drive\_index', d)}. Saved raw (no volts conversion). Whole
+    arrays cannot be saved: loop with \code{for\_range} and save cells.
+  \item \textbf{Timestamps.} \code{timestamp\_key} on a pulse or measure
+    records the start cycle of that statement, from program start. Use the
+    difference between consecutive timestamps; the absolute value wraps
+    modulo $2^{32}$.
+  \item \textbf{Phase reset.} \code{reset\_if\_phase} zeroes an element's IF
+    phase \emph{at its next play or align}. To have both drives at phase 0
+    at the start of a pulse, reset both and align them with the switch
+    element immediately before the pass play -- exactly what
+    \code{phase\_reset=True} emits. Without the align the two resets take
+    effect at each drive's own next statement, which may be shots later.
+  \item \textbf{Transition offset.} \code{set\_transition\_offset('raman',
+    df)} keeps the \code{RamanBeamPair} ratio split (both drives move, by
+    $+0.326\,\delta f$ and $-0.174\,\delta f$ for the 150 and 80\,MHz AOs)
+    with a QUA-computed \code{df}. \code{keep\_phase=False} (default): the IF
+    phase jumps to what the new frequency would have accumulated since the
+    reference; with the per-pulse reset that is irrelevant.
+  \item \textbf{Exact integer IFs.} When the analysis must know the applied
+    frequency exactly, do the split on the host: \code{terms =
+    ctx.transition\_offset\_terms('raman')} gives each drive's integer
+    \code{IF0} and slope, a host table of integer IFs per candidate
+    frequency becomes a QUA int array, and \code{ctx.set\_frequency('raman',
+    table[d], which='raman\_80')} (and the same for \code{raman\_150}) applies
+    a row chosen at run time. Streaming the index \code{d} and recording the
+    table as host data then fixes the applied two-photon frequency to the Hz
+    -- the feedback sequence's pattern (section~\ref{sec:feedback:freq}).
+\end{itemize}
+
+\subsection{The escape hatch: \code{ctx.qua}}
+
+\code{ctx.qua} is the \code{qm.qua} module, imported on first access;
+\code{ctx.shot} is the loop counter and \code{ctx.n\_shots} the shot count.
+Anything the macros do not cover -- \code{declare}, \code{assign},
+\code{Math}, \code{Cast}, \code{Util.cond}, \code{if\_} -- is written directly
+with it. The rules:
+
+\begin{enumerate}[nosep]
+  \item Address elements by \code{ctx.elements(role)}, never by literal
+    string, so a renamed element does not silently miss.
+  \item Every \code{qua.save} into a declared key must go through
+    \code{ctx.save} so the validator counts it; a raw \code{qua.save} on a
+    context stream is invisible to it and fails at \code{fill\_containers}
+    with a length mismatch.
+  \item Nothing may play or measure after \code{handback\_to\_artiq()}
+    (\code{\_check\_open}).
+  \item Fixed point: every intermediate must stay in $[-8, 8)$; overflow
+    wraps silently modulo 16. \code{Math.inv} needs $|x| > 1/8$;
+    \code{Math.exp} needs $x < 2.079$; \code{Math.sqrt} non-negative; no
+    \code{**}, \code{//}, \code{\%} on QUA expressions; no automatic casting
+    (\code{Cast.mul\_int\_by\_fixed} and friends). Section~\ref{sec:feedback:numerics}
+    shows the rescalings.
+  \item Statements written through \code{ctx.qua} are not in the op log at
+    all, so the pulse viewer cannot link them to a source line; a macro's
+    play inside your own \code{if\_} is logged as always executing.
+\end{enumerate}
+
+\subsection{\code{simulate=True} and the pulse viewer}
+
+\begin{lstlisting}[style=py]
+self.opx.use(ramsey_raman, simulate=True, simulate_shots=2, simulate_duration=300.e-6)
+self.finish_prepare(shuffle=False)     # deterministic first shots
+\end{lstlisting}
+
+At \code{finish\_prepare} the program is re-traced with
+\code{skip\_triggers=True} on tables sliced to the first \code{simulate\_shots}
+shots (shots then run back-to-back on the simulated timeline), sent to the
+QOP simulator, and the pulse viewer opens with every simulated pulse linked
+to the sequence line that made it; the process exits before any ARTIQ
+hardware runs. Use \code{save\_data=False}. The simulator cannot run
+\code{wait\_for\_trigger}, input streams, IO variables or \code{pause}; it does
+model computational gaps (verify a \code{wait}'s actual length there). From a
+notebook, \code{OPXBench().simulate(seq, shots=2)} does the same without an
+experiment.
+
+\subsection{Common errors and what they mean}
+
+\begin{center}\small
+\begin{tabular}{@{}p{6.2cm}p{8.3cm}@{}}
+\toprule
+message (abridged) & meaning \\
+\midrule
+\code{float() on ctx.p parameter 't\_x': ... a per-shot column, not one number} & you wrote \code{if ctx.p.t\_x > 0} or \code{max(...)}; compute per shot with numpy, or \code{ctx.const} for a run-level toggle \\
+\code{ctx.const('N') but it varies per shot (17 .. 20)} & the loop count is scanned; per-shot control flow needs a QUA loop bound, not a Python one \\
+\code{uses channel 'imaging' without claiming it} & add it to \code{claims=(...)} \\
+\code{measures into 'k', which is not declared in its measurements} & declare the key and its per-shot shape \\
+\code{declares 4 saves per shot into 'apd\_qm' but the traced body performs 3} & shape and body disagree; with \code{for\_range} remember saves multiply by $n$ \\
+\code{duration for 'raman pulse' rounds to under the OPX minimum of 16 ns} & a nonzero duration below 4 cc; zero is allowed, 1--15\nsu\ is not \\
+\code{WARNING: duration ... is off the 4 ns grid by up to 2.0 ns (1.2\%)} & the requested time is not a multiple of 4\nsu; the rounded value is what runs \\
+\code{'t\_x' = -inf .. 3 does not fit a 32-bit QUA int (durations of 8.6 s or more ...)} & a seconds-vs-microseconds slip, or a division by a zero parameter \\
+\code{'t\_x' is NaN on 3 shot(s) (execution-order index [...])} & a derived parameter left unset on some shots \\
+\code{'t\_raman\_pulse' is registered with adjust() but the OPX sequence reads ctx.p.t\_raman\_pulse} & drop the \code{adjust()} or scan it \\
+\code{ExptParams has no scalar parameter 'omega\_pulse\_list'} & arrays are not shipped per shot; use \code{shot\_array} \\
+\code{['t\_imaging\_pulse\_apd\_abs'] is scanned as an xvar but is compiled into the OPX config once per run} & take one run per value; a config-time parameter \emph{derived} from an xvar fails instead with \code{is a config-time parameter ... but it varies per shot} \\
+\code{cannot reach the OPX (host ..., cluster ...) ... Refused in prepare()} & the QMM connection failed in \code{use()}; no run id was claimed \\
+\code{the sequence's data shapes changed between use() ... and finish\_prepare} & a parameter a shape depends on was set after \code{self.opx.use(...)}; set it before \\
+\code{declares host\_data 't' but never wrote it with ctx.host\_data('t', values)} & every declared host-data key must be written once at trace time \\
+\code{ctx.for\_range(n): n must be a Python int ... not a QUA expression} & the loop count is counted at trace time; a run-time bound needs \code{ctx.qua.for\_} \\
+\code{*** OPX data present for 12 of 20 shots; the remainder are NaN (int containers: -1) and flagged 0} & an aborted run; not an error \\
+\code{*** OPX shot counter echo disagrees with the shot order from shot 7} & the ARTIQ and OPX counters desynchronised (a skipped or doubled handoff); OPX data from shot 7 on is flagged 0 \\
+\code{TriggerTimeout: no OPX hand-back edge on ttl41 within the timeout} & the job is not running, not seeing the trigger, or its shot is longer than 2\,s \\
+\bottomrule
+\end{tabular}
+\end{center}
