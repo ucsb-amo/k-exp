@@ -208,12 +208,12 @@ the seed like the continuous draw), and the per-point rotation matrix
 entries (R00, s uz, omc ux uz, s ux, c) come from per-(level, k) run
 tables (n * (2m - 1) entries each), as do the per-pulse phasor seeds
 (cos/sin of 4 b_l (wq_d - wq_0) + phi_LS per (level, d), cos/sin of
-4 b_l dw/4 per level): NO trig anywhere in the real-time loop. Physics:
-2 (and 3) levels alias measurably (+5-7 % wrong-grid-point rate, 3
-sigma); 4-16 levels sit within +0.6..+3 % of the continuous draw at 1000
-seeds (<= 2 sigma, brainstorm b_alias_ongrid.py) -- fewer than 4 levels
-are refused, >= 8 (better 16) are recommended, and the few-% question is
-open (a 10k-seed run of b_alias_ongrid.py). Default 0 = continuous.
+4 b_l dw/4 per level): NO trig anywhere in the real-time loop. How many
+levels a grid needs -- n - 1 > (max_frac - min_frac) * sqrt(1 + (2
+span)^2), a sampling bound -- and the closed-loop measurement (no step at
+the bound; 8 levels within 1.5 % of the continuous draw on every grid
+tried) are in kexp.base.feedback.t_raman_pulse_level_set. Fewer than 4
+levels are refused (MIN_PULSE_LEVELS). Default 0 = continuous.
 
 Data (per shot; N = N_pulses, m = feedback_grid_size)
 ------------------------------------------------------
@@ -1601,8 +1601,8 @@ def make_feedback_sequence(open_loop=False, exp_lut_bits=None, sincos_lut_bits=N
     return seq
 
 
-bayesian_feedback = make_feedback_sequence(False)
-bayesian_feedback_open_loop = make_feedback_sequence(True)
+bayesian_feedback = make_feedback_sequence(open_loop=False)
+bayesian_feedback_open_loop = make_feedback_sequence(open_loop=True)
 
 __all__ = [
     'bayesian_feedback', 'bayesian_feedback_open_loop', 'make_feedback_sequence',

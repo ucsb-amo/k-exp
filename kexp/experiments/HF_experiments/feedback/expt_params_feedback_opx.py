@@ -95,6 +95,7 @@ class ExptParams(ExptParamsFeedback):
         # self.t_opx_feedback_compute_budget = 40.e-6   # spec value, first pass
         # self.t_opx_feedback_compute_budget = 25.e-6  #simulator, 2026-09-25 (pass 2 structure)
         self.t_opx_feedback_compute_budget = 10.e-6  #simulator, 2026-09-25 (pass 3b structure)
+
         # Constant per-cycle align/sync overhead (s), added to the schedule
         # per pulse: the extra cycles between two pulse-start timestamps
         # beyond d_i + edge + t_img + edge + budget + extra gap. Must be a
@@ -114,6 +115,7 @@ class ExptParams(ExptParamsFeedback):
         # self.t_opx_feedback_align_overhead = 380.e-9  #simulator, 2026-09-24
         # self.t_opx_feedback_align_overhead = 364.e-9  #simulator, 2026-09-25 (pass 2 structure)
         self.t_opx_feedback_align_overhead = 328.e-9  #simulator, 2026-09-25 (pass 3b structure)
+
         # The same constant for the discrete-duration structure
         # (t_raman_pulse_n_levels > 0), which has its own table reads at the
         # pulse boundary: 86 cycles on every one of 5 intervals (QOP
@@ -121,6 +123,7 @@ class ExptParams(ExptParamsFeedback):
         # structure (feedback_flat_rule_bool = 1) has NOT been measured;
         # expect the slip line to fire until it is.
         self.t_opx_feedback_align_overhead_levels = 344.e-9  #simulator, 2026-09-25
+
         # Free-evolution knob, like ARTIQ's delta_t_mu: lengthens every
         # per-step interval by this much (s, multiple of 4 ns). Enters the
         # schedule and the hypothesis phase tables like everything else.
@@ -174,11 +177,17 @@ class ExptParams(ExptParamsFeedback):
         # (draw_t_raman_pulse_list_levels), which lets the OPX take the
         # rotation matrix of every (level, hypothesis) from a table -- no
         # trig in the loop, 33 vs 75 cycles per grid point on the QOP
-        # simulator. Physics: 2-3 levels alias measurably (+5-7 % wrong
-        # grid point, 3 sigma); 4-16 levels within +0.6..+3 % of continuous
-        # at 1000 seeds (<= 2 sigma, brainstorm b_alias_ongrid.py; a 10k-seed
-        # run is owed before this is switched on for real). >= 8 recommended.
-        self.t_raman_pulse_n_levels = 0
+        # simulator. How many: the level dither cannot fold anywhere on the
+        # grid when
+        #   n - 1 > (max_frac - min_frac) * sqrt(1 + (2 * span_Omega)^2)
+        # (derivation and the closed-loop measurement in
+        # kexp.base.feedback.t_raman_pulse_level_set). At [0.5, 1] * t_pi,
+        # 8 meets it for every grid the OPX axis tables accept (span <=
+        # 5.45) and measured within 1.5 % of the continuous draw's
+        # wrong-grid-point rate (3000 seeds). Widen the duration range and
+        # recheck the bound.
+        # self.t_raman_pulse_n_levels = 0   # continuous draw (as ARTIQ)
+        self.t_raman_pulse_n_levels = 8  # 2026-09-26
 
         ### forced / documented
         # Remesh is not ported (host/replay only, D7): the sequence refuses

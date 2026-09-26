@@ -1516,6 +1516,56 @@ def t_raman_pulse_level_set(t_raman_pi_pulse, t_raman_pulse_min_frac_pi,
     [min_frac_pi, max_frac_pi] * t_pi, each rounded to the OPX clock
     (t_clock, 4 ns). Returns a float64 array of length n_levels, ascending
     and distinct (raises if two levels round to the same duration).
+
+    HOW MANY LEVELS. Random durations separate hypotheses because no pair
+    keeps a fixed relation over a continuum of pulse lengths (see
+    draw_t_raman_pulse_list_alternating). n equally spaced levels only
+    sample that continuum, at spacing
+
+        dt = (max_frac_pi - min_frac_pi) * t_pi / (n - 1),
+
+    and their dither vanishes for any pair whose difference repeats every
+    dt:
+
+      * precession phase: two hypotheses df apart differ by df * d turns of
+        free evolution per pulse -- the same on every level when df * dt is
+        an integer. The widest pair is the full grid width,
+        2 span Omega / (2 pi) = span / t_pi, so no pair is left undithered
+        when
+            n - 1 > span * (max_frac_pi - min_frac_pi).
+      * pulse area: a drive-hypothesis detuning of x Omega rotates by
+        sqrt(1 + x^2) (d - t_offset) / (2 t_pi) turns. Sampled at the
+        levels, the flop of the fastest hypothesis folds onto slower ones
+        (Nyquist) unless dt is under half its period. The largest detuning
+        is x = 2 span (drive at one grid edge, hypothesis at the other):
+            n - 1 > (max_frac_pi - min_frac_pi) * sqrt(1 + (2 span)^2),
+        which implies the phase bound.
+
+    span = feedback_guess_span_Omega. With durations on [0.5, 1] t_pi:
+    span 3 -> n >= 5; span 5 -> n >= 7; the widest grid the OPX axis tables
+    accept (2 span <= MAX_ABS_DELTA = 10.9) -> n >= 7. The count scales with
+    the duration range: [0.5, 1.5] t_pi needs n >= 12 at that cap.
+
+    These are sufficient conditions from the sampling argument, not
+    thresholds seen in the closed loop. Measured 2026-09-26 (float64
+    emulation of the OPX loop, N_pulses 20 unless noted, m 21, true
+    detuning on a grid point drawn uniformly, photon noise, 3000 seeds per
+    entry; wrong-final-grid-point rate, 1 sigma ~ 0.008;
+    docs/opx/alias_levels_study.py):
+
+        grid                    continuous   2      3      4      8 levels
+        span 5,   offset 0        0.304    0.319  0.287  0.318  0.290
+        span 3,   offset 2        0.388    0.406  0.390  0.412  0.399
+        span 5.4, offset 0        0.302    0.315  0.302  0.305  0.287
+        span 5,   N_pulses 60     0.301    0.320    --   0.316  0.288
+
+    (span 5, offset 0 also: 5 -> 0.307, 6 -> 0.313, 11 -> 0.306.) 2 and 4
+    levels sit 1-2 % above the continuous draw on every grid, each <= 2.4
+    sigma: suggestive, not established. 8 levels is within 1.5 % everywhere.
+    No step appears at either bound; the hypotheses that fold are far from
+    the drive, where the flop amplitude 1 / (1 + x^2) carries little
+    signal. An earlier 1000-seed study (brainstorm b_alias_ongrid.py, never
+    committed) reported +5-7 % at 2-3 levels; this was not reproduced.
     """
     n = int(n_levels)
     if n < 1:
@@ -1544,10 +1594,8 @@ def draw_t_raman_pulse_list_levels(seed, N_pulses, t_raman_pi_pulse,
     Returns ``(t_list, level_idx)``: the durations (s, on the clock grid)
     and the level index of every pulse (int, 0 .. n_levels-1).
 
-    Fewer than 4 levels alias measurably (2 levels: +5-7 % wrong-grid-point
-    rate in the synthetic closed loop, 3 sigma); 4-16 levels sit within
-    +0.6..+3 % of the continuous draw at 1000 seeds (<= 2 sigma). Use >= 8
-    (better 16) and treat the residual few-% question as open.
+    How many levels a grid needs, and what the closed loop measured: see
+    t_raman_pulse_level_set.
     """
     levels = t_raman_pulse_level_set(t_raman_pi_pulse, t_raman_pulse_min_frac_pi,
                                      t_raman_pulse_max_frac_pi, n_levels, t_clock)

@@ -80,6 +80,10 @@ def _params(N=20, m=21, span=3.0, offset=2.0, **kw):
     # FeedbackOPXReplay.N_PHOTONS_REF
     p.n_photons_per_shot = 1336.0
     p.std_n_photons_per_shot = p.std_photon_fraction_opx * 1336.0
+    # the continuous duration draw unless a test asks for levels: tests pin
+    # the structure they exercise rather than inherit the params file's
+    # default (test_params_file_* checks that default)
+    p.t_raman_pulse_n_levels = 0
     for k, v in kw.items():
         setattr(p, k, v)
     return p
@@ -377,11 +381,11 @@ def test_params_file_inherits_and_forces_no_remesh():
     assert p.feedback_log_weight_scale == 32 == LOG_WEIGHT_SCALE
     assert p.opx_exp_lut_bits == 8 == EXP_LUT_BITS
     assert p.opx_sincos_lut_bits == 12 == SINCOS_LUT_BITS
-    assert p.t_raman_pulse_n_levels == 0
+    assert p.t_raman_pulse_n_levels == 8
     assert not hasattr(p, 'feedback_q_clamp') and not hasattr(p, 'feedback_log_weight_floor')
     c = _const(p)
     assert c.scale == 32 and c.k_exp == 5 and not c.flat_rule
-    assert c.sincos_lut_bits == 12 and c.exp_lut_bits == 8 and c.n_levels == 0
+    assert c.sincos_lut_bits == 12 and c.exp_lut_bits == 8 and c.n_levels == 8
     assert c.inv_sigma_p_s == pytest.approx(c.inv_sigma_p / 8)
     # the floor: -8 - the largest decrement (3/sigma_p/8)^2 (+ a 2^-16 margin)
     assert c.L_floor == pytest.approx(-8 + (3 * c.inv_sigma_p / 8) ** 2 + 2 ** -16)
@@ -401,7 +405,11 @@ def test_params_file_inherits_and_forces_no_remesh():
     assert c.inv_sigma_p < 8 and c.n_split == 2       # 1/range_raw = 11.2 -> two factors
     assert c.t_img_cc == 1250 and c.extra_gap_cc == 0
     assert c.budget_cc == s_to_cc(p.t_opx_feedback_compute_budget)
-    assert c.overhead_cc == round(p.t_opx_feedback_align_overhead / 4e-9)
+    # the file runs the levels structure, which has its own measured overhead
+    assert c.overhead_cc == round(p.t_opx_feedback_align_overhead_levels / 4e-9)
+    p0 = ExptParamsFeedbackOPX()
+    p0.t_raman_pulse_n_levels = 0
+    assert _const(p0).overhead_cc == round(p.t_opx_feedback_align_overhead / 4e-9)
     assert c.phi_LS == pytest.approx(p.frequency_lightshift * p.t_img_pulse)
     for key, val, match in (
             ('feedback_remesh_threshold_Omega', 0.5, 'remesh'),
@@ -418,9 +426,14 @@ def test_params_file_inherits_and_forces_no_remesh():
             ('t_opx_feedback_compute_budget', 0., '16 ns'),
             ('opx_exp_lut_bits', 11, 'exp_lut_bits')):
         q = ExptParamsFeedbackOPX()
+        q.t_raman_pulse_n_levels = 0            # the continuous structure's keys
         setattr(q, key, val)
         with pytest.raises(ValueError, match=match):
             _const(q)
+    q = ExptParamsFeedbackOPX()                 # the file's levels structure
+    q.t_opx_feedback_align_overhead_levels = 5.e-9
+    with pytest.raises(ValueError, match='multiple'):
+        _const(q)
     # the midpoint remap must keep p1 monotonic on [-1, 1] (no p1 clamps)
     q = ExptParamsFeedbackOPX()
     q.feedback_measurement_midpoint_remap_enabled = 1
