@@ -1387,3 +1387,170 @@ def _feedback_kwargs_from_atomdata(ad):
         "feedback_apd_map_b": p.feedback_apd_map_b,
         "feedback_apd_map_verbose": p.feedback_apd_map_verbose,
     }
+
+
+### host-side helpers for the OPX port of the feedback loop
+#
+# Pure numpy, no kernel code. Used by kexp/experiments/opx_sequences/feedback.py
+# (at trace time, per shot) and by kexp/analysis/feedback_opx.py (replay), so
+# the grid the OPX drives, the hypothesis phases it uses and the pulse
+# schedule it is held to are computed by ONE piece of code on both sides.
+# Nothing above this line is touched by the port.
+
+
+def feedback_grid_omega(p, fractional_initial_offset=None, guess_span_Omega=None,
+                        frequency_raman_transition=None, t_raman_pi_pulse=None,
+                        feedback_grid_size=None):
+    """Hypothesis grid (rad/s) and the index that sits exactly on resonance.
+
+    A numpy re-implementation of Feedback._initialize_frequency_grid, term
+    for term, including the snap, so the host (OPX tables, replay) and the
+    kernel agree:
+
+        n_off  = round(fractional_initial_offset)          # half-to-even
+        t_j    = -1 + j * 2/(m-1)                           # j = 0..m-1
+        w_j    = omega_res + Omega * (n_off - span * t_j)   # DESCENDING in j
+        zidx   = argmin_j |w_j - omega_res|                 # first minimum
+        w_j   += omega_res - w_zidx                         # snap onto resonance
+
+    Every argument defaults to the corresponding attribute of ``p``; pass a
+    value explicitly for a per-shot quantity (a scanned initial offset).
+    Returns ``(omega_grid, zidx)`` with ``omega_grid`` float64 of length m and
+    ``omega_grid[zidx] == 2*pi*frequency_raman_transition`` exactly.
+    """
+    def pick(value, key):
+        return getattr(p, key) if value is None else value
+
+    m = int(pick(feedback_grid_size, "feedback_grid_size"))
+    if m < 2:
+        raise ValueError(f"feedback_grid_size must be >= 2, got {m}.")
+    t_pi = float(pick(t_raman_pi_pulse, "t_raman_pi_pulse"))
+    f_res = float(pick(frequency_raman_transition, "frequency_raman_transition"))
+    offset = float(pick(fractional_initial_offset, "feedback_fractional_initial_offset"))
+    span = float(pick(guess_span_Omega, "feedback_guess_span_Omega"))
+
+    Omega = np.pi / t_pi
+    omega_res = 2.0 * np.pi * f_res
+    n_off = round(offset)                    # python round == kernel round
+    scale = 2.0 / (m - 1)
+    t = -1.0 + np.arange(m, dtype=np.float64) * scale
+    grid = omega_res + Omega * (n_off - span * t)
+    zidx = int(np.argmin(np.abs(grid - omega_res)))
+    grid = grid + (omega_res - grid[zidx])
+    return grid, zidx
+
+
+def hypothesis_phase_tables(f_grid_hz, t_start_s):
+    """Per-pulse phasor seeds of the hypothesis phase, in turns in [0, 1).
+
+    Reset phase model (OPX port): the two-photon drive phase is 0 at the
+    start of every pulse, so hypothesis j at pulse i sees the rotation axis
+    at azimuth ``phi_{j,i} = -f_j * t_i`` (turns), with ``t_i`` the pulse
+    start time from pulse 0. generate_posterior walks j with a phasor
+    recurrence seeded at hypothesis 0 and stepped by the grid spacing; this
+    returns exactly those two numbers per pulse:
+
+        phi0_i = frac(-f_0 * t_i)              dphi_i = frac(-(f_1 - f_0) * t_i)
+
+    so that ``phi_{j,i} = phi0_i + j * dphi_i (mod 1)``. Reduced modulo 1 in
+    float64 on the host: at f ~ 1.2e8 Hz and t ~ 2 ms the product is ~2.4e5
+    turns, whose fractional part float64 still resolves to ~3e-11 turns, so
+    shipping the reduced values as QUA fixed (2^-28 ~ 4e-9) loses nothing.
+
+    ``f_grid_hz``: (m,) or (n_shots, m); ``t_start_s``: (N,) or (n_shots, N).
+    Returns ``(phi0, dphi)`` shaped like ``t_start_s``.
+    """
+    f = np.asarray(f_grid_hz, dtype=np.float64)
+    t = np.asarray(t_start_s, dtype=np.float64)
+    if f.ndim == 1:
+        f0 = f[0]
+        df = (f[1] - f[0]) if f.size > 1 else 0.0
+    elif f.ndim == 2:
+        if t.ndim != 2 or t.shape[0] != f.shape[0]:
+            raise ValueError(
+                f"f_grid_hz {f.shape} and t_start_s {t.shape} must share the "
+                f"per-shot axis.")
+        f0 = f[:, :1]
+        df = (f[:, 1:2] - f[:, :1]) if f.shape[1] > 1 else np.zeros_like(f0)
+    else:
+        raise ValueError(f"f_grid_hz must be 1D or 2D, got shape {f.shape}.")
+    phi0 = np.mod(-f0 * t, 1.0)
+    dphi = np.mod(-df * t, 1.0)
+    # np.mod can return exactly 1.0 when the argument is a tiny negative
+    # number; fold it back so the tables are strictly in [0, 1)
+    phi0 = np.where(phi0 >= 1.0, phi0 - 1.0, phi0)
+    dphi = np.where(dphi >= 1.0, dphi - 1.0, dphi)
+    return phi0, dphi
+
+
+def schedule_pulse_starts(d_cc, t_img_cc, t_budget_cc, overhead_cc, block_edge_cc=4):
+    """Scheduled pulse-start times in OPX clock cycles, pulse 0 at 0.
+
+    The OPX feedback cycle holds the Raman switch element to a fixed budget,
+    so pulse i+1 starts a host-known number of cycles after pulse i:
+
+        t_{i+1} = t_i + d_i + edge + t_img + edge + budget + overhead
+
+    where ``d_i`` is pulse i's 'pass' play, ``edge`` the 'block' level-set
+    play that re-blocks after it (and after the imaging exposure), ``t_img``
+    the imaging exposure, ``budget`` the fixed wait covering measurement
+    readback + posterior, and ``overhead`` the constant align/sync cost per
+    cycle once measured (t_opx_feedback_align_overhead). All in cycles; see
+    kexp/experiments/opx_sequences/feedback.py for the statement list this
+    mirrors. ``d_cc``: (N,) or (n_shots, N). Returns int64, same shape.
+    """
+    d = np.asarray(d_cc)
+    if not np.issubdtype(d.dtype, np.integer):
+        raise TypeError("d_cc must be an integer array of clock cycles.")
+    d = d.astype(np.int64)
+    per_cycle = (d + np.int64(2 * int(block_edge_cc) + int(t_img_cc)
+                              + int(t_budget_cc) + int(overhead_cc)))
+    starts = np.cumsum(per_cycle, axis=-1) - per_cycle
+    return starts.astype(np.int64)
+
+
+def t_raman_pulse_level_set(t_raman_pi_pulse, t_raman_pulse_min_frac_pi,
+                            t_raman_pulse_max_frac_pi, n_levels, t_clock=4.e-9):
+    """The discrete Raman pulse durations of the OPX "levels" draw
+    (t_raman_pulse_n_levels > 0): n_levels values equally spaced on
+    [min_frac_pi, max_frac_pi] * t_pi, each rounded to the OPX clock
+    (t_clock, 4 ns). Returns a float64 array of length n_levels, ascending
+    and distinct (raises if two levels round to the same duration).
+    """
+    n = int(n_levels)
+    if n < 1:
+        raise ValueError(f"n_levels must be >= 1, got {n}.")
+    t_pi = float(t_raman_pi_pulse)
+    lo = float(t_raman_pulse_min_frac_pi) * t_pi
+    hi = float(t_raman_pulse_max_frac_pi) * t_pi
+    levels = np.rint(np.linspace(lo, hi, n) / float(t_clock)) * float(t_clock)
+    if np.unique(levels).size != n:
+        raise ValueError(
+            f"{n} pulse-duration levels on [{lo:g}, {hi:g}] s do not stay "
+            f"distinct on the {t_clock * 1e9:g} ns clock.")
+    return levels
+
+
+def draw_t_raman_pulse_list_levels(seed, N_pulses, t_raman_pi_pulse,
+                                   t_raman_pulse_min_frac_pi,
+                                   t_raman_pulse_max_frac_pi, n_levels,
+                                   t_clock=4.e-9):
+    """Raman pulse times for one shot drawn from a DISCRETE level set (the
+    OPX B+E structure: per-(level, hypothesis) rotation tables, no trig in
+    the real-time loop). A pure function of `seed`, like
+    draw_t_raman_pulse_list: each pulse's level is drawn independently and
+    uniformly from the n_levels durations of t_raman_pulse_level_set.
+
+    Returns ``(t_list, level_idx)``: the durations (s, on the clock grid)
+    and the level index of every pulse (int, 0 .. n_levels-1).
+
+    Fewer than 4 levels alias measurably (2 levels: +5-7 % wrong-grid-point
+    rate in the synthetic closed loop, 3 sigma); 4-16 levels sit within
+    +0.6..+3 % of the continuous draw at 1000 seeds (<= 2 sigma). Use >= 8
+    (better 16) and treat the residual few-% question as open.
+    """
+    levels = t_raman_pulse_level_set(t_raman_pi_pulse, t_raman_pulse_min_frac_pi,
+                                     t_raman_pulse_max_frac_pi, n_levels, t_clock)
+    rng = np.random.default_rng(int(seed))
+    idx = rng.integers(0, int(n_levels), int(N_pulses))
+    return levels[idx], idx.astype(np.int64)

@@ -18,3 +18,10 @@ from .rabi_posterior import (
 	draw_t_raman_pulse_list,
 	GOF_EXCESS_NOISE_LIMIT,
 )
+
+# OPX port of the feedback loop (reset phase model): replay + fixed-point
+# emulation of the on-OPX posterior
+from .feedback_opx import (
+	FeedbackOPXReplay,
+	FeedbackOPXReplayResult,
+)
