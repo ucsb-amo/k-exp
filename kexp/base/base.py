@@ -174,6 +174,10 @@ class Base(Expt, Devices, Cooling, Image, Cameras, Control, Clients):
         if dds_off:
             self.switch_all_dds(0) # turn all DDS off to start experiment
         self.core.break_realtime()
+        # A crashed OPX run leaves this line HIGH (raman 80/150 AOs routed to
+        # a halted OPX); nothing else drops it before the first shot's
+        # cleanup_scan_kernel, and switch_all_dds does not cover a TTL.
+        self.ttl.quantum_machines_raman_rf_handoff_ttl.off()
         if beat_ref_on:
             self.dds.beatlock_ref.on()
         if init_imaging:
@@ -304,6 +308,12 @@ class Base(Expt, Devices, Cooling, Image, Cameras, Control, Clients):
         # happened inside an OPX window (an underflow there skips the
         # hand-back that normally drops this line).
         self.ttl.quantum_machines_raman_rf_handoff_ttl.off()
+        # An RTIOUnderflow inside the take-back skips its RF-off events; the
+        # OPX releases its blocks overlap after the hand-back regardless, so
+        # RF left on here is light on the atoms. One RTIO event each (these
+        # two switch DDSs have no DAC channel).
+        self.imaging.off()
+        self.raman.off()
 
         self.core.break_realtime()
         self.ry_405.lock_status()

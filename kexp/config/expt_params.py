@@ -428,23 +428,37 @@ class ExptParams(ExptParamsWaxx):
         #
         self.v_integrated_apd_adc_background = -2.1
 
-        ### OPX+ (quantum machines) handshake -- see the timing diagram on
-        ### Control.handoff_to_quantum_machines. Both sides (ARTIQ kernel, OPX
-        ### program) read these two windows; each is split in half between
-        ### the two machines.
-        # Handoff: after the trigger the OPX raises its RF blocks (~1 us);
-        # ARTIQ turns its steady-state RF on at settle/2; the OPX exposes
-        # nothing before settle, when the RF is on and settled.
-        self.t_opx_handoff_artiq_side = 350e-9 # time for OPX to see trigger and react, +time for opx ttl (to rf switches) to ready 
+        ### OPX+ (quantum machines) handshake -- timing diagram on
+        ### Control.handoff_to_quantum_machines; the OPX half is framed by
+        ### kexp.control.opx.builder from kexp_channel_map, which reads the
+        ### same parameters. These are CONFIG-TIME: never scan or live-adjust
+        ### them (kexp.control.opx.opx_config.CONFIG_TIME_PARAMS; refused).
+        # Handoff, after the ARTIQ trigger edge:
+        #   artiq_side: ARTIQ turns its steady-state RF on (imaging and raman
+        #     switch AOMs) and raises the handoff TTL, all at one timestamp.
+        #     ASSUMPTION, NOT MEASURED (milestone M1): the OPX has seen the
+        #     trigger and its RF-block switches are fully off by then
+        #     (trigger latency + 16 ns block play + switch turn-off). QM
+        #     publishes no trigger latency; if it is longer than this, both
+        #     beams leak for the difference on every shot.
+        #   artiq_side + opx_side: ARTIQ returns to the caller; the OPX body
+        #     may start (the builder waits the SUM after its block plays:
+        #     ChannelMap.t_handoff_settle_s). 1.35 us is 337.5 OPX clock
+        #     cycles -- the builder rounds to the 4 ns grid (units.s_to_cc).
+        self.t_opx_handoff_artiq_side = 350e-9 # time for OPX to see trigger and react, +time for opx ttl (to rf switches) to ready
         self.t_opx_handoff_opx_side = 1e-6 # slow rf switch turnoff time w MOSFET NOT + ARTIQ DDS rf switch fall time
 
-        # Handback: after its hand-back trigger the OPX holds the RF blocks
-        # high for the overlap. ARTIQ resumes at overlap/2 and switches its
-        # RF off there: the first half is kernel-CPU slack to learn of the
-        # edge (~3 us) and submit the three switch/TTL events (~1 us more),
-        # the second is the margin before the blocks release. The leftover
-        # slack is printed at VERBOSE by wait_for_quantum_machines_handback;
-        # ~10 us total is the floor, 30 us leaves 3x margin on the CPU half.
+        # Handback, after the OPX hand-back edge: the OPX holds its RF blocks
+        # high for the whole overlap. ARTIQ resumes at overlap/2 and there
+        # switches both RF off and drops the handoff TTL at one timestamp
+        # (switch-only take-back: one RTIO event each, no DAC on these two
+        # DDSs). The first half is kernel-CPU slack to learn of the edge and
+        # submit those three events -- unmeasured on this machine, ~4-7 us
+        # expected, printed at VERBOSE by wait_for_quantum_machines_handback;
+        # the second half is the margin before the blocks release. Measure
+        # that slack before shrinking the overlap. imaging.off()/raman.off()
+        # at the end of the overlap are bookkeeping re-writes of the same
+        # switch level, not the safety event.
 
         # OPX APD integration window (within the acquire window, which is
         # t_imaging_pulse_apd_abs long). Placeholder values, 2026-09-23 --
