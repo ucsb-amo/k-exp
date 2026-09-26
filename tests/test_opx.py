@@ -427,6 +427,25 @@ def test_trace_records_accessed_params():
     OPXProgramBuilder(s, make_map(), tables, tables.n_shots).trace()
     assert tables.accessed == {'t_raman_pulse', 't_fixed'}
 
+def test_latch_is_unscaled_without_a_power_fraction_param():
+    # a map naming no power_fraction_param latches the drives at the config
+    # amplitude (no amp()) and reads no fraction
+    from qm import generate_qua_script
+
+    @opx_sequence('_t_latch_plain', claims=('raman',))
+    def s(ctx):
+        ctx.raman_pulse(ctx.p.t_raman_pulse)
+
+    ex = FakeExpt([('t_raman_pulse', [0., 1.e-6])])
+    tables = build_shot_tables(ex)
+    prog, _ctx = OPXProgramBuilder(s, make_map(), tables,
+                                   tables.n_shots).trace()
+    src = generate_qua_script(prog)
+    assert "play('cw', 'raman_80')" in src
+    assert "play('cw', 'raman_150')" in src
+    assert 'amplitude_scale' not in src
+    assert tables.accessed == {'t_raman_pulse'}
+
 def test_live_adjust_of_a_baked_param_is_refused():
     # the OPX bakes its per-shot values at finish_prepare; the Adjust panel
     # must not be able to move a parameter the sequence read, directly or

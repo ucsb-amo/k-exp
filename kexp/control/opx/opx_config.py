@@ -93,6 +93,13 @@ RAMAN_TRANSITION_PARAM = 'frequency_raman_transition'
 RAMAN_ELEMENT_DDS = {RAMAN_150_ELEMENT: 'raman_150_plus',
                      RAMAN_80_ELEMENT: 'raman_80_plus'}
 
+# The Raman power fraction, shared with ARTIQ (prep_raman -> RamanBeamPair
+# scales each DDS amplitude by sqrt(fraction_power_raman)). The config
+# amplitudes are the dds defaults = fraction 1; the builder latches the
+# drives at amp(sqrt(fraction_power_raman)), once per run, so it is
+# run-level on the OPX (refused as an xvar and as an adjust() key).
+RAMAN_POWER_FRACTION_PARAM = 'fraction_power_raman'
+
 # ExptParams keys compiled into the config / channel map once per run
 # (design D2). Scanning or live-adjusting one would bake one shot's value
 # into every shot while ARTIQ scans it, with no record -- so they are
@@ -190,7 +197,9 @@ def build_machine(expt, tables=None) -> Machine:
     code as prep_raman() on the ARTIQ side. Amplitudes come from the dds
     frame defaults (kexp.config.dds_id: raman_80_plus / raman_150_plus) --
     used directly as waveform sample voltages, per the switch-box
-    calibration. The APD acquire pulse is t_imaging_pulse_apd_abs long with
+    calibration. They are the fraction_power_raman = 1 amplitudes: the
+    builder latches the drives at amp(sqrt(fraction_power_raman)), as
+    RamanBeamPair scales the DDSs (RAMAN_POWER_FRACTION_PARAM). The APD acquire pulse is t_imaging_pulse_apd_abs long with
     the integration window from t_opx_integration_start/len.
 
     Validated before it is returned (amplitude limit, window fit, duplicate
@@ -303,6 +312,9 @@ def kexp_channel_map(expt, tables=None) -> ChannelMap:
         't_handoff_settle_s': settle_s,
         't_opx_handback_overlap': overlap_s,
         'guarded_channels': ['raman', 'imaging'],
+        # the drive amplitudes above are fraction 1; the program latches
+        # them at amp(sqrt(<this param>)) (value in params/ and the program)
+        'raman_power_fraction_param': RAMAN_POWER_FRACTION_PARAM,
     })
 
     cmap = ChannelMap(
@@ -313,7 +325,8 @@ def kexp_channel_map(expt, tables=None) -> ChannelMap:
                 analog_latch_op=LATCH_OP,
                 block_op=BLOCK_OP, pass_op=PASS_OP,
                 transition_param=RAMAN_TRANSITION_PARAM,
-                transition_to_ifs=raman_transition_to_ifs(expt)),
+                transition_to_ifs=raman_transition_to_ifs(expt),
+                power_fraction_param=RAMAN_POWER_FRACTION_PARAM),
             'imaging': ChannelSpec(
                 switch_element=IMAGING_SWITCH_ELEMENT,
                 measure_element=APD_ELEMENT,

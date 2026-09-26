@@ -38,23 +38,27 @@ def viewer_probe(ctx):
     ctx.measure('apd_qm', expose=False)
 
 
-def _trace(seq, xvals, n_shots=None):
+def _trace(seq, xvals, n_shots=None, cmap=None, params=None):
     ex = FakeExpt([('t_raman_pulse', list(xvals))])
+    for key, value in (params or {}).items():
+        setattr(ex.params, key, value)
     tables = build_shot_tables(ex)
-    b = OPXProgramBuilder(seq, make_map(), tables, tables.n_shots)
+    cmap = cmap if cmap is not None else make_map()
+    b = OPXProgramBuilder(seq, cmap, tables, tables.n_shots)
     prog, ctx = b.trace(skip_triggers=True)
     return b, prog, ctx
 
 
-def _bundle(seq, xvals, duration_ns, qua=True):
-    b, prog, ctx = _trace(seq, xvals)
+def _bundle(seq, xvals, duration_ns, qua=True, cmap=None, params=None):
+    cmap = cmap if cmap is not None else make_map()
+    b, prog, ctx = _trace(seq, xvals, cmap=cmap, params=params)
     cfg = fake_config()
     qua_sim = ''
     if qua:
         from qm import generate_qua_script
         qua_sim = generate_qua_script(prog)
     job = simulate_job(b.log, cfg, b.n_shots, duration_ns, program=prog, ctx=ctx)
-    return build_bundle(job, b, make_map(), cfg, duration_ns, qua_sim=qua_sim,
+    return build_bundle(job, b, cmap, cfg, duration_ns, qua_sim=qua_sim,
                         info={'title': 'test'}), b, job
 
 
@@ -168,6 +172,26 @@ def test_bundle_complete_window_has_no_warnings():
     # digital edge arrays match the exposure edges (cross-check passes)
     e1 = bundle.array(bundle.lane('D1')['edges'])
     assert np.any(np.abs(e1 - exp[0]['t0']) < 1.5) and np.any(np.abs(e1 - exp[0]['t1']) < 1.5)
+
+
+def test_bundle_analog_lanes_show_the_latched_amplitude():
+    # a map with a power_fraction_param latches at amp(sqrt(f)): the analog
+    # lanes label the latched volts, and the simulated tone carries them
+    import dataclasses
+    cmap = make_map()
+    cmap.channels['raman'] = dataclasses.replace(
+        cmap.channels['raman'], power_fraction_param='fraction_power_raman')
+    bundle, b, job = _bundle(viewer_probe, [0., 4.e-6], 400_000, cmap=cmap,
+                             params={'fraction_power_raman': 0.36})
+    notes = {ln['id']: ln['note'] for ln in bundle.meta['lanes']}
+    # fake_config: 0.25 V (raman_80, A1) and 0.3 V (raman_150, A2)
+    assert '0.15 V (config 0.25 V x amp 0.6)' in notes['A1']
+    assert '0.18 V (config 0.3 V x amp 0.6)' in notes['A2']
+    assert 'fraction_power_raman' in bundle.meta['params']['names']
+    a1 = np.asarray(job.get_simulated_samples().con1.analog['1'], dtype=float)
+    win = a1[5_000:25_000]
+    assert np.sqrt(2) * float(np.sqrt(np.mean(np.square(win)))) == \
+        pytest.approx(0.15, rel=1e-3)
 
 
 def test_bundle_truncation_is_flagged():

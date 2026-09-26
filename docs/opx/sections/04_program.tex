@@ -48,7 +48,8 @@ with program():
     # one declare_output_stream() (+ a fixed variable for measure keys) per data key (at first use)
 
     # ---- prologue, once per run ----
-    play('cw', 'raman_80'); play('cw', 'raman_150')           # 1000 ns sticky latch; tone holds all run
+    play('cw' * amp(sqrt(f)), 'raman_80')                     # f = fraction_power_raman (ARTIQ's);
+    play('cw' * amp(sqrt(f)), 'raman_150')                    #   1000 ns sticky latch; tone holds all run
 
     with for_(shot, 0, shot < N_shots, shot + 1):             # implicit align at loop entry
         [update_frequency('raman_150', ifs150[shot]); update_frequency('raman_80', ifs80[shot])]
@@ -130,7 +131,7 @@ limit):
 \toprule
 element & ports & sticky & ops \\
 \midrule
-\code{raman\_80} & analog out 1 & analog, 100\nsu\ ramp & \code{cw} (1000\nsu\ latch, constant waveform = dds default 0.337\,V) \\
+\code{raman\_80} & analog out 1 & analog, 100\nsu\ ramp & \code{cw} (1000\nsu\ latch, constant waveform = dds default 0.337\,V = power fraction 1, played at \code{amp(}$\sqrt{f}$\code{)}) \\
 \code{raman\_150} & analog out 2 & analog, 100\nsu\ ramp & \code{cw} (0.324\,V) \\
 \code{raman\_switch} & digital 1 & analog+digital, 16\nsu & \code{block} $[(1,0)]$, \code{pass} $[(0,0)]$, both 16\nsu\ long \\
 \code{imaging\_switch} & digital 2 & analog+digital, 16\nsu & \code{block}, \code{pass} \\
@@ -145,7 +146,12 @@ element & ports & sticky & ops \\
 it are named \code{<element>.<label>.pulse|wf|dm} and
 \code{<element>.<label>.<weight>.iw} (the golden test compares the
 \code{elements} block with the previous hand-written config). Amplitudes from
-\file{kexp/config/dds\_id.py} lines 84--86 and 110--112.}
+\file{kexp/config/dds\_id.py} lines 84--86 and 110--112; they are the
+$f = 1$ amplitudes, and the builder's latch scales them by $\sqrt{f}$ with
+$f$ = \code{fraction\_power\_raman} (\code{ChannelSpec.power\_fraction\_param}),
+the same factor \code{RamanBeamPair.set} applies to the DDSs. $f$ must be
+constant for the run (refused as an xvar or \code{adjust()} key when the
+sequence claims \code{raman}).}
 \label{tab:elements}
 \end{table}
 

@@ -29,6 +29,9 @@ MAX_ANALOG_V = 0.499
 # rejected (or wrapped) by the QOP compiler far from the line that wrote it.
 QUA_FIXED_LIMIT = 8.
 
+# amp() scaling factors of a play must lie in [-2, 2).
+QUA_AMP_LIMIT = 2.
+
 
 def s_to_cc(t, key=''):
     """Seconds -> integer clock cycles (scalar or ndarray), rounded.

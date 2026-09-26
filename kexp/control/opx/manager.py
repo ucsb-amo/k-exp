@@ -142,6 +142,23 @@ def check_config_time_xvars(expt, config_time_params):
             f"scheduled value. Take one run per value instead.")
 
 
+def check_latch_param_xvars(expt, cmap, claims):
+    """Refuse a run that scans the power fraction of a claimed role's
+    analog drives (ChannelSpec.power_fraction_param): the builder latches
+    them once per run, so a scan would run every shot at the first
+    scheduled value. Roles the sequence does not claim are not latched, so
+    their parameter may be scanned (ARTIQ-only use)."""
+    keys = {getattr(cmap.spec(r), 'power_fraction_param', None)
+            for r in claims} - {None}
+    scanned = [k for k in _xvar_keys(expt) if k in keys]
+    if scanned:
+        raise RuntimeError(
+            f"[opx] {scanned} is scanned as an xvar, but the OPX latches "
+            f"its analog drives once per run at amp(sqrt({scanned[0]})). "
+            f"The OPX would run every shot at the first scheduled value. "
+            f"Take one run per value instead.")
+
+
 def _install_qm_log_gate():
     """Install ``_qm_log_gate`` on the ``qm`` logger, once per process.
     Must run BEFORE the first ``import qm``: filters on the logger survive
@@ -305,6 +322,7 @@ class OPXManager:
         # early, loud: xvars declared before use() are visible now (the
         # authoritative check runs again at finish_prepare)
         check_config_time_xvars(expt, self._config_time_params)
+        check_latch_param_xvars(expt, cmap, seq.claims)
 
         params = getattr(expt, 'params', None)
         measurements = seq.resolve_measurements(params)
@@ -380,6 +398,7 @@ class OPXManager:
                          or self._config_time_params)
         self._config_time_params = cfg_keys
         check_config_time_xvars(expt, cfg_keys)
+        check_latch_param_xvars(expt, self._map, seq.claims)
         # the config reads these once per run: record them as dependencies
         # of the program so the Adjust-panel check covers them too
         for key in cfg_keys:

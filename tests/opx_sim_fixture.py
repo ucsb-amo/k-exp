@@ -351,7 +351,9 @@ def simulate_offline(log, config, n_shots, duration_ns, skip_triggers=True,
             if wfs:
                 port = _analog_port(ec)
                 wf_name = wfs.get('single')
-                amp = _const_sample(config, wf_name)
+                # the builder's latch carries its amp() factor in the log
+                amp = (_const_sample(config, wf_name)
+                       * float(rec.extra.get('amp_scale', 1.)))
                 st = analog[e]
                 st.close(t0)
                 st.amp = amp

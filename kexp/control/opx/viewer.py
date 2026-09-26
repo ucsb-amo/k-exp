@@ -457,10 +457,14 @@ class BundleBuilder:
             self.arrays[akey] = arr.astype(np.float32)
             f = self.cfg.intermediate_frequency(el) if el else None
             a = self.cfg.analog_amplitude(el) if el else None
+            scale = self._latch_amp_scale(el) if el else None
             desc = []
             if f is not None:
                 desc.append(f'{float(f) / 1e6:g} MHz')
-            if a is not None:
+            if a is not None and scale is not None:
+                desc.append(f'{a * scale:g} V (config {a:g} V x '
+                            f'amp {scale:.4g})')
+            elif a is not None:
                 desc.append(f'{a:g} V')
             self._add_lane(f'A{port}', f'A{port} {el or ""}'.strip(),
                            'analog', 'physical', COLORS['analog'],
@@ -468,6 +472,16 @@ class BundleBuilder:
                            note=('sticky drive: ' + ' · '.join(desc)
                                  if desc else ''),
                            samples=akey, height=0.9)
+
+    def _latch_amp_scale(self, element):
+        """The amp() factor the builder latched `element` at (its power
+        fraction, sqrt'd), or None when it latched at the config
+        amplitude."""
+        for r in self.log.records:
+            if (r.macro == 'latch' and r.element == element
+                    and 'amp_scale' in r.extra):
+                return float(r.extra['amp_scale'])
+        return None
 
     # ---- matching --------------------------------------------------------
     def _match(self, items, report, qmap):

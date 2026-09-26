@@ -52,6 +52,13 @@ class ChannelSpec:
     # ctx.set_transition all go through transition_to_ifs.
     transition_param: str = None
     transition_to_ifs: Callable = None
+    # the ExptParams key holding the analog drives' power fraction -- the
+    # same parameter the ARTIQ side scales its DDS amplitudes by. The config
+    # amplitude is the fraction-1 amplitude; the builder latches each drive
+    # at amp(sqrt(fraction)) (power ~ amplitude^2). Latched once per run, so
+    # the value must be constant for the run. None: latched at the config
+    # amplitude.
+    power_fraction_param: str = None
 
 
 @dataclass

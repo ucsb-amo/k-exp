@@ -8,7 +8,10 @@ is worked out per shot on the host before the program is built.
 
 The Raman analog drives (raman_80 / raman_150, sticky) are latched once per
 run by the builder so the intensity servo never sees the RF drop; a "pulse"
-here is the common switch AOM gate opening for the requested time.
+here is the common switch AOM gate opening for the requested time. They
+latch at amp(sqrt(fraction_power_raman)) of the dds_id amplitudes -- what
+prep_raman() sets on the ARTIQ DDSs -- so set self.p.fraction_power_raman in
+prepare() to change the Raman power (one value per run: not an xvar).
 
 That switch AOM is NOT kept warm by the sticky drives -- its thermal
 warm-up (and the raman shutter) stay ARTIQ's job: call prep_raman() before

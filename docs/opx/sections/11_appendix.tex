@@ -95,9 +95,14 @@ the remesh plan.
 
 \paragraph{M2 -- the OPX Rabi flop.} \code{qm\_rabi\_frequency\_opx.py} /
 \code{check\_rabi\_frequency\_apd\_opx.py} against the ARTIQ-native and
-manual-OPX flops at the same settings. Resolve the amplitude gap (OPX drives
-at the bare dds defaults 0.337/0.324\,V versus ARTIQ's $\sqrt{0.3}\times$
-default) and re-measure \code{t\_raman\_pi\_pulse} for the OPX drive. Measure
+manual-OPX flops at the same settings. The amplitude gap (OPX drives at the
+bare dds defaults 0.337/0.324\,V versus ARTIQ's $\sqrt{0.3}\times$ default)
+is closed in code since 2026-09-25: the latch plays at
+\code{amp(sqrt(fraction\_power\_raman))}, the
+amplitude \code{RamanBeamPair.set} writes. That equal amplitudes give equal
+Rabi frequencies rests on the switch-box calibration (OPX volts = DDS
+amplitude); confirm it with the two flops and re-measure
+\code{t\_raman\_pi\_pulse} for the OPX drive if they differ. Measure
 the OPX switch-path turn-on latency (replaces 127\nsu).
 
 \paragraph{Timing of the feedback cycle (simulator done, hardware owed).}

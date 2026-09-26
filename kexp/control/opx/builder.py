@@ -3,7 +3,8 @@
 The generated program is one job per run:
 
     latch sticky Raman analog drives (once; the intensity servo needs the
-        AO drive never to drop)
+        AO drive never to drop) at amp(sqrt(power fraction)) -- see
+        ChannelSpec.power_fraction_param
     for shot in range(N_shots):                # N = N_shots_with_repeats
         [re-point Raman IFs at this shot's transition, if it is scanned]
         wait_for_trigger                       # ARTIQ handoff (control.py)
@@ -81,7 +82,7 @@ import numpy as np
 
 from kexp.control.opx.context import OPXShotContext
 from kexp.control.opx.sequence import Stream
-from kexp.control.opx.units import s_to_cc
+from kexp.control.opx.units import s_to_cc, MAX_ANALOG_V, QUA_AMP_LIMIT
 from kexp.control.opx.trace_log import (OpLog, PHASE_PROLOGUE,
                                         PHASE_HANDSHAKE, PHASE_EPILOGUE)
 
@@ -143,6 +144,53 @@ class OPXProgramBuilder:
         out.update(RESERVED_STREAMS)
         return out
 
+    def _latch_scale(self, ctx, role, spec):
+        """(power fraction, amp() factor) a role's analog drives latch at:
+        (f, sqrt(f)) for f = ctx.p.<spec.power_fraction_param> -- power goes
+        as amplitude^2, and the config amplitude is fraction 1 -- or
+        (None, None) for a role without one (latched at the config
+        amplitude).
+
+        Read through ctx.p, so the parameter is recorded as accessed and
+        the Adjust panel refuses it. The drives latch once per run, so a
+        fraction that varies per shot is refused rather than silently
+        latched at its first value. When the map carries a machine, the
+        latched amplitude is checked against the analog output limit.
+        """
+        key = getattr(spec, 'power_fraction_param', None)
+        if key is None:
+            return None, None
+        ref = getattr(ctx.p, key)
+        col = ref.column
+        bad = ~(np.isfinite(col) & (col >= 0.))
+        if np.any(bad):
+            raise ValueError(
+                f"[opx] {key} = {float(col[bad][0])!r}: a power fraction must be a "
+                f"finite number >= 0.")
+        if not ref.is_constant:
+            raise RuntimeError(
+                f"[opx] {key!r} varies per shot ({np.min(col):g} .. "
+                f"{np.max(col):g}), but the {role!r} analog drives latch once "
+                f"per run at amp(sqrt({key})) -- every shot would run at the "
+                f"first value. Take one run per value.")
+        fraction = float(col[0])
+        scale = float(np.sqrt(fraction))
+        if not scale < QUA_AMP_LIMIT:
+            raise ValueError(
+                f"[opx] {key} = {fraction:g} needs amp({scale:g}) on the "
+                f"{role!r} latch, outside QUA's amp() range "
+                f"[-{QUA_AMP_LIMIT:g}, {QUA_AMP_LIMIT:g}).")
+        machine = getattr(self.map, 'machine', None)
+        if machine is not None:
+            for el in spec.analog_elements:
+                a = getattr(machine.element(el), 'amplitude_v', None)
+                if a is not None and abs(a * scale) > MAX_ANALOG_V:
+                    raise ValueError(
+                        f"[opx] {key} = {fraction:g} latches {el!r} at "
+                        f"{a:g} V x {scale:g} = {a * scale:g} V, above the "
+                        f"analog output limit of {MAX_ANALOG_V:g} V.")
+        return fraction, scale
+
     def trace(self, skip_triggers=False
               ) -> 'tuple[Program, OPXShotContext]':
         """Build the QUA program. Returns (program, context) -- the context
@@ -189,15 +237,33 @@ class OPXProgramBuilder:
             # run prologue: latch the sticky analog drives once. Sticky
             # plays accumulate on the held value, so this is the only place
             # they are played (per-shot re-latching would add amplitudes).
+            # A role with a power_fraction_param latches at
+            # amp(sqrt(fraction)) of the config (fraction-1) amplitude.
             log.new_call('latch')
             for role in seq.claims:
                 spec = cmap.spec(role)
+                if not spec.analog_elements:
+                    continue
+                fraction, scale = self._latch_scale(ctx, role, spec)
                 for el in spec.analog_elements:
+                    if scale is None:
+                        log.record('play', el, spec.analog_latch_op,
+                                   phase=PHASE_PROLOGUE, macro='latch',
+                                   note=f'{role} analog drive latched '
+                                        f'(sticky: holds for the whole run)')
+                        qua.play(spec.analog_latch_op, el)
+                        continue
+                    key = spec.power_fraction_param
                     log.record('play', el, spec.analog_latch_op,
                                phase=PHASE_PROLOGUE, macro='latch',
-                               note=f'{role} analog drive latched (sticky: '
-                                    f'holds for the whole run)')
-                    qua.play(spec.analog_latch_op, el)
+                               label=f'sqrt({key})',
+                               note=f'{role} analog drive latched at '
+                                    f'amp({scale:.6g}) = sqrt({key} = '
+                                    f'{fraction:g}) of the config amplitude '
+                                    f'(sticky: holds for the whole run)',
+                               amp_scale=scale, power_fraction=fraction,
+                               power_fraction_param=key)
+                    qua.play(spec.analog_latch_op * qua.amp(scale), el)
 
             # analog drives that follow a transition parameter: the config
             # IFs are the first shot's value; when it varies, re-point the

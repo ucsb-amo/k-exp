@@ -228,7 +228,10 @@ load depends on its duty cycle. Hence:
   \item The OPX \emph{drives} the 80/150 AOs with sticky CW tones latched
     once per run, at exactly the frequencies \code{prep\_raman()} would have
     programmed on the ARTIQ DDSs (the same \code{RamanBeamPair.ao\_frequencies}
-    split, section~\ref{sec:program:config}). The routing switch
+    split, section~\ref{sec:program:config}) and at the same amplitudes:
+    $\sqrt{f}\times$ the dds defaults, $f$ = \code{fraction\_power\_raman}, as
+    \code{RamanBeamPair.set} writes them (the latch plays at
+    \code{amp(}$\sqrt{f}$\code{)}; since 2026-09-25). The routing switch
     (\code{ttl33}) decides whose tone reaches the AOs; the tone itself never
     stops during the run.
   \item The OPX \emph{gates} the switch AOM by blocking/passing ARTIQ's own

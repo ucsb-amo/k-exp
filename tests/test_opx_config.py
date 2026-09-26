@@ -33,7 +33,8 @@ from kexp.control.opx.components import (Machine, Sticky, DigitalLine,  # noqa: 
 from kexp.control.opx.opx_config import (kexp_channel_map, build_opx_config,  # noqa: E402
                                          build_machine, config_time_params,
                                          CONFIG_TIME_PARAMS,
-                                         RAMAN_TRANSITION_PARAM)
+                                         RAMAN_TRANSITION_PARAM,
+                                         RAMAN_POWER_FRACTION_PARAM)
 
 
 # ---------------------------------------------------------------------------
@@ -215,6 +216,114 @@ def test_scanned_transition_is_not_refused():
     # says so
     m0 = kexp_channel_map(ex).machine
     assert m0.extra['transition_source'] == 'params'
+
+
+# ---------------------------------------------------------------------------
+# Raman power fraction: the ARTIQ parameter, applied as amp() on the latch
+# ---------------------------------------------------------------------------
+
+def _trace_real(ex, claims=('raman',)):
+    """Trace a one-op sequence against the real map -> (builder, tables,
+    QUA source)."""
+    from qm import generate_qua_script
+    from kexp.control.opx.builder import OPXProgramBuilder
+    from kexp.control.opx.sequence import OPXSequence
+
+    def body(ctx):
+        if 'raman' in claims:
+            ctx.raman_pulse(ctx.p.t_raman_pi_pulse)
+        else:
+            ctx.wait_s(1.e-6)
+    seq = OPXSequence(body, name='_cfg_fp_' + '_'.join(claims), claims=claims)
+    tables = build_shot_tables(ex)
+    b = OPXProgramBuilder(seq, kexp_channel_map(ex, tables), tables,
+                          tables.n_shots)
+    prog, _ctx = b.trace()
+    return b, tables, generate_qua_script(prog)
+
+
+def _latch_scales(src):
+    """{element: amp() factor} of the analog latch plays in QUA source."""
+    import re
+    return {el: float(v) for el, v in re.findall(
+        r"play\('cw', '(\w+)', amplitude_scale=([0-9.eE+-]+)\)", src)}
+
+
+def test_raman_latch_is_sqrt_fraction_power_of_the_dds_default():
+    # fraction_power_raman is the ARTIQ parameter: prep_raman ->
+    # RamanBeamPair.set writes sqrt(f) x the dds default to each DDS. The
+    # OPX config keeps the dds default (= fraction 1) and the latch plays it
+    # at amp(sqrt(f)), so both sides drive the AOs at the same amplitude.
+    ex = RealParamsExpt([('t_raman_pulse', [0., 4.e-6])])
+    f = float(ex.params.fraction_power_raman)
+    cmap = kexp_channel_map(ex)
+    assert RAMAN_POWER_FRACTION_PARAM == 'fraction_power_raman'
+    assert cmap.spec('raman').power_fraction_param == RAMAN_POWER_FRACTION_PARAM
+    assert cmap.spec('imaging').power_fraction_param is None
+    assert (cmap.machine.extra['raman_power_fraction_param']
+            == RAMAN_POWER_FRACTION_PARAM)
+    cfg = build_opx_config(ex)
+    a80 = cfg['waveforms']['raman_80.cw.wf']['sample']
+    a150 = cfg['waveforms']['raman_150.cw.wf']['sample']
+    assert a80 == ex.dds.raman_80_plus.amplitude
+    assert a150 == ex.dds.raman_150_plus.amplitude
+
+    b, tables, src = _trace_real(ex)
+    scales = _latch_scales(src)
+    assert scales.keys() == {'raman_80', 'raman_150'}
+    assert src.count("play('cw', ") == 2            # once per drive per run
+    for s in scales.values():
+        assert s == pytest.approx(np.sqrt(f), rel=1.e-12)
+    # the same volts RamanBeamPair.set writes (dds0 = 150, dds1 = 80)
+    assert a150 * scales['raman_150'] == pytest.approx(
+        np.sqrt(f) * ex.raman._amplitude_0, rel=1.e-12)
+    assert a80 * scales['raman_80'] == pytest.approx(
+        np.sqrt(f) * ex.raman._amplitude_1, rel=1.e-12)
+    for r in (r for r in b.log.records if r.macro == 'latch'):
+        assert r.extra['power_fraction'] == f
+        assert r.extra['amp_scale'] == pytest.approx(np.sqrt(f), rel=1.e-12)
+
+    # read through ctx.p, so the Adjust panel refuses it
+    from kexp.control.opx.manager import check_live_adjust_conflicts
+    assert RAMAN_POWER_FRACTION_PARAM in tables.accessed
+    ex._adjust_specs = [SimpleNamespace(key=RAMAN_POWER_FRACTION_PARAM)]
+    with pytest.raises(RuntimeError, match=RAMAN_POWER_FRACTION_PARAM):
+        check_live_adjust_conflicts(ex, tables)
+
+
+def test_scanned_raman_power_fraction_refused_only_when_raman_claimed():
+    from kexp.control.opx.manager import check_latch_param_xvars
+    ex = RealParamsExpt([(RAMAN_POWER_FRACTION_PARAM, [0.3, 0.1])])
+    cmap = kexp_channel_map(ex)
+    with pytest.raises(RuntimeError, match=RAMAN_POWER_FRACTION_PARAM):
+        check_latch_param_xvars(ex, cmap, ('raman',))
+    with pytest.raises(RuntimeError, match='latch once per run'):
+        _trace_real(ex)
+    # a sequence that does not claim raman never latches the drives, so
+    # ARTIQ may scan the fraction
+    check_latch_param_xvars(ex, cmap, ('imaging',))
+    _b, _t, src = _trace_real(ex, claims=('imaging',))
+    assert "play('cw'" not in src
+
+
+@pytest.mark.parametrize('f, match', [
+    (-0.1, '>= 0'),
+    (float('nan'), '>= 0'),
+    (2.5, 'analog output limit'),        # 0.337 V x sqrt(2.5) = 0.53 V
+    (4.0, r'amp\(\) range'),             # amp(2) is outside [-2, 2)
+])
+def test_bad_raman_power_fraction_is_refused(f, match):
+    ex = RealParamsExpt()
+    ex.params.fraction_power_raman = f
+    with pytest.raises(ValueError, match=match):
+        _trace_real(ex)
+
+
+def test_power_fraction_one_latches_the_dds_default():
+    ex = RealParamsExpt()
+    ex.params.fraction_power_raman = 1.
+    _b, _t, src = _trace_real(ex)
+    assert _latch_scales(src) == {'raman_80': 1., 'raman_150': 1.}
 
 
 # ---------------------------------------------------------------------------
