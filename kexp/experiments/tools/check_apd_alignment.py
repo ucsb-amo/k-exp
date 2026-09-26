@@ -93,8 +93,9 @@ class tweezer_load(EnvExperiment, Base):
                                                v_end=self.p.v_paint_amp_end,
                                                n=1000)
 
-        self.init_raman_beams_nf()
-
+        # 2026-09-26: removed the call to init_raman_beams_nf(), which no
+        # longer exists in Base. Nothing sets the raman_nf pair up here now;
+        # the current equivalent would be self.raman_nf.init(frequency, power).
         self.raman_nf.pulse(t=self.p.t_raman_pulse)
 
         delay(self.p.t_tweezer_hold)

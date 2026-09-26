@@ -43,7 +43,8 @@ from kexp.control.rydberg_lasers import RydbergDDSSwitchBeam, RydbergTTLSwitchBe
 from kexp.calibrations.magnets import (slope_i_transducer_per_v_setpoint_supply_outer,
                                        offset_i_transducer_per_v_setpoint_supply_outer,
                                        slope_i_transducer_per_v_setpoint_pid_outer,
-                                       offset_i_transducer_per_v_setpoint_pid_outer)
+                                       offset_i_transducer_per_v_setpoint_pid_outer,
+                                       slope_i_per_v_setpoint_supply_inner)
 
 dv = -0.1
 d_exptparams = ExptParams()
@@ -107,10 +108,15 @@ class Devices():
         # self.dds.dds_manager = [DDSManager(self.core)]
         self.get_dds_devices()
         self.dds_list = self.dds.dds_list
+        # record_to: whether this run's DDS init was skipped, and why, is kept
+        # with its data (HDF5 attr "dds_init"); the terminal stays quiet for
+        # the usual all-skipped case.
         self.dds_initializer = AD9910FastInit(core=self.core,
                                               core_cache=self.get_device("core_cache"),
                                               dds_list=self.dds.dds_list,
-                                              cache_key="kexp_ad9910_sync_data")
+                                              cache_key="kexp_ad9910_sync_data",
+                                              record_to=getattr(self, "_extra_file_texts",
+                                                                None))
         
         self.rf = doubled_rf(dds_ch=self.dds.antenna_rf, expt_params=self.params)
 
@@ -126,7 +132,7 @@ class Devices():
                                         blanking_ttl=self.ttl.b_field_stab_SRS_blanking_input,
                                         hbridge_ttl=self.ttl.hbridge_helmholtz,
                                         expt_params=self.params,
-                                        slope_current_per_vdac_supply=17.)
+                                        slope_current_per_vdac_supply=slope_i_per_v_setpoint_supply_inner)
                                       
         self.outer_coil = igbt_magnet(max_current=500.,
                                         max_voltage=80.,
