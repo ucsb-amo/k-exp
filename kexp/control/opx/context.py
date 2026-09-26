@@ -56,6 +56,9 @@ class OPXShotContext(Generic[P]):
         self._stream_roles = {}  # data key -> channel role (for V conversion)
         self._save_counts = {}   # data key -> saves traced per shot
         self._handback_done = False
+        # roles whose analog drive frequency the sequence changed: the
+        # builder points them back at the run's transition after the body
+        self._if_touched = set()
 
         # provenance: every emitted QUA statement, with the sequence source
         # line and the per-shot values behind it (read by the pulse viewer)
@@ -317,6 +320,7 @@ class OPXShotContext(Generic[P]):
         from qm import qua
         self._check_open("set_frequency")
         els = self._analog_targets(role, which)
+        self._if_touched.add(role)
         self._log.new_call('set_frequency')
         v = self.hz(f)
         label, raw, col = self._last_resolved
@@ -324,6 +328,61 @@ class OPXShotContext(Generic[P]):
             self._log.record('update_frequency', el, macro='set_frequency',
                              label=label, values=raw, duration_cc=None,
                              note='IF change', frequency_hz=col)
+            qua.update_frequency(el, v, keep_phase=keep_phase)
+
+    def set_transition(self, role, f, keep_phase=False):
+        """Point a channel's analog drives at a transition of f Hz (SI; a
+        ctx.p parameter or expression scans per shot), e.g. a Ramsey
+        detuning:
+
+            ctx.set_transition('raman', ctx.p.frequency_raman_transition
+                                        + ctx.p.frequency_ramsey_detuning)
+
+        Each drive's IF comes from the channel's transition_to_ifs -- for
+        the Raman pair, the same split ARTIQ's RamanBeamPair runs. Every
+        shot starts at the run's transition (transition_param): the builder
+        restores it after any shot whose body changed a drive frequency."""
+        self._check_open("set_transition")
+        self._claimed_spec(role)
+        self._if_touched.add(role)
+        self._point_transition(role, f, macro='set_transition',
+                               keep_phase=keep_phase)
+
+    def _point_transition(self, role, f, macro, phase=PHASE_BODY,
+                          keep_phase=False):
+        """update_frequency on every drive of `role` to address transition
+        f -- shared by set_transition and the builder's per-shot framing
+        (which runs outside the body, so no open/claim bookkeeping here)."""
+        from qm import qua
+        spec = self._map.spec(role)
+        if spec.transition_to_ifs is None:
+            raise RuntimeError(
+                f"[opx] channel {role!r} has no transition_to_ifs in the "
+                f"channel map -- its drives do not address one transition. "
+                f"Use ctx.set_frequency per drive instead.")
+        if isinstance(f, ParamRef):
+            self._check_ref(f)
+            label, col = f.label, f.column
+        else:
+            label = 'transition'
+            col = np.full(self._tables.n_shots,
+                          as_host_scalar(f, 'ctx.set_transition() argument'))
+        self._check_finite(f, label, col)
+        ifs = spec.transition_to_ifs(col)
+        missing = set(spec.analog_elements) - set(ifs)
+        if missing:
+            raise RuntimeError(
+                f"[opx] transition_to_ifs for {role!r} gives no IF for "
+                f"{sorted(missing)}.")
+        self._log.new_call(macro)
+        for el in spec.analog_elements:
+            ref = ParamRef(f"{el} IF @ {label}", ifs[el], self._tables)
+            v = self.hz(ref)
+            _label, raw, hz_col = self._last_resolved
+            self._log.record('update_frequency', el, phase=phase, macro=macro,
+                             label=ref.label, values=raw, duration_cc=None,
+                             note=f'IF for transition {label}',
+                             frequency_hz=hz_col)
             qua.update_frequency(el, v, keep_phase=keep_phase)
 
     def frame_rotation(self, role, turns, which=None):

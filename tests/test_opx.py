@@ -9,6 +9,9 @@ Simulation and execution need the OPX on the network (milestone M1);
 nothing here opens a socket.
 """
 
+import os
+import sys
+
 import numpy as np
 import pytest
 from types import SimpleNamespace
@@ -24,6 +27,9 @@ from kexp.control.opx.channels import ChannelMap, ChannelSpec
 from kexp.control.opx.builder import OPXProgramBuilder
 from kexp.control.opx.manager import OPXManager, VALID_MASK_KEY
 
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+from opx_sim_fixture import fake_raman_expt                    # noqa: E402
+
 
 # ---------------------------------------------------------------------------
 # fakes
@@ -36,6 +42,7 @@ class FakeParams:
         self.t_fixed = 5.e-6
         self.t_opx_handoff_settle = 10.e-6
         self.t_opx_handback_overlap = 10.e-6
+        self.frequency_raman_transition = 119.4639e6
         self.a_list = np.array([1., 2.])   # non-scalar: must not become a column
 
     def compute_derived(self):
@@ -53,6 +60,9 @@ class FakeExpt:
         self.scan_xvars = [xvar(k, np.asarray(v), position=i)
                            for i, (k, v) in enumerate(xvars)]
         self.xvardims = [len(xv.values) for xv in self.scan_xvars]
+        # the Raman split the OPX config and builder go through
+        r = fake_raman_expt()
+        self.dds, self.raman = r.dds, r.raman
 
     def compute_new_derived(self):
         self.params.t_new = self.params.t_raman_pulse + 1.e-6
@@ -356,13 +366,10 @@ def test_trace_generates_qua_source():
     from qm import generate_qua_script
     from kexp.control.opx.opx_config import build_opx_config
 
-    dds_chan = lambda f, a: SimpleNamespace(frequency=f, amplitude=a)
     ex = FakeExpt([('t_raman_pulse', [0., 1.e-6])])
     ex.params.t_imaging_pulse_apd_abs = 5.e-6
     ex.params.t_opx_integration_start = 0.
     ex.params.t_opx_integration_len = 5.e-6
-    ex.dds = SimpleNamespace(raman_80_plus=dds_chan(80.e6, 0.337),
-                             raman_150_plus=dds_chan(150.e6, 0.324))
 
     @opx_sequence('_t_src', claims=('raman',))
     def s(ctx):
@@ -513,16 +520,15 @@ def test_fill_containers_partial_run_nans_and_flags():
 # kexp config
 # ---------------------------------------------------------------------------
 
-def _config_stub(a_80=0.337):
-    dds_chan = lambda f, a: SimpleNamespace(frequency=f, amplitude=a)
-    ex = SimpleNamespace(
-        params=SimpleNamespace(t_imaging_pulse_apd_abs=5.e-6,
-                               t_opx_integration_start=0.,
-                               t_opx_integration_len=5.e-6,
-                               t_opx_handoff_settle=10.e-6,
-                               t_opx_handback_overlap=10.e-6),
-        dds=SimpleNamespace(raman_80_plus=dds_chan(80.e6, a_80),
-                            raman_150_plus=dds_chan(150.e6, 0.324)))
+def _config_stub(a_80=0.337, frequency_raman_transition=119.4639e6):
+    ex = fake_raman_expt(a_80=a_80, a_150=0.324,
+                         frequency_raman_transition=frequency_raman_transition)
+    p = ex.params
+    p.t_imaging_pulse_apd_abs = 5.e-6
+    p.t_opx_integration_start = 0.
+    p.t_opx_integration_len = 5.e-6
+    p.t_opx_handoff_settle = 10.e-6
+    p.t_opx_handback_overlap = 10.e-6
     return ex
 
 def test_build_opx_config_shape():
@@ -532,7 +538,12 @@ def test_build_opx_config_shape():
     for el in ('raman_80', 'raman_150', 'raman_switch', 'imaging_switch',
                'artiq_handback', 'apd'):
         assert el in els
-    assert els['raman_80']['intermediate_frequency'] == 80_000_000
+    # IFs at the Raman resonance, split like the kernel -- not the dds
+    # centers (80/150 MHz is the 140 MHz two-photon point)
+    f150, f80 = _config_stub().raman.ao_frequencies(119.4639e6)
+    assert els['raman_80']['intermediate_frequency'] == hz_to_int(f80)
+    assert els['raman_150']['intermediate_frequency'] == hz_to_int(f150)
+    assert els['raman_80']['intermediate_frequency'] != 80_000_000
     assert cfg['waveforms']['raman_80_wf']['sample'] == 0.337
     assert cfg['pulses']['apd_acquire']['length'] == 5000
     # integration window covers exactly the acquire length
@@ -557,3 +568,130 @@ def test_integration_window_must_fit():
     ex.params.t_opx_integration_len = 6.e-6   # > 5 us acquire
     with pytest.raises(ValueError, match='does not fit'):
         build_opx_config(ex)
+
+
+# ---------------------------------------------------------------------------
+# Raman transition -> OPX drive IFs (shared split with the ARTIQ kernel)
+# ---------------------------------------------------------------------------
+
+F_TR = 119.4639e6
+
+def make_transition_map(ex):
+    from kexp.control.opx.opx_config import (raman_transition_to_ifs,
+                                             RAMAN_TRANSITION_PARAM)
+    cmap = make_map()
+    spec = cmap.channels['raman']
+    spec.transition_param = RAMAN_TRANSITION_PARAM
+    spec.transition_to_ifs = raman_transition_to_ifs(ex)
+    return cmap
+
+def test_ao_frequencies_is_the_kernel_split():
+    pair = fake_raman_expt().raman
+    dummy = pair._dummy.copy()
+    f150, f80 = pair.ao_frequencies(F_TR)
+    # both +1 order double-pass AOs: two-photon = 2 * (f150 - f80)
+    assert abs(2. * (f150 - f80) - F_TR) < 1.e-3
+    assert abs(f150 - 143.303446e6) < 10. and abs(f80 - 83.571496e6) < 10.
+    # arrays: elementwise identical to the kernel method called per value
+    fs = np.array([F_TR, F_TR + 5.e3, F_TR - 2.e6])
+    a150, a80 = pair.ao_frequencies(fs)
+    for f, x150, x80 in zip(fs, a150, a80):
+        pair.state_splitting_to_ao_frequency(f)
+        assert (x150, x80) == (pair._dummy[0], pair._dummy[1])
+    pair._dummy[:] = dummy
+    pair.ao_frequencies(fs)
+    np.testing.assert_array_equal(pair._dummy, dummy)   # scratch restored
+
+def test_raman_ifs_refuse_miswired_pair():
+    from kexp.control.opx.opx_config import raman_transition_to_ifs
+    ex = fake_raman_expt()
+    ex.raman.dds0 = SimpleNamespace()        # 150 no longer in the pair
+    with pytest.raises(RuntimeError, match='not part of expt.raman'):
+        raman_transition_to_ifs(ex)
+
+def test_config_ifs_follow_first_executed_shot():
+    from kexp.control.opx.opx_config import build_opx_config
+    ex = FakeExpt([('frequency_raman_transition', [F_TR + 1.e6, F_TR])])
+    ex.params.t_imaging_pulse_apd_abs = 5.e-6
+    ex.params.t_opx_integration_start = 0.
+    ex.params.t_opx_integration_len = 5.e-6
+    tables = build_shot_tables(ex)
+    cfg = build_opx_config(ex, tables)
+    f150, f80 = ex.raman.ao_frequencies(F_TR + 1.e6)
+    assert cfg['elements']['raman_150']['intermediate_frequency'] ==         hz_to_int(f150)
+    assert cfg['elements']['raman_80']['intermediate_frequency'] ==         hz_to_int(f80)
+    assert 'frequency_raman_transition' in tables.accessed
+
+def _trace_transition(seq, xvars):
+    ex = FakeExpt(xvars)
+    tables = build_shot_tables(ex)
+    b = OPXProgramBuilder(seq, make_transition_map(ex), tables,
+                          tables.n_shots)
+    prog, ctx = b.trace()
+    return ex, tables, b, prog, ctx
+
+def test_constant_transition_adds_no_frequency_updates():
+    from qm import generate_qua_script
+
+    @opx_sequence('_t_tr_const', claims=('raman',))
+    def s(ctx):
+        ctx.raman_pulse(ctx.p.t_raman_pulse)
+
+    _ex, _t, _b, prog, _ctx = _trace_transition(
+        s, [('t_raman_pulse', [0., 1.e-6])])
+    assert 'update_frequency' not in generate_qua_script(prog)
+
+def test_scanned_transition_repoints_drives_every_shot():
+    from qm import generate_qua_script
+
+    @opx_sequence('_t_tr_scan', claims=('raman',))
+    def s(ctx):
+        ctx.raman_pulse(ctx.p.t_fixed)
+
+    fs = [F_TR - 1.e3, F_TR, F_TR + 1.e3]
+    ex, tables, b, prog, _ctx = _trace_transition(
+        s, [('frequency_raman_transition', fs)])
+    src = generate_qua_script(prog)
+    i_upd = src.index("update_frequency('raman_150'")
+    assert "update_frequency('raman_80'" in src
+    assert i_upd < src.index('wait_for_trigger')     # before the handoff
+    recs = [r for r in b.log.records if r.kind == 'update_frequency']
+    assert {r.macro for r in recs} == {'transition'}
+    col = tables.column('frequency_raman_transition')
+    f150, f80 = ex.raman.ao_frequencies(col)
+    by_el = {r.element: r.extra['frequency_hz'] for r in recs}
+    np.testing.assert_array_equal(by_el['raman_150'], hz_to_int(f150))
+    np.testing.assert_array_equal(by_el['raman_80'], hz_to_int(f80))
+
+def test_set_transition_in_body_is_restored_after_the_shot():
+    from qm import generate_qua_script
+
+    @opx_sequence('_t_tr_ramsey', claims=('raman',))
+    def s(ctx):
+        ctx.set_transition('raman', ctx.p.frequency_raman_transition
+                           + ctx.p.t_raman_pulse * 1.e9)   # "detuning"
+        ctx.raman_pulse(ctx.p.t_fixed)
+
+    _ex, _t, b, prog, _ctx = _trace_transition(
+        s, [('t_raman_pulse', [0., 1.e-6])])
+    src = generate_qua_script(prog)
+    i_body = src.index("update_frequency('raman_150'")
+    i_handback = src.index("'artiq_handback'")
+    i_restore = src.index("update_frequency('raman_150'", i_handback)
+    assert i_body < i_handback < i_restore
+    macros = [r.macro for r in b.log.records if r.kind == 'update_frequency']
+    assert macros.count('set_transition') == 2
+    assert macros.count('transition_restore') == 2
+
+def test_set_transition_needs_claim_and_split():
+    @opx_sequence('_t_tr_unclaimed', claims=('imaging',))
+    def s1(ctx):
+        ctx.set_transition('raman', 1.e8)
+    with pytest.raises(RuntimeError, match='without claiming'):
+        _trace_transition(s1, [('t_raman_pulse', [0.])])
+
+    @opx_sequence('_t_tr_nosplit', claims=('imaging',))
+    def s2(ctx):
+        ctx.set_transition('imaging', 1.e8)
+    with pytest.raises(RuntimeError, match='no transition_to_ifs'):
+        _trace_transition(s2, [('t_raman_pulse', [0.])])

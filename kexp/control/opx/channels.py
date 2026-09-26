@@ -17,6 +17,7 @@ Generic (future waxx.control.opx): no kexp imports, no qm imports.
 """
 
 from dataclasses import dataclass, field
+from typing import Callable
 
 
 @dataclass
@@ -42,6 +43,15 @@ class ChannelSpec:
     # window length used to convert raw integration results to mean volts
     t_acquire_s: float = None
     t_integration_s: float = None
+    # analog drives that together address one transition (a Raman pair):
+    # the ExptParams key holding that transition frequency (Hz), and a host
+    # function mapping an array of transition frequencies to
+    # {analog element: array of drive IFs (Hz)}. The lab's map builder
+    # fills both from the same code that splits the transition on the ARTIQ
+    # side; the config IFs, the builder's per-shot updates and
+    # ctx.set_transition all go through transition_to_ifs.
+    transition_param: str = None
+    transition_to_ifs: Callable = None
 
 
 @dataclass

@@ -9,7 +9,10 @@ Config-time vs shot-time: values in this file are compiled into the QUA
 config ONCE per run (analog drive frequencies/amplitudes, acquire and
 integration windows). They cannot be xvars -- a scan of one of these needs a
 shot-time route (update_frequency / amp() via ctx) or is an error. Pulse
-durations, detunings and phases are shot-time and scan freely.
+durations, detunings and phases are shot-time and scan freely. The Raman
+drive IFs have that route built in: they follow frequency_raman_transition
+(split by expt.raman, the ARTIQ RamanBeamPair), compiled at the first
+shot's value and updated per shot by the builder when it is scanned.
 
 Hardware truth table (2026-09, from the switch-box wiring):
 
@@ -59,6 +62,42 @@ T_RAMAN_LATCH_NS = 1000         # sticky latch play; the tone holds after
 # block = TTL high (ARTIQ RF blocked), pass = TTL low. See truth table.
 BLOCK_LEVEL = 1
 
+# The two-photon transition the Raman drives address, and which dds of
+# expt.raman (the ARTIQ RamanBeamPair) each OPX analog element stands in for
+# once the handoff TTL routes the AOs to the OPX.
+RAMAN_TRANSITION_PARAM = 'frequency_raman_transition'
+RAMAN_ELEMENT_DDS = {'raman_150': 'raman_150_plus',
+                     'raman_80': 'raman_80_plus'}
+
+
+def raman_transition_to_ifs(expt):
+    """-> f(transition Hz array) -> {element: IF Hz array}.
+
+    The split is expt.raman.ao_frequencies: the same
+    state_splitting_to_ao_frequency RamanBeamPair.set runs in the kernel, so
+    the OPX drives the AOs at exactly the frequencies prep_raman() would
+    have set on the DDSs for that transition.
+    """
+    pair = expt.raman
+    which = {}
+    for el, dds_name in RAMAN_ELEMENT_DDS.items():
+        dds = getattr(expt.dds, dds_name)
+        if dds is pair.dds0:
+            which[el] = 0
+        elif dds is pair.dds1:
+            which[el] = 1
+        else:
+            raise RuntimeError(
+                f"[opx] OPX element {el!r} stands in for dds.{dds_name}, but "
+                f"that dds is not part of expt.raman -- the Raman split "
+                f"cannot be mapped onto the OPX drives. Fix RAMAN_ELEMENT_DDS "
+                f"or the RamanBeamPair wiring in kexp/base/devices.py.")
+
+    def to_ifs(frequency_transition):
+        f01 = pair.ao_frequencies(frequency_transition)
+        return {el: f01[i] for el, i in which.items()}
+    return to_ifs
+
 
 def kexp_channel_map(expt) -> ChannelMap:
     p = expt.params
@@ -66,7 +105,9 @@ def kexp_channel_map(expt) -> ChannelMap:
         channels={
             'raman': ChannelSpec(
                 switch_element='raman_switch',
-                analog_elements=('raman_80', 'raman_150')),
+                analog_elements=('raman_80', 'raman_150'),
+                transition_param=RAMAN_TRANSITION_PARAM,
+                transition_to_ifs=raman_transition_to_ifs(expt)),
             'imaging': ChannelSpec(
                 switch_element='imaging_switch',
                 measure_element='apd',
@@ -85,19 +126,41 @@ def kexp_channel_map(expt) -> ChannelMap:
     )
 
 
-def build_opx_config(expt) -> dict:
+def raman_config_transition(expt, tables=None) -> float:
+    """The transition frequency the Raman drive IFs are compiled at: the
+    first executed shot's value of frequency_raman_transition (from the
+    per-shot tables when given, so a scanned or derived value is read in
+    execution order). The builder re-points the IFs every shot when the
+    value varies (see builder.py)."""
+    key = RAMAN_TRANSITION_PARAM
+    if tables is not None and tables.has(key):
+        tables.accessed.add(key)
+        return float(tables.column(key)[0])
+    f = np.asarray(getattr(expt.params, key), dtype=float)
+    if f.size != 1:
+        raise ValueError(
+            f"[opx] {key} has {f.size} values and no per-shot tables were "
+            f"given to pick the first executed shot's.")
+    return float(f.reshape(()))
+
+
+def build_opx_config(expt, tables=None) -> dict:
     """The QUA config dict, built at finish_prepare from the experiment.
 
-    Raman drive frequencies and amplitudes come from the dds frame defaults
-    (kexp.config.dds_id: raman_80_plus / raman_150_plus) -- the dds
-    amplitudes are used directly as waveform sample voltages, per the
-    switch-box calibration.
+    Raman drive IFs are the AO frequencies of expt.raman at the run's
+    frequency_raman_transition (raman_config_transition), split by the same
+    code as prep_raman() on the ARTIQ side. Amplitudes come from the dds
+    frame defaults (kexp.config.dds_id: raman_80_plus / raman_150_plus) --
+    used directly as waveform sample voltages, per the switch-box
+    calibration.
     """
     p = expt.params
     dds = expt.dds
 
-    f_80 = hz_to_int(dds.raman_80_plus.frequency)
-    f_150 = hz_to_int(dds.raman_150_plus.frequency)
+    ifs = raman_transition_to_ifs(expt)(
+        np.array([raman_config_transition(expt, tables)]))
+    f_80 = hz_to_int(ifs['raman_80'][0])
+    f_150 = hz_to_int(ifs['raman_150'][0])
     a_80 = float(dds.raman_80_plus.amplitude)
     a_150 = float(dds.raman_150_plus.amplitude)
     for name, a in (('raman_80', a_80), ('raman_150', a_150)):

@@ -5,11 +5,13 @@ The generated program is one job per run:
     latch sticky Raman analog drives (once; the intensity servo needs the
         AO drive never to drop)
     for shot in range(N_shots):                # N = N_shots_with_repeats
+        [re-point Raman IFs at this shot's transition, if it is scanned]
         wait_for_trigger                       # ARTIQ handoff (control.py)
         assert RF blocks on guarded channels   # within ~100 ns of the trigger
         wait t_opx_handoff_settle              # ARTIQ RF on at settle/2, settled by settle
         <sequence body>                        # user code, params per shot
         hand-back trigger; hold blocks for t_opx_handback_overlap; release
+        [restore Raman IFs to the run's transition, if the body moved them]
     ramp analog drives to zero
     stream_processing: buffer per-shot saves
 
@@ -122,7 +124,22 @@ class OPXProgramBuilder:
                                     f'holds for the whole run)')
                     qua.play(spec.analog_latch_op, el)
 
+            # analog drives that follow a transition parameter: the config
+            # IFs are the first shot's value; when it varies, re-point the
+            # drives at the top of every shot -- right after the previous
+            # hand-back, while ARTIQ owns the AOs and prepares the shot, so
+            # the new tone is long settled by the trigger
+            transitions = {}
+            for role in seq.claims:
+                spec = cmap.spec(role)
+                if spec.transition_to_ifs is not None:
+                    transitions[role] = getattr(ctx.p, spec.transition_param)
+
             with qua.for_(shot, 0, shot < self.n_shots, shot + 1):
+                for role, base in transitions.items():
+                    if not base.is_constant:
+                        ctx._point_transition(role, base, macro='transition',
+                                              phase=PHASE_HANDSHAKE)
                 log.new_call('handoff')
                 if not skip_triggers:
                     log.record('wait_for_trigger', sync_el,
@@ -161,6 +178,16 @@ class OPXProgramBuilder:
                 log.record('align', None, phase=PHASE_HANDSHAKE,
                            macro='handback')
                 qua.align()
+                # the body moved a drive off the run's transition (Ramsey
+                # detuning, ...): point it back so the next shot starts
+                # there. A varying transition is re-pointed at the top of
+                # the next shot anyway.
+                for role in sorted(ctx._if_touched):
+                    base = transitions.get(role)
+                    if base is not None and base.is_constant:
+                        ctx._point_transition(role, base,
+                                              macro='transition_restore',
+                                              phase=PHASE_HANDSHAKE)
 
             # run epilogue: analog drives down; blocks were already released
             # to pass in the final shot's hand-back

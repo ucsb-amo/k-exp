@@ -238,7 +238,7 @@ class OPXManager:
         tables = build_shot_tables(expt)
         self._n_shots = tables.n_shots
         self._map = self._map_builder(expt)
-        config = self._config_builder(expt)
+        config = self._config_builder(expt, tables)
 
         builder = OPXProgramBuilder(seq, self._map, tables, self._n_shots)
         prog, ctx = builder.trace()

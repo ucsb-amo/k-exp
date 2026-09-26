@@ -98,16 +98,43 @@ def fake_config(a_80=0.25, a_150=0.3, f_80=80.e6, f_150=150.e6,
     16 ns), artiq_handback on port 3 (200 ns trigger), apd on digital port 4
     + analog input 1 with time_of_flight 200 and a 5000 ns acquire pulse."""
     from kexp.control.opx.opx_config import build_opx_config
-    chan = lambda f, a: SimpleNamespace(frequency=f, amplitude=a)
-    ex = SimpleNamespace(
-        params=SimpleNamespace(t_imaging_pulse_apd_abs=t_acquire,
-                               t_opx_integration_start=0.,
-                               t_opx_integration_len=t_acquire,
-                               t_opx_handoff_settle=10.e-6,
-                               t_opx_handback_overlap=10.e-6),
-        dds=SimpleNamespace(raman_80_plus=chan(f_80, a_80),
-                            raman_150_plus=chan(f_150, a_150)))
+    # the raman IFs come out of the real RamanBeamPair split: with centers
+    # f_150/f_80, the transition 2*(f_150 - f_80) is its zero-offset point,
+    # so the IFs are exactly f_150 and f_80
+    ex = fake_raman_expt(f_80=f_80, f_150=f_150, a_80=a_80, a_150=a_150,
+                         frequency_raman_transition=2. * (f_150 - f_80))
+    p = ex.params
+    p.t_imaging_pulse_apd_abs = t_acquire
+    p.t_opx_integration_start = 0.
+    p.t_opx_integration_len = t_acquire
+    p.t_opx_handoff_settle = 10.e-6
+    p.t_opx_handback_overlap = 10.e-6
     return build_opx_config(ex)
+
+
+def fake_dds(frequency, amplitude, aom_order=1):
+    """A dds channel stub with what RamanBeamPair reads on the host."""
+    dev = SimpleNamespace(sysclk_per_mu=1,
+                          frequency_to_ftw=lambda f: 0,
+                          turns_to_pow=lambda t: 0,
+                          amplitude_to_asf=lambda a: 0)
+    return SimpleNamespace(frequency=frequency, amplitude=amplitude,
+                           aom_order=aom_order, dds_device=dev)
+
+
+def fake_raman_expt(f_80=80.e6, f_150=150.e6, a_80=0.337, a_150=0.324,
+                    frequency_raman_transition=119.4639e6):
+    """Stub experiment carrying dds.raman_80_plus / raman_150_plus and a
+    REAL waxx RamanBeamPair wired like kexp/base/devices.py (dds0 = 150,
+    dds1 = 80), so the OPX config runs the same split as the kernel."""
+    from waxx.control.raman_beams import RamanBeamPair
+    dds = SimpleNamespace(raman_80_plus=fake_dds(f_80, a_80),
+                          raman_150_plus=fake_dds(f_150, a_150))
+    params = SimpleNamespace(
+        frequency_raman_transition=frequency_raman_transition)
+    raman = RamanBeamPair(dds0=dds.raman_150_plus, dds1=dds.raman_80_plus,
+                          dds_sw=SimpleNamespace(), params=params)
+    return SimpleNamespace(params=params, p=params, dds=dds, raman=raman)
 
 
 def _port_num(p):
