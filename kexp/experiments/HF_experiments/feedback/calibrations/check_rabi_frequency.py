@@ -32,6 +32,7 @@ class hf_raman(EnvExperiment, Base):
 
         self.prepare_hf_tweezers()
         self.prep_raman()
+        # self.warmup_imaging()
 
         self.raman.pulse(self.p.t_raman_pulse)
 
