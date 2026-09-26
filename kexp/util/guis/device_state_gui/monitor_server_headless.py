@@ -65,7 +65,10 @@ def main() -> int:
         )
         return 1
 
-    return run(MONITOR_EXPT_PATH, config_file_path=MONITOR_STATE_FILEPATH)
+    journal_dir = os.path.join(LOG_DIR, "ops_journal") if LOG_DIR else None
+    log.info("OPS JOURNAL DIR        = %s", journal_dir)
+    return run(MONITOR_EXPT_PATH, config_file_path=MONITOR_STATE_FILEPATH,
+               journal_dir=journal_dir)
 
 
 if __name__ == "__main__":
