@@ -82,6 +82,30 @@ class FrameBuffer:
             return self._latest_frame.copy()
 
 
+def snap_frame(camera, timeout_s):
+    """One frame whose whole exposure happens after this call starts.
+
+    Starts a fresh acquisition, waits for its first frame, reads it and stops.
+    Taking "the next frame" out of free-running video instead gives a frame
+    whose exposure was already under way -- mostly at whatever the scene was
+    before -- and that is how scan tiles ended up showing a neighbouring SLM
+    position. Returns the frame (uint16), or None if the acquisition stopped
+    without one. Raises the camera's TimeoutError if none arrives in time.
+    """
+    camera.start_acquisition()
+    try:
+        if not camera.wait_for_frame(timeout=timeout_s):
+            return None
+        frames = camera.read_multiple_images()
+    finally:
+        camera.stop_acquisition()
+    if frames is None or len(frames) == 0:
+        return None
+    # the first frame of this acquisition, not the newest: its exposure is the
+    # one that began right after start_acquisition()
+    return np.asanyarray(frames[0], dtype=np.uint16)
+
+
 def read_camera_state(camera):
     """Read back what the camera actually has set, one field per try.
 
