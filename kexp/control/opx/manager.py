@@ -39,6 +39,7 @@ import atexit
 import json
 import logging
 import time
+import warnings
 from typing import TYPE_CHECKING, Optional
 
 import numpy as np
@@ -70,17 +71,19 @@ INT_MISSING = -1
 
 
 def _qm_log_gate(record):
-    """Logging filter on the ``qm`` logger. qm-qua attaches its own stdout
-    handler at INFO on import (importing it already prints a session line),
-    so its chatter is gated by the run's verbosity instead: INFO passes only
-    at console.VERBOSE, warnings and errors always pass. The verbosity is
-    read at log time, so the flag controls an already-imported qm too."""
+    """Logging filter for qm-qua's output. qm attaches its own stdout
+    handler at INFO on import (importing it already prints a session line)
+    and logs every connect / compile / execute step at INFO, so its chatter
+    is gated by the run's verbosity instead: INFO passes only at
+    console.VERBOSE, warnings and errors always pass. The verbosity is read
+    at log time, so the flag controls an already-imported qm too."""
     if record.levelno >= logging.WARNING:
         return True
     return console.get_level() >= console.VERBOSE
 
 
 _qm_log_gate_installed = False
+_qm_quieted = False
 
 
 def check_live_adjust_conflicts(expt, tables):
@@ -163,13 +166,59 @@ def _install_qm_log_gate():
     """Install ``_qm_log_gate`` on the ``qm`` logger, once per process.
     Must run BEFORE the first ``import qm``: filters on the logger survive
     qm's own ``config_loggers`` (which resets the level and adds the
-    handler), so this also catches the import-time "Starting session"
-    line."""
+    handler), so this catches the import-time "Starting session" line.
+
+    A logger filter only sees records logged on that logger itself; qm logs
+    everything else ("Performing health check", "Executing program", ...)
+    on child loggers (qm.api.*, qm.quantum_machine, ...), whose records
+    reach the handlers without passing it. ``_quiet_qm`` covers those once
+    qm is imported."""
     global _qm_log_gate_installed
     if _qm_log_gate_installed:
         return
-    logging.getLogger("qm").addFilter(_qm_log_gate)
+    qm_logger = logging.getLogger("qm")
+    qm_logger.addFilter(_qm_log_gate)
+    # qm prints through its own handler; _quiet_qm turns propagation back
+    # on if the import did not add one
+    qm_logger.propagate = False
     _qm_log_gate_installed = True
+
+
+def _quiet_qm():
+    """Keep qm-qua's own output out of the run terminal. Call right AFTER
+    ``import qm`` (it needs qm's handler, and qm's warning filters must
+    already be in place to be overridden). Once per process.
+
+    * ``_qm_log_gate`` goes on qm's own handler(s) too, so INFO logged on
+      qm's child loggers is gated like the rest (warnings always print).
+    * qm's records stop propagating to the root logger when qm prints them
+      itself: under artiq_run the root logger has a stderr handler, so every
+      qm line otherwise prints twice (once per handler).
+    * Below VERBOSE, marshmallow's "removed in marshmallow 4" deprecations
+      raised inside qm are ignored: they are about how qm-qua calls
+      marshmallow internally (nothing a lab sequence can change), and qm
+      force-enables DeprecationWarnings for its own modules, so they would
+      otherwise print on every run that builds a config. qm's deprecations
+      of its own API (what our sequences call) are left visible.
+    """
+    global _qm_quieted
+    if _qm_quieted:
+        return
+    qm_logger = logging.getLogger("qm")
+    for handler in qm_logger.handlers:
+        if _qm_log_gate not in handler.filters:
+            handler.addFilter(_qm_log_gate)
+    qm_logger.propagate = not any(isinstance(h, logging.StreamHandler)
+                                  for h in qm_logger.handlers)
+    if console.get_level() < console.VERBOSE:
+        try:
+            from marshmallow.warnings import Marshmallow4Warning
+        except ImportError:
+            Marshmallow4Warning = None
+        if Marshmallow4Warning is not None:
+            warnings.filterwarnings("ignore", category=Marshmallow4Warning,
+                                    module=r"qm(\.|$)")
+    _qm_quieted = True
 
 
 def _json_default(o):
@@ -250,13 +299,15 @@ class OPXManager:
         return self._map_builder(expt)
 
     def _connect(self):
-        """Connect to the QuantumMachinesManager (once). The qm log gate is
-        installed before the first import so qm's INFO chatter follows the
+        """Connect to the QuantumMachinesManager (once). qm's output is
+        gated around the first import (_install_qm_log_gate before,
+        _quiet_qm after) so its connect/compile/execute chatter follows the
         run verbosity. An unreachable OPX raises here."""
         if self._qmm is not None:
             return self._qmm
         _install_qm_log_gate()   # before the first qm import
         from qm import QuantumMachinesManager
+        _quiet_qm()              # after it
         try:
             self._qmm = QuantumMachinesManager(host=self._host,
                                                cluster_name=self._cluster)
@@ -287,8 +338,10 @@ class OPXManager:
 
         simulate=True: at finish_prepare the program is built and sent to
         the QOP simulator instead of executed, the waveform report is
-        plotted, and the process exits before any ARTIQ hardware runs.
-        Use save_data=False for simulation runs.
+        plotted, the liveOD run registered at finish_prepare is aborted
+        (ABORT_RUN, also when the simulation raises), and the process exits
+        before any ARTIQ hardware runs. Use save_data=False for simulation
+        runs.
 
         simulate_shots: how many scheduled shots the simulated program
         loops over (default 1 -- just the run's first shot, i.e. every
@@ -445,27 +498,35 @@ class OPXManager:
             # tables keeps each simulated shot's values exactly what the
             # real run's corresponding shot would use. Provenance above
             # keeps the real, full program.
-            n_sim = self._simulate_shots or self._n_shots
-            n_sim = min(n_sim, self._n_shots)
-            tables_sim = ShotTables(
-                {k: col[:n_sim].copy()
-                 for k, col in tables.columns.items()}, n_sim)
-            builder_sim = OPXProgramBuilder(seq, self._map, tables_sim, n_sim,
-                                            params=params)
-            prog_sim, _ = builder_sim.trace(skip_triggers=True)
-            self._sim_builder = builder_sim
-            self._sim_config = config
-            console.info(f"[opx] simulating the first {n_sim} of "
-                         f"{self._n_shots} scheduled shot(s) (triggers "
-                         f"skipped -- shots run back-to-back on the "
-                         f"simulated timeline).")
-            self._run_simulation(prog_sim, config)
-            if self._simulate_viewer and self.sim_job is not None:
-                self.open_viewer(prog_sim)
+            try:
+                n_sim = self._simulate_shots or self._n_shots
+                n_sim = min(n_sim, self._n_shots)
+                tables_sim = ShotTables(
+                    {k: col[:n_sim].copy()
+                     for k, col in tables.columns.items()}, n_sim)
+                builder_sim = OPXProgramBuilder(seq, self._map, tables_sim,
+                                                n_sim, params=params)
+                prog_sim, _ = builder_sim.trace(skip_triggers=True)
+                self._sim_builder = builder_sim
+                self._sim_config = config
+                console.info(f"[opx] simulating the first {n_sim} of "
+                             f"{self._n_shots} scheduled shot(s) (triggers "
+                             f"skipped -- shots run back-to-back on the "
+                             f"simulated timeline).")
+                self._run_simulation(prog_sim, config)
+                if self._simulate_viewer and self.sim_job is not None:
+                    self.open_viewer(prog_sim)
+            finally:
+                # the run is already registered with liveOD (INIT_RUN in
+                # finish_prepare_wax) but will never take a shot: abort it,
+                # whether the simulation finished or raised, so liveOD does
+                # not sit waiting on the camera for it
+                if self._exit_after_simulate:
+                    self._abort_live_od_run()
             if self._exit_after_simulate:
                 raise SystemExit(
-                    "[opx] simulation complete -- exiting before any ARTIQ "
-                    "hardware runs.")
+                    "[opx] simulation complete -- liveOD run aborted, "
+                    "exiting before any ARTIQ hardware runs.")
             console.info("[opx] simulation complete; samples/report on "
                          "self.sim_job.")
             return
@@ -485,8 +546,10 @@ class OPXManager:
         streams = ", ".join(
             f"{k} {list(s.shape)}/shot" if s.n > 1 else k
             for k, s in self._measurements.items()) or "none"
+        # the job id is otherwise only in qm's INFO lines (VERBOSE)
+        job = f", job {job_id}" if job_id is not None else ""
         console.info(f"[opx] {seq.name!r}: job running "
-                     f"({self._n_shots} shots, streams: {streams})")
+                     f"({self._n_shots} shots, streams: {streams}{job})")
 
     # ------------------------------------------------------------------
     # provenance
@@ -551,6 +614,21 @@ class OPXManager:
         }
         self._shot_tables_doc = doc
         self._write_text(SHOT_TABLES_ATTR, doc)
+
+    def _abort_live_od_run(self):
+        """Send ABORT_RUN for a run that finish_prepare registered but that
+        will never take a shot (the simulate exit). liveOD closes it out as
+        it does a reset: the camera wait is interrupted and the run's
+        reserved, still-empty file is discarded. Best effort -- no client
+        (suppress_live_od, OPXBench) is a no-op, and abort_run() itself
+        swallows network errors."""
+        client = getattr(self._expt, 'live_od_client', None)
+        if client is None:
+            return
+        client.abort_run()
+        rid = getattr(getattr(self._expt, 'run_info', None), 'run_id', None)
+        console.info(f"[opx] liveOD run {rid} aborted (simulation only, no "
+                     f"shots taken).")
 
     def _run_simulation(self, prog, config) -> 'SimulatedJob':
         from qm import SimulationConfig

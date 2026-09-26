@@ -14,9 +14,10 @@ The generated program is one job per run:
         wait settle on every guarded switch    # settle = artiq_side + opx_side
         align                                  # A3: body starts after the settle
         <sequence body>                        # user code, params per shot
-        hand-back: align (A4); trigger; hold blocks t_opx_handback_overlap; release
+        hand-back: align (A4); trigger; hold blocks + drives
+            t_handback_hold_s from the rising edge; release blocks
         [align (A5); restore Raman IFs -- only if the body moved a drive]
-    ramp analog drives to zero
+    ramp analog drives to zero                 # after the last shot's hold
     stream_processing: buffer per-shot saves (shape per declared key)
 
 Handoff framing is owned here, not by sequences, so it cannot be gotten
@@ -39,16 +40,25 @@ the timing diagram). The contract, with today's ExptParams values:
                           ChannelMap.t_handoff_settle_s holds (the lab map
                           fills it with that sum) and what the builder waits
                           after the block plays
-    t_e                   OPX hand-back edge (any time after the settle; a
-                          body with nothing to play hands back within a
-                          microsecond -- ARTIQ arms its gate before the
-                          trigger, so no minimum shot length is imposed)
-    t_e + overlap/2       ARTIQ switch-only take-back (RF off, TTL low)
-    t_e + overlap         OPX releases the blocks (pass); ARTIQ's timeline
-                          resumes
+    t_e                   OPX hand-back trigger, rising edge (any time after
+                          the settle; a body with nothing to play hands back
+                          within a microsecond -- ARTIQ arms its gate before
+                          the trigger, so no minimum shot length is imposed)
+    t_e + receive         ARTIQ timestamps the edge
+                          (t_opx_handback_artiq_trigger_receive_latency, 1 us)
+    t_e + receive + rtio  ARTIQ switch-only take-back: RF off, handoff TTL
+                          low (t_opx_handback_artiq_rtio_delay after its
+                          timestamp, 2 us)
+    t_e + hold            = + t_opx_handback_switch_fall_delay (2 us): those
+                          switches have fallen. OPX releases the blocks
+                          (pass); only from here may it touch its analog
+                          drives (ramp_to_zero after the final shot, IF
+                          re-points) -- they wait with the blocks. ARTIQ's
+                          timeline resumes. hold = receive + rtio + fall =
+                          ChannelMap.t_handback_hold_s (5 us)
 
 * The switch elements are sticky-digital. The OPX program itself releases
-  the blocks at t_e + overlap regardless of what ARTIQ does; a crash on the
+  the blocks at t_e + hold regardless of what ARTIQ does; a crash on the
   ARTIQ side mid-window therefore ends with the blocks released and
   ARTIQ's RF still ON on both switch AOMs (handoff TTL HIGH) until
   cleanup_scan_kernel / the next init_kernel turns them off. A job halted
@@ -218,8 +228,7 @@ class OPXProgramBuilder:
         sync_el = cmap.spec(cmap.sync_channel).switch_element
         settle_cc = s_to_cc(cmap.t_handoff_settle_s,
                             key='t_handoff_settle_s')
-        overlap_cc = s_to_cc(cmap.t_handback_overlap_s,
-                             key='t_opx_handback_overlap')
+        hold_cc = s_to_cc(cmap.t_handback_hold_s, key='t_handback_hold_s')
 
         log = OpLog(seq.func, self.tables.n_shots)
         self.log = log
@@ -230,7 +239,7 @@ class OPXProgramBuilder:
             echo = qua.declare_output_stream()
             self.echo_stream = echo
             ctx = OPXShotContext(cmap, self.tables, seq, shot,
-                                 overlap_cc, guarded_specs, log=log,
+                                 hold_cc, guarded_specs, log=log,
                                  measurements=self.measurements,
                                  host_data=self.host_data)
 
@@ -268,8 +277,9 @@ class OPXProgramBuilder:
             # analog drives that follow a transition parameter: the config
             # IFs are the first shot's value; when it varies, re-point the
             # drives at the top of every shot -- right after the previous
-            # hand-back, while ARTIQ owns the AOs and prepares the shot, so
-            # the new tone is long settled by the trigger
+            # hand-back's hold (the drives wait it out with the blocks), while
+            # ARTIQ owns the AOs and prepares the shot, so the new tone is
+            # long settled by the trigger
             transitions = {}
             for role in seq.claims:
                 spec = cmap.spec(role)
@@ -345,7 +355,10 @@ class OPXProgramBuilder:
                                               phase=PHASE_HANDSHAKE)
 
             # run epilogue: analog drives down; blocks were already released
-            # to pass in the final shot's hand-back
+            # to pass in the final shot's hand-back. The drives waited out
+            # that hand-back's hold with the blocks, so the ramp starts
+            # t_handback_hold_s after the last trigger edge, once ARTIQ has
+            # dropped the handoff TTL and has the AOs back.
             log.new_call('epilogue')
             for role in seq.claims:
                 spec = cmap.spec(role)

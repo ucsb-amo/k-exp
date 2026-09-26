@@ -75,7 +75,7 @@ class ChannelMap:
         regardless of what the sequence claims, because light would leak
         otherwise (kexp handoff_to_quantum_machines turns on both raman and
         imaging RF unconditionally).
-    t_handoff_settle_s / t_handback_overlap_s: the two handshake windows
+    t_handoff_settle_s / t_handback_hold_s: the two handshake windows
         (SI seconds), filled by the lab's map builder from the same
         ExptParams the ARTIQ kernel reads; there are no defaults on purpose.
         Settle: the builder waits it after its block plays before anything
@@ -84,9 +84,16 @@ class ChannelMap:
         settles) -- ARTIQ returns to its caller at the same point. That
         the OPX blocks are complete before ARTIQ's RF arrives (within
         artiq_side) is a hardware assumption nobody has measured (M1).
-        Overlap: the blocks stay high t_handback_overlap_s after the
-        hand-back trigger; ARTIQ switches its RF off and drops the handoff
-        TTL at overlap/2.
+        Hold: measured from the hand-back trigger's rising edge, the OPX
+        keeps every guarded RF block high and leaves every guarded analog
+        drive untouched for t_handback_hold_s; only then do the blocks
+        fall (pass) and may the drives change (ramp_to_zero after the final
+        shot, IF re-points). It is the SUM of the three hand-back times:
+        t_opx_handback_artiq_trigger_receive_latency (the edge reaches
+        ARTIQ's input timestamp) + t_opx_handback_artiq_rtio_delay (ARTIQ
+        switches its RF off and drops the handoff TTL that long after the
+        timestamp) + t_opx_handback_switch_fall_delay (those switches have
+        fallen) -- ARTIQ's timeline resumes at the same point.
     config_time_params: ExptParams keys compiled into the config / this map
         once per run (kexp opx_config.CONFIG_TIME_PARAMS). The manager
         refuses them as xvars and as adjust() keys: a scan of one would
@@ -101,12 +108,12 @@ class ChannelMap:
     handback_op: str = 'trigger'
     guarded_channels: tuple = ()
     t_handoff_settle_s: float = None
-    t_handback_overlap_s: float = None
+    t_handback_hold_s: float = None
     config_time_params: tuple = ()
     machine: object = None
 
     def __post_init__(self):
-        for name in ('t_handoff_settle_s', 't_handback_overlap_s'):
+        for name in ('t_handoff_settle_s', 't_handback_hold_s'):
             v = getattr(self, name)
             if v is None or not v > 0.:
                 raise ValueError(

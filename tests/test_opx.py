@@ -44,7 +44,10 @@ class FakeParams:
         # two ARTIQ-side windows; make_map() below hard-codes 10 us
         self.t_opx_handoff_artiq_side = 350.e-9
         self.t_opx_handoff_opx_side = 1.e-6
-        self.t_opx_handback_overlap = 10.e-6
+        # the hand-back hold is their sum; make_map() hard-codes 10 us
+        self.t_opx_handback_artiq_trigger_receive_latency = 1.e-6
+        self.t_opx_handback_artiq_rtio_delay = 2.e-6
+        self.t_opx_handback_switch_fall_delay = 2.e-6
         self.frequency_raman_transition = 119.4639e6
         self.a_list = np.array([1., 2.])   # non-scalar: must not become a column
 
@@ -83,15 +86,15 @@ def make_map():
         handback_element='artiq_handback',
         guarded_channels=('raman', 'imaging'),
         t_handoff_settle_s=10.e-6,
-        t_handback_overlap_s=10.e-6)
+        t_handback_hold_s=10.e-6)
 
 
 def test_channel_map_requires_handshake_times():
     with pytest.raises(ValueError, match='t_handoff_settle_s'):
-        ChannelMap(channels={}, t_handback_overlap_s=10.e-6)
-    with pytest.raises(ValueError, match='t_handback_overlap_s'):
+        ChannelMap(channels={}, t_handback_hold_s=10.e-6)
+    with pytest.raises(ValueError, match='t_handback_hold_s'):
         ChannelMap(channels={}, t_handoff_settle_s=10.e-6,
-                   t_handback_overlap_s=0.)
+                   t_handback_hold_s=0.)
 
 
 # ---------------------------------------------------------------------------
@@ -562,7 +565,9 @@ def _config_stub(a_80=0.337, frequency_raman_transition=119.4639e6):
     p.t_opx_integration_len = 5.e-6
     p.t_opx_handoff_artiq_side = 4.e-6
     p.t_opx_handoff_opx_side = 6.e-6
-    p.t_opx_handback_overlap = 10.e-6
+    p.t_opx_handback_artiq_trigger_receive_latency = 1.e-6
+    p.t_opx_handback_artiq_rtio_delay = 4.e-6
+    p.t_opx_handback_switch_fall_delay = 5.e-6
     return ex
 
 def test_build_opx_config_shape():
@@ -600,14 +605,17 @@ def test_kexp_channel_map_reads_handshake_params():
     assert cmap.t_handoff_settle_s == pytest.approx(
         p.t_opx_handoff_artiq_side + p.t_opx_handoff_opx_side)
     assert cmap.t_handoff_settle_s == pytest.approx(10.e-6)
-    assert cmap.t_handback_overlap_s == 10.e-6
+    # hold = receive latency + rtio delay + switch fall
+    assert cmap.t_handback_hold_s == pytest.approx(10.e-6)
     assert cmap.guarded_channels == ('raman', 'imaging')
     # D2: the config-time keys travel on the map (the manager refuses them
     # as xvars / adjusts); the machine tree is provenance
     cfg_keys = getattr(cmap, 'config_time_params', ())
     for key in ('t_imaging_pulse_apd_abs', 't_opx_integration_len',
                 't_opx_handoff_artiq_side', 't_opx_handoff_opx_side',
-                't_opx_handback_overlap'):
+                't_opx_handback_artiq_trigger_receive_latency',
+                't_opx_handback_artiq_rtio_delay',
+                't_opx_handback_switch_fall_delay'):
         assert key in cfg_keys
     machine = getattr(cmap, 'machine', None)
     if machine is not None:

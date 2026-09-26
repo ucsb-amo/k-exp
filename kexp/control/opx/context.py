@@ -135,14 +135,14 @@ class OPXShotContext(Generic[P]):
     p: P
 
     def __init__(self, channel_map: ChannelMap, tables: ShotTables,
-                 sequence, shot_var, overlap_cc, guarded_specs, log=None,
+                 sequence, shot_var, hold_cc, guarded_specs, log=None,
                  measurements=None, host_data=None):
         self.p = cast(P, ParamsProxy(tables))
         self._map = channel_map
         self._tables = tables
         self._sequence = sequence
         self._shot = shot_var
-        self._overlap_cc = int(overlap_cc)
+        self._hold_cc = int(hold_cc)
         self._guarded_specs = list(guarded_specs)
 
         # declared per-shot shapes: {key: Stream}. Given by the builder
@@ -1097,14 +1097,22 @@ class OPXShotContext(Generic[P]):
     def handback_to_artiq(self):
         """Hand control back to ARTIQ.
 
-        Fires the hand-back trigger, holds every guarded RF block high for
-        the shared overlap window (ExptParams.t_opx_handback_overlap --
-        ARTIQ's wait_for_quantum_machines_handback kills its steady-state
-        RF halfway through it), then releases the blocks to pass so ARTIQ
-        owns its own light between shots. Auto-appended at the end of the
-        body if the sequence never calls it. It may be called explicitly, but
-        it must be the body's last act on the beams: nothing may play or
-        measure after it (see _check_open).
+        Fires the hand-back trigger, then -- counted from its rising edge --
+        holds every guarded RF block high and every guarded analog drive
+        untouched for ChannelMap.t_handback_hold_s: the sum of
+        t_opx_handback_artiq_trigger_receive_latency (the edge reaches
+        ARTIQ's timestamp), t_opx_handback_artiq_rtio_delay (ARTIQ's
+        wait_for_quantum_machines_handback switches its steady-state RF off
+        and drops the handoff TTL that long after its timestamp) and
+        t_opx_handback_switch_fall_delay (those switches have fallen). Then
+        it releases the blocks to pass so ARTIQ owns its own light between
+        shots. The drives wait with the blocks, so whatever the program
+        does to them next -- the epilogue's ramp_to_zero after the final
+        shot, an IF re-point -- happens only once ARTIQ has the AOs back.
+        Auto-appended at the end of the body if the sequence never calls
+        it. It may be called explicitly, but it must be the body's last act
+        on the beams: nothing may play or measure after it (see
+        _check_open).
         """
         from qm import qua
         if self._handback_done:
@@ -1120,14 +1128,20 @@ class OPXShotContext(Generic[P]):
                    phase=phase, macro='handback',
                    note='hand-back trigger to ARTIQ')
         qua.play(self._map.handback_op, self._map.handback_element)
+        # the wait starts with the trigger play (all aligned above), so the
+        # hold is counted from the rising edge
         switches = [s.switch_element for s in self._guarded_specs]
-        log.record('wait', switches[0] if switches else None, phase=phase,
-                   macro='handback', label='t_opx_handback_overlap',
-                   duration_cc=self._overlap_cc,
-                   values=self._overlap_cc * 4e-9,
-                   note='blocks held while ARTIQ takes its RF back',
-                   elements=list(switches))
-        qua.wait(self._overlap_cc, *switches)
+        held = switches + [el for s in self._guarded_specs
+                           for el in s.analog_elements]
+        log.record('wait', held[0] if held else None, phase=phase,
+                   macro='handback', label='t_handback_hold_s',
+                   duration_cc=self._hold_cc,
+                   values=self._hold_cc * 4e-9,
+                   note='blocks held and drives untouched while ARTIQ '
+                        'takes its RF and the AOs back (receive latency '
+                        '+ rtio delay + switch fall)',
+                   elements=list(held))
+        qua.wait(self._hold_cc, *held)
         for s in self._guarded_specs:
             log.record('play', s.switch_element, s.pass_op, phase=phase,
                        macro='handback',

@@ -761,7 +761,7 @@ class BundleBuilder:
                 text = f"handoff: block + settle · {fmt_ns(dur)}"
                 kind = 'wait'
             elif macro == 'handback':
-                text = f"hand-back + overlap · {fmt_ns(dur)}"
+                text = f"hand-back + hold · {fmt_ns(dur)}"
                 kind = 'trigger'
             elif macro == 'measure':
                 text = f"measure {head.data_key} · {fmt_ns(dur)}"
@@ -836,7 +836,7 @@ class BundleBuilder:
                 a = min(clocks[i][0] for i in hand_out)
                 b = max(clocks[i][1] for i in hand_out)
                 framing.append({'t0': a, 't1': b, 'shot': s, 'kind': 'handback',
-                                'label': 'hand-back: trigger, overlap, release'})
+                                'label': 'hand-back: trigger, hold, release'})
         if self._not_simulated_from is not None:
             t0 = min(self._not_simulated_from, self.duration_ns)
             framing.append({'t0': t0, 't1': self.duration_ns, 'shot': None,

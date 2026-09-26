@@ -33,6 +33,7 @@ from kexp.control.opx.components import (Machine, Sticky, DigitalLine,  # noqa: 
 from kexp.control.opx.opx_config import (kexp_channel_map, build_opx_config,  # noqa: E402
                                          build_machine, config_time_params,
                                          CONFIG_TIME_PARAMS,
+                                         HANDBACK_HOLD_PARAMS,
                                          RAMAN_TRANSITION_PARAM,
                                          RAMAN_POWER_FRACTION_PARAM)
 
@@ -81,7 +82,9 @@ def _stub():
     p.t_opx_integration_len = 5.e-6
     p.t_opx_handoff_artiq_side = 350.e-9
     p.t_opx_handoff_opx_side = 1.e-6
-    p.t_opx_handback_overlap = 10.e-6
+    p.t_opx_handback_artiq_trigger_receive_latency = 1.e-6
+    p.t_opx_handback_artiq_rtio_delay = 2.e-6
+    p.t_opx_handback_switch_fall_delay = 2.e-6
     return ex
 
 
@@ -100,7 +103,19 @@ def test_kexp_channel_map_from_real_expt_params():
     # kernel back in the caller) at artiq_side + opx_side
     assert cmap.t_handoff_settle_s == (p.t_opx_handoff_artiq_side
                                        + p.t_opx_handoff_opx_side)
-    assert cmap.t_handback_overlap_s == p.t_opx_handback_overlap
+    # hold = the hand-back sum: the edge reaches ARTIQ, ARTIQ takes its RF
+    # back rtio_delay after its timestamp, the switches fall
+    assert HANDBACK_HOLD_PARAMS == (
+        't_opx_handback_artiq_trigger_receive_latency',
+        't_opx_handback_artiq_rtio_delay',
+        't_opx_handback_switch_fall_delay')
+    assert cmap.t_handback_hold_s == (
+        p.t_opx_handback_artiq_trigger_receive_latency
+        + p.t_opx_handback_artiq_rtio_delay
+        + p.t_opx_handback_switch_fall_delay)
+    assert cmap.machine.extra['t_handback_hold_s'] == cmap.t_handback_hold_s
+    for key in HANDBACK_HOLD_PARAMS:
+        assert cmap.machine.extra[key] == getattr(p, key)
     assert cmap.guarded_channels == ('raman', 'imaging')
     assert cmap.sync_channel == 'raman'
     assert cmap.spec('imaging').t_acquire_s == p.t_imaging_pulse_apd_abs
@@ -153,6 +168,41 @@ def test_settle_wait_is_the_sum_on_the_program_side():
         assert old not in src
     # and with the config attached it still serializes
     assert 'raman_switch' in generate_qua_script(prog, cfg)
+
+
+def test_handback_hold_is_the_sum_on_the_program_side():
+    # from the hand-back trigger the program waits ChannelMap.t_handback_hold_s
+    # on both RF-block switches AND both analog drives before it releases
+    # the blocks, and the epilogue ramp_to_zero comes after that wait --
+    # never at the trigger, while ARTIQ still routes the AOs to the OPX
+    from qm import generate_qua_script
+    from kexp.control.opx.builder import OPXProgramBuilder
+    from kexp.control.opx.sequence import OPXSequence
+
+    ex = RealParamsExpt([('t_raman_pulse', [0., 4.e-6])])
+    p = ex.params
+    tables = build_shot_tables(ex)
+    cmap = kexp_channel_map(ex, tables)
+
+    def body(ctx):
+        ctx.raman_pulse(ctx.p.t_raman_pulse)
+    seq = OPXSequence(body, name='_cfg_hold', claims=('raman',))
+    prog, _ctx = OPXProgramBuilder(seq, cmap, tables, tables.n_shots).trace()
+    src = generate_qua_script(prog)
+    hold_cc = s_to_cc(p.t_opx_handback_artiq_trigger_receive_latency
+                      + p.t_opx_handback_artiq_rtio_delay
+                      + p.t_opx_handback_switch_fall_delay)
+    assert hold_cc == s_to_cc(cmap.t_handback_hold_s)
+    i_trig = src.index("play('trigger', 'artiq_handback')")
+    i_hold = src.index(f"wait({hold_cc}, 'raman_switch', 'imaging_switch', "
+                       f"'raman_80', 'raman_150')", i_trig)
+    i_rel = src.index("play('pass', 'raman_switch')", i_hold)
+    i_rel2 = src.index("play('pass', 'imaging_switch')", i_rel)
+    i_ramp = src.index("ramp_to_zero('raman_80'", i_rel2)
+    assert i_trig < i_hold < i_rel < i_rel2 < i_ramp
+    # nothing between the trigger and the hold wait
+    between = src[i_trig:i_hold].splitlines()
+    assert len(between) == 2, between
 
 
 # ---------------------------------------------------------------------------
@@ -592,7 +642,7 @@ def test_channel_map_defaults_and_op_check():
     # a map built by hand (test_opx.make_map style) has no machine and no
     # config-time list -- both optional
     cmap = ChannelMap(channels={'raman': ChannelSpec('raman_switch')},
-                      t_handoff_settle_s=1.e-6, t_handback_overlap_s=1.e-6)
+                      t_handoff_settle_s=1.e-6, t_handback_hold_s=1.e-6)
     assert cmap.machine is None and cmap.config_time_params == ()
     # the lab map is checked against its machine at build time: an element
     # or op the map names that the machine does not have is caught there
@@ -602,7 +652,7 @@ def test_channel_map_defaults_and_op_check():
 
     def bad(channels, handback='artiq_handback'):
         return ChannelMap(channels=channels, handback_element=handback,
-                          t_handoff_settle_s=1.e-6, t_handback_overlap_s=1.e-6)
+                          t_handoff_settle_s=1.e-6, t_handback_hold_s=1.e-6)
     with pytest.raises(ValueError, match="'open'"):
         _check_map_against_machine(
             bad({'raman': ChannelSpec('raman_switch', pass_op='open')}), m)

@@ -11,7 +11,7 @@ provenance next to the QUA program text.
 
 Config-time vs shot-time: values in this file are compiled into the QUA
 config ONCE per run (analog drive frequencies/amplitudes, acquire and
-integration windows, the handshake windows). They cannot be xvars or
+integration windows, the handoff settle and hand-back hold). They cannot be xvars or
 live-adjusted -- CONFIG_TIME_PARAMS lists the ExptParams keys concerned;
 they are recorded as accessed on the shot tables (so the Adjust-panel
 guard covers them), a scan of one raises here, and the manager refuses them
@@ -108,14 +108,20 @@ RAMAN_POWER_FRACTION_PARAM = 'fraction_power_raman'
 # NOT in this list: it is compiled at the first executed shot's value but
 # the builder re-points the drives per shot when it is scanned (it is
 # still recorded as accessed, so it cannot be live-adjusted).
+# The hand-back hold is the sum of these three, measured from the OPX's
+# trigger edge (ARTIQ spends the last two in wait_for_quantum_machines_handback)
+HANDBACK_HOLD_PARAMS = (
+    't_opx_handback_artiq_trigger_receive_latency',  # edge -> ARTIQ timestamp
+    't_opx_handback_artiq_rtio_delay',   # timestamp -> ARTIQ RF off, TTL low
+    't_opx_handback_switch_fall_delay',  # those switches have fallen
+)
 CONFIG_TIME_PARAMS = (
     't_imaging_pulse_apd_abs',      # APD acquire pulse length
     't_opx_integration_start',      # integration window start
     't_opx_integration_len',        # integration window length (volts scale)
     't_opx_handoff_artiq_side',     # handoff: ARTIQ RF on after the trigger
     't_opx_handoff_opx_side',       # handoff: OPX body may start after the sum
-    't_opx_handback_overlap',       # hand-back: blocks held after the edge
-)
+) + HANDBACK_HOLD_PARAMS            # hand-back: OPX holds for the sum
 
 
 def config_time_params(expt=None, tables=None) -> tuple:
@@ -305,12 +311,21 @@ def kexp_channel_map(expt, tables=None) -> ChannelMap:
     # the same point. The block-before-RF ordering within artiq_side is an
     # unmeasured hardware assumption (M1; see expt_params.py).
     settle_s = float(p.t_opx_handoff_artiq_side) + float(p.t_opx_handoff_opx_side)
-    overlap_s = float(p.t_opx_handback_overlap)
+    # Hand-back hold: from the rising edge of its hand-back trigger the OPX
+    # keeps the RF blocks high and its analog drives untouched until the
+    # edge has reached ARTIQ (receive latency), ARTIQ has switched its RF
+    # off and dropped the handoff TTL (rtio delay after its timestamp) and
+    # those switches have fallen (switch fall delay) -- the SUM, which is
+    # also where ARTIQ's timeline resumes.
+    handback_parts = {key: float(getattr(p, key))
+                      for key in HANDBACK_HOLD_PARAMS}
+    hold_s = sum(handback_parts.values())
     machine.extra.update({
         't_opx_handoff_artiq_side': float(p.t_opx_handoff_artiq_side),
         't_opx_handoff_opx_side': float(p.t_opx_handoff_opx_side),
         't_handoff_settle_s': settle_s,
-        't_opx_handback_overlap': overlap_s,
+        **handback_parts,
+        't_handback_hold_s': hold_s,
         'guarded_channels': ['raman', 'imaging'],
         # the drive amplitudes above are fraction 1; the program latches
         # them at amp(sqrt(<this param>)) (value in params/ and the program)
@@ -347,7 +362,7 @@ def kexp_channel_map(expt, tables=None) -> ChannelMap:
         # whatever the sequence claims
         guarded_channels=('raman', 'imaging'),
         t_handoff_settle_s=settle_s,
-        t_handback_overlap_s=overlap_s,
+        t_handback_hold_s=hold_s,
         config_time_params=config_time_params(expt),
         machine=machine,
     )

@@ -111,7 +111,9 @@ def fake_config(a_80=0.25, a_150=0.3, f_80=80.e6, f_150=150.e6,
     # the two-sided split of ExptParams, 2026-09-24
     p.t_opx_handoff_artiq_side = 350.e-9
     p.t_opx_handoff_opx_side = 1.e-6
-    p.t_opx_handback_overlap = 10.e-6
+    p.t_opx_handback_artiq_trigger_receive_latency = 1.e-6
+    p.t_opx_handback_artiq_rtio_delay = 2.e-6
+    p.t_opx_handback_switch_fall_delay = 2.e-6
     return build_opx_config(ex)
 
 
@@ -803,6 +805,38 @@ def test_analog_port_carries_latched_sine():
     t_end = job.t_end_ns
     assert np.all(a1[t_end:] == 0.)
     assert np.max(np.abs(a1[t_end - 100:t_end])) < 0.25
+
+
+def test_handback_hold_counts_from_the_trigger_edge():
+    # the blocks fall exactly t_handback_hold_s after each hand-back
+    # trigger's rising edge, and the analog drives are left alone for the
+    # same hold: the last shot's ramp_to_zero starts then, not at the
+    # trigger (ARTIQ still routes the AOs to the OPX until its take-back)
+    from test_opx import make_map
+    seq = _seq(_rabi_only, '_sim_hold')
+    job = trace_and_simulate(seq, [('t_raman_pulse', [2.e-6, 3.e-6])],
+                             duration_ns=200_000)
+    rep = job.get_simulated_waveform_report()
+    hold_ns = int(round(make_map().t_handback_hold_s * 1e9))
+    trig = _triggers(rep)
+    assert len(trig) == 2
+    for sw in ('raman_switch', 'imaging_switch'):
+        releases = [w.timestamp for w in rep.digital_waveforms
+                    if w.element == sw and w.pulse_name.endswith('.pass.pulse')
+                    and w.length == 16]
+        assert releases == [t.timestamp + hold_ns for t in trig], sw
+    t_e = trig[-1].timestamp
+    ramp_ns = job.config['elements']['raman_80']['sticky']['duration']
+    assert job.t_end_ns == t_e + hold_ns + ramp_ns
+    s = job.get_simulated_samples().con1
+    rms = lambda x: float(np.sqrt(np.mean(np.square(x))))
+    for port, amp in (('1', 0.25), ('2', 0.3)):
+        a = np.asarray(s.analog[port], dtype=float)
+        # full tone through the whole hold (10 us = integer periods at 80
+        # and 150 MHz), silence after the ramp
+        assert np.sqrt(2) * rms(a[t_e:t_e + hold_ns]) == \
+            pytest.approx(amp, rel=1e-3), port
+        assert np.all(a[t_e + hold_ns + ramp_ns:] == 0.), port
 
 
 def test_phase_reset_events_and_job_ducktype():

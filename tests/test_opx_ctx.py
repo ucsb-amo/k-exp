@@ -843,6 +843,50 @@ def test_on_finish_prepare_writes_provenance_texts(monkeypatch):
     assert m._host_values['h'].shape == (2, 2)
 
 
+class _FakeLiveODClient:
+    def __init__(self):
+        self.aborts = 0
+
+    def abort_run(self):
+        self.aborts += 1
+
+
+def test_simulate_exit_aborts_live_od_run(monkeypatch):
+    """simulate=True under artiq_run: the run finish_prepare registered with
+    liveOD never takes a shot, so ABORT_RUN goes out once the simulation is
+    done -- and also when it raises. OPXBench (_exit_after_simulate=False)
+    keeps its process and sends nothing."""
+    @opx_sequence('_c_sim_abort', claims=())
+    def s(ctx):
+        ctx.wait_s(1.e-6)
+
+    def ready(exit_after, sim=lambda self, prog, config: None):
+        stub = ManagerStub([('t_raman_pulse', [0., 1.e-6])])
+        stub.live_od_client = _FakeLiveODClient()
+        m = _manager(stub, monkeypatch=monkeypatch)
+        monkeypatch.setattr(OPXManager, '_run_simulation', sim)
+        m._exit_after_simulate = exit_after
+        m.use(s, simulate=True, simulate_viewer=False,
+              simulate_web_plot=False)
+        return m, stub.live_od_client
+
+    m, client = ready(True)
+    with pytest.raises(SystemExit):
+        m.on_finish_prepare()
+    assert client.aborts == 1
+
+    def boom(self, prog, config):
+        raise RuntimeError('simulator down')
+    m, client = ready(True, boom)
+    with pytest.raises(RuntimeError, match='simulator down'):
+        m.on_finish_prepare()
+    assert client.aborts == 1
+
+    m, client = ready(False)
+    m.on_finish_prepare()
+    assert client.aborts == 0
+
+
 # ---------------------------------------------------------------------------
 # manager: fetch / fill / finish
 # ---------------------------------------------------------------------------
