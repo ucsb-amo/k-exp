@@ -8,6 +8,10 @@ model the timing that matters -- an acquisition's first exposure starts after
 start_acquisition(), the SLM changes pattern some time after a command -- and
 nothing else, so these tests say the sequencing is right, not that the Andor
 or the Meadowlark behave like the fakes.
+
+SPOT_FINDER_DIR, if set, is the spot finder package to test instead of the one
+in k-exp (a copy being worked on outside the guarded tree). Tests of the run
+gate and the FrameSource seam skip on a package that predates them.
 """
 import json
 import os
@@ -23,10 +27,16 @@ import numpy as np
 import pytest
 
 ROOT = Path(__file__).resolve().parents[2]
-SPOT_FINDER = ROOT / "k-exp" / "kexp" / "calibrations" / "SLM_spot_finder"
+SPOT_FINDER = Path(os.environ.get("SPOT_FINDER_DIR")
+                   or ROOT / "k-exp" / "kexp" / "calibrations" / "SLM_spot_finder")
 SLM_WIRE_DIR = ROOT / "wax" / "waxx-src" / "waxx" / "control" / "slm" / "server"
 sys.path.insert(0, str(SPOT_FINDER))
 sys.path.insert(0, str(SLM_WIRE_DIR))
+
+# The run gate and the FrameSource seam (2026-09-26).
+HAS_SEAM = all((SPOT_FINDER / f).is_file() for f in ("run_gate.py", "frame_source.py"))
+needs_seam = pytest.mark.skipif(
+    not HAS_SEAM, reason=f"{SPOT_FINDER} predates the run gate and FrameSource")
 
 os.environ.setdefault("QT_QPA_PLATFORM", "offscreen")
 
@@ -473,14 +483,27 @@ def gui(app, slm_host, monkeypatch):
     monkeypatch.setattr(stage_group, "APDStageClient", FakeStage)
     monkeypatch.setattr(main_gui.FinalScanPreviewDialog, "exec", lambda self: 0)
     # never the lab SLM PC, not even for the startup reachability probe
-    monkeypatch.setattr(main_gui, "SLMController", lambda canvas_res, **_: SLMController(
-        canvas_res=canvas_res, server_ip="127.0.0.1", server_port=slm_host.port))
+    monkeypatch.setattr(main_gui, "SLMController", lambda canvas_res, **kw: SLMController(
+        canvas_res=canvas_res, server_ip="127.0.0.1", server_port=slm_host.port,
+        **{k: v for k, v in kw.items() if k == "write_gate"}))
     pattern = SLMPattern()
     camera = FakeCamera(pattern)
-    w = main_gui.UnifiedControlGUI(camera, connect_camera_on_start=False)
+    kwargs, gate, liveod = {}, None, None
+    if HAS_SEAM:
+        # never the lab liveOD either: the run state is a dict the test sets
+        from run_gate import RunGate
+        liveod = {"ok": True, "run_in_progress": False, "run_id": 80712}
+        gate = RunGate(status_fn=lambda: dict(liveod), poll_period_s=0.02)
+        kwargs["run_gate"] = gate
+    w = main_gui.UnifiedControlGUI(camera, connect_camera_on_start=False, **kwargs)
     w._test_pattern = pattern
+    w._test_liveod = liveod
+    if HAS_SEAM:
+        assert process_until(app, lambda: w._gate_open)
     yield w
     w.close()
+    if gate is not None:
+        gate.stop()
 
 
 def test_window_scan_files_each_frame_under_its_position(app, gui, slm_host):
@@ -545,3 +568,404 @@ def test_window_releases_and_reconnects_nothing_moves_the_stage(app, gui, monkey
     gui.stage_group.in_btn.click()
     assert process_until(app, lambda: gui.stage_group.position == "in")
     assert ("move_to", "in", False) in FakeStage.calls
+
+
+# ----------------------------------------------------------------------
+# Runs: the run gate, a run taking the camera, the FrameSource seam
+# ----------------------------------------------------------------------
+
+RUN_REASON = "run 80713 in progress -- SLM writes blocked during runs"
+
+
+class CountingSLM(FakeSLM):
+    """FakeSLM that records every set_center_and_wait, i.e. every SLM write."""
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.calls = []
+
+    def set_center_and_wait(self, cx, cy):
+        self.calls.append((cx, cy))
+        return super().set_center_and_wait(cx, cy)
+
+
+class FakeGate:
+    """A write gate: open for the first ``n_open`` checks, closed after."""
+
+    def __init__(self, n_open=0, reason=RUN_REASON):
+        self.n_open = n_open
+        self.reason = reason
+        self.calls = 0
+
+    def check(self):
+        self.calls += 1
+        if self.calls <= self.n_open:
+            return True, ""
+        return False, self.reason
+
+
+def controller_state(slm):
+    return (slm.mode, tuple(slm.spot_center), slm.spot_radius, tuple(slm.grating_center),
+            slm.grating_size, slm.grating_spacing, slm.angle_deg)
+
+
+def wait_until(cond, timeout=2.0):
+    t_end = time.monotonic() + timeout
+    while time.monotonic() < t_end:
+        if cond():
+            return True
+        time.sleep(0.005)
+    return False
+
+
+@needs_seam
+def test_preempted_snap_stops_scan_before_next_slm_write():
+    from frame_source import Preempted
+    pattern = SLMPattern()
+    slm = CountingSLM(pattern, delay_s=0.0)
+    camera = FakeCamera(pattern)
+    timeout = scan_group.frame_timeout_s(camera)
+    _, _, points = scan_grid(50, 50, R=1, step=1, canvas_res=(1920, 1200))
+    k = 4           # snaps before the run takes the camera
+    n_snaps = []
+
+    def snap():
+        if len(n_snaps) == k:
+            raise Preempted("run armed the camera", run_tag="80713")
+        n_snaps.append(1)
+        return snap_frame(camera, timeout)
+
+    filed = []
+    shots, outcome = run_scan(points, slm.set_center_and_wait, snap, 0.0,
+                              should_stop=lambda: False, on_shot=filed.append)
+
+    # the position in flight was written; nothing after it
+    assert slm.calls == [(p.cx, p.cy) for p in points[:k + 1]]
+    assert len(shots) == k and filed == shots
+    # ... and it is not filed: blank ("not reached"), not a red X
+    assert all(s.frame is not None and not s.error for s in shots)
+    assert shots_to_grid(shots, 3, 3)[points[k].row][points[k].col] is None
+    assert "camera taken by run 80713" in outcome
+    assert f"({points[k].cx}, {points[k].cy})" in outcome
+    assert f"{k}/{len(points)} done" in outcome
+
+
+@needs_seam
+def test_gate_checked_before_every_slm_write():
+    pattern = SLMPattern()
+    slm = CountingSLM(pattern, delay_s=0.0)
+    camera = FakeCamera(pattern)
+    timeout = scan_group.frame_timeout_s(camera)
+    _, _, points = scan_grid(50, 50, R=1, step=1, canvas_res=(1920, 1200))
+    log = []
+
+    def set_center(cx, cy):
+        log.append("write")
+        return slm.set_center_and_wait(cx, cy)
+
+    def may_write():            # a run starts after the 3rd position
+        log.append("gate")
+        return (True, "") if log.count("write") < 3 else (False, RUN_REASON)
+
+    shots, outcome = run_scan(points, set_center, lambda: snap_frame(camera, timeout), 0.0,
+                              should_stop=lambda: False, on_shot=lambda s: None,
+                              may_write=may_write)
+
+    assert log == ["gate", "write"] * 3 + ["gate"]      # asked before every write
+    assert len(slm.calls) == 3 and len(shots) == 3       # no 4th write
+    assert RUN_REASON in outcome and f"3/{len(points)} done" in outcome
+    assert f"({points[3].cx}, {points[3].cy})" in outcome
+
+
+@needs_seam
+def test_slm_controller_refuses_all_writes_when_gate_closed(app, slm_host):
+    uploads = slm_host.uploads
+    slm = SLMController(server_ip="127.0.0.1", server_port=slm_host.port,
+                        write_gate=FakeGate(n_open=0))
+    blocked, changed = [], []
+    slm.blocked.connect(blocked.append)
+    slm.state_changed.connect(lambda: changed.append(1))
+    try:
+        n0 = len(uploads)
+        before = controller_state(slm)
+        slm.set_center(5, 6)
+        slm.nudge_center(1, 1)
+        slm.reset_center_to_default()
+        slm.set_spot_radius(33)
+        slm.set_mode("grating")
+        slm.set_grating_size(50)
+        slm.set_grating_spacing(9)
+        slm.set_angle_deg(12.0)
+        slm.send_update()
+        slm.resend()
+        r = slm.set_center_and_wait(7, 8)
+        app.processEvents()
+
+        assert not r.ok and r.blocked and r.error == RUN_REASON
+        assert controller_state(slm) == before and not changed
+        assert len(blocked) == 11 and set(blocked) == {RUN_REASON}
+        # a link probe sends no pattern, and still goes through
+        slm.check_link()
+        assert process_until(app, lambda: slm._last_link is not None)
+        assert slm._last_link[0] == "open"
+        time.sleep(0.2)                         # the stub takes 20 ms per upload
+        assert len(uploads) == n0
+    finally:
+        slm.close()
+
+    # A run that starts between the setter's check and the send: the sender
+    # asks again and drops the command, and the SLM state is marked unknown.
+    slm = SLMController(server_ip="127.0.0.1", server_port=slm_host.port,
+                        write_gate=FakeGate(n_open=1))
+    try:
+        n0 = len(uploads)
+        slm.set_center(600, 700)
+        assert slm.get_center() == (600, 700)          # the setter was let through
+        assert wait_until(lambda: slm.unknown_reason != "")
+        assert "(600, 700) was not sent" in slm.unknown_reason
+        assert RUN_REASON in slm.unknown_reason
+        time.sleep(0.2)
+        assert len(uploads) == n0
+    finally:
+        slm.close()
+
+
+@needs_seam
+def test_return_to_start_and_tile_pick_blocked_during_run(app, gui, slm_host):
+    from PyQt6.QtCore import Qt
+    from PyQt6.QtTest import QTest
+    uploads = slm_host.uploads
+    x0, y0 = gui.slm.get_center()
+    gui._scan_start_center = (x0, y0)       # as a finished scan leaves it ...
+    n = len(uploads)
+    gui.slm.set_center(x0 + 7, y0)          # ... with the pattern parked elsewhere
+    assert process_until(app, lambda: any(tuple(c) == (x0 + 7, y0) for _, c in uploads[n:]))
+    gui._update_controls()
+    assert gui.return_btn.isEnabled()
+    assert process_until(app, lambda: gui.slm_sync_row.isHidden())   # the SLM has it
+
+    gui._test_liveod.update(run_in_progress=True, run_id=80713)
+    assert process_until(app, lambda: not gui.return_btn.isEnabled())
+    assert not gui.run_banner.isHidden() and "80713 in progress" in gui.run_banner.text()
+    assert not gui.scan_btn.isEnabled() and not gui.resend_btn.isEnabled()
+    assert not gui.slm_preview.isEnabled()
+    assert not any(grp.isEnabled() for grp in gui._pattern_groups)
+    assert not gui.slm_sync_row.isHidden() and "run 80713" in gui.slm_sync_label.text()
+
+    n = len(uploads)
+    radius = gui.slm.spot_radius
+    gui.return_btn.click()                   # disabled: does nothing
+    gui.on_return_to_start()                 # and refuses if reached anyway
+    gui.on_scan_spot_picked(x0 - 3, y0 + 2)  # a tile pick in the scan preview
+    gui._on_preview_dragged(10, 10)
+    gui.on_resend()
+    QTest.keyClick(gui, Qt.Key.Key_Left)
+    gui.mode_grating_rb.setChecked(True)     # through the controller: refused ...
+    gui.radius_sb.setValue(radius + 20)
+    app.processEvents()
+    assert gui.mode_spot_rb.isChecked() and gui.slm.mode == "spot"   # ... and put back
+    assert gui.radius_sb.value() == radius == gui.slm.spot_radius
+    time.sleep(0.2)
+    app.processEvents()
+    assert len(uploads) == n
+    assert gui.slm.get_center() == (x0 + 7, y0)
+
+    gui._test_liveod.update(run_in_progress=False)
+    assert process_until(app, lambda: gui.return_btn.isEnabled())
+    assert gui.run_banner.isHidden() and gui.resend_btn.isEnabled()
+    time.sleep(0.2)
+    app.processEvents()
+    assert len(uploads) == n                              # nothing sent on its own
+    assert "run 80713" in gui.slm_sync_label.text() and not gui.slm_sync_row.isHidden()
+
+    gui.return_btn.click()
+    assert process_until(app, lambda: any(tuple(c) == (x0, y0) for _, c in uploads[n:]))
+    assert process_until(app, lambda: gui.slm_sync_row.isHidden())
+
+
+@needs_seam
+def test_run_gate_fails_closed_on_stale_or_unreachable():
+    from run_gate import RunGate
+    now = [100.0]
+    replies = []
+
+    def status():
+        r = replies.pop(0)
+        if isinstance(r, Exception):
+            raise r
+        return r() if callable(r) else r
+
+    def slow_reply():               # liveOD's REP loop busy: the answer is late
+        now[0] += 2.5
+        return {"ok": True, "run_in_progress": False, "run_id": 80713}
+
+    gate = RunGate(status_fn=status, max_age_s=2.0, clock=lambda: now[0],
+                   wall_clock=lambda: now[0])
+
+    ok, reason = gate.check()                                   # never polled
+    assert not ok and "liveOD unreachable" in reason and "no reply yet" in reason
+
+    replies.append(ConnectionError("no response from liveOD"))
+    assert not gate.poll_once()
+    ok, reason = gate.check()
+    assert not ok and "liveOD unreachable" in reason and "ConnectionError" in reason
+
+    replies.append({"ok": True, "run_in_progress": False, "run_id": 80712})
+    assert gate.poll_once() and gate.check() == (True, "")
+
+    replies.append({"ok": True, "run_id": 80712})              # does not say: not "no run"
+    assert not gate.poll_once()
+    ok, reason = gate.check()
+    assert not ok and "run_in_progress" in reason
+
+    replies.append({"ok": True, "run_in_progress": False, "run_id": 80712})
+    assert gate.poll_once() and gate.check()[0]
+    now[0] += 2.5                                               # no answer since
+    ok, reason = gate.check()
+    assert not ok and "no run state for 2.5 s (limit 2.0 s)" in reason
+
+    replies.append({"ok": True, "run_in_progress": True, "run_id": 80713})
+    assert gate.poll_once()
+    assert gate.check() == (False, RUN_REASON)
+    assert gate.snapshot()["runs_seen"] == 1 and gate.snapshot()["last_run_id"] == 80713
+
+    replies.append(slow_reply)                     # timed from the send: stale on arrival
+    assert gate.poll_once()
+    ok, reason = gate.check()
+    assert not ok and "liveOD unreachable" in reason
+
+    # a run that came and went between two polls still counts as seen
+    replies.append({"ok": True, "run_in_progress": False, "run_id": 80714})
+    assert gate.poll_once() and gate.check() == (True, "")
+    assert gate.snapshot()["runs_seen"] == 2 and gate.snapshot()["last_run_id"] == 80714
+
+    # On its own thread: a poll that hangs closes the gate by age, and check()
+    # never waits for the poll.
+    busy, release = threading.Event(), threading.Event()
+
+    def hanging_status():
+        if busy.is_set():
+            release.wait(5.0)
+        return {"ok": True, "run_in_progress": False, "run_id": 1}
+
+    threaded = RunGate(status_fn=hanging_status, max_age_s=0.3, poll_period_s=0.02).start()
+    try:
+        assert wait_until(lambda: threaded.check()[0])
+        busy.set()
+        assert wait_until(lambda: not threaded.check()[0])
+        t0 = time.monotonic()
+        ok, reason = threaded.check()
+        assert time.monotonic() - t0 < 0.05
+        assert not ok and "liveOD unreachable" in reason and "limit 0.3 s" in reason
+    finally:
+        release.set()
+        threaded.stop()
+
+
+@needs_seam
+def test_liveod_status_passes_poll_through_and_drops_a_broken_client():
+    # The default status_fn, with a fake client in place of LiveODClient (no network).
+    from run_gate import LiveODStatus, RunGate
+
+    class FakeClient:
+        def __init__(self, replies):
+            self.replies, self.closed = list(replies), False
+
+        def poll(self):
+            r = self.replies.pop(0)
+            if isinstance(r, Exception):
+                raise r
+            return r
+
+        def close(self):
+            self.closed = True
+
+    status = LiveODStatus()
+    client = FakeClient([{"ok": True, "run_in_progress": True, "run_id": 80713},
+                         {"ok": False, "error": "busy"},
+                         ConnectionError("no response"),
+                         OSError("socket in a bad state")])
+    status._client = client
+    gate = RunGate(status_fn=status)
+    assert gate.poll_once() and gate.check() == (False, RUN_REASON)
+    assert not gate.poll_once() and "refused POLL" in gate.check()[1]
+    assert not gate.poll_once() and "ConnectionError" in gate.check()[1]
+    assert status._client is client            # a timeout: the client reconnects itself
+    assert not gate.poll_once() and "OSError" in gate.check()[1]
+    assert status._client is None and client.closed    # anything else: rebuilt next poll
+
+
+@needs_seam
+def test_legacy_copies_refuse_to_run(monkeypatch):
+    # The old test/ GUIs write the SLM with no run gate. They must refuse at
+    # build(), before they would open the camera (stubbed to fail loudly here).
+    import importlib.util
+    from artiq.language.environment import EnvExperiment
+
+    def no_camera(*args, **kwargs):
+        raise AssertionError("the legacy copy tried to open the camera")
+
+    legacy = sorted((SPOT_FINDER / "test").glob("*.py"))
+    assert legacy
+    for path in legacy:
+        spec = importlib.util.spec_from_file_location(f"legacy_spot_{path.stem}", path)
+        mod = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(mod)
+        monkeypatch.setattr(mod, "AndorEMCCD", no_camera)
+        expts = [c for c in vars(mod).values() if isinstance(c, type)
+                 and issubclass(c, EnvExperiment) and c is not EnvExperiment]
+        assert expts, path.name
+        for cls in expts:
+            with pytest.raises(RuntimeError, match="superseded -- use the main spot finder GUI"):
+                cls.build(object.__new__(cls))
+
+
+@needs_seam
+def test_window_video_runs_through_the_source(app, gui):
+    frames = []
+    gui._frame_sig.connect(frames.append)
+    gui.video_btn.click()
+    assert gui.video_btn.isChecked() and gui.source.video_running()
+    assert process_until(app, lambda: len(frames) >= 3)
+    assert gui.camera_pill.state == "grabbing"
+    gui.video_btn.click()
+    assert process_until(app, lambda: not gui.source.video_running())
+    assert not gui.video_btn.isChecked() and gui.camera_pill.state == "open"
+
+
+@needs_seam
+def test_local_source_preserves_snap_semantics(app):
+    from frame_source import LocalAndorSource
+    pattern = SLMPattern()
+    rng = random.Random(2)
+    slm = FakeSLM(pattern, delay_s=lambda: rng.uniform(0.0, 0.05), confirms=True)
+    camera = FakeCamera(pattern)
+    source = LocalAndorSource(camera)
+    assert source.is_open() and source.camera is camera
+    assert not LocalAndorSource(None).is_open()
+    assert scan_group.frame_timeout_s(source) == scan_group.frame_timeout_s(camera)
+    _, _, points = scan_grid(100, 200, R=2, step=1, canvas_res=(1920, 1200))
+    timeout = scan_group.frame_timeout_s(source)
+
+    shots, outcome = run_scan(points, slm.set_center_and_wait, lambda: source.snap(timeout),
+                              0.005, should_stop=lambda: False, on_shot=lambda s: None)
+
+    assert outcome.startswith("finished") and len(shots) == len(points)
+    for s in shots:
+        start, end = exposed_at(s)
+        assert start == end == (s.point.cx, s.point.cy), s.point
+        assert s.slm_applied is True
+        assert s.t_slm_applied <= s.t_acquire
+
+    # the ScanWorker, which owns the source for the scan, run on this thread
+    got = []
+    worker = scan_group.ScanWorker(slm, source, points[:3], settle_s=0.005)
+    worker.finished_sig.connect(lambda shots, outcome: got.append((shots, outcome)))
+    worker.run()
+    app.processEvents()
+    shots, outcome = got[0]
+    assert outcome.startswith("finished")
+    assert [exposed_at(s) for s in shots] == [((p.cx, p.cy),) * 2 for p in points[:3]]
+
+    source.close()
+    assert camera.closed and not source.is_open()
