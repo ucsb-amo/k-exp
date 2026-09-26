@@ -6,8 +6,22 @@ import pyqtgraph as pg
 
 from waxx.control import AndorEMCCD, DummyCamera
 
-from andor_group import CameraWorker, FrameBuffer, reset_camera_state, apply_camera_params
+from andor_group import CameraWorker, reset_camera_state, apply_camera_params
 from slm_group import SLMController, SLMPreviewWidget
+from scan_group import ScanWorker, scan_grid, shots_to_grid
+from stage_group import StageGroup, POSITION_IN
+from status_widgets import StatusPill, BackgroundCall
+
+
+def mark_missing_tile(plot_widget, r, c, W, H):
+    """A red X over a tile that has no frame, so it is not read as a dark frame."""
+    x0, y0 = c * W, r * H
+    pen = pg.mkPen((220, 40, 40), width=2)
+    for xs, ys in (([x0, x0 + W], [y0, y0 + H]), ([x0, x0 + W], [y0 + H, y0])):
+        item = pg.PlotDataItem(xs, ys, pen=pen)
+        item.setZValue(20)
+        plot_widget.addItem(item)
+
 
 class LiveScanPreviewDialog(QtWidgets.QDialog):
     spot_picked = QtCore.pyqtSignal(int, int)  # (cx, cy) of the left-clicked tile
@@ -28,6 +42,7 @@ class LiveScanPreviewDialog(QtWidgets.QDialog):
         self._initialized = False
         self._levels = None
         self._grid_lines_added = False
+        self._missing = []  # (r, c) of positions that produced no frame
 
         layout = QtWidgets.QVBoxLayout(self)
         self.pw = pg.PlotWidget()
@@ -53,10 +68,17 @@ class LiveScanPreviewDialog(QtWidgets.QDialog):
         self._msg.setPos(0, 0)
         self.pw.addItem(self._msg)
 
+        self.note = QtWidgets.QLabel("")
+        self.note.setWordWrap(True)
+        layout.addWidget(self.note)
+
         self.center_readout = QtWidgets.QLabel("left-click a tile to move the spot there")
         self.center_readout.setStyleSheet("color: gray;")
         layout.addWidget(self.center_readout)
         self.pw.scene().sigMouseClicked.connect(self._on_mouse_clicked)
+
+    def set_note(self, text):
+        self.note.setText(text)
 
     def _pixel_to_center(self, x: int, y: int):
         if not self._initialized:
@@ -121,9 +143,16 @@ class LiveScanPreviewDialog(QtWidgets.QDialog):
         self.img_item.setImage(self.mosaic.T, autoLevels=False)
         self._initialized = True
 
+        # positions that failed before the first frame arrived
+        for r, c in self._missing:
+            mark_missing_tile(self.pw, r, c, self.W, self.H)
+
     @QtCore.pyqtSlot(int, int, object)
     def update_tile(self, r: int, c: int, frame_obj):
         if frame_obj is None:
+            self._missing.append((r, c))
+            if self._initialized:
+                mark_missing_tile(self.pw, r, c, self.W, self.H)
             return
         frame = frame_obj
         if not isinstance(frame, np.ndarray) or frame.ndim != 2:
@@ -147,7 +176,7 @@ class LiveScanPreviewDialog(QtWidgets.QDialog):
 class FinalScanPreviewDialog(QtWidgets.QDialog):
     spot_picked = QtCore.pyqtSignal(int, int)  # (cx, cy) of the left-clicked tile
 
-    def __init__(self, frames_grid, xs, ys, parent=None, title="Scan Preview"):
+    def __init__(self, frames_grid, xs, ys, parent=None, title="Scan Preview", note=""):
         super().__init__(parent)
         self.setWindowTitle(title)
         self.resize(1000, 820)
@@ -169,16 +198,18 @@ class FinalScanPreviewDialog(QtWidgets.QDialog):
 
         if sample is None:
             layout = QtWidgets.QVBoxLayout(self)
-            layout.addWidget(QtWidgets.QLabel("No frames captured."))
+            layout.addWidget(QtWidgets.QLabel("No frames captured." + (f"\n{note}" if note else "")))
             return
 
         self.H, self.W = sample.shape
 
+        missing = []
         self.mosaic = np.zeros((self.H * self.ny, self.W * self.nx), dtype=sample.dtype)
         for r in range(self.ny):
             for c in range(self.nx):
                 fr = frames_grid[r][c]
-                if fr is None:
+                if fr is None or fr.shape != (self.H, self.W):
+                    missing.append((r, c))
                     continue
                 self.mosaic[r * self.H:(r + 1) * self.H, c * self.W:(c + 1) * self.W] = fr
 
@@ -215,6 +246,13 @@ class FinalScanPreviewDialog(QtWidgets.QDialog):
             self.pw.addItem(pg.InfiniteLine(pos=c * self.W, angle=90, movable=False))
         for r in range(1, self.ny):
             self.pw.addItem(pg.InfiniteLine(pos=r * self.H, angle=0, movable=False))
+        for r, c in missing:
+            mark_missing_tile(self.pw, r, c, self.W, self.H)
+
+        if note:
+            note_label = QtWidgets.QLabel(note)
+            note_label.setWordWrap(True)
+            layout.addWidget(note_label)
 
         self.center_readout = QtWidgets.QLabel("center=(?, ?)  (left-click to set spot, right-click to copy)")
         self.center_readout.setStyleSheet("color: gray;")
@@ -274,106 +312,72 @@ class FinalScanPreviewDialog(QtWidgets.QDialog):
 
         text = (f"        self.px_slm_phase_mask_position_x = {center[0]}\n"
                 f"        self.px_slm_phase_mask_position_y = {center[1]}")
-        
-        QtWidgets.QApplication.clipboard().setText(text) 
+
+        QtWidgets.QApplication.clipboard().setText(text)
         self.center_readout.setText(f"Copied: {text}")
 
-class ScanWorker(QtCore.QThread):
-    progress_sig = QtCore.pyqtSignal(int, int)       
-    tile_sig = QtCore.pyqtSignal(int, int, object)   
-    finished_sig = QtCore.pyqtSignal(list, int, int) 
-    status_sig = QtCore.pyqtSignal(str)
 
-    def __init__(
-        self,
-        gui_ref,
-        centers,
-        nx,
-        ny,
-        settle_s=0.01,
-        frame_timeout_s=0.3,
-        emit_tiles=True,
-        parent=None
-    ):
-        super().__init__(parent)
-        self.gui = gui_ref
-        self.centers = list(centers)
-        self.nx = int(nx)
-        self.ny = int(ny)
-        self.settle_s = float(settle_s)
-        self.frame_timeout_s = float(frame_timeout_s)
-        self.emit_tiles = bool(emit_tiles)
-        self._stop = False
+class SidebarScrollArea(QtWidgets.QScrollArea):
+    """Lets the sidebar scroll on a short screen without taking the arrow keys.
 
-    def stop(self):
-        self._stop = True
+    A scroll area scrolls on arrow keys; passing them on keeps them what they
+    have always been here -- nudging the SLM pattern (UnifiedControlGUI.keyPressEvent).
+    """
 
-    def run(self):
-        frames = []
-        total = len(self.centers)
-
-        self.status_sig.emit("Scan started...")
-        for i, (cx, cy) in enumerate(self.centers):
-            if self._stop:
-                self.status_sig.emit("Scan aborted.")
-                break
-
-            QtCore.QMetaObject.invokeMethod(
-                self.gui,
-                "set_slm_center_and_update",
-                QtCore.Qt.ConnectionType.QueuedConnection,
-                QtCore.Q_ARG(int, int(cx)),
-                QtCore.Q_ARG(int, int(cy)),
-            )
-
-            time.sleep(self.settle_s)
-
-            frame = self.gui.wait_for_next_frame(timeout_s=self.frame_timeout_s)
-            frames.append(frame)
-
-            if self.emit_tiles:
-                r = i // self.nx
-                c = i % self.nx
-                self.tile_sig.emit(r, c, frame)
-
-            self.progress_sig.emit(i + 1, total)
-
-        self.status_sig.emit("Scan finished.")
-        self.finished_sig.emit(frames, self.nx, self.ny)
+    def keyPressEvent(self, event):
+        event.ignore()
 
 
 class UnifiedControlGUI(QtWidgets.QMainWindow):
     RADIUS_MIN = 1
     RADIUS_MAX = 600
 
-    def __init__(self, camera):
+    def __init__(self, camera=None, connect_camera_on_start=True):
         super().__init__()
         self.setWindowTitle("SLM Andor preview")
         self.resize(1500, 900)
+        self._closing = False
 
-        # Camera
-        self.camera = camera
+        # Camera. DummyCamera stands in while the Andor is not connected; the
+        # andor button connects and releases it without closing the window.
+        self.camera = camera if camera is not None else DummyCamera()
+        self._camera_busy = ""   # "connecting" / "disconnecting" while under way
+        self._camera_error = ""
         self.worker = CameraWorker(self.camera)
-        self.framebuf = FrameBuffer()
         self.worker.new_frame_sig.connect(self.update_camera_plot)
+        self.worker.finished.connect(self._on_video_stopped)
 
         # SLM
         self.slm = SLMController(canvas_res=(1920, 1200), server_ip="192.168.1.102", server_port=5000)
         self.slm.state_changed.connect(self._on_slm_state_changed)
+        self.slm.link_changed.connect(self._on_slm_link_changed)
 
         # Scan
         self.scan_worker = None
         self.scan_preview_dlg = None
-        self._scan_was_running = True
+        self._scanning = False
+        self._scan_live = False
+        self._scan_was_running = False
         self._scan_xs = []
         self._scan_ys = []
+        self._scan_total = 0
+        self._scan_done = 0
+        self._scan_last_t = None
         self._scan_start_center = None
         self._scan_picked = False
         self._scan_restore_pending = False
 
         self.init_ui()
-        reset_camera_state(self.camera, DummyCamera)
+        if self._camera_connected():
+            reset_camera_state(self.camera, DummyCamera)
         self._on_slm_state_changed()
+        self._update_controls()
+
+        self.slm.check_link()
+        # Connecting reads the stage position; it never moves the stage.
+        QtCore.QTimer.singleShot(0, self.stage_group.connect_stage)
+        if connect_camera_on_start and not self._camera_connected():
+            QtCore.QTimer.singleShot(0, self.connect_camera)
 
 
     def on_apply_pattern_params(self):
@@ -385,6 +389,12 @@ class UnifiedControlGUI(QtWidgets.QMainWindow):
             self.slm.set_angle_deg(self.angle_sb.value())
 
     def keyPressEvent(self, event):
+        # The scan owns the pattern while it runs; a nudge now would put the
+        # next frame at a position other than the one it is filed under.
+        if self._scanning:
+            super().keyPressEvent(event)
+            return
+
         key = event.key()
         modifiers = event.modifiers()
 
@@ -450,8 +460,34 @@ class UnifiedControlGUI(QtWidgets.QMainWindow):
         self.setCentralWidget(central)
         main = QtWidgets.QHBoxLayout(central)
 
-        sidebar = QtWidgets.QVBoxLayout()
-        main.addLayout(sidebar, 1)
+        # The sidebar is taller than most screens, so it scrolls.
+        sidebar_widget = QtWidgets.QWidget()
+        sidebar = QtWidgets.QVBoxLayout(sidebar_widget)
+        sidebar_scroll = SidebarScrollArea()
+        sidebar_scroll.setWidgetResizable(True)
+        sidebar_scroll.setHorizontalScrollBarPolicy(QtCore.Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
+        sidebar_scroll.setFrameShape(QtWidgets.QFrame.Shape.NoFrame)
+        sidebar_scroll.setFocusPolicy(QtCore.Qt.FocusPolicy.NoFocus)
+        sidebar_scroll.setWidget(sidebar_widget)
+        main.addWidget(sidebar_scroll, 1)
+
+        # Connections: the same coloured buttons as liveOD's camera row. Grey
+        # not connected, purple connecting, green connected, blue acquiring,
+        # red failed; hover for the detail.
+        self.stage_group = StageGroup()
+
+        conn_row = QtWidgets.QHBoxLayout()
+        conn_row.addWidget(QtWidgets.QLabel("Connections:"))
+        self.camera_pill = StatusPill("andor")
+        self.camera_pill.clicked.connect(self._on_camera_pill_clicked)
+        conn_row.addWidget(self.camera_pill)
+        self.slm_pill = StatusPill("slm")
+        self.slm_pill.set_state("closed", "Not checked yet.", action="check the SLM server")
+        self.slm_pill.clicked.connect(self.slm.check_link)
+        conn_row.addWidget(self.slm_pill)
+        conn_row.addWidget(self.stage_group.pill)
+        conn_row.addStretch()
+        sidebar.addLayout(conn_row)
 
         cam_group = QtWidgets.QGroupBox("Camera Control")
         cam_layout = QtWidgets.QVBoxLayout()
@@ -492,10 +528,13 @@ class UnifiedControlGUI(QtWidgets.QMainWindow):
 
         self.cam_param_status = QtWidgets.QLabel("")
         self.cam_param_status.setStyleSheet("color: gray;")
+        self.cam_param_status.setWordWrap(True)
         g.addWidget(self.cam_param_status, 3, 0, 1, 2)
 
         cam_param_group.setLayout(g)
         sidebar.addWidget(cam_param_group)
+
+        sidebar.addWidget(self.stage_group)
 
         slm_mode_group = QtWidgets.QGroupBox("SLM Mode")
         h = QtWidgets.QHBoxLayout()
@@ -555,6 +594,9 @@ class UnifiedControlGUI(QtWidgets.QMainWindow):
         size_group.setLayout(sz)
         sidebar.addWidget(size_group)
 
+        # everything that moves the pattern; locked while a scan owns it
+        self._pattern_groups = (slm_mode_group, center_group)
+
         info_group = QtWidgets.QGroupBox("Pattern Info")
         v = QtWidgets.QVBoxLayout()
         self.coord_label = QtWidgets.QLabel("")
@@ -581,40 +623,62 @@ class UnifiedControlGUI(QtWidgets.QMainWindow):
         self.scan_step_sb.setValue(1)
         scan_layout.addWidget(self.scan_step_sb, 1, 1)
 
-        scan_layout.addWidget(QtWidgets.QLabel("Preview mode:"), 2, 0)
+        scan_layout.addWidget(QtWidgets.QLabel("SLM settle (ms):"), 2, 0)
+        self.settle_sb = QtWidgets.QSpinBox()
+        self.settle_sb.setRange(0, 5000)
+        self.settle_sb.setSingleStep(10)
+        self.settle_sb.setValue(150)
+        self.settle_sb.setToolTip(
+            "Wait between the SLM server reporting a pattern applied and the start of "
+            "the exposure, for the SLM's next video frame and liquid-crystal response.\n"
+            "With an SLM server that does not report (the old run_server.py) it counts "
+            "from the send instead, and must also cover the server's own processing.")
+        scan_layout.addWidget(self.settle_sb, 2, 1)
+
+        scan_layout.addWidget(QtWidgets.QLabel("Preview mode:"), 3, 0)
         self.preview_mode_cb = QtWidgets.QComboBox()
-        self.preview_mode_cb.addItems(["no live preview (Fast)", "live preview (Slow)"])
+        # Scan timing no longer depends on the GUI, so live preview costs only
+        # redraw time -- the GUI may lag on a big grid, the frames do not.
+        self.preview_mode_cb.addItems(["final preview only", "live preview (GUI may lag)"])
         self.preview_mode_cb.setCurrentIndex(0)
-        scan_layout.addWidget(self.preview_mode_cb, 2, 1)
+        scan_layout.addWidget(self.preview_mode_cb, 3, 1)
 
         self.return_to_start_cb = QtWidgets.QCheckBox("Return to start position after scan")
         self.return_to_start_cb.setChecked(True)
-        scan_layout.addWidget(self.return_to_start_cb, 3, 0, 1, 2)
+        scan_layout.addWidget(self.return_to_start_cb, 4, 0, 1, 2)
 
         self.scan_btn = QtWidgets.QPushButton("Scan")
         self.scan_btn.clicked.connect(self.start_scan)
-        scan_layout.addWidget(self.scan_btn, 4, 0, 1, 1)
+        scan_layout.addWidget(self.scan_btn, 5, 0, 1, 1)
 
         self.stop_scan_btn = QtWidgets.QPushButton("Stop")
         self.stop_scan_btn.setEnabled(False)
         self.stop_scan_btn.clicked.connect(self.stop_scan)
-        scan_layout.addWidget(self.stop_scan_btn, 4, 1, 1, 1)
+        scan_layout.addWidget(self.stop_scan_btn, 5, 1, 1, 1)
 
         self.scan_progress = QtWidgets.QLabel("Idle")
-        scan_layout.addWidget(self.scan_progress, 5, 0, 1, 2)
+        self.scan_progress.setWordWrap(True)
+        scan_layout.addWidget(self.scan_progress, 6, 0, 1, 2)
+
+        self.scan_slm_mode = QtWidgets.QLabel("")
+        self.scan_slm_mode.setWordWrap(True)
+        self.scan_slm_mode.setStyleSheet("color: #c77800;")
+        scan_layout.addWidget(self.scan_slm_mode, 7, 0, 1, 2)
 
         scan_group.setLayout(scan_layout)
         sidebar.addWidget(scan_group)
 
-      
+
 
         # SLM preview
         sidebar.addWidget(QtWidgets.QLabel("SLM Preview:"))
         self.slm_preview = SLMPreviewWidget(self.slm, height=300)
-        self.slm_preview.dragged_to.connect(self.slm.set_center)
+        self.slm_preview.dragged_to.connect(self._on_preview_dragged)
         sidebar.addWidget(self.slm_preview)
 
         sidebar.addStretch()
+        sidebar_scroll.setMinimumWidth(sidebar_widget.minimumSizeHint().width()
+                                       + sidebar_scroll.verticalScrollBar().sizeHint().width())
 
         # Andor window
         self.view = pg.GraphicsLayoutWidget()
@@ -628,7 +692,7 @@ class UnifiedControlGUI(QtWidgets.QMainWindow):
 
         self.setFocusPolicy(QtCore.Qt.FocusPolicy.StrongFocus)
 
-    # SLM 
+    # SLM
     def _on_slm_state_changed(self):
         cx, cy = self.slm.get_center()
 
@@ -644,7 +708,7 @@ class UnifiedControlGUI(QtWidgets.QMainWindow):
             w.blockSignals(True)
             w.setValue(max(self.RADIUS_MIN, min(self.RADIUS_MAX, r)))
             w.blockSignals(False)
-        self.size_group.setEnabled(self.slm.mode == "spot")
+        self.size_group.setEnabled(self.slm.mode == "spot" and not self._scanning)
 
         self.coord_label.setText(f"Center: ({cx}, {cy})")
         if self.slm.mode == "spot":
@@ -656,6 +720,10 @@ class UnifiedControlGUI(QtWidgets.QMainWindow):
 
         self.slm_preview.refresh()
 
+    @QtCore.pyqtSlot(str, str)
+    def _on_slm_link_changed(self, state, detail):
+        self.slm_pill.set_state(state, detail, action="check the SLM server")
+
     def on_mode_changed(self):
         self.slm.set_mode("spot" if self.mode_spot_rb.isChecked() else "grating")
 
@@ -663,13 +731,134 @@ class UnifiedControlGUI(QtWidgets.QMainWindow):
         self.slm.set_spot_radius(int(value))
 
     def on_apply_center(self):
+        if self._scanning:
+            return
         self.slm.set_center(self.center_x_sb.value(), self.center_y_sb.value())
 
     def on_reset_center(self):
         self.slm.reset_center_to_default()
 
+    def _on_preview_dragged(self, cx, cy):
+        if not self._scanning:
+            self.slm.set_center(cx, cy)
+
     # Camera
+    def _camera_connected(self):
+        return not isinstance(self.camera, DummyCamera)
+
+    def _on_camera_pill_clicked(self):
+        if self._camera_connected():
+            self.disconnect_camera()
+        else:
+            self.connect_camera()
+
+    def connect_camera(self):
+        """Open the Andor off the GUI thread; the andor button shows the result."""
+        if self._camera_busy or self._camera_connected() or self._closing:
+            return
+        exposure_s = float(self.exposure_sb.value())
+        gain = int(self.gain_sb.value())
+        worker = self.worker
+        self._camera_busy = "connecting"
+        self._camera_error = ""
+        self.cam_param_status.setText("Connecting to the Andor...")
+        self._update_controls()
+
+        def work():
+            camera = AndorEMCCD(ExposureTime=exposure_s, gain=0.0, **andor_readout_params())
+            reset_camera_state(camera, DummyCamera)
+            # reset_camera_state zeroes the gain; bring the camera back to the panel
+            _, msg = apply_camera_params(camera, DummyCamera, worker,
+                                         exposure_s=exposure_s, gain=gain)
+            return camera, msg
+
+        BackgroundCall(work, self._on_camera_connected, self)
+
+    def _on_camera_connected(self, result, error):
+        self._camera_busy = ""
+        if error is not None:
+            self._camera_error = f"{type(error).__name__}: {error}"
+            print(f"[camera] AndorEMCCD open failed ({error})")
+            self.cam_param_status.setText(
+                f"Andor not connected: {error}\n(Is liveOD holding it? Release it there, "
+                f"then click the andor button.)")
+            self._update_controls()
+            return
+        camera, msg = result
+        if self._closing:
+            camera.Close()
+            return
+        self.camera = camera
+        self.worker.camera = camera
+        self._camera_error = ""
+        self.cam_param_status.setText(msg)
+        # AndorEMCCD.__init__ opens the shutter
+        self.shutter_btn.blockSignals(True)
+        self.shutter_btn.setChecked(True)
+        self.shutter_btn.blockSignals(False)
+        self._update_controls()
+
+    def disconnect_camera(self):
+        """Release the Andor (e.g. for liveOD) without closing this window."""
+        if self._camera_busy or not self._camera_connected() or self._scanning:
+            return
+        if self.worker.isRunning():
+            self.worker.stop()
+        camera = self.camera
+        self._camera_busy = "disconnecting"
+        self._update_controls()
+        # AndorEMCCD.Close() closes the shutter before the SDK close (see liveOD's
+        # CameraButton.close_camera for why it is Close, not close).
+        BackgroundCall(camera.Close, self._on_camera_closed, self)
+
+    def _on_camera_closed(self, _result, error):
+        self._camera_busy = ""
+        if error is not None:
+            # Keep the live handle, as liveOD does, so the button still reports
+            # the real device and a second click can try again.
+            self._camera_error = f"close failed: {error}"
+            print(f"[camera] {self._camera_error}")
+            self._update_controls()
+            return
+        self.camera = DummyCamera()
+        self.worker.camera = self.camera
+        self._camera_error = ""
+        self.cam_param_status.setText("Andor released. Click the andor button to connect again.")
+        self._update_controls()
+
+    def _render_camera_pill(self):
+        connected = self._camera_connected()
+        acquiring = connected and (self.worker.isRunning() or self._scanning)
+        if self._camera_busy:
+            state, detail = "loading", f"{self._camera_busy.capitalize()}..."
+        elif self._camera_error:
+            state, detail = "failed", self._camera_error
+        elif acquiring:
+            state, detail = "grabbing", "Scan running." if self._scanning else "Video running."
+        elif connected:
+            state, detail = "open", "Andor connected."
+        else:
+            state, detail = "closed", "Andor not connected."
+        self.camera_pill.set_state(state, detail, action="disconnect" if connected else "connect")
+
+    def _update_controls(self):
+        """Enable what can be used now; the camera is shared by video, scan and connect."""
+        self._render_camera_pill()
+        ready = self._camera_connected() and not self._camera_busy
+        for w in (self.video_btn, self.shutter_btn, self.apply_cam_btn):
+            w.setEnabled(ready and not self._scanning)
+        self.camera_pill.setEnabled(not self._camera_busy and not self._scanning)
+        self.scan_btn.setEnabled(ready and not self._scanning)
+        self.stop_scan_btn.setEnabled(self._scanning)
+        for grp in self._pattern_groups:
+            grp.setEnabled(not self._scanning)
+        self.size_group.setEnabled(self.slm.mode == "spot" and not self._scanning)
+        self.slm_preview.setEnabled(not self._scanning)
+        self.stage_group.set_locked(self._scanning)
+
     def on_apply_camera_params(self):
+        if not self._camera_connected():
+            return
         ok, msg = apply_camera_params(
             self.camera, DummyCamera, self.worker,
             exposure_s=float(self.exposure_sb.value()),
@@ -678,12 +867,23 @@ class UnifiedControlGUI(QtWidgets.QMainWindow):
         self.cam_param_status.setText(msg)
 
     def toggle_video(self, checked):
-        if checked:
+        if checked and self._camera_connected():
             self.worker.start()
         else:
+            self.video_btn.setChecked(False)
             self.worker.stop()
+        self._update_controls()
+
+    def _on_video_stopped(self):
+        # Also fires when apply/shutter briefly stop and restart the video;
+        # only a worker that is still stopped by now has really ended.
+        if not self.worker.isRunning():
+            self.video_btn.setChecked(False)
+        self._update_controls()
 
     def toggle_shutter(self, checked):
+        if not self._camera_connected():
+            return
         mode = "open" if checked else "closed"
         was_running = self.worker.isRunning()
         if was_running:
@@ -698,94 +898,78 @@ class UnifiedControlGUI(QtWidgets.QMainWindow):
     @QtCore.pyqtSlot(np.ndarray)
     def update_camera_plot(self, data):
         self.cam_img_item.setImage(data.T, autoLevels=True)
-        self.framebuf.push(data)
-
-    def wait_for_next_frame(self, timeout_s=1.5):
-        return self.framebuf.wait_for_next(timeout_s=timeout_s)
-
-    @QtCore.pyqtSlot(int, int)
-    def set_slm_center_and_update(self, cx, cy):
-        self.slm.set_center(cx, cy)
 
     # Scan
     def start_scan(self):
-        if self.scan_worker is not None and self.scan_worker.isRunning():
+        if self._scanning:
             return
+        if not self._camera_connected() or self._camera_busy:
+            self.scan_progress.setText("Connect the Andor first (andor button).")
+            return
+        if self.stage_group.position == POSITION_IN:
+            answer = QtWidgets.QMessageBox.question(
+                self, "APD stage is in",
+                "The APD stage was last sent IN: the beamsplitter sends the light to "
+                "the APD and the Andor is blocked.\n\nScan anyway? (Move Out in the "
+                "APD Stage box clears the Andor.)")
+            if answer != QtWidgets.QMessageBox.StandardButton.Yes:
+                return
 
         R = int(self.scan_R_sb.value())
         step = int(self.scan_step_sb.value())
 
         x0, y0 = self.slm.get_center()
-        self._scan_start_center = (x0, y0)
-        self._scan_picked = False
-        self._scan_restore_pending = False
-
-        # Symmetric grid about the current spot position: the center itself is
-        # always scanned, and offsets run out to +-R in multiples of `step`.
-        n = R // step if R > 0 else 0
-        offsets = [k * step for k in range(-n, n + 1)]
-
-        # Drop (rather than clamp) points off the canvas -- clamping would
-        # produce duplicate tiles sharing one label.
-        xs = [x0 + d for d in offsets if 0 <= x0 + d < self.slm.canvas_res[0]]
-        ys = [y0 + d for d in offsets if 0 <= y0 + d < self.slm.canvas_res[1]]
-
-        if not xs or not ys:
+        xs, ys, points = scan_grid(x0, y0, R, step, self.slm.canvas_res)
+        if not points:
             self.scan_progress.setText("Center is off canvas; nothing to scan.")
             return
 
-        nx, ny = len(xs), len(ys)
-        centers = [(x, y) for y in ys for x in xs]
-
+        self._scan_start_center = (x0, y0)
+        self._scan_picked = False
+        self._scan_restore_pending = False
         self._scan_xs = xs
         self._scan_ys = ys
+        nx, ny = len(xs), len(ys)
 
+        # The scan owns the camera: it starts its own acquisition at every
+        # position, so the free-running video has to stop for it.
         self._scan_was_running = self.worker.isRunning()
-        if not self._scan_was_running:
-            self.video_btn.setChecked(True)
-            self.worker.start()
+        if self._scan_was_running:
+            self.worker.stop()
 
-        slow_live = (self.preview_mode_cb.currentIndex() == 1)
-
-        if slow_live:
-            if self.scan_preview_dlg is not None:
-                try:
-                    self.scan_preview_dlg.close()
-                except Exception:
-                    pass
+        self._scan_live = (self.preview_mode_cb.currentIndex() == 1)
+        if self.scan_preview_dlg is not None:
+            try:
+                self.scan_preview_dlg.close()
+            except Exception:
+                pass
+            self.scan_preview_dlg = None
+        if self._scan_live:
             self.scan_preview_dlg = LiveScanPreviewDialog(
                 nx, ny, xs, ys, parent=self, title=f"Scan Preview (live) ({ny}x{nx})"
             )
             self.scan_preview_dlg.spot_picked.connect(self.on_scan_spot_picked)
             self.scan_preview_dlg.finished.connect(lambda *_: self._maybe_return_to_start())
             self.scan_preview_dlg.show()
-        else:
-            if self.scan_preview_dlg is not None:
-                try:
-                    self.scan_preview_dlg.close()
-                except Exception:
-                    pass
-            self.scan_preview_dlg = None
 
-        self.scan_btn.setEnabled(False)
-        self.stop_scan_btn.setEnabled(True)
-        self.scan_progress.setText(f"Scanning 0/{len(centers)} ...")
+        # Find out afresh whether the SLM server confirms each pattern -- it
+        # may have been restarted with a different run_server.py since.
+        self.slm.reset_reply_probe()
+        self.scan_slm_mode.setText("")
+
+        self._scanning = True
+        self._scan_total = len(points)
+        self._scan_done = 0
+        self._scan_last_t = time.monotonic()
+        self.scan_progress.setText(f"Scanning 0/{len(points)} ...")
+        self._update_controls()
 
         self.scan_worker = ScanWorker(
-            gui_ref=self,
-            centers=centers,
-            nx=nx,
-            ny=ny,
-            settle_s=0.01,
-            frame_timeout_s=0.3,
-            emit_tiles=slow_live,
+            self.slm, self.camera, points,
+            settle_s=self.settle_sb.value() / 1000.0,
         )
-        self.scan_worker.progress_sig.connect(self._on_scan_progress)
-        self.scan_worker.status_sig.connect(self._on_scan_status)
+        self.scan_worker.shot_sig.connect(self._on_scan_shot)
         self.scan_worker.finished_sig.connect(self._on_scan_finished)
-        if slow_live:
-            self.scan_worker.tile_sig.connect(self._on_scan_tile)
-
         self.scan_worker.start()
 
     def _maybe_return_to_start(self):
@@ -809,7 +993,7 @@ class UnifiedControlGUI(QtWidgets.QMainWindow):
         Ignored while a scan is running: the ScanWorker owns the center then and
         would overwrite the pick at the next grid point.
         """
-        if self.scan_worker is not None and self.scan_worker.isRunning():
+        if self._scanning:
             if self.scan_preview_dlg is not None:
                 self.scan_preview_dlg.center_readout.setText(
                     "Scan still running -- click again once it finishes."
@@ -822,73 +1006,94 @@ class UnifiedControlGUI(QtWidgets.QMainWindow):
     def stop_scan(self):
         """
         Interrupt scan safely.
-        Worker will exit loop at next iteration boundary.
+        Worker stops before the next position; the current one finishes.
         """
-        if self.scan_worker is not None and self.scan_worker.isRunning():
+        if self._scanning and self.scan_worker is not None:
             self.scan_worker.stop()
-            self.scan_progress.setText("Stopping...")
+            self.scan_progress.setText("Stopping after the current position...")
             self.stop_scan_btn.setEnabled(False)
 
-    @QtCore.pyqtSlot(int, int)
-    def _on_scan_progress(self, done, total):
-        self.scan_progress.setText(f"Scanning {done}/{total} ...")
+    @QtCore.pyqtSlot(object)
+    def _on_scan_shot(self, shot):
+        self._scan_done += 1
+        now = time.monotonic()
+        step_s = now - self._scan_last_t
+        self._scan_last_t = now
 
-    @QtCore.pyqtSlot(str)
-    def _on_scan_status(self, msg):
-        # optional: print(msg)
-        pass
+        if shot.frame is not None:
+            self.cam_img_item.setImage(shot.frame.T, autoLevels=True)
+        else:
+            print(f"[scan] no frame at ({shot.point.cx}, {shot.point.cy}): {shot.error}")
+        if self._scan_live and self.scan_preview_dlg is not None:
+            try:
+                self.scan_preview_dlg.update_tile(shot.point.row, shot.point.col, shot.frame)
+            except Exception:
+                pass
 
-    @QtCore.pyqtSlot(int, int, object)
-    def _on_scan_tile(self, r, c, frame_obj):
-        if self.scan_preview_dlg is None:
+        if shot.slm_applied is None and not self.scan_slm_mode.text():
+            self.scan_slm_mode.setText(
+                "The SLM server does not confirm patterns (old run_server.py), so the "
+                "settle time counts from the send and has to cover the server's own "
+                "processing too. Restart the SLM server with the updated run_server.py "
+                "for confirmed timing.")
+        confirmed = {True: "SLM confirmed", None: "SLM unconfirmed"}.get(shot.slm_applied, "")
+        applied = (f" (server {shot.server_apply_s * 1e3:.0f} ms)"
+                   if shot.server_apply_s is not None else "")
+        self.scan_progress.setText(
+            f"Scanning {self._scan_done}/{self._scan_total}  |  {step_s:.2f} s/position  |  "
+            f"{confirmed}{applied}")
+
+    @QtCore.pyqtSlot(list, str)
+    def _on_scan_finished(self, shots, outcome):
+        self._scanning = False
+        if self._closing:
             return
-        try:
-            self.scan_preview_dlg.update_tile(r, c, frame_obj)
-        except Exception:
-            pass
 
-    @QtCore.pyqtSlot(list, int, int)
-    def _on_scan_finished(self, frames_flat, nx, ny):
-        self.scan_btn.setEnabled(True)
-        self.stop_scan_btn.setEnabled(False)
-        self.scan_progress.setText("Idle")
+        nx, ny = len(self._scan_xs), len(self._scan_ys)
+        n_missing = sum(1 for s in shots if s.frame is None)
+        n_unconfirmed = sum(1 for s in shots if s.slm_applied is None)
+        parts = [f"Scan {outcome}."]
+        if n_missing:
+            parts.append(f"{n_missing} position(s) have no frame (red X).")
+        if len(shots) < self._scan_total:
+            parts.append(f"{self._scan_total - len(shots)} position(s) not reached (blank).")
+        if n_unconfirmed:
+            parts.append(f"SLM application unconfirmed at {n_unconfirmed} position(s): "
+                         f"old SLM server, settle {self.settle_sb.value()} ms from send.")
+        summary = " ".join(parts)
+        print(f"[scan] {summary}")
+        self.scan_progress.setText(summary)
+
+        if self._scan_was_running and self._camera_connected():
+            self.video_btn.setChecked(True)
+            self.worker.start()
+        self._update_controls()
 
         # The scan leaves the pattern parked on the last grid point. Put it back
         # where the scan started -- but only once the preview is done with, and
         # only if the user did not left-click a tile to choose a position.
         self._scan_restore_pending = True
 
-        if not getattr(self, "_scan_was_running", True):
-            self.video_btn.setChecked(False)
-            self.worker.stop()
-
-        slow_live = (self.preview_mode_cb.currentIndex() == 1)
-        if not slow_live:
-            grid = []
-            idx = 0
-            for r in range(ny):
-                row = []
-                for c in range(nx):
-                    row.append(frames_flat[idx] if idx < len(frames_flat) else None)
-                    idx += 1
-                grid.append(row)
-
-            xs = getattr(self, "_scan_xs", list(range(nx)))
-            ys = getattr(self, "_scan_ys", list(range(ny)))
-
-            dlg = FinalScanPreviewDialog(grid, xs, ys, parent=self, title=f"Scan Preview ({ny}x{nx})")
+        if not self._scan_live:
+            grid = shots_to_grid(shots, nx, ny)
+            dlg = FinalScanPreviewDialog(grid, self._scan_xs, self._scan_ys, parent=self,
+                                         title=f"Scan Preview ({ny}x{nx})", note=summary)
             dlg.spot_picked.connect(self.on_scan_spot_picked)
             dlg.exec()
             self._maybe_return_to_start()
         elif self.scan_preview_dlg is None or not self.scan_preview_dlg.isVisible():
             # live dialog already closed -> nothing left to click on
             self._maybe_return_to_start()
+        else:
+            self.scan_preview_dlg.set_note(summary)
 
     def closeEvent(self, event):
+        self._closing = True
         try:
             if self.scan_worker is not None and self.scan_worker.isRunning():
                 self.scan_worker.stop()
-                self.scan_worker.wait(1000)
+                # it finishes the position it is on (settle + one frame)
+                self.scan_worker.wait(15000)
         except Exception:
             pass
 
@@ -956,12 +1161,9 @@ def andor_readout_params():
 
 class UnifiedExperiment():
     def build(self):
-        params = andor_readout_params()
-        try:
-            self.camera = AndorEMCCD(ExposureTime=0.05, gain=0.0, vs_speed=4)
-        except Exception as e:
-            print(f"[camera] AndorEMCCD open failed ({e}); falling back to DummyCamera")
-            self.camera = DummyCamera()
+        # The window opens the Andor itself, off the GUI thread, and can release
+        # and re-open it later (andor button) without being closed.
+        self.camera = None
 
     def run(self):
         app = QtWidgets.QApplication.instance() or QtWidgets.QApplication(sys.argv)
