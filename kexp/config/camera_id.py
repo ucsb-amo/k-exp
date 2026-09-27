@@ -28,9 +28,6 @@ class camera_frame(camera_frame_waxx):
                                 t_light_only_image_delay=30.e-3, # 2026-09-23
                                 t_dark_image_delay=30.e-3, # 2026-09-23
                                 hs_speed=0, preamp=2,
-                                # vs_speed=0, vs_amp=0, # 2026-09-23; REVERTED: run 80708 shows
-                                #   0.3 us / Normal amplitude loses the whole image (charge not
-                                #   transferred; the low dark counts were signal loss, not low CIC)
                                 vs_speed=1, vs_amp=3) # restored 2026-09-24, run 80707/80708
 
         self.apd = APDParams(amp_absorption=.2, exposure_time_abs=20.e-6,
