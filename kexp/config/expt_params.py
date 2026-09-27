@@ -234,7 +234,7 @@ class ExptParams(ExptParamsWaxx):
         self.detune_d1_c_sweep_d1cmot_end = 7.
         self.detune_d2_r_sweep_d1cmot_start = -3.
         self.detune_d2_r_sweep_d1cmot_end = -5.
-        self.n_d1cmot_detuning_sweep_steps = 200
+        self.n_d1cmot_detuning_sweep_steps = 100
 
         self.i_cmot = self.i_mot
         
@@ -258,7 +258,7 @@ class ExptParams(ExptParamsWaxx):
         #v_pd values for start and end of ramp
         # self.pfrac_c_gmramp_end = .04 #0.01
         # self.pfrac_r_gmramp_end = .63# 0.729
-        self.n_gmramp_steps = 200
+        self.n_gmramp_steps = 100
 
         # mag trap
         self.i_magtrap_init = 106.5
@@ -290,7 +290,7 @@ class ExptParams(ExptParamsWaxx):
         self.v_pd_hf_lightsheet_rampdown_end = 0.85 #4.16
         self.v_pd_hf_lightsheet_rampdown2_end = 0.0
         self.v_pd_lightsheet_rampdown3_end = .0
-        self.n_lightsheet_ramp_steps = 1000
+        self.n_lightsheet_ramp_steps = 200
         self.n_lightsheet_evap1_decay_coeff = 1.5
 
         #1064 tweezer
@@ -306,7 +306,7 @@ class ExptParams(ExptParamsWaxx):
         self.v_pd_hf_tweezer_1064_ramp_end = 8.4
         self.v_pd_hf_tweezer_1064_rampdown_end = 0.16
         self.v_pd_hf_tweezer_1064_rampdown2_end = 2.2
-        self.n_tweezer_ramp_steps = 1000
+        self.n_tweezer_ramp_steps = 200
 
         self.v_tweezer_paint_rampdown_end1 = -4.985
         self.v_tweezer_paint_rampdown_end2 = -6.5
@@ -341,7 +341,7 @@ class ExptParams(ExptParamsWaxx):
 
         # RF
         self.amp_rf_source = 0.99
-        self.n_rf_sweep_steps = 1000
+        self.n_rf_sweep_steps = 300
 
         self.t_rf_sweep_state_prep = 100.e-3
         self.frequency_rf_sweep_state_prep_center = 459.3543e6
