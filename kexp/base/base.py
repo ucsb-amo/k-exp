@@ -125,12 +125,12 @@ class Base(Expt, Devices, Cooling, Image, Cameras, Control, Clients):
         self.opx.on_finish_prepare()
 
     def _stamp_device_state(self):
-        """Pre-run check: trust (and whether the check could be made) from
-        the monitor server, printed (warnings only, never a refusal), and the
-        report -- device state, trust, hazards, journal since the last run --
-        stored as the run's 'device_state_at_start' text.  Hazards (e.g. a
-        coil left at current) go only into that text, not the terminal.
-        Never raises."""
+        """Pre-run check: the report from the monitor server -- device state,
+        trust, hazards, journal since the last run -- stored as the run's
+        'device_state_at_start' text.  Only a failed check is printed (never
+        a refusal).  Trust and hazards (e.g. a coil left at current) go only
+        into that text, not the terminal: a run sets the state it needs, so
+        an untrusted state file is not a problem for it.  Never raises."""
         import json
         from types import SimpleNamespace
         try:
@@ -142,7 +142,7 @@ class Base(Expt, Devices, Cooling, Image, Cameras, Control, Clients):
             print(f"[device state] WARNING: the pre-run device-state check failed ({e!r}); "
                   f"nothing was checked and nothing is stamped.")
             return
-        for line in report_warnings(report, hazards=False):
+        for line in report_warnings(report, hazards=False, untrusted=False):
             print(f"[device state] *** {line} ***")
         try:
             self._extra_file_texts["device_state_at_start"] = json.dumps(report, default=repr)

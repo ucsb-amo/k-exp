@@ -1,6 +1,7 @@
 README.md
 pyproject.toml
 setup.py
+docs/opx/alias_levels_study.py
 kexp/__init__.py
 kexp.egg-info/PKG-INFO
 kexp.egg-info/SOURCES.txt
@@ -28,7 +29,10 @@ kexp/calibrations/magnets.py
 kexp/calibrations/tweezer.py
 kexp/calibrations/SLM_spot_finder/SLM_andor_main_gui.py
 kexp/calibrations/SLM_spot_finder/andor_group.py
+kexp/calibrations/SLM_spot_finder/scan_group.py
 kexp/calibrations/SLM_spot_finder/slm_group.py
+kexp/calibrations/SLM_spot_finder/stage_group.py
+kexp/calibrations/SLM_spot_finder/status_widgets.py
 kexp/calibrations/SLM_spot_finder/test/SLM_andor.py
 kexp/calibrations/SLM_spot_finder/test/SLM_andor_GUI.py
 kexp/config/__init__.py
@@ -473,6 +477,7 @@ kexp/experiments/test/405_atom_kill_test.py
 kexp/experiments/test/405_switch_ao_test.py
 kexp/experiments/test/MOT_SLM_example.py
 kexp/experiments/test/amp_ramp_test.py
+kexp/experiments/test/analyzer_fetch_test.py
 kexp/experiments/test/andor_trigger.py
 kexp/experiments/test/array_test.py
 kexp/experiments/test/array_test2.py
@@ -600,6 +605,7 @@ kexp/util/guis/device_state_gui/generate_state_file.py
 kexp/util/guis/device_state_gui/monitor_panel.py
 kexp/util/guis/device_state_gui/monitor_server_gui.py
 kexp/util/guis/device_state_gui/monitor_server_headless.py
+kexp/util/guis/device_state_gui/telemetry_providers.py
 kexp/util/guis/ethernet_relay/ethernet_relay_gui.py
 kexp/util/guis/ethernet_relay/ethernet_relay_panel.py
 kexp/util/guis/ethernet_relay/run_relay_gui.py
@@ -658,6 +664,7 @@ kexp/util/remote_control/email_handler.py
 kexp/util/remote_control/remote_control.py
 kexp/util/remote_control/remote_control_gui.py
 tests/opx_sim_fixture.py
+tests/test_abort_state_compiles.py
 tests/test_composite_devices.py
 tests/test_feedback_opx.py
 tests/test_live_od_config_builder.py
@@ -670,3 +677,6 @@ tests/test_opx_config.py
 tests/test_opx_ctx.py
 tests/test_opx_viewer.py
 tests/test_rydberg_lock_read.py
+tests/test_spot_finder_scan.py
+tests/test_state_reset_expt.py
+tests/test_telemetry_providers.py

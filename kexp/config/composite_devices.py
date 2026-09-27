@@ -918,8 +918,8 @@ def _tweezer_on_check(args, ctx):
     c = ctx.connection(AWG_CONNECTION_KEY) or {}
     if c.get("state") != CONNECTED:
         return Check.warn("the monitor server does not hold the AWG (see the connection bar "
-                          "at the top of the tab): unless it is running from elsewhere there "
-                          "is no RF on the AOD")
+                          "at the top of the tab): On writes the traps through it, so it "
+                          "will be refused")
     return None
 
 
@@ -987,12 +987,17 @@ TWEEZER = CompositeDevice(
                    "Needs the AWG connected (the connection bar at the top of the tab). "
                    "The AOD RF switch is not touched."),
         Op("trigger", "Trigger AWG", code="expt.tweezer.trigger()"),
-        Op("on", "On", args=("v_pd1", "paint"), check=_tweezer_on_check,
-           tooltip="PID AO setpoints made explicit (AO1 at 0 V, AO2 at the PID2 "
-                   "setpoint, so DDS.on cannot restore a stale one), then tweezer.on "
-                   "(painting at the field value): PID1 to 0, AO2 + AO1 on, RF switch "
-                   "on, PID1 integrator cleared; 1 ms; PID1 setpoint to v_pd1.",
+        Op("on", "On", args=("v_pd1", "paint"), payload=("traps",), host=awg_apply,
+           check=_tweezer_on_check,
+           tooltip="Writes the trap table to the AWG and triggers it (as Apply traps; "
+                   "refused, nothing switched, when the monitor server does not hold "
+                   "the AWG).  Then PID AO setpoints made explicit (AO1 at 0 V, AO2 at "
+                   "the PID2 setpoint, so DDS.on cannot restore a stale one), then "
+                   "tweezer.on (painting at the field value): PID1 to 0, AO2 + AO1 on, "
+                   "RF switch on, PID1 integrator cleared t_tweezer_pid1_int_clear_delay "
+                   "later; 1 ms; PID1 setpoint to v_pd1.",
            code="""
+expt.tweezer.trigger()
 expt.tweezer.ao1_dds.update_dac_setpoint(0.)
 expt.tweezer.ao2_dds.update_dac_setpoint(expt.tweezer.pid2_dac.v)
 expt.tweezer.on(paint=True, v_awg_am={paint})
@@ -1021,7 +1026,8 @@ expt.tweezer.set_power({v_pd1})
         Op("pid1_clear", "Clear PID1 integrator",
            code="expt.tweezer.pid1_int_hold_zero.pulse(1.e-6)\n"
                 "expt.tweezer.pid1_int_hold_zero.off()",
-           tooltip="1 us pulse on tweezer_pid1_int_hold_zero (as tweezer.on does); "
+           tooltip="1 us pulse on tweezer_pid1_int_hold_zero (as tweezer.on does, "
+                   "t_tweezer_pid1_int_clear_delay after switch-on); "
                    "the line is left low (integrating)."),
     ),
     lamps=(

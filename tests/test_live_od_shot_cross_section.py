@@ -180,13 +180,22 @@ def _recording_signal(log, name):
 
 def handler_stand_in(log):
     import threading
-    return types.SimpleNamespace(
+    from kexp.util.live_od.live_od_server import LiveODServer
+    s = types.SimpleNamespace(
         _shot_timestamps=[], _init_run_time=0.0, _shot_durations=[], _reset_requested=False,
         _adjust_lock=threading.Lock(), _adjust_values={},
         shot_progress_signal=_recording_signal(log, 'progress'),
         shot_conditions_signal=_recording_signal(log, 'conditions'),
         shot_timing_signal=_recording_signal(log, 'timing'),
-        shot_adjust_values_signal=_recording_signal(log, 'adjust'))
+        shot_adjust_values_signal=_recording_signal(log, 'adjust'),
+        # the rest of what the handler touches (added to the server after this
+        # stand-in was written): no run token, status-strip state and the
+        # frame-deficit warning are not under test here
+        _run_token="", _shot_mono=[],
+        _set_run_state=lambda state, detail="": None,
+        _check_frame_deficit=lambda shot_idx, N_total: None)
+    s._run_msg_ok = types.MethodType(LiveODServer._run_msg_ok, s)
+    return s
 
 
 def test_handler_passes_the_conditions_on_after_the_xvars():

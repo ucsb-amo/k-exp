@@ -11,6 +11,9 @@ cleared for this test by the user) and the master's RTIO log channel
 (rtio_log markers, no physical output). No Base, no liveOD, nothing written to
 the run archive. Raw dumps + a summary go to OUT_DIR.
 
+Monitor: only if it is running at prepare() is it fenced (announce_run) and
+restarted afterwards (send_end); a stopped monitor is left stopped.
+
 Sequence:
   A_clear  fetch (empties the buffer; holds whatever ran before this kernel)
   train A  N_PULSES pulses on ttl84, an rtio_log marker every LOG_EVERY pulses
@@ -30,7 +33,7 @@ Any other kernel exception leaves ttl84 wherever the train was (unconnected).
 
 from artiq.experiment import *
 
-OUT_DIR = r"G:\Shared drives\Tweezers\Other\skynet_log\outputs\2026-09-26_10-05_analyzer_fetch_test"
+OUT_DIR = r"C:\lab\skynet_log\outputs\2026-09-26_10-05_analyzer_fetch_test"
 ANALYZER_PORT = 1382
 
 
@@ -167,13 +170,19 @@ class AnalyzerFetchTest(EnvExperiment):
         self._mon = None
         try:
             from waxx.util.comms_server.comm_client import MonitorClient
-            self._mon = MonitorClient()
-            print("[monitor] status before:", self._mon.get_status())
-            print("[monitor] announce:", self._mon.announce_run(
-                run_id=None, expt="analyzer_fetch_test", client="kong", token=self._token))
-            atexit.register(self._withdraw)
+            mon = MonitorClient()
+            status = mon.get_status() or {}
+            print("[monitor] status before:", status.get("state_name"),
+                  status.get("sub_state"), "trust:", status.get("trust"))
+            if status.get("state_name") in ("READY", "LOADING"):
+                self._mon = mon
+                print("[monitor] announce:", mon.announce_run(
+                    run_id=None, expt="analyzer_fetch_test", client="kong", token=self._token))
+                atexit.register(self._withdraw)
+            else:
+                print("[monitor] not running: not announcing, and not restarting it after")
         except Exception as e:
-            print(f"[monitor] could not announce ({e!r}); composite ops not fenced")
+            print(f"[monitor] could not reach the monitor server ({e!r}); not announced")
 
     def _withdraw(self):
         try:

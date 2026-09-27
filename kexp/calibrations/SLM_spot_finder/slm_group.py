@@ -28,6 +28,8 @@ class SLMSendResult:
     ``applied`` is True when the server said the pattern is on the SLM, and
     None when the server does not say (the old run_server.py): the command
     was delivered, but when the pattern went up is not known.
+    ``blocked`` is True when the run gate stopped the command: nothing was
+    sent, and ``error`` says why.
     """
     ok: bool
     applied: Optional[bool] = None
@@ -36,6 +38,7 @@ class SLMSendResult:
     t_applied: Optional[float] = None       # time.monotonic() at the "applied" reply
     server_apply_s: Optional[float] = None  # the server's own generate + upload time
     error: str = ""
+    blocked: bool = False
 
 
 class _Outgoing:
@@ -46,6 +49,8 @@ class _Outgoing:
         self.want_reply = want_reply
         self.done = threading.Event()
         self.result = None
+        # SLMController._unknown_gen when the sender's gate check let it through
+        self.unknown_gen = None
 
 
 class SLMController(QtCore.QObject):
@@ -57,11 +62,23 @@ class SLMController(QtCore.QObject):
     serves one connection at a time, so the connection this used to hold open
     for the life of the GUI kept every experiment's SLM command waiting until
     the GUI was closed.
+
+    ``write_gate`` (a RunGate, or any callable returning ``(ok, reason)``) is
+    asked by every setter before it changes anything, and again by the sender
+    thread just before it connects. Closed, a setter emits ``blocked(reason)``
+    and leaves the state -- and so the preview and the spinboxes -- as it was;
+    a command the sender refuses is dropped, and the SLM state is marked
+    unknown. Link probes (check_link) send no pattern and are always allowed.
     """
     state_changed = QtCore.pyqtSignal()  # emitted when state changes
     link_changed = QtCore.pyqtSignal(str, str)  # pill state, detail
+    blocked = QtCore.pyqtSignal(str)  # a write the run gate refused: why
+    # "" once the SLM holds what was last sent from here; otherwise why that is
+    # not known (a run may have written it, a command was refused, ...)
+    sync_changed = QtCore.pyqtSignal(str)
 
-    def __init__(self, canvas_res=(1920, 1200), server_ip="192.168.1.102", server_port=5000):
+    def __init__(self, canvas_res=(1920, 1200), server_ip="192.168.1.102", server_port=5000,
+                 write_gate=None):
         super().__init__()
         self.canvas_res = canvas_res
         self._lock = threading.RLock()
@@ -77,6 +94,15 @@ class SLMController(QtCore.QObject):
         self.angle_deg = 0.0
 
         self.mode = "spot"
+
+        # run gate
+        self.write_gate = write_gate
+        self._last_blocked = None
+        # What the SLM shows is known only after a command from here got
+        # through. Bumped by mark_unknown(), so a command already on its way
+        # when the mark is made does not clear it.
+        self.unknown_reason = ""
+        self._unknown_gen = 0
 
         # network
         self.server_ip = server_ip
@@ -103,10 +129,60 @@ class SLMController(QtCore.QObject):
             c = self.spot_center if self.mode == "spot" else self.grating_center
             return int(c[0]), int(c[1])
 
+    # ------------------------------------------------------------------
+    # Run gate
+    # ------------------------------------------------------------------
+
+    def gate(self):
+        """``(ok, reason)`` from the write gate; always open without one."""
+        if self.write_gate is None:
+            return True, ""
+        check = getattr(self.write_gate, "check", self.write_gate)
+        try:
+            ok, reason = check()
+        except Exception as e:
+            return False, f"run gate failed ({type(e).__name__}: {e}) -- SLM writes blocked"
+        return bool(ok), str(reason)
+
+    def _may_write(self) -> bool:
+        ok, reason = self.gate()
+        if not ok:
+            self._refuse(reason)
+        return ok
+
+    def _refuse(self, reason):
+        if reason != self._last_blocked:     # once per reason, not per keypress
+            self._last_blocked = reason
+            print(f"[slm] write refused: {reason}")
+        self.blocked.emit(reason)
+
+    def mark_unknown(self, reason: str):
+        """What is on the SLM is no longer known to be this state; say why.
+
+        The GUI shows it with a Re-send button. Nothing is sent automatically:
+        the next command from here (resend() or any setter) clears it.
+        """
+        with self._lock:
+            self._unknown_gen += 1
+            self.unknown_reason = str(reason)
+        self.sync_changed.emit(self.unknown_reason)
+
+    def resend(self):
+        """Send the current state again, e.g. after a run may have changed the SLM."""
+        if not self._may_write():
+            return
+        self._send_update()
+
+    # ------------------------------------------------------------------
+    # Setters: each asks the gate before it changes anything
+    # ------------------------------------------------------------------
+
     def set_mode(self, mode: str):
+        if not self._may_write():
+            return
         self.mode = "spot" if mode == "spot" else "grating"
         self.state_changed.emit()
-        self.send_update()
+        self._send_update()
 
     def _set_center_state(self, cx: int, cy: int):
         cx = max(0, min(self.canvas_res[0] - 1, int(cx)))
@@ -118,17 +194,25 @@ class SLMController(QtCore.QObject):
                 self.grating_center = [cx, cy]
 
     def set_center(self, cx: int, cy: int):
+        if not self._may_write():
+            return
         self._set_center_state(cx, cy)
         self.state_changed.emit()
-        self.send_update()
+        self._send_update()
 
     def set_center_and_wait(self, cx: int, cy: int) -> SLMSendResult:
         """Move the pattern and block until the server has it up, if it says so.
 
         For the scan thread. Returns once the server replied "applied", or --
         for a server that does not reply -- once the command was delivered.
-        Bounded by the timeouts at the top of this module.
+        Bounded by the timeouts at the top of this module. A closed run gate
+        returns at once with ``ok=False, blocked=True`` and changes nothing.
         """
+        ok, reason = self.gate()
+        if not ok:
+            self._refuse(reason)
+            return SLMSendResult(ok=False, center=(int(cx), int(cy)), error=reason,
+                                 blocked=True)
         self._set_center_state(cx, cy)
         self.state_changed.emit()
         item = self._enqueue(_Outgoing(self._command(), want_reply=True))
@@ -170,6 +254,12 @@ class SLMController(QtCore.QObject):
             }
 
     def send_update(self):
+        if not self._may_write():
+            return
+        self._send_update()
+
+    def _send_update(self):
+        # the sender thread asks the gate once more before it connects
         self._enqueue(_Outgoing(self._command()))
 
     # ------------------------------------------------------------------
@@ -205,6 +295,14 @@ class SLMController(QtCore.QObject):
 
     def _transmit(self, item: _Outgoing) -> SLMSendResult:
         center = tuple(item.command["center"]) if item.command else None
+        if item.command is not None:
+            # The last word before a pattern goes out: a run may have started
+            # since the setter asked.
+            with self._lock:
+                item.unknown_gen = self._unknown_gen
+            ok, reason = self.gate()
+            if not ok:
+                return SLMSendResult(ok=False, center=center, error=reason, blocked=True)
         try:
             with socket.create_connection((self.server_ip, self.server_port),
                                           timeout=CONNECT_TIMEOUT_S) as sock:
@@ -281,6 +379,22 @@ class SLMController(QtCore.QObject):
 
     def _report(self, item: _Outgoing):
         r = item.result
+        if r.blocked:
+            # Refused at the last moment: the state here moved, the SLM did not.
+            # Not a link problem, so the pill is left alone.
+            self._refuse(r.error)
+            where = f"({r.center[0]}, {r.center[1]}) " if r.center else ""
+            self.mark_unknown(f"SLM state unknown -- the pattern {where}was not sent: {r.error}")
+            return
+        if item.command is not None and r.ok:
+            # The SLM now shows this state -- unless it was marked unknown
+            # after this command passed the gate.
+            with self._lock:
+                cleared = bool(self.unknown_reason) and item.unknown_gen == self._unknown_gen
+                if cleared:
+                    self.unknown_reason = ""
+            if cleared:
+                self.sync_changed.emit("")
         where = f"SLM server {self.server_ip}:{self.server_port}"
         if not r.ok:
             state, detail = "failed", f"{where}: {r.error}"
@@ -328,27 +442,35 @@ class SLMController(QtCore.QObject):
         return np.array(img, dtype=np.uint8)
 
     def set_spot_radius(self, r: int):
+        if not self._may_write():
+            return
         self.spot_radius = max(1, int(r))
         self.state_changed.emit()
-        self.send_update()
+        self._send_update()
 
 
     def set_grating_size(self, size: int):
+        if not self._may_write():
+            return
         size = int(size)
         self.grating_size = max(2, size)
         self.state_changed.emit()
-        self.send_update()
+        self._send_update()
 
     def set_grating_spacing(self, spacing: int):
+        if not self._may_write():
+            return
         spacing = int(spacing)
         self.grating_spacing = max(2, int(spacing))
         self.state_changed.emit()
-        self.send_update()
+        self._send_update()
 
     def set_angle_deg(self, angle: float):
+        if not self._may_write():
+            return
         self.angle_deg = float(angle)
         self.state_changed.emit()
-        self.send_update()
+        self._send_update()
 
 
 

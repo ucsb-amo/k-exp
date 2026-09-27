@@ -23,7 +23,14 @@ OLD_SERVER_NOT_YET = {"ok": False, "ready": False, "error": "Camera ready timeou
 def stand_in_server(reset=False, ready=False, grab_done=True):
     s = types.SimpleNamespace(_reset_requested=reset, _current_camera_key="xy_basler",
                               _basler_prev_grab_done_event=threading.Event(),
-                              _cam_ready_event=threading.Event())
+                              _cam_ready_event=threading.Event(),
+                              # the rest of what the handler reads (added to the server
+                              # after this stand-in was written): no run token issued,
+                              # no grab failure, no overrides, status-strip state ignored
+                              _run_token="", _grab_failure="", _t_ready_mono=None,
+                              _set_run_state=lambda state, detail="": None,
+                              camera_overrides_record=lambda: {})
+    s._run_msg_ok = types.MethodType(LiveODServer._run_msg_ok, s)
     if grab_done:
         s._basler_prev_grab_done_event.set()
     if ready:
