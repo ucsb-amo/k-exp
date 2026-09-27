@@ -327,6 +327,15 @@ class Base(Expt, Devices, Cooling, Image, Cameras, Control, Clients):
         self.core.break_realtime()
 
     @kernel
+    def cleanup_abort_kernel(self):
+        """Safe state after scan_kernel raised anything other than an
+        underflow, overflow or trigger timeout (waxx Scanner._scan runs this,
+        then re-raises): the safety part of cleanup -- raman shutter closed,
+        coils stopped and discharged, 1064 beams off -- without the shot's
+        data write or liveOD notification, as after a warm-up shot."""
+        self.cleanup_warmup_kernel()
+
+    @kernel
     def cleanup_scan_kernel(self):
 
         self.cleanup_image_count()
