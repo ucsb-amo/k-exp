@@ -139,7 +139,7 @@ SERVER_SPECS: list[ServerSpec] = [
     ),
     ServerSpec(
         id="basler",
-        label="Basler Cameras",
+        label="Basler server · Camera Viewer",
         icon="📷",
         body_factory=_lazy_panel("kexp.util.guis.basler.basler_panel", "BaslerServerPanel"),
         # The embedded BaslerCamerasMainWindow is a ZMQ *client* that

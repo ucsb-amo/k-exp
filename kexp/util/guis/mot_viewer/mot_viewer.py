@@ -3,9 +3,21 @@ from PyQt6.QtWidgets import QApplication
 from PyQt6.QtGui import QPixmap, QPainter, QFont, QIcon
 from PyQt6.QtCore import Qt
 
-from beacon.basler.cameras_gui import BaslerCamerasMainWindow
+from beacon.camera.viewer.main_window import CameraViewerMainWindow
 
 mot_basler_serial = "40277706"
+
+
+def make_viewer(window_cls=CameraViewerMainWindow):
+    """The MOT camera's viewer window, with its own saved layout."""
+    viewer = window_cls(
+        serial_filter=[mot_basler_serial],
+        auto_open=True,
+        layout_key="mot_viewer",
+    )
+    viewer.setWindowTitle("MOT Viewer")
+    return viewer
+
 
 def main():
     try:
@@ -24,11 +36,7 @@ def main():
     painter.end()
     app.setWindowIcon(QIcon(pixmap))
 
-    viewer = BaslerCamerasMainWindow(
-        serial_filter=[mot_basler_serial],
-        auto_open=True,
-    )
-    viewer.setWindowTitle("MOT Viewer")
+    viewer = make_viewer()
     viewer.show()
     sys.exit(app.exec())
 

@@ -91,7 +91,7 @@ CLIENT_SPECS: list[ClientSpec] = [
     ),
     ClientSpec(
         id="basler",
-        label="Basler Cameras",
+        label="Camera Viewer",
         icon="📷",
         body_factory=_lazy_panel("kexp.util.guis.basler.basler_panel", "BaslerClientPanel"),
         warm_imports=["pyqtgraph", "numpy", "beacon.basler.cameras_gui"],
