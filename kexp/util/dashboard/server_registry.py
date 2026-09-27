@@ -97,10 +97,12 @@ SERVER_SPECS: list[ServerSpec] = [
         id="monitor",
         label="Monitor",
         icon="👁",
-        # Headless and panel-less: ready/not-ready state and the Start /
-        # Restart / Stop controls live in the Device Control panel, so no
-        # dock tile is needed.  The supervisor still runs in the background
-        # and is listed in Running Servers and the Servers menu.
+        # Headless and panel-less: this server's LED and Start / Stop /
+        # Restart are on the Device Control panel's header (server dashboard
+        # only; server_dashboard_app.SERVER_CONTROLS_ON_CLIENT_PANEL), and the
+        # monitor experiment's state and Start are in that panel's status
+        # row.  The supervisor is also listed in Running Servers and the
+        # Servers menu.
         body_factory=None,
         server_cmd=[_PY, "-m", "kexp.util.guis.device_state_gui.monitor_server_headless"],
         cwd=_REPO,

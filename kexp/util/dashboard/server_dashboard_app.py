@@ -58,6 +58,29 @@ EXTRA_CLIENT_IDS_ON_SERVER_DASHBOARD: list[str] = [
     "ethernet_relay",
 ]
 
+# Extra client panels whose header carries the LED and Start / Stop / Restart
+# of a hidden-panel server, as a server panel's header does: the monitor
+# server has no panel of its own, and Device Control is where it is used.
+SERVER_CONTROLS_ON_CLIENT_PANEL: dict[str, str] = {
+    "device_control": "monitor",
+}
+
+# What the monitor server's Stop / Restart cost, asked before either: it has
+# no graceful shutdown here, so the supervisor kills its process tree -- the
+# monitor experiment included -- and a new server does not start the monitor.
+_MONITOR_SERVER_CONFIRM = {
+    "stop": ("Stop the monitor server",
+             "Stop the monitor server process?\n\n"
+             "It is killed at once, together with the monitor experiment it runs: an op or "
+             "ramp playing out is cut off where it is. Until the server is started again, "
+             "no Device Control GUI reaches the hardware."),
+    "restart": ("Restart the monitor server",
+                "Restart the monitor server process?\n\n"
+                "It is killed at once, together with the monitor experiment it runs: an op "
+                "or ramp playing out is cut off where it is. The new server does not start "
+                "the monitor: start it from the Device Control status row."),
+}
+
 # Lab-specific wiring: tell the generic waxx framework where kexp keeps its
 # log dir, host autostart table, and layout defaults.
 try:
@@ -116,6 +139,32 @@ def placement_for(spec: PanelSpec, panel, layout: dict, *, realize_eagerly: bool
         realize_eagerly=realize_eagerly or spec.realize_eagerly,
         warm_imports=tuple(spec.warm_imports),
     )
+
+
+def wire_server_controls(panel, sup, server_id: str = "") -> None:
+    """Give an extra client panel's server-style header (a ServerPanel's)
+    the LED and Start / Stop / Restart of the hidden-panel server *sup*.
+    Stop and Restart of the monitor server ask first."""
+    from PyQt6.QtWidgets import QMessageBox  # noqa: PLC0415
+
+    header = panel.header()
+    header.set_state(sup.state)
+    sup.state_changed.connect(header.set_state)
+
+    def confirmed(action: str) -> bool:
+        if server_id != "monitor":
+            return True
+        title, text = _MONITOR_SERVER_CONFIRM[action]
+        reply = QMessageBox.question(panel, title, text,
+                                     QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No,
+                                     QMessageBox.StandardButton.No)
+        return reply == QMessageBox.StandardButton.Yes
+
+    header.start_clicked.connect(
+        lambda _c=False, s=sup: s.reset_and_start() if s.state.name in ("CRASHED", "FAILED") else s.start())
+    header.stop_clicked.connect(lambda _c=False, s=sup: s.stop() if confirmed("stop") else None)
+    header.restart_clicked.connect(
+        lambda _c=False, s=sup: s.restart() if confirmed("restart") else None)
 
 
 def main(argv: list[str] | None = None) -> int:
@@ -219,9 +268,18 @@ def main(argv: list[str] | None = None) -> int:
         if cspec is None:
             log.warning("server-dashboard extra client id=%s not in CLIENT_SPECS", cid)
             continue
-        cpanel = ClientPanel(cspec.id, cspec.label, body_factory=cspec.body_factory, icon=cspec.icon)
+        server_id = SERVER_CONTROLS_ON_CLIENT_PANEL.get(cid, "")
+        sup = supervisors.get(server_id)
+        if sup is not None:
+            cpanel = ServerPanel(cspec.id, cspec.label, body_factory=cspec.body_factory,
+                                 icon=cspec.icon)
+            wire_server_controls(cpanel, sup, server_id)
+        else:
+            cpanel = ClientPanel(cspec.id, cspec.label, body_factory=cspec.body_factory,
+                                 icon=cspec.icon)
         placements.append(placement_for(cspec, cpanel, layout))
-        log.info("added client panel '%s' to server dashboard", cspec.id)
+        log.info("added client panel '%s' to server dashboard%s", cspec.id,
+                 f" (header controls the '{server_id}' server)" if sup is not None else "")
 
     # Framework panels: Running Servers overview + Log dock.
     from waxx.util.dashboard.running_servers_panel import RunningServersPanel  # noqa: PLC0415
