@@ -218,6 +218,13 @@ class Base(Expt, Devices, Cooling, Image, Cameras, Control, Clients):
     @kernel
     def init_scan_kernel(self,two_d_tweezers = False):
 
+        # Fresh RTIO state at the start of every shot. Wait first: reset()
+        # drops every output event not yet played, and after the warm-up
+        # shots the coil ramp-down from cleanup_warmup_kernel is still on the
+        # timeline (nothing drains it). The wait also keeps t_recover.
+        self.core.wait_until_mu(now_mu())
+        self.core.reset()
+
         self.arm_scopes()
 
         self.background_field()
