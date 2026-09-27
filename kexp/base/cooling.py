@@ -797,19 +797,21 @@ class Cooling():
         ### End Defaults ###
 
         self.dds.d1_3d_c.set_dds_gamma(delta=detune_d1_c,
-                                       amplitude=amp_d1_c, 
-                                       v_pd=v_pd_d1_c_list[0])
+                                       amplitude=amp_d1_c)
         delay(self.params.t_rtio)
-        self.dds.d1_3d_r.set_dds_gamma(delta=detune_d1_r, 
-                                       amplitude=amp_d1_r,
-                                       v_pd=v_pd_d1_r_list[0])
+        self.dds.d1_3d_r.set_dds_gamma(delta=detune_d1_r,
+                                       amplitude=amp_d1_r)
 
+        # Both VVAs are written without a load, then one LDAC moves them
+        # together. update_dac_setpoint keeps dds.v_pd and the DAC_CH's v on
+        # the last written value, so the device state is right at the end (or
+        # at an abort mid-ramp).
         self.switch_d1_3d(1)
 
         for n in range(N_elem):
-            self.dds.d1_3d_c.set_dds(v_pd=v_pd_d1_c_list[n])
-            delay(self.params.t_rtio)
-            self.dds.d1_3d_r.set_dds(v_pd=v_pd_d1_r_list[n])
+            self.dds.d1_3d_c.update_dac_setpoint(v_pd_d1_c_list[n], dac_load=False)
+            self.dds.d1_3d_r.update_dac_setpoint(v_pd_d1_r_list[n], dac_load=False)
+            self.dac.load()
             delay(dt_gmramp)
 
     @kernel
