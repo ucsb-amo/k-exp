@@ -28,7 +28,10 @@ class camera_frame(camera_frame_waxx):
                                 t_light_only_image_delay=30.e-3, # 2026-09-23
                                 t_dark_image_delay=30.e-3, # 2026-09-23
                                 hs_speed=0, preamp=2,
-                                vs_speed=1, vs_amp=3) # restored 2026-09-24, run 80707/80708
+                                vs_speed=1, vs_amp=3, # restored 2026-09-24, run 80707/80708
+                                baseline_clamp=1,
+                                # 2026-09-26: run-owned fields; only these values are accepted for runs
+                                trigger_mode="ext", frame_transfer=0, sensor_roi=(0, 512, 0, 512, 1, 1))
 
         self.apd = APDParams(amp_absorption=.2, exposure_time_abs=20.e-6,
                             amp_fluorescence=0.5, exposure_time_fluor=25.e-6,
