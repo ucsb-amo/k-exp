@@ -56,7 +56,9 @@ class camera_frame(camera_frame_waxx):
                                     exposure_time_abs = 19.e-6, amp_absorption = 0.5,gain_abs=24.,
                                     exposure_time_dispersive = 100.e-6, amp_dispersive = 0.248)
         
-        self.basler_2dmot = BaslerParams(serial_number='40411037',
+        # self.basler_2dmot = BaslerParams(serial_number='40411037',
+        #                                  trigger_source='Line2')
+        self.basler_2dmot = BaslerParams(serial_number='40277703', # camera replaced (user), 2026-09-26
                                          trigger_source='Line2')
         
         self.cleanup()
