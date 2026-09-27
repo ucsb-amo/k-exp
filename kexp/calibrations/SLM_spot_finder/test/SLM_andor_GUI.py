@@ -12,6 +12,17 @@ from artiq.language.environment import EnvExperiment
 
 from waxx.control import AndorEMCCD, DummyCamera
 
+# 2026-09-26: kept for reference only. It writes the SLM with no run gate (so
+# possibly in the middle of a run) and holds one SLM server connection open
+# for its whole life, which queues every experiment's SLM command behind it.
+SUPERSEDED = ("superseded -- use the main spot finder GUI "
+              "(k-exp/kexp/calibrations/SLM_spot_finder/spot_finder.bat). This old copy "
+              "is kept for reference and refuses to run.")
+
+
+def refuse_superseded():
+    raise RuntimeError(SUPERSEDED)
+
 
 # --- CAMERA WORKER ---
 class CameraWorker(QtCore.QThread):
@@ -300,6 +311,7 @@ class ScanWorker(QtCore.QThread):
 # --- MAIN UNIFIED GUI ---
 class UnifiedControlGUI(QtWidgets.QMainWindow):
     def __init__(self, camera):
+        refuse_superseded()
         super().__init__()
         self.setWindowTitle("Unified SLM Control & Andor Preview")
         self.resize(1500, 900)
@@ -942,6 +954,7 @@ class UnifiedControlGUI(QtWidgets.QMainWindow):
 # --- ARTIQ WRAPPER ---
 class UnifiedExperiment(EnvExperiment):
     def build(self):
+        refuse_superseded()   # before the Andor is opened
         try:
             self.camera = AndorEMCCD(ExposureTime=0.05, gain=0.0, hs_speed=0, vs_speed=0)
         except:
@@ -955,6 +968,8 @@ class UnifiedExperiment(EnvExperiment):
 
 
 if __name__ == "__main__":
+    print(SUPERSEDED)
+    sys.exit(1)
     from artiq.frontend.artiq_run import main
     sys.argv.append(__file__)
     main()

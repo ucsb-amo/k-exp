@@ -6,6 +6,17 @@ from artiq.language.environment import EnvExperiment
 
 from waxx.control import AndorEMCCD, DummyCamera
 
+# 2026-09-26: kept for reference only. It opens the Andor with none of the
+# main spot finder's readout settings and knows nothing about runs.
+SUPERSEDED = ("superseded -- use the main spot finder GUI "
+              "(k-exp/kexp/calibrations/SLM_spot_finder/spot_finder.bat). This old copy "
+              "is kept for reference and refuses to run.")
+
+
+def refuse_superseded():
+    raise RuntimeError(SUPERSEDED)
+
+
 class CameraWorker(QtCore.QThread):
     new_frame_sig = QtCore.pyqtSignal(np.ndarray)
     
@@ -44,6 +55,7 @@ class CameraWorker(QtCore.QThread):
 
 class AndorCameraGUI(QtWidgets.QMainWindow):
     def __init__(self, camera):
+        refuse_superseded()
         super().__init__()
         self.setWindowTitle("Andor EMCCD Preview")
         self.resize(1100, 800)
@@ -169,6 +181,7 @@ class AndorCameraGUI(QtWidgets.QMainWindow):
 # ARTIQ wrapper
 class AndorPreviewFinal(EnvExperiment):
     def build(self):
+        refuse_superseded()   # before the Andor is opened
         try:
             self.camera = AndorEMCCD(
                 ExposureTime=0.05,
@@ -186,6 +199,8 @@ class AndorPreviewFinal(EnvExperiment):
         app.exec()
 
 if __name__ == "__main__":
+    print(SUPERSEDED)
+    sys.exit(1)
     from artiq.frontend.artiq_run import main
     sys.argv.append(__file__)
     main()
