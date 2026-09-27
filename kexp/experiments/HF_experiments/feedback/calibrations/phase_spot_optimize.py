@@ -2,6 +2,7 @@ from artiq.experiment import *
 from artiq.experiment import delay
 from kexp import Base, img_types, cameras
 import numpy as np
+from numpy import int32
 from kexp.calibrations.tweezer import tweezer_vpd1_to_vpd2
 from kexp.calibrations.imaging import high_field_imaging_detuning
 from artiq.coredevice.sampler import Sampler
@@ -38,6 +39,8 @@ class phase_spot(EnvExperiment, Base):
 
         # apd slots: 0 = up, 1 = down, 2 = none (dark), 3 = superposition
         self.data.apd = self.data.add_data_container(4)
+        # 1 = this shot measured up first, 0 = down first (from up_first())
+        self.data.up_first = self.data.add_data_container(1, np.int32)
 
         self.scope = self.scope_data.add_siglent_scope("192.168.1.108", label='PD', arm=True)
 
@@ -45,27 +48,29 @@ class phase_spot(EnvExperiment, Base):
 
         self.finish_prepare(shuffle=True)
 
+    @kernel
     def up_first(self) -> TBool:
         """Whether this shot should measure the "up" spin state first.
 
         Alternates deterministically based on the repeat number of the
         current phase_slm_mask value, not the shot order -- so every other
         repeat of a given phase value starts up-first vs down-first,
-        regardless of how the scan order was randomized.
+        regardless of how the scan order was shuffled.
 
         Repeats are laid out along the axis as [v0]*R + [v1]*R + ..., so the
-        repeat slot is (canonical index) % R.  With the default random scan
-        order (and shuffle=False) xvar.values stay canonical and
-        xvar.counter is that index directly; the legacy per-axis scheme
-        (shuffle='axis') permutes the values, so the canonical index must be
-        recovered through the recorded permutation.
+        repeat slot is (canonical index) % R.  finish_prepare(shuffle=True)
+        permutes that list once and records the permutation in
+        xvar.sort_idx; the counter walks the shuffled list, so the canonical
+        index is sort_idx[counter].  Needs shuffle=True (sort_idx is an empty
+        list otherwise).
+
+        Kernel-side (2026-09-27): this was a host RPC with no timeline slack
+        after it, and on run 83157 it took ~35 ms and the next DDS write
+        underflowed by 19.7 ms.
         """
         xvar = self.scan_xvars[0]
-        if getattr(self, 'scan_order_scheme', 'axis') == 'axis' and len(xvar.sort_idx):
-            canonical_idx = int(xvar.sort_idx[xvar.counter])
-        else:
-            canonical_idx = int(xvar.counter)
-        repeat_idx = canonical_idx % self.p.N_repeats
+        canonical_idx = int32(xvar.sort_idx[xvar.counter])
+        repeat_idx = canonical_idx % int32(self.p.N_repeats)
         return repeat_idx % 2 == 0
 
     @kernel
@@ -74,6 +79,7 @@ class phase_spot(EnvExperiment, Base):
         self.integrator.init()
 
         up_first = self.up_first()
+        self.data.up_first.put_data(1 if up_first else 0)
 
         # set up weak measurement
         self.set_imaging_detuning(frequency_detuned=self.p.frequency_detuned_hf_midpoint)
