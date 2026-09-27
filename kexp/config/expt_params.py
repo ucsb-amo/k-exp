@@ -75,7 +75,8 @@ class ExptParams(ExptParamsWaxx):
 
         # SLM settings
         self.dimension_slm_mask = 30.e-6 
-        self.phase_slm_mask = 0.387097 * np.pi
+        # self.phase_slm_mask = 0.387097 * np.pi
+        self.phase_slm_mask = 2.028 * np.pi #83135-83143, 2026-09-27
         self.px_slm_grating_position_x = 994
         self.px_slm_grating_position_y = 824
         self.px_slm_phase_mask_position_x = 1022
