@@ -27,15 +27,15 @@ class phase_spot(EnvExperiment, Base):
         # self.p.frequency_detuned_hf_midpoint = -5.0e6
 
         # self.xvar('phase_slm_mask', 0.387097 * np.pi + np.linspace(-0.2, 0.2, 5) * np.pi)
-        self.xvar('phase_slm_mask', np.linspace(0.30,1.0,1) * np.pi)
-        self.p.phase_slm_mask = 0.387097 * np.pi
+        self.xvar('phase_slm_mask', np.linspace(0.0,2.6,50) * np.pi)
+        # self.p.phase_slm_mask = 0.387097 * np.pi
 
         # self.xvar('dimension_slm_mask',np.linspace(15.e-6,250.e-6,10))
         # self.p.dimension_slm_mask = 20.e-6
         
         self.p.t_raman_pulse = self.p.t_raman_pi_pulse
         
-        self.p.N_repeats = 3
+        self.p.N_repeats = 10
 
         # apd slots: 0 = up, 1 = down, 2 = none (dark), 3 = superposition
         self.data.apd = self.data.add_data_container(4)
@@ -89,6 +89,8 @@ class phase_spot(EnvExperiment, Base):
         self.prepare_hf_tweezers()
         self.prep_raman(phase_mode=0)
 
+        delay(1.e-3)
+
         self.ttl.pd_scope_trig3.pulse(1.e-6)
 
         idx0 = 0
@@ -100,12 +102,12 @@ class phase_spot(EnvExperiment, Base):
             idx1 = 0
 
         self.integrated_imaging_pulse(self.data.apd, t=self.p.t_imaging_pulse, idx=idx0) # first spin state
-        delay(5.e-6)
+        delay(6.e-6)
 
         self.raman.pulse(self.p.t_raman_pulse)
 
         self.integrated_imaging_pulse(self.data.apd, t=self.p.t_imaging_pulse, idx=idx1) # second spin state
-        delay(5.e-6)
+        delay(6.e-6)
 
         # pi/2 pulse from whichever spin state we ended on -> equal superposition.
         # Done regardless of up_first, so idx=3 is always the superposition.
