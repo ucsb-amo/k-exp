@@ -71,11 +71,11 @@ class gm_tof(EnvExperiment, Base):
         self.mot(self.p.t_mot_load)
         self.dds.push.off()
 
-        # self.cmot_d1(self.p.t_d1cmot)
+        self.cmot_d1(self.p.t_d1cmot)
         
-        # self.gm(self.p.t_gm)
-        # self.ttl.pd_scope_trig.pulse(1.e-8)
-        # self.gm_ramp(self.p.t_gmramp)
+        self.gm(self.p.t_gm)
+        self.ttl.pd_scope_trig.pulse(1.e-8)
+        self.gm_ramp(self.p.t_gmramp)
 
         self.release()
         
