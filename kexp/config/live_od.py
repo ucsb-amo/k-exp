@@ -17,6 +17,10 @@ db; kexp.config.camera_id builds the camera table.
 CAMERA_BAR_KEYS = ("xy_basler", "basler_2dmot", "z_basler", "x_basler", "andor")
 # Opened as soon as the window starts. None: every camera starts closed, as before.
 CAMERAS_OPEN_ON_START = ()
+# Camera host mode only (LiveODConfig.use_camera_host): opened when the host
+# starts. The Andor, so that the SLM spot finder subscribes to liveOD's instead of
+# opening the SDK itself (INTERFACES D-f).
+CAMERA_HOST_CLAIM_ON_START = ("andor",)
 
 
 def _default_roi_id_for(camera_key):
@@ -41,6 +45,17 @@ def make_live_od_config():
     from kexp.config.ip import server_talk, PATHS
     from kexp.config.camera_id import cameras
     from kexp.config.expt_params import ExptParams
+    from beacon.camera.schema import Constraint
+
+    # The DU897's vertical clock at index 0 (0.3 us) with amplitude index 0
+    # (Normal) moves no charge: the light frames of run 80708 held no image
+    # (light - dark peak 38 ADU vs 9400 ADU at 0.5 us / +3 in run 80707). The
+    # camera host refuses it for runs and live streaming alike (see
+    # kexp.config.camera_id for the sweep).
+    du897_vs = Constraint(
+        when=(("vs_speed", "==", 0), ("vs_amp", "==", 0)), level="refuse",
+        reason="0.3 us vertical clock with Normal amplitude transfers no charge "
+               "(runs 80707/80708)")
 
     def resolve_camera_params(camera_key):
         for value in vars(cameras).values():
@@ -60,6 +75,12 @@ def make_live_od_config():
         default_roi_id_for=_default_roi_id_for,
         params_factory=ExptParams,
         cross_section_for_shot=cross_section_for_shot,
+        # The camera host (k-jam/jpagett/camera_host/PLAN.md): liveOD owns its
+        # cameras through one worker thread each and serves them to the spot
+        # finder and the Camera Viewer. Off: CameraNanny opens them, as before.
+        use_camera_host=False,  # flip to True after the hardware smoke (k-jam/jpagett/camera_host/PLAN.md)
+        camera_host_claim_on_start=CAMERA_HOST_CLAIM_ON_START,
+        camera_constraints={"andor_emccd": (du897_vs,)},
         # Kept exactly as it was: the pinned taskbar button's identity.
         app_user_model_id="weldlab.kexp.gui.live_od",
         window_title="LiveOD Server",
