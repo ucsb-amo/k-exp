@@ -92,7 +92,9 @@ class tweezer(wax_tweezer.TweezerController, PaintedBeam):
     def on(self,paint=False,v_awg_am=dv):
         """Turns on the tweezer (awg rf sw on, pid1 and pid2 dds on, pid2
         feedback set to disabled, and pid1 feedback engaged at 0 V) at the
-        given painting amplitude.
+        given painting amplitude. The PID1 integrator is cleared (1 us pulse)
+        t_tweezer_pid1_int_clear_delay after the switch-on, so the turn-on
+        transient is not left in it; the timeline advances past the clear.
 
         Args:
             paint (bool, optional): Whether or not to paint the tweezers.
@@ -115,7 +117,8 @@ class tweezer(wax_tweezer.TweezerController, PaintedBeam):
         with parallel:
             self.ao1_dds.on()
             self.sw_ttl.on()
-            self.pid1_int_hold_zero.pulse(1.e-6)
+        delay(self.params.t_tweezer_pid1_int_clear_delay)
+        self.pid1_int_hold_zero.pulse(1.e-6)
 
     @kernel
     def off(self):

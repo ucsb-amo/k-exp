@@ -125,6 +125,7 @@ class ExptParams(ExptParamsWaxx):
         self.t_tweezer_single_move = 4.e-3
         self.t_tweezer_movement_dt = 10.e-6
         self.t_tweezer_amp_ramp_dt = 10.e-6
+        self.t_tweezer_pid1_int_clear_delay = 10.e-6 # tweezer.on: switch-on to PID1 integrator clear
 
         self.t_tweezer_paint_rampdown1 = 45.e-3
         self.t_tweezer_paint_rampdown2 = 8.e-3
