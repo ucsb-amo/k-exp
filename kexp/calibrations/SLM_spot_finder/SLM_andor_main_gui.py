@@ -1,3 +1,4 @@
+import argparse
 import sys
 import time
 import numpy as np
@@ -6,8 +7,8 @@ import pyqtgraph as pg
 
 from waxx.control import AndorEMCCD
 
-from frame_source import LocalAndorSource
-from run_gate import RunGate
+from frame_source import LocalAndorSource, SourceChoice, choose_source
+from run_gate import RunGate, CombinedGate
 from slm_group import SLMController, SLMPreviewWidget
 from scan_group import ScanWorker, scan_grid, shots_to_grid
 from stage_group import StageGroup, POSITION_IN
@@ -338,9 +339,16 @@ class UnifiedControlGUI(QtWidgets.QMainWindow):
     _frame_sig = QtCore.pyqtSignal(np.ndarray)
     _video_stopped_sig = QtCore.pyqtSignal()
 
-    def __init__(self, camera=None, connect_camera_on_start=True, source=None, run_gate=None):
-        """``source``: a FrameSource. None builds today's LocalAndorSource on
-        ``camera`` (None: the Andor is opened by the andor button / on start).
+    def __init__(self, camera=None, connect_camera_on_start=True, source=None, run_gate=None,
+                 source_mode="auto", directory=None):
+        """``source``: a FrameSource, used as given. None: with a ``camera``,
+        or with ``source_mode="direct"``, today's LocalAndorSource on
+        ``camera`` (None: the Andor is opened by the andor button / on
+        start). Otherwise the window first looks for liveOD's Andor
+        (choose_source, off the GUI thread, through ``directory``; None: UDP
+        discovery) and opens nothing until that is settled: "auto" takes
+        liveOD's Andor when a camera host serves it and falls back to the
+        local camera with a banner; "stream" takes liveOD's Andor or nothing.
         ``run_gate``: a RunGate, or any callable returning ``(ok, reason)``.
         None polls liveOD's run state (RunGate's default)."""
         super().__init__()
@@ -352,6 +360,16 @@ class UnifiedControlGUI(QtWidgets.QMainWindow):
         # DummyCamera while the Andor is not connected; the andor button
         # connects and releases it without closing the window.
         built_local = source is None
+        self._source_mode = source_mode
+        self._directory = directory
+        self._connect_on_start = bool(connect_camera_on_start)
+        # No camera given and not --direct: find out first whether liveOD
+        # serves the Andor. Until then the local source below is a placeholder
+        # that nothing opens.
+        self._source_pending = built_local and camera is None and source_mode != "direct"
+        self._source_refused = ""   # why no camera may be connected (--stream, none served)
+        self._src_seen = (0, 0)     # the source's (runs_seen, restarts_seen) acted on
+        self._video_note = ""
         if built_local:
             source = LocalAndorSource(camera, open_camera=open_local_andor)
         self.source = source
@@ -360,7 +378,8 @@ class UnifiedControlGUI(QtWidgets.QMainWindow):
         # source itself switches earlier, on the thread doing the open/close.
         self._connected = self.source.is_open()
         self._camera = getattr(self.source, "camera", None)
-        self._camera_busy = ""   # "connecting" / "disconnecting" while under way
+        # "finding" / "connecting" / "disconnecting" while under way
+        self._camera_busy = ""
         self._camera_error = ""
         self._frame_sig.connect(self.update_camera_plot)
         self._video_stopped_sig.connect(self._on_video_stopped)
@@ -370,6 +389,10 @@ class UnifiedControlGUI(QtWidgets.QMainWindow):
         # first answer.
         self._owns_gate = run_gate is None
         self.run_gate = run_gate if run_gate is not None else RunGate()
+        # What the SLM controller and the scan ask: the run gate, and the
+        # camera source's own view (liveOD's camera host says when a run holds
+        # its Andor, or when it restarted or stopped answering).
+        self.write_gate = CombinedGate(self.run_gate, lambda: self.source)
         self._gate_open = False
         self._gate_reason = "run state not checked yet -- SLM writes blocked"
         self._gate_runs_seen = 0
@@ -378,7 +401,7 @@ class UnifiedControlGUI(QtWidgets.QMainWindow):
 
         # SLM
         self.slm = SLMController(canvas_res=(1920, 1200), server_ip="192.168.1.102",
-                                 server_port=5000, write_gate=self.run_gate)
+                                 server_port=5000, write_gate=self.write_gate)
         self.slm.state_changed.connect(self._on_slm_state_changed)
         self.slm.link_changed.connect(self._on_slm_link_changed)
         self.slm.blocked.connect(self._on_slm_blocked)
@@ -401,6 +424,9 @@ class UnifiedControlGUI(QtWidgets.QMainWindow):
         self.init_ui()
         if built_local and self._camera_connected():
             self.source.reset_to_video()
+        if built_local and camera is None and source_mode == "direct":
+            choice = choose_source("direct")
+            self._set_source_banner(choice.banner, choice.level)
         self._on_slm_state_changed()
         # This window's pattern is on the SLM only once it has sent it.
         self.slm.mark_unknown("SLM state unknown -- not written from this window yet")
@@ -418,7 +444,10 @@ class UnifiedControlGUI(QtWidgets.QMainWindow):
         self.slm.check_link()
         # Connecting reads the stage position; it never moves the stage.
         QtCore.QTimer.singleShot(0, self.stage_group.connect_stage)
-        if connect_camera_on_start and not self._camera_connected():
+        if self._source_pending:
+            # connects (connect_camera_on_start) once the source is settled
+            self._find_source()
+        elif connect_camera_on_start and not self._camera_connected():
             QtCore.QTimer.singleShot(0, self.connect_camera)
 
     @property
@@ -528,6 +557,13 @@ class UnifiedControlGUI(QtWidgets.QMainWindow):
             "padding: 4px; border-radius: 4px;")
         self.run_banner.setVisible(False)
         sidebar.addWidget(self.run_banner)
+
+        # Where the camera frames come from: liveOD's Andor, or the camera
+        # opened here (and why).
+        self.source_banner = QtWidgets.QLabel("")
+        self.source_banner.setWordWrap(True)
+        self.source_banner.setVisible(False)
+        sidebar.addWidget(self.source_banner)
 
         # Shown while what the SLM displays is not known to be this window's
         # pattern (a run may have written it). Re-send only on a click.
@@ -834,13 +870,8 @@ class UnifiedControlGUI(QtWidgets.QMainWindow):
         return self._gate_open and not self._scanning
 
     def _refresh_gate(self):
-        """Read the run gate; update the banner, the controls and the SLM state line."""
-        snapshot = getattr(self.run_gate, "snapshot", None)
-        if snapshot is not None:
-            snap = snapshot()
-        else:
-            ok, reason = self.slm.gate()
-            snap = {"ok": ok, "reason": reason, "state": "open" if ok else "closed"}
+        """Read the write gate; update the banner, the controls and the SLM state line."""
+        snap = self.write_gate.snapshot()
         ok, reason, state = bool(snap["ok"]), snap.get("reason", ""), snap.get("state")
 
         # liveOD was unreachable and answers again: a run could have come and
@@ -861,11 +892,53 @@ class UnifiedControlGUI(QtWidgets.QMainWindow):
             rid = snap.get("last_run_id")
             who = f"run {rid}" if rid else "a run"
             self.slm.mark_unknown(f"SLM state unknown -- {who} may have written it")
+        # liveOD's camera host (a StreamSource): a run took its Andor, or the
+        # host restarted -- either may have left another pattern on the SLM.
+        src = snap.get("source")
+        if src:
+            seen = (int(src.get("runs_seen") or 0), int(src.get("restarts_seen") or 0))
+            if seen != self._src_seen:
+                new_runs = seen[0] > self._src_seen[0]
+                new_restarts = seen[1] > self._src_seen[1]
+                self._src_seen = seen
+                if new_restarts:
+                    self.slm.mark_unknown("SLM state unknown -- liveOD's camera host "
+                                          "restarted, so a run may have written it")
+                elif new_runs:
+                    tag = src.get("last_run_tag")
+                    who = f"run {tag}" if tag else "a run"
+                    self.slm.mark_unknown(f"SLM state unknown -- {who} took liveOD's Andor "
+                                          f"and may have written it")
 
         if (ok, reason) != (self._gate_open, self._gate_reason):
             self._gate_open, self._gate_reason = ok, reason
             self._render_gate_banner()
             self._update_controls()
+        self._refresh_video_note()
+
+    def _refresh_video_note(self):
+        """Say in the status bar why a running video shows nothing (StreamSource)."""
+        note_fn = getattr(self.source, "video_note", None)
+        note = note_fn() if note_fn is not None else ""
+        if note == self._video_note:
+            return
+        old, self._video_note = self._video_note, note
+        bar = self.statusBar()
+        if note:
+            bar.showMessage(note)
+        elif old and bar.currentMessage() == old:
+            bar.clearMessage()
+
+    _BANNER_COLORS = {"info": "#1565c0", "warn": "#ef6c00", "error": "#c62828"}
+
+    def _set_source_banner(self, text, level="info"):
+        color = self._BANNER_COLORS.get(level, self._BANNER_COLORS["info"])
+        self.source_banner.setStyleSheet(
+            f"background-color: {color}; color: white; padding: 4px; border-radius: 4px;")
+        if text and not text.startswith("liveOD"):     # "liveOD" keeps its spelling
+            text = text[:1].upper() + text[1:]
+        self.source_banner.setText(text)
+        self.source_banner.setVisible(bool(text))
 
     def _render_gate_banner(self):
         if self._gate_open:
@@ -897,46 +970,115 @@ class UnifiedControlGUI(QtWidgets.QMainWindow):
     def _camera_connected(self):
         return self._connected
 
+    def _shared_source(self):
+        """True when the camera belongs to liveOD (StreamSource), not to this window."""
+        return bool(getattr(self.source, "shared", False))
+
+    def _find_source(self):
+        """Look for liveOD's Andor off the GUI thread (bounded, a few seconds).
+
+        Nothing opens a camera until the answer is in: then liveOD's Andor, or
+        the local camera with a banner saying why, or (--stream) none."""
+        self._source_pending = True
+        self._source_refused = ""
+        self._camera_busy = "finding"
+        self._camera_error = ""
+        self.cam_param_status.setText("Looking for liveOD's camera host...")
+        self._update_controls()
+        mode, directory = self._source_mode, self._directory
+        BackgroundCall(lambda: choose_source(mode, directory), self._on_source_chosen, self)
+
+    def _on_source_chosen(self, choice, error):
+        self._camera_busy = ""
+        self._source_pending = False
+        if error is not None:       # choose_source reports the lookup's own errors
+            why = f"looking for liveOD's camera host failed ({type(error).__name__}: {error})"
+            choice = (SourceChoice("none", f"{why} -- --stream was given, so the Andor is not "
+                                           f"opened directly", "error")
+                      if self._source_mode == "stream" else
+                      SourceChoice("direct", f"{why} -- using the camera directly; release it "
+                                             f"in liveOD first", "warn"))
+        if self._closing:
+            return
+        if choice.kind == "stream":
+            self.source = choice.source
+            self._connected = self.source.is_open()
+            self._camera = None
+            self._src_seen = (0, 0)
+        self._source_refused = choice.banner if choice.kind == "none" else ""
+        print(f"[camera] source: {choice.kind} -- {choice.banner}")
+        self._set_source_banner(choice.banner, choice.level)
+        self.cam_param_status.setText("")
+        self._update_controls()
+        if self._connect_on_start and choice.kind != "none":
+            self.connect_camera()
+
     def _on_camera_pill_clicked(self):
-        if self._camera_connected():
+        if self._source_refused:
+            self._find_source()         # --stream and nothing served: look again
+        elif self._camera_connected():
             self.disconnect_camera()
         else:
             self.connect_camera()
 
+    def _set_shutter_button(self, checked):
+        self.shutter_btn.blockSignals(True)
+        self.shutter_btn.setChecked(bool(checked))
+        self.shutter_btn.blockSignals(False)
+
     def connect_camera(self):
-        """Open the Andor off the GUI thread; the andor button shows the result."""
+        """Open the Andor (or attach to liveOD's) off the GUI thread; the andor
+        button shows the result."""
         if self._camera_busy or self._camera_connected() or self._closing:
+            return
+        if self._source_pending:
+            return
+        if self._source_refused:
+            self.cam_param_status.setText(self._source_refused)
             return
         exposure_s = float(self.exposure_sb.value())
         gain = int(self.gain_sb.value())
         source = self.source
-        self._camera_busy = "connecting"
+        shared = self._shared_source()
+        self._camera_busy = "attaching" if shared else "connecting"
         self._camera_error = ""
-        self.cam_param_status.setText("Connecting to the Andor...")
+        self.cam_param_status.setText("Attaching to liveOD's Andor..." if shared
+                                      else "Connecting to the Andor...")
         self._update_controls()
 
         def work():
-            source.open()   # the local source resets to video (zeroes the gain)
-            # bring the camera back to the panel
+            source.open()
+            if shared:
+                # liveOD owns the camera's settings: show them, don't overwrite them
+                return "adopt", source.panel_settings()
+            # the local source resets to video (zeroes the gain): bring the
+            # camera back to the panel
             _, msg = source.apply(exposure_s, gain)
-            return msg
+            return "applied", msg
 
         BackgroundCall(work, self._on_camera_connected, self)
 
     def _on_camera_connected(self, result, error):
         self._camera_busy = ""
+        shared = self._shared_source()
         if error is not None:
             # open() may have succeeded and the apply after it failed
             self._connected = self.source.is_open()
             self._camera = getattr(self.source, "camera", None)
             self._camera_error = f"{type(error).__name__}: {error}"
-            print(f"[camera] AndorEMCCD open failed ({error})")
-            self.cam_param_status.setText(
-                f"Andor not connected: {error}\n(Is liveOD holding it? Release it there, "
-                f"then click the andor button.)")
+            if shared:
+                print(f"[camera] attaching to liveOD's Andor failed ({error})")
+                self.cam_param_status.setText(
+                    f"liveOD's Andor not attached: {error}\n(Is liveOD running, with its "
+                    f"camera host? Click the andor button to try again.)")
+            else:
+                print(f"[camera] AndorEMCCD open failed ({error})")
+                self.cam_param_status.setText(
+                    f"Andor not connected: {error}\n(Is liveOD holding it? Release it there, "
+                    f"then click the andor button.)")
             self._update_controls()
             return
-        msg = result
+        kind, value = result
         if self._closing:
             try:
                 self.source.close()
@@ -946,23 +1088,44 @@ class UnifiedControlGUI(QtWidgets.QMainWindow):
         self._connected = True
         self._camera = getattr(self.source, "camera", None)
         self._camera_error = ""
-        self.cam_param_status.setText(msg)
-        # AndorEMCCD.__init__ opens the shutter
-        self.shutter_btn.blockSignals(True)
-        self.shutter_btn.setChecked(True)
-        self.shutter_btn.blockSignals(False)
+        if kind == "adopt":
+            self._show_panel_settings(value)
+        else:
+            self.cam_param_status.setText(value)
+            # AndorEMCCD.__init__ opens the shutter
+            self._set_shutter_button(True)
         self._update_controls()
 
+    def _show_panel_settings(self, ps):
+        """Put liveOD's live settings in the panel, and say what they are."""
+        exp, gain, shutter = ps.get("exposure_s"), ps.get("gain"), ps.get("shutter_open")
+        if exp is not None:
+            self.exposure_sb.setValue(exp)
+        if gain is not None:
+            self.gain_sb.setValue(gain)
+        if shutter is not None:
+            self._set_shutter_button(shutter)
+        exp_txt = f"{exp:.4f} s" if exp is not None else "unknown"
+        text = (f"Attached to liveOD's Andor (settings rev {ps.get('settings_rev')}): exposure "
+                f"{exp_txt}, EM gain {gain if gain is not None else 'unknown'}, shutter "
+                f"{'open' if shutter else 'closed' if shutter is not None else 'unknown'}. "
+                f"These are liveOD's live settings: Apply changes them for liveOD's live "
+                f"view too; runs use their own.")
+        if gain is not None and gain > self.gain_sb.maximum():
+            text += f" (EM gain {gain} is above this panel's limit of {self.gain_sb.maximum()}.)"
+        self.cam_param_status.setText(text)
+
     def disconnect_camera(self):
-        """Release the Andor (e.g. for liveOD) without closing this window."""
+        """Release the Andor (e.g. for liveOD) without closing this window;
+        from liveOD's Andor, detach (liveOD keeps the camera)."""
         if self._camera_busy or not self._camera_connected() or self._scanning:
             return
         if self.source.video_running():
             self.source.stop_video()
-        self._camera_busy = "disconnecting"
+        self._camera_busy = "detaching" if self._shared_source() else "disconnecting"
         self._update_controls()
         # The local source closes with AndorEMCCD.Close(), which closes the
-        # shutter before the SDK close.
+        # shutter before the SDK close; a stream source only detaches.
         BackgroundCall(self.source.close, self._on_camera_closed, self)
 
     def _on_camera_closed(self, _result, error):
@@ -977,23 +1140,43 @@ class UnifiedControlGUI(QtWidgets.QMainWindow):
         self._connected = False
         self._camera = getattr(self.source, "camera", None)
         self._camera_error = ""
-        self.cam_param_status.setText("Andor released. Click the andor button to connect again.")
+        self.cam_param_status.setText(
+            "Detached from liveOD's Andor (liveOD keeps it). Click the andor button to attach "
+            "again." if self._shared_source() else
+            "Andor released. Click the andor button to connect again.")
         self._update_controls()
 
     def _render_camera_pill(self):
         connected = self._camera_connected()
+        shared = self._shared_source()
         acquiring = connected and (self.source.video_running() or self._scanning)
-        if self._camera_busy:
+        if self._camera_busy == "finding":
+            state, detail = "loading", "Looking for liveOD's camera host (a few seconds)..."
+        elif self._camera_busy:
             state, detail = "loading", f"{self._camera_busy.capitalize()}..."
+        elif self._source_refused:
+            state, detail = "failed", self._source_refused
         elif self._camera_error:
             state, detail = "failed", self._camera_error
         elif acquiring:
-            state, detail = "grabbing", "Scan running." if self._scanning else "Video running."
+            state = "grabbing"
+            detail = "Scan running." if self._scanning else "Video running."
+            if shared:
+                detail += " Frames from liveOD's Andor."
         elif connected:
-            state, detail = "open", "Andor connected."
+            state = "open"
+            detail = (f"Attached to liveOD's Andor ({getattr(self.source, 'description', '')});"
+                      f" liveOD keeps the camera." if shared else "Andor connected.")
         else:
-            state, detail = "closed", "Andor not connected."
-        self.camera_pill.set_state(state, detail, action="disconnect" if connected else "connect")
+            state = "closed"
+            detail = "liveOD's Andor not attached." if shared else "Andor not connected."
+        if self._source_refused:
+            action = "look for liveOD's camera host again"
+        elif shared:
+            action = "detach" if connected else "attach"
+        else:
+            action = "disconnect" if connected else "connect"
+        self.camera_pill.set_state(state, detail, action=action)
 
     def _update_controls(self):
         """Enable what can be used now; the camera is shared by video, scan and connect."""
@@ -1018,8 +1201,19 @@ class UnifiedControlGUI(QtWidgets.QMainWindow):
     def on_apply_camera_params(self):
         if not self._camera_connected():
             return
-        ok, msg = self.source.apply(float(self.exposure_sb.value()), int(self.gain_sb.value()))
+        exposure_s, gain = float(self.exposure_sb.value()), int(self.gain_sb.value())
+        if self._shared_source():
+            # a request to liveOD's camera host: off the GUI thread
+            self.cam_param_status.setText("Applying to liveOD's Andor...")
+            source = self.source
+            BackgroundCall(lambda: source.apply(exposure_s, gain), self._on_params_applied, self)
+            return
+        ok, msg = self.source.apply(exposure_s, gain)
         self.cam_param_status.setText(msg)
+
+    def _on_params_applied(self, result, error):
+        self.cam_param_status.setText(
+            f"Not applied: {type(error).__name__}: {error}" if error is not None else result[1])
 
     def _start_video(self):
         # emitting a signal is safe from the source's thread; the slots run here
@@ -1038,10 +1232,28 @@ class UnifiedControlGUI(QtWidgets.QMainWindow):
         # only a source whose video is still stopped by now has really ended.
         if not self.source.video_running():
             self.video_btn.setChecked(False)
+            # e.g. a run took liveOD's Andor (StreamSource); not restarted by itself
+            why = getattr(self.source, "video_stop_reason", "")
+            if why:
+                self.statusBar().showMessage(why, 10000)
         self._update_controls()
 
     def toggle_shutter(self, checked):
         if not self._camera_connected():
+            return
+        if self._shared_source():
+            # liveOD's Andor: (ok, msg) from its camera host, off the GUI thread;
+            # the button goes back if the host refused
+            source, want = self.source, bool(checked)
+
+            def done(result, error):
+                ok, msg = ((False, f"Shutter not set: {type(error).__name__}: {error}")
+                           if error is not None else result)
+                self.cam_param_status.setText(msg)
+                if not ok:
+                    self._set_shutter_button(not want)
+
+            BackgroundCall(lambda: source.set_shutter(want), done, self)
             return
         self.source.set_shutter(bool(checked))
 
@@ -1329,19 +1541,38 @@ def andor_readout_params():
         return fallback
 
 
+def parse_source_mode(argv=None):
+    """'auto' (default), 'direct' (--direct) or 'stream' (--stream). Unknown
+    arguments (Qt's own) are left alone."""
+    parser = argparse.ArgumentParser(
+        description="SLM spot finder. By default the Andor comes from liveOD's camera host "
+                    "when liveOD serves it, else it is opened here.")
+    group = parser.add_mutually_exclusive_group()
+    group.add_argument("--direct", action="store_true",
+                       help="open the Andor here through the SDK and never ask liveOD's "
+                            "camera host (release the camera in liveOD first)")
+    group.add_argument("--stream", action="store_true",
+                       help="use liveOD's Andor through its camera host only; never open "
+                            "the camera directly")
+    args, _ = parser.parse_known_args(argv)
+    return "direct" if args.direct else "stream" if args.stream else "auto"
+
+
 class UnifiedExperiment():
-    def build(self):
-        # The window opens the Andor itself, off the GUI thread, and can release
-        # and re-open it later (andor button) without being closed.
+    def build(self, source_mode="auto"):
+        # The window finds its camera itself, off the GUI thread -- liveOD's
+        # Andor, or the Andor opened here -- and can release and re-open it
+        # later (andor button) without being closed.
         self.camera = None
+        self.source_mode = source_mode
 
     def run(self):
         app = QtWidgets.QApplication.instance() or QtWidgets.QApplication(sys.argv)
-        gui = UnifiedControlGUI(self.camera)
+        gui = UnifiedControlGUI(self.camera, source_mode=self.source_mode)
         gui.show()
         app.exec()
 
 if __name__ == "__main__":
     ue = UnifiedExperiment()
-    ue.build()
+    ue.build(source_mode=parse_source_mode(sys.argv[1:]))
     ue.run()

@@ -9,9 +9,17 @@ start_acquisition(), the SLM changes pattern some time after a command -- and
 nothing else, so these tests say the sequencing is right, not that the Andor
 or the Meadowlark behave like the fakes.
 
+The StreamSource tests (the Andor taken through liveOD's camera host) run a
+real beacon CameraServerCore, policy "persistent" as liveOD's host is, on
+127.0.0.1 with a FakeBackend-derived camera whose frames encode the SLM
+position -- found through a directory whose discovery is a dict, never UDP.
+The core never beacons (QuietCore overrides it, and NetServer's beacon is
+patched out too): this runs on kong, where a test server that advertised
+itself as camera_server:*:liveod would be found by the lab.
+
 SPOT_FINDER_DIR, if set, is the spot finder package to test instead of the one
 in k-exp (a copy being worked on outside the guarded tree). Tests of the run
-gate and the FrameSource seam skip on a package that predates them.
+gate, the FrameSource seam and StreamSource skip on a package that predates them.
 """
 import json
 import os
@@ -475,8 +483,9 @@ def process_until(app, cond, timeout=10.0):
     return False
 
 
-@pytest.fixture
-def gui(app, slm_host, monkeypatch):
+def build_window(slm_host, monkeypatch, camera, **kwargs):
+    """The spot finder window, with the stage, the SLM server and liveOD's
+    run state all fakes. Close it, then stop ``w._test_gate``."""
     import stage_group
     import SLM_andor_main_gui as main_gui
     FakeStage.calls = []
@@ -486,24 +495,35 @@ def gui(app, slm_host, monkeypatch):
     monkeypatch.setattr(main_gui, "SLMController", lambda canvas_res, **kw: SLMController(
         canvas_res=canvas_res, server_ip="127.0.0.1", server_port=slm_host.port,
         **{k: v for k, v in kw.items() if k == "write_gate"}))
-    pattern = SLMPattern()
-    camera = FakeCamera(pattern)
-    kwargs, gate, liveod = {}, None, None
+    gate, liveod = None, None
     if HAS_SEAM:
         # never the lab liveOD either: the run state is a dict the test sets
         from run_gate import RunGate
         liveod = {"ok": True, "run_in_progress": False, "run_id": 80712}
         gate = RunGate(status_fn=lambda: dict(liveod), poll_period_s=0.02)
         kwargs["run_gate"] = gate
-    w = main_gui.UnifiedControlGUI(camera, connect_camera_on_start=False, **kwargs)
-    w._test_pattern = pattern
+    w = main_gui.UnifiedControlGUI(camera, **kwargs)
     w._test_liveod = liveod
+    w._test_gate = gate
+    return w
+
+
+def close_window(w):
+    w.close()
+    if w._test_gate is not None:
+        w._test_gate.stop()
+
+
+@pytest.fixture
+def gui(app, slm_host, monkeypatch):
+    pattern = SLMPattern()
+    camera = FakeCamera(pattern)
+    w = build_window(slm_host, monkeypatch, camera, connect_camera_on_start=False)
+    w._test_pattern = pattern
     if HAS_SEAM:
         assert process_until(app, lambda: w._gate_open)
     yield w
-    w.close()
-    if gate is not None:
-        gate.stop()
+    close_window(w)
 
 
 def test_window_scan_files_each_frame_under_its_position(app, gui, slm_host):
@@ -969,3 +989,818 @@ def test_local_source_preserves_snap_semantics(app):
 
     source.close()
     assert camera.closed and not source.is_open()
+
+
+# ----------------------------------------------------------------------
+# liveOD's camera host: StreamSource against a real CameraServerCore
+# ----------------------------------------------------------------------
+
+try:
+    from beacon.camera.backend import RawFrame
+    from beacon.camera.core import CameraServerCore
+    from beacon.camera.directory import CameraDirectory, CameraEntry
+    from beacon.camera.fake_backend import FakeBackend
+    from beacon.discovery.server import NetServer
+except ImportError:                     # no beacon: the StreamSource tests skip
+    CameraServerCore = FakeBackend = None
+
+HAS_STREAM = (HAS_SEAM and CameraServerCore is not None
+              and "class StreamSource" in (SPOT_FINDER / "frame_source.py").read_text(
+                  encoding="utf-8"))
+needs_stream = pytest.mark.skipif(
+    not HAS_STREAM, reason=f"{SPOT_FINDER} has no StreamSource (or beacon is missing)")
+
+HOST_ID = "camera_server:spot-test:liveod"      # never beaconed (QuietCore)
+ANDOR_ID = "andor_emccd:SPOT0001"
+MODE_CODE = {"live": 1, "snap": 2, "run": 3}
+RUN_VALUES = {"trigger_mode": "ext", "exposure_time": 1e-3, "gain": 1, "shutter": "open"}
+
+
+if FakeBackend is not None:
+    class PatternBackend(FakeBackend):
+        """FakeBackend as liveOD's Andor, whose frames say what the SLM showed.
+
+        Row 0 of a frame is [x_start, y_start, x_end, y_end] -- the SLMPattern
+        when its exposure started and ended, as FakeCamera's -- and row 1 starts
+        with 1 / 2 / 3 for a live / snap / run frame. An exposure starts at
+        start_acquisition() or right after the previous frame, and ends when the
+        frame is made: one cycle later, or at a trigger() edge in a run.
+        """
+
+        def __init__(self, pattern, cycle_s=0.02):
+            super().__init__(
+                ANDOR_ID, "andor_emccd", shape=(2, 4), cycle_s=cycle_s, model="FakeEMCCD",
+                settings={"exposure_time": cycle_s, "cycle_time": cycle_s, "gain": 1,
+                          "trigger_mode": "int", "shutter": "open"},
+                ranges={"exposure_time": (1e-5, 10.0), "gain": (1, 300)},
+                choices={"trigger_mode": ("int", "software", "ext"),
+                         "shutter": ("open", "closed")})
+            self.pattern = pattern
+            self._exp_start = None
+
+        def start_acquisition(self, mode, n_frames=None):
+            self._exp_start = self.pattern.get()
+            super().start_acquisition(mode, n_frames)
+
+        def _produce(self):             # FakeBackend._produce, with the pattern in the pixels
+            mode = self._mode
+            idx = self._produced
+            self._produced += 1
+            end = self.pattern.get()
+            start = end if self._exp_start is None else self._exp_start
+            self._exp_start = end
+            img = np.zeros(self.shape, dtype=np.uint16)
+            img[0] = [*start, *end]
+            img[1, 0] = MODE_CODE.get(mode, 0)
+            self._pending.append(RawFrame(img, hw_idx=idx, hw_ts=idx, t_host=time.time()))
+            if self._n_max is not None and self._produced >= self._n_max:
+                self._mode = None
+
+    class QuietCore(CameraServerCore):
+        """A CameraServerCore that never beacons, whatever NetServer does."""
+
+        def _start_beacon(self):
+            pass
+
+
+class NoAliases:
+    """The directory's alias store: none (never this PC's real one)."""
+
+    def all(self):
+        return {}
+
+
+class Host:
+    """liveOD's camera host, as far as the spot finder can tell: a real
+    CameraServerCore (policy "persistent") on 127.0.0.1 serving one fake Andor,
+    open and streaming, found through directories whose discovery is ``addr``."""
+
+    def __init__(self, pattern, state_dir):
+        self.pattern = pattern
+        self.state_dir = str(state_dir)
+        self.addr = {}
+        self.core = self.backend = None
+        self._dirs, self._sources = [], []
+        self.start()
+
+    def start(self, live=True):
+        core = QuietCore(HOST_ID, policy="persistent", bind_host="127.0.0.1",
+                         check_duplicate=False, state_dir=self.state_dir)
+        backend = PatternBackend(self.pattern)
+        core.add_camera(ANDOR_ID, lambda: backend, category="andor_emccd", owner_key="andor",
+                        info={"model": "FakeEMCCD"})
+        core.start_in_thread()
+        assert core._waxx_beacon_thread is None         # nothing was broadcast
+        w = core.worker(ANDOR_ID)
+        w.call("open", 5.0)                              # liveOD claims it at startup
+        if live:
+            w.call("start_live", 5.0)
+        self.core, self.backend = core, backend
+        self.addr.clear()
+        self.addr[HOST_ID] = ("127.0.0.1", core.port)
+
+    def stop(self):
+        if self.core is not None:
+            self.core.stop(10)
+
+    def restart(self):
+        self.stop()
+        self.start()
+
+    @property
+    def worker(self):
+        return self.core.worker(ANDOR_ID)
+
+    def directory(self):
+        d = CameraDirectory(collect_for=0.0, request_timeout_s=1.0, store=NoAliases(),
+                            discover=lambda prefix: (dict(self.addr)
+                                                     if prefix == "camera_server:" else {}))
+        self._dirs.append(d)
+        return d
+
+    def open_source(self, **kw):
+        """A StreamSource on this host, attached; no status thread unless asked."""
+        from frame_source import StreamSource
+        kw.setdefault("status_poll_s", None)
+        kw.setdefault("timeout_s", 1.0)
+        src = StreamSource(ANDOR_ID, label="spot finder test", directory=self.directory(), **kw)
+        self._sources.append(src)
+        src.open()
+        return src
+
+    def take_camera_for_run(self, tag="80713", n_frames=2, trigger=True):
+        """What liveOD does at INIT_RUN / WAIT_CAM_READY, then the kernel's triggers."""
+        w = self.worker
+        w.call("lock", 5.0, token="RUN", reason=f"run {tag}")
+        w.call("arm", 5.0, token="RUN", values=dict(RUN_VALUES), n_frames=n_frames, run_tag=tag)
+        if trigger:
+            self.backend.trigger(n_frames)
+
+    def end_run(self):
+        w = self.worker
+        w.call("disarm", 5.0, token="RUN")
+        w.call("unlock", 5.0, token="RUN")
+
+    def close(self):
+        for s in self._sources:
+            try:
+                s.close()
+            except Exception:
+                pass
+        self.stop()
+        for d in self._dirs:
+            d.close()
+
+
+@pytest.fixture
+def host(monkeypatch, tmp_path):
+    monkeypatch.setenv("BEACON_STATE_DIR", str(tmp_path / "beacon_state"))
+    # with QuietCore, twice over: no NetServer in this test broadcasts anything
+    monkeypatch.setattr(NetServer, "_start_beacon", lambda self: None)
+    h = Host(SLMPattern(), tmp_path)
+    yield h
+    h.close()
+
+
+def mode_of(frame):
+    return int(frame[1, 0])
+
+
+@needs_stream
+def test_scan_through_host_files_each_frame_under_its_position(app, host):
+    rng = random.Random(3)
+    slm = FakeSLM(host.pattern, delay_s=lambda: rng.uniform(0.0, 0.05), confirms=True)
+    source = host.open_source()
+    _, _, points = scan_grid(100, 200, R=2, step=1, canvas_res=(1920, 1200))
+
+    source.begin_scan()
+    timeout = scan_group.frame_timeout_s(source)
+    assert timeout == pytest.approx(2 * 0.02 + 2.0)     # from the host's cycle_time
+    shots, outcome = run_scan(points, slm.set_center_and_wait, lambda: source.snap(timeout),
+                              0.005, should_stop=lambda: False, on_shot=lambda s: None)
+    source.end_scan()
+
+    assert outcome.startswith("finished") and len(shots) == len(points)
+    for s in shots:
+        start, end = exposed_at(s)
+        assert start == end == (s.point.cx, s.point.cy), s.point
+        assert mode_of(s.frame) == MODE_CODE["snap"]
+        assert s.slm_applied is True
+        assert s.t_slm_applied <= s.t_acquire
+
+    # the ScanWorker, which owns the source for the scan, run on this thread
+    got = []
+    worker = scan_group.ScanWorker(slm, source, points[:3], settle_s=0.005)
+    worker.finished_sig.connect(lambda shots, outcome: got.append((shots, outcome)))
+    worker.run()
+    app.processEvents()
+    shots, outcome = got[0]
+    assert outcome.startswith("finished")
+    assert [exposed_at(s) for s in shots] == [((p.cx, p.cy),) * 2 for p in points[:3]]
+
+    # detaching leaves liveOD's camera open, and streaming again after the snaps
+    source.close()
+    assert host.worker.is_open and host.worker.state == "streaming"
+
+
+@needs_stream
+def test_run_arming_mid_scan_preempts_and_no_run_frame_is_filed(host):
+    from run_gate import CombinedGate
+    slm = CountingSLM(host.pattern, delay_s=0.0)
+    source = host.open_source()
+    _, _, points = scan_grid(100, 200, R=5, step=1, canvas_res=(1920, 1200))
+    filed = []
+
+    source.begin_scan()
+    timeout = scan_group.frame_timeout_s(source)
+    timer = threading.Timer(0.4, host.take_camera_for_run)     # lock + arm + triggers
+    timer.start()
+    try:
+        shots, outcome = run_scan(points, slm.set_center_and_wait,
+                                  lambda: source.snap(timeout), 0.01,
+                                  should_stop=lambda: False, on_shot=filed.append)
+    finally:
+        timer.join()
+    n_writes = len(slm.calls)
+
+    assert 0 < len(shots) < len(points)
+    assert "camera taken by" in outcome, outcome
+    assert filed == shots
+    for s in shots:                     # only snaps, each at its own position
+        assert exposed_at(s) == ((s.point.cx, s.point.cy),) * 2
+        assert mode_of(s.frame) == MODE_CODE["snap"]
+    # one SLM write per filed position, the one in flight, and none after
+    assert slm.calls[:len(shots)] == [(s.point.cx, s.point.cy) for s in shots]
+    assert len(shots) <= n_writes <= len(shots) + 1
+    time.sleep(0.3)
+    assert len(slm.calls) == n_writes
+    # the run did take frames -- none of them was filed
+    assert wait_until(lambda: host.worker.slot.latest(sources=("run",)) is not None)
+    assert host.worker.slot.latest(sources=("run",)).run_tag == "80713"
+
+    # the source's own gate: closed after the preemption, and while the run holds it
+    ok, reason = source.check()
+    assert not ok and "took liveOD's Andor" in reason
+    assert source.poll_status()
+    ok, reason = source.check()
+    assert not ok and "run 80713 holds liveOD's Andor" in reason
+    assert CombinedGate(lambda: (True, ""), lambda: source).check() == (False, reason)
+    host.end_run()
+    assert source.poll_status() and source.check() == (True, "")
+    snap = source.gate_snapshot()
+    assert snap["runs_seen"] == 1 and snap["last_run_tag"] == "80713"
+
+
+@needs_stream
+@pytest.mark.parametrize("spoil", ["run", "stale", "foreign_snap", "foreign_camera"])
+def test_snap_rejects_run_stale_or_foreign_frames(host, monkeypatch, spoil):
+    import dataclasses
+    from beacon.camera.stream import SnapMismatch
+    change = {"run": dict(source="run", run_tag="80713"),
+              "stale": dict(seq=0),
+              "foreign_snap": dict(snap_id="someone-elses-snap"),
+              "foreign_camera": dict(camera_id="andor_emccd:OTHER")}[spoil]
+    slot = host.worker.slot
+    real_latest = slot.latest
+
+    def latest(sources=("live", "snap"), after_seq=None, snap_id=None):
+        f = real_latest(sources=sources, after_seq=after_seq, snap_id=snap_id)
+        if f is not None and snap_id is not None:        # the snap's own frame, spoiled
+            f = dataclasses.replace(f, **change)
+        return f
+
+    monkeypatch.setattr(slot, "latest", latest)          # the core hands out what this gives
+    source = host.open_source()
+    source.begin_scan()
+    with pytest.raises(SnapMismatch):
+        source.snap(3.0)
+
+    # in a scan: never filed -- a missing frame (red X) -- and three in a row stop it
+    slm = CountingSLM(host.pattern, delay_s=0.0)
+    _, _, points = scan_grid(50, 50, R=1, step=1, canvas_res=(1920, 1200))
+    shots, outcome = run_scan(points, slm.set_center_and_wait, lambda: source.snap(3.0), 0.0,
+                              should_stop=lambda: False, on_shot=lambda s: None)
+    assert len(shots) == scan_group.MAX_CONSECUTIVE_CAMERA_FAILURES
+    assert all(s.frame is None and "SnapMismatch" in s.error for s in shots)
+    assert "no camera frame" in outcome
+
+
+@needs_stream
+def test_settings_changed_by_another_client_stop_the_scan(host):
+    other = host.open_source()                           # another program on this PC
+    k = 3
+
+    class ChangingSLM(CountingSLM):
+        def set_center_and_wait(self, cx, cy):
+            r = super().set_center_and_wait(cx, cy)
+            if len(self.calls) == k:
+                ok, msg = other.apply(0.03, 7)           # mid-scan, before this snap
+                assert ok, msg
+            return r
+
+    slm = ChangingSLM(host.pattern, delay_s=0.0)
+    source = host.open_source()
+    source.begin_scan()
+    _, _, points = scan_grid(50, 50, R=1, step=1, canvas_res=(1920, 1200))
+
+    shots, outcome = run_scan(points, slm.set_center_and_wait, lambda: source.snap(3.0), 0.0,
+                              should_stop=lambda: False, on_shot=lambda s: None)
+
+    assert len(shots) == k - 1 and len(slm.calls) == k   # the position in flight, no more
+    assert "camera settings changed by another program" in outcome
+    assert "settings_rev" in outcome
+
+
+@needs_stream
+def test_scan_after_a_run_takes_the_hosts_live_restore_at_its_first_snap(host, monkeypatch):
+    # liveOD's host leaves the camera at a run's settings and puts the live
+    # profile back before the next remote SNAP (HostServerCore.before_snap):
+    # the revision moves once, at the scan's first frame, and the scan goes on.
+    w = host.worker
+    real_h_snap = host.core._v2_handlers["SNAP"]
+    restored = []
+
+    def h_snap(req):
+        if not restored:
+            restored.append(w.settings_rev)
+            w.submit("apply", values={}, purpose="live")
+        return real_h_snap(req)
+
+    monkeypatch.setitem(host.core._v2_handlers, "SNAP", h_snap)
+    slm = FakeSLM(host.pattern, delay_s=0.0)
+    source = host.open_source()
+    source.begin_scan()
+    rev0 = w.settings_rev
+    _, _, points = scan_grid(50, 50, R=1, step=1, canvas_res=(1920, 1200))
+
+    shots, outcome = run_scan(points, slm.set_center_and_wait, lambda: source.snap(3.0), 0.0,
+                              should_stop=lambda: False, on_shot=lambda s: None)
+
+    assert outcome.startswith("finished") and len(shots) == len(points), outcome
+    assert restored == [rev0] and w.settings_rev == rev0 + 1
+    for s in shots:
+        assert exposed_at(s) == ((s.point.cx, s.point.cy),) * 2
+
+
+@needs_stream
+def test_host_restart_mid_scan_raises_server_restarted_and_closes_gate(host):
+    from frame_source import ServerRestarted
+    from run_gate import CombinedGate
+    k = 4
+
+    class RestartingSLM(CountingSLM):
+        def set_center_and_wait(self, cx, cy):
+            r = super().set_center_and_wait(cx, cy)
+            if len(self.calls) == k:
+                host.restart()      # liveOD restarts between this SLM write and its snap
+            return r
+
+    slm = RestartingSLM(host.pattern, delay_s=0.0)
+    source = host.open_source()
+    old_instance = host.core.instance
+    raised = []
+
+    def snap():
+        try:
+            return source.snap(3.0)
+        except Exception as e:
+            raised.append(e)
+            raise
+
+    source.begin_scan()
+    _, _, points = scan_grid(50, 50, R=2, step=1, canvas_res=(1920, 1200))
+    shots, outcome = run_scan(points, slm.set_center_and_wait, snap, 0.0,
+                              should_stop=lambda: False, on_shot=lambda s: None)
+
+    assert len(shots) == k - 1 and len(slm.calls) == k
+    assert all(s.frame is not None for s in shots)
+    assert isinstance(raised[-1], ServerRestarted)
+    assert raised[-1].old_instance == old_instance
+    assert raised[-1].new_instance == host.core.instance != old_instance
+    assert "camera host restarted" in outcome and f"{k - 1}/{len(points)} done" in outcome
+
+    # The gate closes: no SLM write until the new host has said whether a run
+    # holds the camera -- and the restart is counted, for "SLM state unknown".
+    ok, reason = source.check()
+    assert not ok and "restarted" in reason
+    assert source.gate_snapshot()["restarts_seen"] == 1
+    assert CombinedGate(lambda: (True, ""), lambda: source).check() == (False, reason)
+    time.sleep(0.3)
+    assert len(slm.calls) == k
+    assert source.poll_status()
+    assert source.check() == (True, "")
+
+    # the source follows the new host
+    source.begin_scan()
+    assert mode_of(source.snap(3.0)) == MODE_CODE["snap"]
+
+
+@needs_stream
+def test_video_never_shows_run_frames(host):
+    source = host.open_source()
+    frames, stopped = [], threading.Event()
+    source.start_video(frames.append, stopped.set)
+    assert wait_until(lambda: len(frames) >= 3, timeout=5.0)
+    assert source.video_running() and source.video_note() == ""
+
+    host.take_camera_for_run(n_frames=3)
+    assert stopped.wait(5.0)                     # the run took the camera: video ends
+    assert not source.video_running()
+    assert "took liveOD's Andor" in source.video_stop_reason
+    # there were run frames (published by the worker once it pumps the triggers)
+    assert wait_until(lambda: host.worker.slot.latest(sources=("run",)) is not None)
+
+    n = len(frames)
+    stopped.clear()
+    source.start_video(frames.append, stopped.set)   # started again during the run
+    assert stopped.wait(5.0)
+    assert len(frames) == n
+    assert all(mode_of(f) in (MODE_CODE["live"], MODE_CODE["snap"]) for f in frames)
+    host.end_run()
+
+
+def live_requesters(host):
+    return host.core.snapshot()["cameras"][ANDOR_ID]["live_requesters"]
+
+
+def count_stop_live(host, monkeypatch):
+    """The client_id of every STOP_LIVE the host receives, in a list."""
+    sent = []
+    real = host.core._v2_handlers["STOP_LIVE"]
+
+    def h_stop_live(req):
+        sent.append(req.header.get("client_id"))
+        return real(req)
+    monkeypatch.setitem(host.core._v2_handlers, "STOP_LIVE", h_stop_live)
+    return sent
+
+
+@needs_stream
+def test_video_starts_an_idle_liveod_andor_and_gives_it_back(host):
+    w = host.worker
+    w.call("stop_live", 5.0)                     # liveOD has the Andor open, not streaming
+    assert w.state == "idle" and live_requesters(host) == []
+    source = host.open_source()
+    frames, stopped = [], threading.Event()
+    source.start_video(frames.append, stopped.set)
+    assert wait_until(lambda: len(frames) >= 3, timeout=5.0)    # START_LIVE started it
+    assert w.state == "streaming" and source.video_note() == ""
+    mine = live_requesters(host)
+    assert len(mine) == 1 and mine[0].startswith("v2:")
+    assert all(mode_of(f) == MODE_CODE["live"] for f in frames)
+    source.stop_video()                          # the last requester: the stream stops
+    assert stopped.wait(5.0) and source.video_stop_reason == ""
+    assert wait_until(lambda: w.state == "idle") and live_requesters(host) == []
+
+    frames.clear()
+    source.start_video(frames.append)
+    assert wait_until(lambda: len(frames) >= 1, timeout=5.0)
+    source.close()                               # close gives it back too
+    assert wait_until(lambda: w.state == "idle") and w.is_open   # liveOD keeps the camera
+
+    # liveOD's own live view asked for the stream: the spot finder never ends it
+    host.core.request_live(ANDOR_ID, "liveod").result(5)
+    source = host.open_source()
+    frames.clear()
+    source.start_video(frames.append)
+    assert wait_until(lambda: len(frames) >= 2, timeout=5.0)
+    assert "liveod" in live_requesters(host) and len(live_requesters(host)) == 2
+    source.stop_video()
+    time.sleep(0.3)
+    assert w.state == "streaming" and live_requesters(host) == ["liveod"]
+    host.core.release_live(ANDOR_ID, "liveod").result(5)
+    assert wait_until(lambda: w.state == "idle")
+
+
+@needs_stream
+def test_video_refused_by_the_host_stops_at_once_and_says_why(host, monkeypatch):
+    w = host.worker
+    sent = count_stop_live(host, monkeypatch)
+    source = host.open_source()
+    frames, stopped = [], threading.Event()
+
+    # a run holds liveOD's Andor: no live stream
+    host.take_camera_for_run(trigger=False)
+    source.start_video(frames.append, stopped.set)
+    assert stopped.wait(5.0) and not source.video_running() and frames == []
+    reason = source.video_stop_reason
+    assert reason.startswith("video not started: run 80713 holds liveOD's Andor"), reason
+    assert "starts no live stream during a run" in reason
+    note = source.video_note()
+    assert note.startswith("No live video: run 80713") and "when the run is over" in note
+    assert w.locked_by == "RUN" and w.state == "acquiring"   # the run's acquisition, untouched
+    source.stop_video()
+    host.end_run()
+
+    # a closed camera: never opened for the spot finder
+    w.call("close", 5.0)
+    stopped.clear()
+    source.start_video(frames.append, stopped.set)
+    assert stopped.wait(5.0) and frames == []
+    assert "not open" in source.video_stop_reason
+    assert "open it in liveOD, then start the video again" in source.video_note()
+    assert not w.is_open
+
+    # the host's write policy says no (another PC is view only)
+    w.call("open", 5.0)
+    host.core.write_policy = lambda addr, cid, keys: (False, "view only: not this PC")
+    stopped.clear()
+    source.start_video(frames.append, stopped.set)
+    assert stopped.wait(5.0) and frames == []
+    assert "refused the live stream: view only: not this PC" in source.video_stop_reason
+    assert w.state == "idle"
+    assert sent == []                            # nothing to give back after a refusal
+
+    # allowed again: the note goes, and the one request made is given back once
+    host.core.write_policy = None
+    source.start_video(frames.append, stopped.set)
+    assert wait_until(lambda: len(frames) >= 1, timeout=5.0)
+    assert source.video_note() == ""
+    source.stop_video()
+    assert len(sent) == 1
+    assert wait_until(lambda: w.state == "idle")
+
+
+@needs_stream
+def test_a_stopping_host_ends_video_and_snap_like_a_restart(host, monkeypatch):
+    import frame_source
+    from frame_source import ServerStopping, Preempted
+    # what CameraServerCore answers every parked request while it stops
+    stopping = {"ok": False, "code": "shutdown", "error": "server stopping"}
+    handlers = host.core._v2_handlers
+    real_wait = handlers["WAIT_FRAME"]
+    source = host.open_source()
+    frames, stopped = [], threading.Event()
+    source.start_video(frames.append, stopped.set)
+    assert wait_until(lambda: len(frames) >= 2, timeout=5.0)
+    monkeypatch.setitem(handlers, "WAIT_FRAME", lambda req: dict(stopping))
+    assert stopped.wait(5.0) and not source.video_running()
+    assert "liveOD's camera host is shutting down" in source.video_stop_reason
+    ok, why = source.check()
+    assert not ok and "shutting down" in why     # the gate holds, as after a restart
+    monkeypatch.setitem(handlers, "WAIT_FRAME", real_wait)
+
+    source.begin_scan()                          # a newer status: the gate opens
+    assert source.check() == (True, "")
+    monkeypatch.setitem(handlers, "SNAP", lambda req: dict(stopping))
+    with pytest.raises(ServerStopping) as err:
+        source.snap(2.0)
+    assert isinstance(err.value, Preempted) and err.value.reason == "shutdown"
+    assert not source.check()[0]
+    assert scan_group.preempt_text(err.value)[0] == "camera host shutting down"
+    assert frame_source._preempt_what(err.value) == "liveOD's camera host is shutting down"
+
+
+@needs_stream
+def test_apply_reports_run_locked(host):
+    source = host.open_source()
+    ps = source.panel_settings()
+    assert ps["exposure_s"] == pytest.approx(0.02) and ps["gain"] == 1
+    assert ps["shutter_open"] is True
+
+    ok, msg = source.apply(0.03, 5)
+    assert ok and msg.startswith("Applied:") and "exposure=0.0300s" in msg and "gain=5" in msg
+    assert host.backend.settings["gain"] == 5
+    assert host.backend.settings["exposure_time"] == pytest.approx(0.03)
+    ok, msg = source.apply(20.0, 5)             # past the camera's range: clamped, and said so
+    assert not ok and "exposure NOT SET" in msg and "(clamped)" in msg
+
+    host.take_camera_for_run(trigger=False)
+    n_applied = len(host.backend.applied)
+    ok, msg = source.apply(0.05, 3)
+    assert not ok and "run 80713 holds liveOD's Andor" in msg
+    assert "no settings during a run" in msg
+    ok, msg = source.set_shutter(False)
+    assert not ok and "run 80713" in msg
+    assert len(host.backend.applied) == n_applied        # nothing reached the camera
+
+    host.end_run()
+    ok, msg = source.set_shutter(False)
+    assert ok and host.backend.settings["shutter"] == "closed", msg
+
+
+class FakeDirectory:
+    """CameraDirectory.list() stand-in: ``entries``, once ``release`` is set."""
+
+    def __init__(self, entries=(), release=None, error=None):
+        self.entries = list(entries)
+        self.release = release
+        self.error = error
+        self.calls = 0
+
+    def list(self):
+        self.calls += 1
+        if self.release is not None:
+            assert self.release.wait(10)
+        if self.error is not None:
+            raise self.error
+        return list(self.entries)
+
+    def close(self):
+        pass
+
+
+def entry(server_id, state="streaming", camera_id=ANDOR_ID, holder=None):
+    cat, _, serial = camera_id.partition(":")
+    return CameraEntry(camera_id=camera_id, category=cat, serial=serial, name="andor",
+                       model="FakeEMCCD", server_id=server_id, host="127.0.0.1", port=1,
+                       state=state, holder=holder, protocol="v2", server_ids=(server_id,))
+
+
+@needs_stream
+def test_find_liveod_andor_takes_only_a_liveod_host():
+    from frame_source import find_liveod_andor
+    e, why = find_liveod_andor(FakeDirectory([entry("camera_server:kong")]))
+    assert e is None and why == "liveOD does not serve the Andor (camera host off)"
+    e, why = find_liveod_andor(FakeDirectory(
+        [entry(HOST_ID, camera_id="basler_usb:40320384"), entry(HOST_ID)]))
+    assert e.camera_id == ANDOR_ID and why == ""
+    e, why = find_liveod_andor(FakeDirectory(
+        [entry(HOST_ID, state="reserved", holder={"label": "tweezer balance"})]))
+    assert e is None and "reserved" in why and "tweezer balance" in why
+
+
+@needs_stream
+def test_source_selection_falls_back_to_local_with_banner(app, slm_host, monkeypatch):
+    import SLM_andor_main_gui as main_gui
+    from frame_source import LocalAndorSource
+    opened = []
+
+    def fake_andor(**kw):
+        opened.append(kw)
+        return FakeCamera(SLMPattern())
+
+    monkeypatch.setattr(main_gui, "AndorEMCCD", fake_andor)     # never the real SDK
+
+    # auto, and the directory finds nothing: the local camera, with the banner
+    release = threading.Event()
+    directory = FakeDirectory(release=release)
+    w = build_window(slm_host, monkeypatch, None, directory=directory)
+    try:
+        assert process_until(app, lambda: directory.calls == 1)
+        app.processEvents()                     # the GUI runs while discovery waits
+        assert w.camera_pill.state == "loading" and not opened
+        assert not w._camera_connected() and not w.scan_btn.isEnabled()
+        release.set()
+        assert process_until(app, lambda: w._camera_connected())
+        assert isinstance(w.source, LocalAndorSource) and len(opened) == 1
+        assert not w.source_banner.isHidden()
+        text = w.source_banner.text()
+        assert "liveOD does not serve the Andor (camera host off)" in text
+        assert "using the camera directly; release it in liveOD first" in text
+        assert w.camera_pill.state == "open"
+    finally:
+        close_window(w)
+
+    # a lookup that fails falls back the same way, and says why
+    opened.clear()
+    w = build_window(slm_host, monkeypatch, None,
+                     directory=FakeDirectory(error=OSError("no route to the lab network")))
+    try:
+        assert process_until(app, lambda: w._camera_connected())
+        assert len(opened) == 1
+        assert "Looking for liveOD's camera host failed" in w.source_banner.text()
+        assert "no route to the lab network" in w.source_banner.text()
+    finally:
+        close_window(w)
+
+    # --stream: nothing served means no camera at all; the andor button looks again
+    opened.clear()
+    directory = FakeDirectory()
+    w = build_window(slm_host, monkeypatch, None, directory=directory, source_mode="stream")
+    try:
+        assert process_until(app, lambda: w.camera_pill.state == "failed")
+        assert "--stream was given" in w.source_banner.text()
+        w.connect_camera()
+        app.processEvents()
+        assert not opened and not w._camera_connected() and not w.scan_btn.isEnabled()
+        w.camera_pill.click()
+        assert process_until(app, lambda: directory.calls == 2
+                             and w.camera_pill.state == "failed")
+        assert not opened
+    finally:
+        close_window(w)
+
+    # --direct: liveOD's camera host is not asked
+    directory = FakeDirectory()
+    w = build_window(slm_host, monkeypatch, None, directory=directory, source_mode="direct")
+    try:
+        assert process_until(app, lambda: w._camera_connected())
+        assert directory.calls == 0 and len(opened) == 1
+        assert "--direct" in w.source_banner.text()
+    finally:
+        close_window(w)
+
+    assert main_gui.parse_source_mode([]) == "auto"
+    assert main_gui.parse_source_mode(["--direct"]) == "direct"
+    assert main_gui.parse_source_mode(["--stream", "-platform", "offscreen"]) == "stream"
+    with pytest.raises(SystemExit):
+        main_gui.parse_source_mode(["--direct", "--stream"])
+
+
+@needs_stream
+def test_source_selection_attaches_to_liveod_andor_when_served(app, slm_host, monkeypatch,
+                                                               host):
+    import SLM_andor_main_gui as main_gui
+    from frame_source import StreamSource
+
+    def no_camera(**kw):
+        raise AssertionError("the window opened the Andor directly")
+
+    monkeypatch.setattr(main_gui, "AndorEMCCD", no_camera)
+    n_applied = len(host.backend.applied)
+    w = build_window(slm_host, monkeypatch, None, directory=host.directory())
+    try:
+        assert process_until(app, lambda: w._camera_connected())
+        assert isinstance(w.source, StreamSource)
+        assert "Andor through liveOD" in w.source_banner.text()
+        assert HOST_ID in w.source_banner.text()
+        # liveOD's settings are shown, not overwritten
+        assert w.exposure_sb.value() == pytest.approx(0.02) and w.gain_sb.value() == 1
+        assert len(host.backend.applied) == n_applied
+        assert w.camera_pill.state == "open"
+        assert process_until(app, lambda: w._gate_open)
+
+        # Apply goes to liveOD's live settings (off the GUI thread) and reports the readback
+        w.exposure_sb.setValue(0.03)
+        w.gain_sb.setValue(4)
+        w.apply_cam_btn.click()
+        assert process_until(app, lambda: w.cam_param_status.text().startswith("Applied:"))
+        assert host.backend.settings["gain"] == 4
+        assert host.backend.settings["exposure_time"] == pytest.approx(0.03)
+
+        frames = []
+        w._frame_sig.connect(frames.append)
+        w.video_btn.click()
+        assert process_until(app, lambda: len(frames) >= 3)
+        assert w.camera_pill.state == "grabbing"
+
+        # a run takes liveOD's Andor: the video stops, the gate closes, no SLM write
+        n_up = len(slm_host.uploads)
+        host.take_camera_for_run()
+        assert process_until(app, lambda: not w.video_btn.isChecked())
+        assert process_until(app, lambda: not w._gate_open
+                             and "80713" in w.run_banner.text())
+        assert "holds liveOD's Andor" in w.run_banner.text()
+        w.slm.set_center(10, 10)
+        time.sleep(0.2)
+        app.processEvents()
+        assert len(slm_host.uploads) == n_up
+        # the camera takes no settings during the run: the shutter button goes back
+        was_open = w.shutter_btn.isChecked()
+        w.shutter_btn.click()
+        assert process_until(app, lambda: "holds liveOD's Andor" in w.cam_param_status.text())
+        assert process_until(app, lambda: w.shutter_btn.isChecked() == was_open)
+
+        # the run ends: the gate opens, the SLM state is unknown, nothing is sent by itself
+        host.end_run()
+        assert process_until(app, lambda: w._gate_open)
+        assert "took liveOD's Andor" in w.slm_sync_label.text()
+        time.sleep(0.2)
+        app.processEvents()
+        assert len(slm_host.uploads) == n_up
+    finally:
+        close_window(w)
+    assert host.worker.is_open                  # detached; liveOD keeps its camera
+
+
+@needs_stream
+def test_stream_source_satisfies_protocol():
+    import inspect
+    import frame_source
+    from beacon.camera import stream as beacon_stream
+    members = [n for n, v in vars(frame_source.FrameSource).items()
+               if callable(v) and not n.startswith("_")]
+    assert set(members) == {"is_open", "open", "close", "frame_period", "start_video",
+                            "stop_video", "video_running", "apply", "set_shutter",
+                            "begin_scan", "snap", "end_scan", "run_state"}
+    for name in members:
+        want = list(inspect.signature(getattr(frame_source.FrameSource, name)).parameters)
+        for cls in (frame_source.StreamSource, frame_source.LocalAndorSource):
+            got = list(inspect.signature(getattr(cls, name)).parameters)
+            assert got == want, (cls.__name__, name, got, want)
+
+    # one Preempted: what beacon's stream raises is what run_scan catches
+    assert frame_source.Preempted is beacon_stream.Preempted
+    assert frame_source.ServerRestarted is beacon_stream.ServerRestarted
+    assert frame_source.ServerStopping is beacon_stream.ServerStopping
+    assert scan_group.Preempted is frame_source.Preempted
+
+    # not attached: no camera, no run, no opinion on the gate, nothing running
+    s = frame_source.StreamSource("andor", directory=FakeDirectory())
+    assert not s.is_open() and not s.video_running()
+    assert s.run_state() == frame_source.RunState()
+    assert s.check() == (True, "") and s.gate_snapshot()["state"] == "detached"
+    s.stop_video()
+    s.end_scan()
+    s.close()
+    with pytest.raises(RuntimeError, match="not attached"):
+        s.snap(1.0)
+    ok, msg = s.apply(0.01, 1)
+    assert not ok and "not attached" in msg
+
+    # discovery stays within about 3 s, and only liveOD's hosts count
+    assert frame_source.DISCOVERY_COLLECT_S + 2 * frame_source.DISCOVERY_REQUEST_S <= 3.0
+    assert frame_source.is_liveod_server("camera_server:kong:liveod")
+    assert not frame_source.is_liveod_server("camera_server:kong")
+    assert not frame_source.is_liveod_server("basler_server:kong")

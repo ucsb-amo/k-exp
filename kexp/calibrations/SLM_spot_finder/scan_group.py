@@ -16,7 +16,8 @@ exposure can span a move, and every frame is stored with the (row, col) and
 A run ends the scan at once. A closed gate at step 0 stops it before the SLM
 is written again; a run taking the camera at step 3 (Preempted) stops it with
 the position in flight left blank -- not reached, not a failed frame -- and
-with no further SLM write. Any other snap failure is a missing frame (a red X)
+with no further SLM write. Through liveOD's camera host, the host restarting
+or the camera's settings changing under the scan are a Preempted too. Any other snap failure is a missing frame (a red X)
 and the scan goes on, up to MAX_CONSECUTIVE_CAMERA_FAILURES in a row.
 
 What this replaced took "the next frame" out of free-running video 10 ms after
@@ -83,6 +84,26 @@ def _always_open():
     return True, ""
 
 
+def preempt_text(e):
+    """``(what, detail)`` for a Preempted: what took the camera, and the error's text.
+
+    A run is "camera taken by run R"; liveOD's camera host restarting, the
+    camera moving, or its settings changing say so instead.
+    """
+    reason = getattr(e, "reason", "") or ""
+    tag = getattr(e, "run_tag", None)
+    what = {"restart": "camera host restarted",
+            "shutdown": "camera host shutting down",
+            "host_lost": "camera host stopped answering",
+            "moved": "camera moved to another server",
+            "settings_changed": "camera settings changed by another program",
+            "refused": "camera host refused the snap"}.get(reason)
+    if what is None:
+        what = f"camera taken by run {tag}" if tag else "camera taken by a run"
+    detail = str(e) or reason
+    return what, detail
+
+
 def run_scan(points, set_center, snap, settle_s, should_stop, on_shot, may_write=_always_open):
     """Take one frame per point, strictly one after another (see module docstring).
 
@@ -121,11 +142,11 @@ def run_scan(points, set_center, snap, settle_s, should_stop, on_shot, may_write
             if frame is None:
                 error = "acquisition ended without a frame"
         except Preempted as e:
-            # A run has the camera, and its kernel writes the SLM: stop now,
-            # write nothing more, and file nothing for this position.
-            who = f"run {e.run_tag}" if e.run_tag else "a run"
-            return shots, (f"camera taken by {who} at ({p.cx}, {p.cy}), {len(shots)}/{n} "
-                           f"done: {e.reason}")
+            # A run has the camera, and its kernel writes the SLM (or the
+            # camera host restarted, or its settings changed under the scan):
+            # stop now, write nothing more, and file nothing for this position.
+            what, detail = preempt_text(e)
+            return shots, f"{what} at ({p.cx}, {p.cy}), {len(shots)}/{n} done: {detail}"
         except Exception as e:
             frame, error = None, f"{type(e).__name__}: {e}"
         shot = ScanShot(point=p, frame=frame, slm_applied=slm.applied,
@@ -209,9 +230,9 @@ class ScanWorker(QtCore.QThread):
             finally:
                 self.source.end_scan()
         except Preempted as e:
-            who = f"run {e.run_tag}" if e.run_tag else "a run"
-            outcome = (f"camera taken by {who} after {len(self._shots)}/{len(self.points)} "
-                       f"positions: {e.reason}")
+            what, detail = preempt_text(e)
+            outcome = (f"{what} after {len(self._shots)}/{len(self.points)} "
+                       f"positions: {detail}")
         except Exception as e:
             outcome = (f"stopped by an error after {len(self._shots)}/{len(self.points)} "
                        f"positions: {type(e).__name__}: {e}")

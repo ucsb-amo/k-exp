@@ -28,6 +28,10 @@ announces itself to the Monitor server whether or not it uses liveOD
 widen this gate.
 
 The poll runs on its own thread, so check() never blocks the GUI.
+
+With the Andor taken through liveOD's camera host (frame_source.StreamSource),
+the window's write gate is a CombinedGate: this gate, and the camera host's
+own run state for the Andor. Both fail closed.
 """
 
 import threading
@@ -243,3 +247,57 @@ class RunGate:
                 "runs_seen": self.runs_seen,
                 "last_run_id": self._last_run_id,
             }
+
+
+class CombinedGate:
+    """The run gate and the camera source's own view of runs; closed if either is.
+
+    ``run_gate`` is a RunGate (or any callable / object with ``check()``
+    returning ``(ok, reason)``). ``source_fn()`` returns the window's current
+    FrameSource; one with ``gate_snapshot()`` (StreamSource: liveOD's camera
+    host says a run holds the Andor, the host restarted, or it stopped
+    answering) adds its verdict. A source without one (LocalAndorSource) adds
+    nothing. It is the SLM controller's write gate and the scan's may_write.
+
+    ``snapshot()`` is RunGate's snapshot (so ``state``, ``runs_seen`` and
+    ``last_run_id`` stay liveOD's POLL), with ``ok``/``reason`` closed by the
+    source when RunGate is open, and the source's own snapshot under "source".
+    """
+
+    def __init__(self, run_gate, source_fn):
+        self.run_gate = run_gate
+        self.source_fn = source_fn
+
+    def check(self):
+        s = self.snapshot()
+        return s["ok"], s["reason"]
+
+    __call__ = check
+
+    def snapshot(self) -> dict:
+        rg = self.run_gate
+        snap_fn = getattr(rg, "snapshot", None)
+        if snap_fn is not None:
+            s = dict(snap_fn())
+        else:
+            check = getattr(rg, "check", rg)
+            try:
+                ok, reason = check()
+            except Exception as e:
+                ok, reason = False, f"run gate failed ({type(e).__name__}: {e}) -- SLM writes blocked"
+            s = {"ok": bool(ok), "reason": str(reason), "state": "open" if ok else "closed"}
+        src = None
+        try:
+            source = self.source_fn()
+            gs = getattr(source, "gate_snapshot", None)
+            if gs is not None:
+                src = dict(gs())
+        except Exception as e:
+            src = {"ok": False, "state": "unreachable",
+                   "reason": (f"camera source run state unreadable ({type(e).__name__}: {e}) "
+                              f"-- SLM writes blocked")}
+        s["source"] = src
+        if s.get("ok") and src is not None and not src.get("ok", True):
+            s["ok"] = False
+            s["reason"] = src.get("reason") or "camera source says no -- SLM writes blocked"
+        return s
