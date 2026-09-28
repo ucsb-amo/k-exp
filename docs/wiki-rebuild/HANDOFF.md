@@ -13,7 +13,7 @@ Read in this order: `PROMPT.md` (the full task spec, verbatim) → this file →
 | Phase | State | Output |
 |---|---|---|
 | 0 Recon | **done** | `phase0_recon.md` (page inventory, staleness ranking, code map, tests, design docs, footguns), `question_banks.md` (20 newcomer + 20 expert questions with expected answers and code pointers) |
-| 1 Research fan-out | **partly done** | `reports/NN_<area>.md` for every agent that finished (see §3). Two consolidation agents were launched at the end of the session to sweep the areas whose agents had not finished; their outputs, if they landed, are `reports/CONSOLIDATED_A.md` and `reports/CONSOLIDATED_B.md` (see §4) |
+| 1 Research fan-out | **done** (9 full reports + 2 consolidated reports covering the other 6 areas at reduced depth) | `reports/01,02,03,06,08,09,10,11,12_*.md`; `reports/CONSOLIDATED_A.md` (areas 04, 05, 07; 646 lines); `reports/CONSOLIDATED_B.md` (areas 13, 14, 15; 932 lines, incl. a 136-row Error Message Index) |
 | 2 Master inventory | not started | to write: `wiki_inventory.md`, merged glossary (`drafts/glossary.md`), concept map |
 | 3 Structure plan + 2 reviewers | not started | to write: `wiki_ia_plan.md`; a provisional sketch is `drafts/ia_plan_provisional.md` |
 | 4 Writing + edit passes | not started | pages go to `docs/wiki/<Page-Name>.md` |
@@ -54,32 +54,60 @@ Read in this order: `PROMPT.md` (the full task spec, verbatim) → this file →
 | 01 | Startup, PCs, network | `briefs/01_startup_pcs.md` | written (319 lines) |
 | 02 | Package layering and code map | `briefs/02_layering_codemap.md` | written |
 | 03 | Experiment lifecycle | `briefs/03_lifecycle.md` | written |
-| 04 | Scanning and parameters | `briefs/04_scanning_params.md` | NOT written; agent stopped mid-research. Its compact transcript extract is `salvage/NN_<area>_transcript.md`; covered by a consolidation agent (§4) |
-| 05 | Device layer | `briefs/05_device_layer.md` | NOT written; agent stopped mid-research. Its compact transcript extract is `salvage/NN_<area>_transcript.md`; covered by a consolidation agent (§4) |
+| 04 | Scanning and parameters | `briefs/04_scanning_params.md` | covered in `reports/CONSOLIDATED_A.md` or `_B.md` (§4); transcript extract in `salvage/` |
+| 05 | Device layer | `briefs/05_device_layer.md` | covered in `reports/CONSOLIDATED_A.md` or `_B.md` (§4); transcript extract in `salvage/` |
 | 06 | Hardware drivers | `briefs/06_hardware_drivers.md` | written (191 lines) |
-| 07 | Monitor and device state | `briefs/07_monitor_device_state.md` | NOT written; agent stopped mid-research. Its compact transcript extract is `salvage/NN_<area>_transcript.md`; covered by a consolidation agent (§4) |
+| 07 | Monitor and device state | `briefs/07_monitor_device_state.md` | covered in `reports/CONSOLIDATED_A.md` or `_B.md` (§4); transcript extract in `salvage/` |
 | 08 | Cameras and LiveOD | `briefs/08_cameras_liveod.md` | written (317 lines) |
 | 09 | Data pipeline | `briefs/09_data_pipeline.md` | written (267 lines) |
 | 10 | Analysis | `briefs/10_analysis.md` | written (258 lines) |
 | 11 | GUIs, dashboards, telemetry | `briefs/11_guis_dashboards.md` | written (289 lines) |
 | 12 | Calibrations and feedback | `briefs/12_calibrations_feedback.md` | written (224 lines) |
-| 13 | Experiments catalog | `briefs/13_experiments_catalog.md` | NOT written; agent stopped mid-research. Its compact transcript extract is `salvage/NN_<area>_transcript.md`; covered by a consolidation agent (§4) |
-| 14 | Loud failures / Error Message Index | `briefs/14_loud_failures.md` | NOT written; agent stopped mid-research. Its compact transcript extract is `salvage/NN_<area>_transcript.md`; covered by a consolidation agent (§4) |
-| 15 | Demon hunter and wiki auditor | `briefs/15_demons_audit.md` | NOT written; agent stopped mid-research. Its compact transcript extract is `salvage/NN_<area>_transcript.md`; covered by a consolidation agent (§4) |
+| 13 | Experiments catalog | `briefs/13_experiments_catalog.md` | covered in `reports/CONSOLIDATED_A.md` or `_B.md` (§4); transcript extract in `salvage/` |
+| 14 | Loud failures / Error Message Index | `briefs/14_loud_failures.md` | covered in `reports/CONSOLIDATED_A.md` or `_B.md` (§4); transcript extract in `salvage/` |
+| 15 | Demon hunter and wiki auditor | `briefs/15_demons_audit.md` | covered in `reports/CONSOLIDATED_A.md` or `_B.md` (§4); transcript extract in `salvage/` |
 
 `ls reports/` is the authority: any `NN_*.md` present was written by its agent in full. The
 per-agent transcripts of the stopped agents are not in the repo (they were in the old session's
 `~/.claude` directory), so an area with no report must be re-researched from its brief.
 
-## 4. The two consolidation agents (final sweep)
+## 4. The two consolidation agents (final sweep) — both finished
 
-At the end of the session all remaining workflows were stopped and two Opus agents were launched
-with `briefs/consolidation_A.md` and `briefs/consolidation_B.md`. Each covers half of the areas
-whose report was missing at that moment, at reduced depth (the brief says which), and writes ONE
-report `reports/CONSOLIDATED_A.md` / `reports/CONSOLIDATED_B.md` in the standard 15-section format
-with per-area subsections. They were told to `git add`, commit and push their own report to this
-branch when done (pull --rebase first). If a consolidated report is missing, that agent did not
-finish: re-run its brief.
+`reports/CONSOLIDATED_A.md` (commit b5eab98) covers areas 04, 05, 07; `reports/CONSOLIDATED_B.md`
+(commit 6cb9ca0) covers 14, 15, 13. Both use the 15-section format per area. Their headline findings
+and the CORRECTIONS they make to Phase 0 (take these over `phase0_recon.md` / `question_banks.md`):
+
+- **Shuffle.** `shuffle='axis'` and `run_info/shot_order` exist nowhere in wax: there is only a
+  per-axis shuffle, and liveOD unshuffles (sorts) params, images and DataVault data at END_RUN. The
+  Scan-loop and DataVault pages are wrong on this, and question E4's expected answer ("not unshuffled")
+  is wrong for the saved file. (A, area 04)
+- **`force_dds_init` has defaulted to True since 2026-09-22** (68d8dcb8); docstrings still say the
+  fast skip is the default. Question E18's hint needs this. (A, area 05)
+- **`max_v` is not a clamp**: a DAC value above `max_v` writes 0 V. (A, area 05; B demon list)
+- The `populate_ttl_list` bug in the recon was fixed 2026-09-23 (444a27e). The DDS `transition`
+  setting is stored but never used. (A)
+- **Monitor:** edits made while the monitor is stopped or a run holds the core are stored in the
+  state file but never applied afterwards, although the GUI's notice says they will be; and
+  `regenerate_device_state_file.bat` run while the server is up overwrites the file without the
+  server noticing. Both need checking on hardware. (A, area 07)
+- **liveOD raise-vs-warn** is decided by the internal `setup_camera` (frames captured), not
+  `save_data`: an APD run with liveOD down only warns, saves nothing, and prints
+  "setup_camera=False" although the user passed True. (B, area 14; refines E1)
+- `CAMERA_OPEN_TIMEOUT` is never read (a camera that cannot open is retried forever). An error in
+  the cleanup after an underflow can hide the underflow. (B)
+- SLM: the 2026-09-26 reply-when-applied protocol exists but experiments never request a reply, so
+  saved SLM values are still the request; the hourly SLM re-initialisation blanks the pattern
+  mid-run. Data files are named after the experiment *class*, so `mot_tof.py` saves
+  `..._gm_tof.hdf5`; `mot_tof.py` sets detunings on `self` instead of `self.p`. (B, area 15)
+- Recon correction: the Scan-loop page says nothing about `raise_underflow`; its errors are the
+  shuffle claims above. Two page names contain U+2010 hyphens; 31 absolute wiki URLs; a broken
+  `Compiler-Quirks` link; the Climate page is the only orphan. (B)
+- OPX: only the ARTIQ-side handshake and `qm/` experiments are on main; the OPX program code is on
+  the unmerged `jep/opx-integration` branch, and `expt_params` and seqview point at modules not on
+  main. `ExptBuilder` is copied into ~10 files and writes `kexp/experiments/ml_expt.py`. (B, area 13)
+- The exact ARTIQ RTIO error texts still need a human (ARTIQ is not installed in the cloud container).
+
+Read both consolidated reports in full before Phase 2, like the others.
 
 ## 5. How to resume (step by step)
 
