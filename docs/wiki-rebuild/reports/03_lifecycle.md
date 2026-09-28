@@ -396,3 +396,330 @@ N31. **Sentinel defaults differ per file and one collides with a real value.** `
 N32. **Monitor, magnetometer and APD-stage fallbacks in `Clients`** (clients.py:18-32): Monitor failure prints one line and the run continues with no fence, no stamp, no abort report and no end state; magnetometer failure installs `HMRDummy` (field 0.0 every shot); PDXC failure disables stage moves with warnings (pdxc_apd_stage.py:37-45). An `HMRClient` failure that is *not* a `RuntimeError` is not caught and stops `prepare` (depends on beacon's exception type — needs a human). **confirmed** except the beacon part.
 
 N33. **Two DataVault/params instances are created and discarded.** `Expt.__init__` builds waxa `ExptParams`, waxx `DataVault(expt=self)`, a bare `DataSaver()`; `Base.__init__` replaces all three (expt.py:103-118; base.py:50-60, 72). Harmless, but a subclass of `Expt` that is not `Base` would run with the generic waxa params. **confirmed**.
+
+---
+
+## 6. loud_failures
+
+Each entry: verbatim text (template, then an example) → where raised/printed → cause → fix.
+
+**L1. liveOD not reachable, camera run** — kexp/base/clients.py:45-50 (raised in `Base.__init__`, i.e. in `prepare`, after the 10 s discovery; **not** in `finish_prepare` as the wiki says)
+```
+RuntimeError: [LiveOD] Could not connect to LiveOD server: {e}
+Check that the LiveOD server window is running on the control PC.
+To run without a LiveOD server, pass suppress_live_od=True (and setup_camera=False) to Base.__init__.
+```
+Cause: `LiveODClient()` discovery (beacon id `live_od`, scoped by hardware id) failed and `capture_frames` is True. `{e}` is beacon's discovery error (text not in these repos: needs a human). Fix: start the LiveOD Server (Server Dashboard on the control PC); check you are on the lab subnet; for a no-imaging test pass `setup_camera=False, suppress_live_od=True`. **confirmed**.
+
+**L2. liveOD not reachable, no-frames run (warning, run continues)** — clients.py:39-43, then expt.py:188-192
+```
+[LiveOD] WARNING: Could not connect to LiveOD server: {e}
+Running experiment without LiveOD (setup_camera=False).
+Start the LiveOD server window if imaging is needed.
+[LiveOD] WARNING: No liveOD server connection — data will not be saved (setup_camera=False).
+```
+Cause: `capture_frames` False (you passed `setup_camera=False`, **or you selected `cameras.apd`**) and liveOD down. The second line appears only if `save_data=True`. Nothing is saved; run id stays 0. Fix: start liveOD if you want the data. **confirmed**.
+
+**L3. INIT_RUN refused** — waxx/util/live_od/live_od_client.py:263-266 (raised in `finish_prepare`)
+```
+RuntimeError: [LiveODClient] INIT_RUN failed: {error}
+e.g. RuntimeError: [LiveODClient] INIT_RUN failed: Data file creation failed: [Errno 2] No such file or directory: 'B:\\...'
+```
+Cause: liveOD could not reserve the run ID/file (data drive), or the camera host refused the camera (host mode). Error texts come from live_od_server.py:908-914 and the host-refusal path. Fix: check `B:`/`%data%`, liveOD log. **confirmed** (template); example **inferred**.
+
+**L4. Camera never became ready** — live_od_client.py:298-301 (raised from `init_kernel` via `wait_for_camera_ready`)
+```
+ValueError: [LiveODClient] Camera ready timed out after {timeout:.0f} s (server: {last_error}).
+e.g. ValueError: [LiveODClient] Camera ready timed out after 90 s (server: <liveOD's last error text>).
+```
+and a camera failure reported at once (live_od_client.py:319-321):
+```
+ValueError: [LiveODClient] Camera ready failed: {error}
+```
+Cause: camera not connected/armed in liveOD (USB matrix switch, camera held elsewhere, refused settings). Consequences: the run dies inside `init_kernel`, before `scan()`: no abort-state report, device state stays **untrusted**, the monitor is **not** restarted (only `_abort_for_reset` and the scan handler call `signal_end`). Fix: fix the camera in liveOD, press **Start monitor** / **Run MOT Observe** if needed. **confirmed** (texts); monitor consequence **inferred**.
+
+**L5. No reply from liveOD mid-run** — live_od_client.py:125-131
+```
+ConnectionError: [LiveODClient] No response from liveOD server at tcp://{ip}:{port}. Is liveOD running?
+e.g. ConnectionError: [LiveODClient] No response from liveOD server at tcp://<liveOD host IP>:<port>. Is liveOD running?
+```
+Cause: any request past its receive timeout (5 s default; SHOT_COMPLETE, POLL…). During the scan it is raised from `cleanup_scan_kernel_wax` → outer `scan()` handler → state reported trusted as "an exception (see the traceback)". Fix: check the liveOD window; restart it only between runs (MIGRATION_PLAN rule 5). (The address is whatever beacon discovery returned.)
+
+**L6. END_RUN refused** — live_od_client.py:392-395 (raised from `analyze` → `end_wax`)
+```
+RuntimeError: [LiveODClient] END_RUN failed: {error}
+```
+Cause: liveOD could not save. Everything after END_RUN in `end_wax` is skipped: no e-mail, no end state to the Monitor (state stays untrusted), no monitor restart. **confirmed**.
+
+**L7. liveOD Abort before or during the camera wait** — waxa/base/scribe.py:283-284 and 255-261
+```
+Run {run_id} reset while waiting for the camera -- aborting.
+RuntimeError: Acquisition for run {run_id} aborted.
+e.g. RuntimeError: Acquisition for run 83120 aborted.
+```
+Cause: Abort pressed during WAIT_CAM_READY (first two lines) or before shot 1 (second line only, from the scan loop's first POLL). Monitor restarted once; during the camera wait no state is reported (stays untrusted); in the scan loop the handler reports a trusted state (test `test_a_reset_during_the_camera_wait_sends_no_state`, `test_the_liveod_abort_button_reports_a_trusted_state_and_restarts_once`). **confirmed**.
+
+**L8. liveOD Abort during the scan** — waxx/base/expt.py:261-265 and 45-47
+```
+[abort] if this process has not exited in 30 s, its thread stacks will be printed here to show what is holding it up.
+... TerminationRequested traceback ...
+[Monitor] run {rid} aborted (the liveOD Abort button): its device state at the abort went to the monitor server (trusted).
+```
+The traceback's exact header is ARTIQ's (needs a human); commit wax 782345c confirms "its TerminationRequested traceback". Data file deleted by liveOD. **confirmed**.
+
+**L9. RTIOUnderflow in a shot** — scribe.py:314-315, then ARTIQ's own message, then expt.py:362-364
+```
+[Scanner] RTIOUnderflow: run {rid} aborted after cleanup; the original exception and its traceback follow.
+[Monitor] run {rid} aborted (RTIOUnderflow in a shot): its last commanded device state went to the monitor server, marked UNTRUSTED -- a channel write that raised RTIOUnderflow may not have reached the hardware, so that channel can differ. Check that channel, then Trust state on the Device Control GUI.
+RTIOUnderflow: RTIO underflow at channel 0x10008:ttl24, {t} mu, slack -2456 mu   (ARTIQ's format; channel/slack from wax 3a25319's hardware test)
+```
+Order on screen: the `[Scanner]` line prints from the RPC before the handler; the `[Monitor]` line prints from `scan()`'s outer handler; the traceback is printed last by artiq_run (**inferred** order). File deleted (ABORT_RUN). Fix: find the kernel line in the traceback; add slack (a `delay` before the event, fewer events, avoid RPCs just before it). **confirmed** except the exact ARTIQ line.
+
+**L10. TriggerTimeout (line trigger or OPX hand-back)** — scanner.py:444-446; waxx/control/artiq/TTL.py:128-131; kexp/base/control.py:317-324
+```
+[scan] shot aborted: a triggered wait saw no edge (TriggerTimeout, see the line above). Cleaning up and ending the run.
+TriggerTimeout: no rising edge on ttl{0} within the gate window
+TriggerTimeout: no OPX hand-back edge on ttl{0} within the timeout
+[opx] no hand-back edge on quantum_machines_receive_trigger within T_OPX_HANDBACK_TIMEOUT of the trigger: the OPX job is not running, is not seeing the trigger, or its shot is longer than the timeout. ARTIQ RF and the handoff TTL are back off.
+[Scanner] TriggerTimeout: run {rid} aborted after cleanup; the original exception and its traceback follow.
+[Monitor] run {rid} aborted (TriggerTimeout in a shot): its device state at the abort went to the monitor server (trusted).
+```
+`{0}` is the TTL channel number (int64 exception parameter). Fix: line-trigger cable / 60 Hz source; OPX job running and wired to ttl32/ttl41. **confirmed**.
+
+**L11. RTIOOverflow** — scanner.py:457-459
+```
+[scan] shot aborted: an RTIO input FIFO overflowed (RTIOOverflow) -- a TTL input is toggling far faster than expected. Cleaning up and ending the run.
+```
+then the `[Scanner] RTIOOverflow: ...` line and a trusted `[Monitor]` report. **confirmed**.
+
+**L12. Image-count check** — kexp/base/image.py:451 (in `cleanup_image_count`, the first line of `cleanup_scan_kernel`)
+```
+ValueError: Incorrect number of PWA acquired during the shot.
+```
+Causes: (a) your `scan_kernel` triggered the camera a number of times the check does not accept (it accepts only exactly `N_pwa_per_shot` light frames with no PWOA/dark yet, or the complete set); (b) **an RTIOUnderflow/TriggerTimeout/RTIOOverflow in a camera run before the first camera trigger or between the PWOA and the dark frame** — the cleanup in the underflow handler raises this instead, masking the original exception (see D1). State reported **untrusted** (`ValueError` ∈ WRITE_FAILURES). **confirmed** (a); (b) **best explanation — needs checking on hardware**.
+
+**L13. `raise_underflow` is obsolete** — scanner.py:370-372
+```
+[scan] scan(raise_underflow=True) is no longer needed and is ignored: an aborted shot is always cleaned up, and the original exception is re-raised with its traceback (2026-09-27).
+```
+**confirmed**.
+
+**L14. Camera and TTL selection** — kexp/base/cameras.py:37, 135-137; kexp/base/devices.py:252
+```
+ValueError: The requested camera with key {key} was not found.
+ValueError: No camera TTL mapping found for camera key '{camera.key}'.
+ValueError: Both the xy and x imaging fibers are currently derived from the PID setup (as of 2026-02-17)
+```
+The third is unreachable today (`choose_camera` always returns `img_config.PID`, cameras.py:115). **confirmed**.
+
+**L15. Repeats / xvar setup (prepare-time)** — waxa/base/dealer.py:54,65,70; waxx/base/scanner.py:131,134,152,183
+```
+ValueError: self.params.repeats must have either have one element or length equal to the number of xvarnames
+ValueError: xvar key 't_tof' is already registered as an adjust param.
+ValueError: xvar of key t_tof is assigned more than once.
+ValueError: Key contains forbidden characters.
+ValueError: param 'x' does not already exist, so a dtype or default_val must be provided
+```
+(scan agent 04 owns these; listed for the index). **confirmed**.
+
+**L16. Legacy no-liveOD camera wait (unreachable from Base)** — scribe.py:94-100
+```
+RuntimeError: wait_for_camera_ready: no LiveOD server connection (live_od_client is not set) but setup_camera=True. The legacy HDF5-polling path is no longer supported (CameraMother file-watching was removed). Either ensure the LiveOD server window is running on the control PC, or pass setup_camera=False / suppress_live_od=True to Base.__init__.
+```
+and expt.py:184-187 `RuntimeError: No liveOD server connection found. Start the liveOD GUI before running experiments.` — both unreachable through `Base` (N13). **confirmed**.
+
+**L17. Superseded run** — live_od_client.py:359-365
+```
+[LiveODClient] {error} -- liveOD is serving a newer run; this run is stopped and nothing more of it is recorded.
+[LiveODClient] {error} -- liveOD does not know this run (was it restarted?); this run is stopped and nothing more of it is recorded.
+```
+Followed by the Abort path of L8 (with the misattributed cause, N21). **confirmed**.
+
+**L18. Exit without END_RUN** — live_od_client.py:183-188
+```
+[LiveODClient] exiting without END_RUN (uncaught ValueError: Incorrect number of PWA acquired during the shot.); liveOD was told.
+[LiveODClient] exiting without END_RUN, and could not tell liveOD (ConnectionError: ...); its run stays open until the next run starts or someone resets it.
+```
+Other outcomes: `liveOD had already moved on to another run.`; `liveOD did not take it ({error}; a liveOD older than RUN_EXITED needs a restart).` Example reason **inferred**. **confirmed** (templates).
+
+**L19. Incomplete save** — live_od_client.py:401-410
+```
+!! RUN SAVED INCOMPLETE: {reason}
+!! {images_received} of {images_expected} images arrived. The file is marked
+!! data_complete=False; its images are in arrival order and do not line up
+!! with the shots. Do not analyze it as a complete run.
+```
+(between two lines of 72 `!`). **confirmed**.
+
+**L20. Monitor-side warnings at the end or abort** — waxx/base/monitor.py:192, 196-198, 216, 224-226, 285-286; expt.py:208-209, 369-370, 374
+```
+[Monitor] WARNING: could not collect the end-of-run device state: {e!r}
+[Monitor] WARNING: the monitor server did not accept this run's end state ({msg}); the device state file still describes the hardware as it was BEFORE this run.
+[Monitor] WARNING: could not build the aborted run's device state: {e!r}
+[Monitor] WARNING: the monitor server did not accept the aborted run's device state ({msg}) -- the monitor server runs older code; restart it; the device state stays untrusted.
+[Monitor] note: could not tell the monitor server this run is starting (server unreachable); composite ops are not fenced for it.
+[Monitor] WARNING: could not report run {rid}'s device state at the abort ({e!r}); the device state stays untrusted.
+[Monitor] WARNING: could not ask for a monitor restart ({e!r}).
+```
+(the "older code" hint appears only when the server replied "unknown type"). **confirmed**.
+
+**L21. Prepare-time client fallbacks (run continues)** — clients.py:22, 31; pdxc_apd_stage.py:41-43, 55-56; hmr_magnetometer_client.py:173, 179; base.py:130-131, 134
+```
+Failed to connect to Monitor: {e}
+Failed to connect to HMR Magnetometer server: {e}
+[PDXC] WARNING: no connection to the PDXC stage server: {e}
+       APD stage control is disabled for this run. Start the PDXC server on the control PC if you need it.
+[PDXC] WARNING: not connected -- skipping move to in.
+Reading magnetometer failed after 5 attempts: {e}
+[device state] WARNING: the pre-run device-state check failed ({e!r}); nothing was checked and nothing is stamped.
+[device state] *** could not read the device state from the monitor server (the monitor server did not answer get_state); nothing was checked before this run. ***
+```
+**confirmed**.
+
+**L22. End-of-run warnings** — expt.py:393; expt.py:570, 573; scanner.py:676-677
+```
+[end_wax] WARNING: scope_data.close() raised: {_e} — continuing.
+[_serialize_end_payload] WARNING: scope '{label}' reshape_data() raised: {_e} — scope data will be empty for this run.
+[_serialize_end_payload] WARNING: scope '{label}' produced no usable data (shape={shape}) — omitting from payload.
+{exception text}
+Derived parameters were not updated.
+```
+**confirmed**.
+
+**L23. Adjust + save warning** — expt.py:195-199
+```
+[adjust] WARNING: adjustable params detected with save_data=True. Values changed in the Adjust panel between shots will NOT be reflected in saved data.
+```
+**confirmed**.
+
+**L24. save_on_underflow partial save** — scribe.py:344-345; expt.py:442
+```
+[Scanner] RTIOUnderflow on run {rid}: save_on_underflow=True — proceeding to analyze() to save partial data.
+run id {rid} ended at {YYYY-mm-dd HH:MM:SS} after {n} of {N} shots  ({expt})
+```
+**confirmed**.
+
+**L25. DDS init per channel** — ad9910_fast_init.py:238-239 (only when not forced and a check fails)
+```
+[dds init] WARNING: urukul {urukul_idx} ch {ch} failed its check ({reason}, raw {raw}) -- running the full AD9910 init on it.
+```
+**confirmed**.
+
+**L26. Run-done e-mail failure** — notifications.py:163 (a `logging` warning; the printed prefix depends on artiq_run's logger setup — needs a human)
+```
+Failed to send run-done notification: {exc}
+e.g. Failed to send run-done notification: [Errno 2] No such file or directory: 'G:\\Shared drives\\Tweezers\\Environments and Profiles\\email_notification_gmail_credentials.txt'
+```
+**confirmed** (template); example **inferred**.
+
+---
+
+## 7. demon_candidates
+
+**D1. An underflow in a camera shot is reported as `ValueError: Incorrect number of PWA acquired during the shot.` and the coils are not reset.**
+Evidence: the underflow handler calls `cleanup_scan_kernel` (scanner.py:432-434), whose first statement is `cleanup_image_count` (base.py:329). With `setup_camera` True it raises unless the frame counters are exactly (N_pwa, N_pwa) or (N_pwa+1, N_pwa+2) (image.py:437-451). A shot that underflows before its first `trigger_camera` (counters 0, 0 — e.g. during the MOT, the evaporation, or at the trigger pulse itself, since `img_idx` increments after the trigger pulse and `light_img_idx` only after the whole exposure, image.py:422-426 and 123-126) or between the PWOA and the dark frame therefore raises `ValueError` *inside the handler*: `reset_coils`, `lightsheet.off`, the handoff-TTL drop and the imaging/raman RF off (base.py:331-351) are skipped, `_abort_shot` never runs (no ABORT_RUN, no `[Scanner]` line), and `scan()`'s `except ValueError` reports the state UNTRUSTED with cause "ValueError". liveOD later gets RUN_EXITED ("exited", file left as is, frames missing). The test experiment for the new path (kexp/experiments/test/underflow_traceback_test.py) uses `setup_camera=False`, so it never exercises this. Date: the interaction exists since cleanup started running in the handler, 2026-09-27 (wax 3a25319); before that the handler also called cleanup (commit message: "Since 2026-05-26 the scan loop caught RTIOUnderflow ... and dropped it"). Whether ARTIQ also prints the original underflow as context is unknown.
+Confidence: *best explanation — still needs checking* (code path certain; ARTIQ's nested-exception printing and hardware consequence unverified).
+
+**D2. The AD9910 fast init is silently off for every experiment.**
+Evidence: `init_kernel(..., force_dds_init = True)` (base.py:155) vs docstring "By default (False) ... are skipped, which saves ~1.5 s per run" (157-161) and `Devices.init_all_dds(force=False)` docstring (devices.py:305-310). No experiment passes `force_dds_init=False` (grep). First seen 2026-09-23 (merge 9fd18fb). Visible only as the NORMAL-level `[dds init] full init on N of N channels, 0 skipped (forced), ...` line and `"why": "forced"` in the `dds_init` file attribute.
+Confidence: *seen and confirmed* (code); intent needs a human.
+
+**D3. The canonical example sets detunings and shim currents on the experiment, not on `self.p`.**
+Evidence: kexp/experiments/default_experiments/mot_tof.py:22-25 (`self.detune_d2_r_mot = -6.14` etc.) and 35-37 (`self.v_xshim_current=...` three times); `Cooling.mot` reads `self.params.detune_d2_c_mot` etc. (cooling.py:419-434). These lines have no effect; the run silently uses the ExptParams defaults. The class in `mot_tof.py` is also named `gm_tof` (line 6). In the file since at least 2026-09-23 (blame 5c86c33).
+Confidence: *seen and confirmed*.
+
+**D4. An APD run with liveOD down saves nothing, and the warning names the wrong flag.**
+Evidence: `cameras.apd` + `setup_camera=True` → `capture_frames=False` (cameras.py:81) → Clients only warns (clients.py:38-43, "Running experiment without LiveOD (setup_camera=False)") → `finish_prepare_wax` prints "data will not be saved (setup_camera=False)" (expt.py:188-192) and the run proceeds with run id 0; the APD values are measured and discarded.
+Confidence: *seen and confirmed* (code).
+
+**D5. The source code stored in the data file is the file as it is at the END of the run, not what ran.**
+Evidence: `_serialize_end_payload` reads `expt_filepath`, `kexp/config/expt_params.py` and every `kexp/base/*.py` from disk when `end()` runs (expt.py:590-605; data_saver.py:804-807). Editing your experiment (or `cooling.py`) while a long run is going — common practice — stores the edited text in `expt_file`/`base_class_*`. waxx/waxa sources are not stored at all.
+Confidence: *seen and confirmed* (code).
+
+**D6. Monitor server unreachable at prepare: one line, then a run with no fence, no stamp, no end state.**
+Evidence: clients.py:18-22 catches any exception and prints `Failed to connect to Monitor: {e}`; every later Monitor step is guarded by `hasattr(self,'monitor')` (expt.py:157, 203, 350, 417; base.py:105) and silently skipped; `scan()`'s snapshot kernel stays the no-op (scanner.py:105-114).
+Confidence: *seen and confirmed*; the GUI-side consequence (untrusted, "took the core and has not reported its end state") **inferred** from monitor_server_gui.py:650-667.
+
+**D7. Magnetometer down → field recorded as 0.0 G every shot, and each shot may stall several seconds.**
+Evidence: `HMRDummy.get_field_magnitude` returns 0.0 (hmr_magnetometer_client.py:43-47) after a one-line print at prepare (clients.py:28-32); if the server dies mid-run, `get_field_magnitude` retries up to 5 times with 1 s timeouts and rediscovery, then prints and returns 0.0 (hmr_magnetometer_client.py:155-181), called every shot from `init_scan_kernel` (base.py:231; control.py:146-151). 0.0 is stored in `data.b` exactly like a reading.
+Confidence: *seen and confirmed* (code).
+
+**D8. `save_on_underflow` marks the device state TRUSTED even though a write underflowed.**
+Evidence: under `save_on_underflow` the run ends through `end()` → `update_device_states` → `replace_state`, which the server always marks trusted (monitor.py:180-202; expt.py:417-421); `_shot_abort` set by `_send_abort_to_server` (scribe.py:336) is never consulted there, unlike `_report_abort_state` (expt.py:355).
+Confidence: *seen and confirmed* (code).
+
+**D9. A run that dies before `scan()` (camera timeout, error in `init_kernel` or in your `run()` before `scan`) never restarts the monitor.**
+Evidence: `signal_end` is only called by `end_wax` (expt.py:422-423) and `_restart_monitor_once` (scribe.py:286-293, reached from `_abort_for_reset` and `_report_abort_state`). The monitor server restarts the monitor only on "run complete" (monitor_server_gui.py:1227-1229) or a run-loop end. The Monitor wiki page documents the untrusted state for this case but not the stopped monitor.
+Confidence: *best explanation — still needs checking* (monitor server may have another restart trigger outside the code read).
+
+**D10. Warm-up shots and inter-shot kernels have no safety cleanup.**
+Evidence: `pre_scan` (warm-ups; the default is the hf tweezer BEC prep with high-field coils) runs outside the per-shot `try` (scanner.py:393); an exception there, or in `init_scan_kernel`/`cleanup_scan_kernel`/`post_scan`, goes straight to `scan()`'s outer handler, which only snapshots and re-raises (scanner.py:334-350). Commit k-exp db740a6 explains that an uncleaned exception "could leave the outer coil at the hf field" — the fix covered `scan_kernel` only.
+Confidence: *seen and confirmed* (code path); hardware effect **inferred**.
+
+**D11. `restart_monitor=False` in a default experiment leaves the monitor stopped after a hand-launched run.**
+Evidence: kexp/experiments/default_experiments/hf_tweezer_bec.py:80; commit 0816b10 ("no monitor restart", 2026-09-24) — meant for the monitor server's run loop.
+Confidence: *seen and confirmed* (code).
+
+**D12. Kernel-side parameter assignments before `scan()` are overwritten.**
+Evidence: N4/N5 (scanner.py:526-554). KERNEL_INVARIANTS_PLAN.md:45 counts "~23 params ... assigned directly in experiment kernels".
+Confidence: *seen and confirmed* (code); which experiments are affected needs agent 13.
+
+**D13. A superseded run's stop is logged as "the liveOD Abort button".**
+Evidence: expt.py:261-263 sets `_abort_cause` for any `reset_requested`, including `stale_run` (live_od_client.py:354-365). The Monitor journal and banner then name the Abort button.
+Confidence: *seen and confirmed* (code).
+
+**D14. The run-done e-mail can fail quietly and delay exit.**
+Evidence: failures go to `logger.warning` only (notifications.py:159-163); reading the credentials from `G:` is unbounded, bounded at exit by a 20 s join (notifications.py:173-190); recipient hard-coded (130). The 60 s hang dump will not fire for a 20 s stall.
+Confidence: *seen and confirmed* (code).
+
+**D15. APD pickoff stage silently not moved when the PDXC server is down.**
+Evidence: pdxc_apd_stage.py:37-45 (decided once at construction), 55-71 (`[PDXC] WARNING: not connected -- skipping move to in.`); the run continues and the APD may look at a blocked path.
+Confidence: *seen and confirmed* (code).
+
+**D16. The "first shot ~25% low" line prints for every experiment.**
+Evidence: base.py:88-90 prints it whenever `warmup_shots=0`, but the measurement is for hf tweezer BEC (base.py:82-86; JP/hf_bec_warmup_test.py:15-18). A MOT run's first shot has not been shown to be low.
+Confidence: *seen and confirmed* (code); physics needs a human.
+
+**D17. Terminal line saying the stage/liveOD state uses the internal `setup_camera`.** Covered by D4; also `[LiveOD] WARNING ... (setup_camera=False)` appears for APD runs where the user wrote `True`.
+
+**D18. Saved params record the request, not what the kernel used, for list/bool xvars and adjusted params.**
+Evidence: END_RUN `params` are the host values (expt.py:608-611): list/bool xvars have no kernel writer (N4) yet are stored as scanned arrays; Adjust values are the last value only (expt.py:194-199).
+Confidence: *seen and confirmed* (code); details owned by agent 04.
+
+---
+
+## 8. symptoms
+
+S1. **"I ran `ar mot_tof.py`, it waited ~10 s, then stopped with `RuntimeError: [LiveOD] Could not connect to LiveOD server`."** Where: your kpy terminal, during `prepare` (before any "Scan:" line). Expected: `Scan: ...` and `Run ID: ...`. Cause: LiveOD Server not running/discoverable (L1). Misleading: the message is raised in `Base.__init__`, not in `finish_prepare` as the wiki says.
+
+S2. **"My APD run finished, printed no Run ID, and there is no file."** Terminal shows `[LiveOD] WARNING: Could not connect ... Running experiment without LiveOD (setup_camera=False).` and `[LiveOD] WARNING: No liveOD server connection — data will not be saved (setup_camera=False).` near the top, then normal progress lines and `run id 0 complete at ...`. Expected a saved APD run. Misleading: you passed `setup_camera=True`; the run looks healthy otherwise (D4).
+
+S3. **"The run hangs after `Run ID: N` and then dies with `ValueError: [LiveODClient] Camera ready timed out after 90 s (server: ...)`."** Where: terminal, ~90 s after the run ID. Afterwards the Device Control GUI shows the monitor *interrupted by an experiment run* and a red untrusted banner ("run N (expt) took the core at HH:MM:SS and has not reported its end state"); the monitor does not come back by itself (D9, inferred). Fix: camera in liveOD, then Start monitor / Run MOT Observe.
+
+S4. **"I pressed Abort and the run kept going for a while."** The Abort takes effect at the end of the current shot (N20), or after all warm-up shots. liveOD's status shows "aborting", and after max(30 s, 3 × shot period) "no reply" if the experiment really stopped answering.
+
+S5. **"After Abort the terminal printed a `TerminationRequested` traceback and `[abort] if this process has not exited in 30 s ...`."** That is the normal abort path, not a crash. If 30 s later thread stacks print, the process is stuck at exit (AWG close, e-mail, ZMQ). The data file is deleted; the Device Control GUI shows the state trusted ("state of run N (expt) at its abort (the liveOD Abort button)").
+
+S6. **"My run died with an RTIOUnderflow and the Device Control GUI is red."** Terminal: `[Scanner] RTIOUnderflow: run N aborted after cleanup; ...`, `[Monitor] run N aborted (RTIOUnderflow in a shot): ... marked UNTRUSTED -- ...`, then the core-device traceback naming the channel and kernel line. The banner hover reason: `run N (expt) aborted (RTIOUnderflow in a shot); the file holds its last commanded state, but a channel write that raised RTIOUnderflow may not have reached the hardware, so that channel can differ`. File deleted. Fix: the kernel line in the traceback; then Trust state or Run MOT Observe.
+
+S7. **"My camera run died with `ValueError: Incorrect number of PWA acquired during the shot.` — I never changed the imaging."** Likely an underflow/trigger timeout before the first image of that shot (D1). No `[Scanner] RTIOUnderflow` line appears; the `[Monitor]` line says `(ValueError)`; the coils/lightsheet may still be on; liveOD shows the run as "exited". Check the traceback for a nested underflow; press Run MOT Observe.
+
+S8. **"I changed `self.detune_d2_c_mot` in mot_tof.py and the MOT did not change."** It must be `self.p.detune_d2_c_mot` (D3). Nothing warns.
+
+S9. **"Every run prints `[dds init] full init on 24 of 24 channels, 0 skipped (forced), 1400 ms` — I thought DDS init was skipped now."** It is forced by default (D2). Pass `force_dds_init=False` to `init_kernel` to allow the skip.
+
+S10. **"The data file's `expt_file` attribute has code I only wrote after the run started."** Source texts are read at the end of the run (D5).
+
+S11. **"`b` (magnetometer) is 0 for every shot"** and prepare printed `Failed to connect to HMR Magnetometer server: ...` — or shots got several seconds slower and `Reading magnetometer failed after 5 attempts: ...` appeared (D7).
+
+S12. **"After running hf_tweezer_bec.py by hand the Device Control GUI says the monitor is not running."** `end(..., restart_monitor=False)` (D11). Press Start monitor.
+
+S13. **"The run finished (`run id N complete`) but the process took ~20 s to close."** The run-done e-mail thread was waiting on the G: drive or Gmail (D14); no message unless the send failed.
+
+S14. **"My run ended with `run id N ended at ... after 7 of 20 shots`."** `save_on_underflow=True` saved a partial run after an underflow/overflow/trigger timeout in shot 7; shot 7 itself is included; the device state is marked trusted anyway (D8).
+
+S15. **"`[LiveODClient] ... liveOD is serving a newer run; this run is stopped and nothing more of it is recorded.`"** Someone (or an ExptBuilder) started another run; yours stops like an Abort, and the Monitor says "the liveOD Abort button" (D13).
+
+S16. **"I set `self.p.x` inside `run()` before `self.scan()` and the shots used the old value."** Parameters are re-sent from the host every shot (D12).
+
+S17. **"I forgot `analyze()` and liveOD shows my run as exited; the file has no parameters."** No `end()` → no END_RUN; liveOD leaves the file "not saved, not deleted" (live_od_server.py:1362-1363), terminal prints `[LiveODClient] exiting without END_RUN; liveOD was told.` (no parenthesis: no uncaught exception, live_od_client.py:180-184), and liveOD logs `RUN_EXITED: run N: The experiment's process exited without END_RUN (no exception reported). Its file is left as it was: not saved, not deleted.` (live_od_server.py:1355, 1362-1364) — for a camera run with frames still due, the run instead stays open (1356-1361).

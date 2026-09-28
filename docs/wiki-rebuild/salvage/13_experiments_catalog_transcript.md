@@ -1,0 +1,2771 @@
+# Salvaged transcript of stopped research agent 13 (experiments_catalog)
+
+Source: /root/.claude/projects/-home-user/db7054f3-75e8-5d58-9981-ce723c029a42/subagents/workflows/wf_ae8c6b7e-507/agent-aecf22d9f90529834.jsonl
+Assistant text blocks: 0; tool calls: 143. Tool results truncated to 700 chars. The agent's own notes and every file it read/grepped are here; verify before reuse.
+
+### tool_use
+Read /tmp/claude-0/-home-user/db7054f3-75e8-5d58-9981-ce723c029a42/scratchpad/briefs/00_shared.md offset=None limit=None
+
+### tool_result (truncated)
+1	# Shared brief for every Phase 1 research agent (read this first, then your own brief)
+2	
+3	You are one of 15 research agents rebuilding the k-exp wiki. You report to the editor-in-chief, who reads your report in full. You do research and write a report; you make no structural decisions and edit no wiki pages.
+4	
+5	## Where things are (this container)
+6	- k-exp repo: `/home/user/k-exp` (package `kexp`). HEAD c8faf77 (2026-09-27).
+7	- wax repo: `/home/user/wax` (`waxx-src/waxx`, `waxa-src/waxa`, each with `tests/`). HEAD acc4621 (2026-09-27).
+8	- The current wiki, cloned: `/tmp/claude-0/-home-user/db7054f3-75e8-5d58-9981-ce723c029a42/scratchpad/wiki/*.md` (36 pages). Read the pages your bri
+
+### tool_use
+Read /tmp/claude-0/-home-user/db7054f3-75e8-5d58-9981-ce723c029a42/scratchpad/briefs/13_experiments_catalog.md offset=None limit=None
+
+### tool_result (truncated)
+1	# Agent 13 — Experiments catalog. Report: reports/13_experiments_catalog.md
+2	Scope: `kexp/experiments/**` (~488 files). Classify every top-level folder and every file in `default_experiments/`, `tools/`, `calibration/`, `measurements/`, `qm/`, `test/` as canonical / personal-or-in-progress / legacy, with evidence (git log dates and authors via `git -C /home/user/k-exp log --format='%as %an' -- <path> | head`, the most-edited list in the recon, imports of removed APIs, `_old` placement). Identify the **~10 experiments operators really run** (recent edits + names in `kexp/config/ip.py`, `_bat`, the run loop, the Monitor page; e.g. mot_tof, gm_tof, cmot_tof, mag_trap, lightsheet_load, hf_lig
+
+### tool_use
+Bash: cat /tmp/claude-0/-home-user/db7054f3-75e8-5d58-9981-ce723c029a42/scratchpad/phase0_recon.md
+
+### tool_result (truncated)
+# Phase 0 recon — k-exp wiki rebuild (editor-in-chief)
+
+Date: 2026-09-28. k-exp HEAD c8faf77 (2026-09-27, branch claude/determined-ptolemy-qdteku = main at session start). wax HEAD acc4621 (2026-09-27). Wiki HEAD a109f57 (2026-09-27, master).
+
+## Delivery constraint
+The wiki repo (ucsb-amo/k-exp.wiki) clones but cannot be pushed from this session (proxy: not in the authorized set; GitHub wikis are not attachable via add_repo). Deliverable therefore: `docs/wiki/` on k-exp branch `claude/determined-ptolemy-qdteku` (GitHub-wiki page naming, `Title-With-Dashes.md`, plus `_Sidebar.md`, `Home.md`) and a one-command sync script `docs/wiki/sync_wiki.sh|.ps1` that pushes the folder to the wiki repo's
+
+### tool_use
+Bash: cat /tmp/claude-0/-home-user/db7054f3-75e8-5d58-9981-ce723c029a42/scratchpad/question_banks.md
+
+### tool_result (truncated)
+# Question banks (editor-in-chief, Phase 0)
+
+Acceptance: a fresh agent reading only the wiki answers every question correctly; a separate agent grades against the code. Newcomer answers within 2 clicks of Home; expert answers within 1 step of their natural entry point (search / Error Message Index / code map / Words You'll See).
+
+## Newcomer bank (20)
+N1. I sat down at kong after a power cut. What do I start, in what order, and how do I know each piece is up? (Expect: Server Dashboard on kong; LiveOD Server window says "Mother is watching..."; monitor server LED / Start on the Device Control panel; data drive B: mapped; env vars.)
+N2. What is the difference between a run and a shot, and what
+
+### tool_use
+Bash: cd /tmp/claude-0/-home-user/db7054f3-75e8-5d58-9981-ce723c029a42/scratchpad/wiki; ls; cat -n Home.md; cat -n Quick-Start---anatomy-of-an-experiment.md
+
+### tool_result (truncated)
+ARTIQ-basics.md
+Adding-new-hardware.md
+Base-experiment-parent-class.md
+Changing-data-directory.md
+Climate-data-(Zabbix)-in-analysis.md
+Code-architecture---kexp-waxa-waxx.md
+Composite-system-control-classes.md
+DataVault---Saving-experiment-data.md
+Demons.md
+Device-Frames.md
+Device-configuration-reference.md
+Fast-DDS-freuqency-updates-‐‐-pre‐staged-register-writes.md
+Fitting-classes.md
+Home.md
+LiveOD---Camera-acquisition-and-previewer.md
+Miscellaneous-Archaeology.md
+Network-and-Firewall-Setup.md
+Networking-intro.md
+Numerology-‐-which-parameters-do-what.md
+PC-Setup.md
+Placeholder-objects-and-shared-references.md
+Quick-Start---anatomy-of-an-experiment.md
+Real-Time-Device-Control-(Monitor).md
+Rep
+
+### tool_use
+Bash: cd /tmp/claude-0/-home-user/db7054f3-75e8-5d58-9981-ce723c029a42/scratchpad/wiki; cat -n Repositories-and-design-philosophy.md
+
+### tool_result (truncated)
+     1	> **Note**: This page was partially generated by AI.  Contributions and corrections are welcome.
+     2	
+     3	## Overview
+     4	
+     5	The K machine experimental control and analysis software is organized into five repositories, each serving a distinct purpose in the experimental workflow.  The design philosophy emphasizes **separation of concerns**, **machine-agnostic reusability**, and **minimal dependencies** where appropriate.
+     6	
+     7	## Design Philosophy Summary
+     8	
+     9	| Aspect | Principle |
+    10	|--------|-----------|
+    11	| **Separation of Concerns** | <ul><li>Analysis (waxa)<li>Control (waxx), <li>Machine-specific config (k-exp)<li>theory (k-amo)<li>test
+
+### tool_use
+Bash: cd /tmp/claude-0/-home-user/db7054f3-75e8-5d58-9981-ce723c029a42/scratchpad/wiki; sed -n 1,60p Demons.md; echo ----; sed -n 1,50p PC-Setup.md; echo; cat _Sidebar.md
+
+### tool_result (truncated)
+# Demons
+
+Odd failure modes: things that break silently, or break in a way that looks
+like something else. Each entry says what you see, what is really going on, and
+what to do about it.
+
+When you add one, date it and say how sure we are of the cause: seen and
+confirmed, or a best explanation that still needs checking.
+
+---
+
+## The SLM ignores every pattern when its server is started over Remote Desktop
+
+*Seen 2026-09-26.*
+
+### What you see
+
+In the SLM server window on the SLM PC (`192.168.1.102`):
+
+```
+Blink SDK was successfully initialized.
+SLM Width: 1920, Height: 1200
+Error: Failed to load LUT!
+```
+
+After that, the server still accepts commands. It prints `Received command: ...`
+and `Mas
+
+### tool_use
+Bash: cd /home/user/k-exp/kexp/experiments; ls -la; find . -name '*.py' | wc -l; for d in */; do echo "$d $(find "$d" -name '*.py' | wc -l)"; done
+
+### tool_result (truncated)
+total 76
+drwxr-xr-x 18 root root 4096 Sep 28 04:29 .
+drwxr-xr-x 10 root root 4096 Sep 28 04:29 ..
+drwxr-xr-x  7 root root 4096 Sep 28 04:29 HF_experiments
+drwxr-xr-x  8 root root 4096 Sep 28 04:29 JE
+drwxr-xr-x  3 root root 4096 Sep 28 04:29 JK
+drwxr-xr-x  7 root root 4096 Sep 28 04:29 JP
+drwxr-xr-x  3 root root 4096 Sep 28 04:29 JWY
+drwxr-xr-x  2 root root 4096 Sep 28 04:29 LF_experiments
+drwxr-xr-x  3 root root 4096 Sep 28 04:29 MBL
+drwxr-xr-x  5 root root 4096 Sep 28 04:29 Mloop testing
+drwxr-xr-x  2 root root 4096 Sep 28 04:29 NF_experiments
+-rw-r--r--  1 root root    0 Sep 28 04:29 __init__.py
+drwxr-xr-x  2 root root 4096 Sep 28 04:29 _old
+drwxr-xr-x  2 root root 4096 Sep 28 04:29 calib
+
+### tool_use
+Bash: cd /home/user/k-exp/kexp/experiments; find default_experiments tools calibration measurements qm test -type f | sort; echo; ls -la default_experiments
+
+### tool_result (truncated)
+calibration/apd_voltage_vs_state.py
+calibration/basler_magnification.py
+calibration/calibrate_hf_imaging.py
+calibration/calibrate_lf_imaging.py
+calibration/calibrate_lf_imaging_pid.py
+calibration/find_hf_raman_transition_frequency.py
+calibration/find_raman_transition_frequency.py
+calibration/imaging_intensity_ramsey.py
+calibration/imaging_intensity_ramsey_phase_jump.py
+calibration/lightshift_calibration_4_16.ipynb
+calibration/measure_currents_vs_setpoint_pid_and_supply.py
+calibration/measure_i_transducer_per_i_supply.py
+calibration/rabi_oscillations.py
+calibration/tweezer_xpf_calibration.py
+default_experiments/Old/align_raman_beams.py
+default_experiments/Old/check_hf_spin_pop.py
+default_expe
+
+### tool_use
+Bash: cd /home/user/k-exp; git log --oneline | wc -l; git log --format='%as %an %s' | tail -3; git log --format='%as %an %s' -15; git shortlog -sn | head -20
+
+### tool_result (truncated)
+66
+2026-09-10 jpagett Update detuning_plotter.py
+2026-09-10 jpagett restructure stage control to be simpler
+2026-09-10 jpagett apd to camera type, stage control
+2026-09-27 jpagett _bat: bootstrap_pc.ps1, the public one-line start of a K PC setup
+2026-09-27 jpagett _bat/shortcuts: remove the Client and Server Dashboard shortcuts
+2026-09-27 jpagett OPX handshake: hand-back hold split into three params; control.py reads them
+2026-09-27 jpagett dashboard: monitor server LED and Start/Stop/Restart on the Device Control panel header
+2026-09-27 jpagett test: RTIO-event count experiment; analyzer fetch test leaves a stopped monitor alone
+2026-09-27 jpagett experiments: gm_tof runs cmot/gm/gm_ramp ag
+
+### tool_use
+Bash: cd /home/user/k-exp; git rev-parse --is-shallow-repository; cat .git/shallow 2>/dev/null; git log --format='%h %as %an %s' | tail -5; git show --stat $(git log --format=%h | tail -1) | head -20
+
+### tool_result (truncated)
+true
+5c86c33cc61e0b2cebc71c1097c6393de940bf7e
+c5fd0b08f10d2052408846e12ffc9a6d8d39b972
+fc47c68b475c746cd3ae75ec4f7f0e37e2cbc519
+b4ba8e2 2026-09-16 jpagett auto detect outer coil current
+ba07ce2 2026-09-11 jpagett no apd stage move on basler run
+eb73421 2026-09-10 jpagett Update detuning_plotter.py
+264bd3c 2026-09-10 jpagett restructure stage control to be simpler
+fc47c68 2026-09-10 jpagett apd to camera type, stage control
+commit fc47c68b475c746cd3ae75ec4f7f0e37e2cbc519
+Author: jpagett <pagett.jared@gmail.com>
+Date:   Thu Sep 10 10:19:44 2026 -0700
+
+    apd to camera type, stage control
+
+ .gitignore                                         |     10 +
+ README.md                                
+
+### tool_use
+Bash: cd /home/user/k-exp; git remote -v; git branch -a | head
+
+### tool_result (truncated)
+origin	https://github.com/ucsb-amo/k-exp (fetch)
+origin	https://github.com/ucsb-amo/k-exp (push)
+* claude/determined-ptolemy-qdteku
+  main
+  remotes/origin/claude/determined-ptolemy-qdteku
+  remotes/origin/main
+
+### tool_use
+Bash: cd /tmp/claude-0/-home-user/db7054f3-75e8-5d58-9981-ce723c029a42/scratchpad; ls; ls kexp_full.git 2>/dev/null | head -2 || true
+
+### tool_result (truncated)
+a02
+briefs
+drafts
+kexp_files.txt
+out
+phase0_recon.md
+question_banks.md
+reports
+wiki
+
+### tool_use
+Bash: cd /tmp/claude-0/-home-user/db7054f3-75e8-5d58-9981-ce723c029a42/scratchpad; ls a02 out drafts reports; head -5 kexp_files.txt; wc -l kexp_files.txt
+
+### tool_result (truncated)
+a02:
+docs.py
+imports.json
+imports.py
+kexp_docs.txt
+waxa_docs.txt
+waxx_docs.txt
+waxx_files.txt
+
+drafts:
+glossary_groups_1_4.md
+ia_plan_provisional.md
+
+out:
+sync_wiki.ps1
+sync_wiki.sh
+
+reports:
+./__init__.py
+./_bat/ODT_picomotor_control.bat
+./_bat/__init__.py
+./_bat/_restart_all_tray_launcher_scripts.bat
+./_bat/_start_all_tray_launcher_scripts.bat
+291 kexp_files.txt
+
+### tool_use
+Bash: cd /tmp/claude-0/-home-user/db7054f3-75e8-5d58-9981-ce723c029a42/scratchpad; mkdir -p a13; timeout 180 git clone --bare --filter=blob:none https://github.com/ucsb-amo/k-exp a13/kexp_full.git 2>&1 | tail -5; git -C a13/kexp_full.git log --oneline | wc -l
+
+### tool_result (truncated)
+Cloning into bare repository 'a13/kexp_full.git'...
+4334
+
+### tool_use
+Bash: cd /tmp/claude-0/-home-user/db7054f3-75e8-5d58-9981-ce723c029a42/scratchpad/a13/kexp_full.git; git log --format='%h %as %an %s' -3 main; git branch -a | head; git log --format='%as' | tail -1; git shortlog -sn main | head -20
+
+### tool_result (truncated)
+c8faf77a 2026-09-27 jpagett _bat: bootstrap_pc.ps1, the public one-line start of a K PC setup
+c04c97bc 2026-09-27 jpagett _bat/shortcuts: remove the Client and Server Dashboard shortcuts
+b2c3210e 2026-09-27 jpagett OPX handshake: hand-back hold split into three params; control.py reads them
+  backup
+  je-simultaneous-tweezer-movements
+  jep/artiq-9
+  jep/beacon-move
+  jep/deeper-into-the-server-hole
+  jep/faster-raman-sets
+  jep/liveod-harden
+  jep/main-backup-2026-05-31
+  jep/opx-integration
+  jep/random-scan-order
+2022-09-22
+  3498	jpagett
+   596	hpbroida
+    83	Herbert-Broida
+    53	Jared Pagett
+    39	bowjun
+    32	unknown
+    21	jeremyrestes
+     6	Jack Kingdon
+     3	Jing-Wei-Yang
+    
+
+### tool_use
+Bash: cd /tmp/claude-0/-home-user/db7054f3-75e8-5d58-9981-ce723c029a42/scratchpad/a13; G="git -C kexp_full.git"; $G log main --format='@@%as|%an' --name-only -- kexp/experiments > explog.txt; wc -l explog.txt; python3 - <<'EOF'
+import collections
+d=collections.defaultdict(list)
+cur=None
+for line in open('explog.txt'):
+    line=line.rstrip('\n')
+    if line.startswith('@@'):
+        cur=line[2:].split('|')
+    elif line.strip():
+        d[line].append(cur)
+import os
+out=open('filestats.tsv','w')
+for f in sorted(d):
+    L=d[f]
+    dates=[x[0] for x in L]; authors=collections.Counter(x[1] for x in L)
+    exists=os.path.exists('/home/user/k-exp/'+f)
+    out.write(f"{f}\t{len(L)}\t{min(dates)}\t{max(dates)}\t{','.join(f'{a}:{n}' for a,n in authors.most_common())}\t{'EXISTS' if exists else 'gone'}\n")
+out.close()
+EOF
+grep -c EXISTS filestats.tsv; grep EXISTS filestats.tsv | awk -F'\t' '{print $1}' | wc -l
+
+### tool_result (truncated)
+Auto packing the repository in background for optimum performance.
+See "git help gc" for manual housekeeping.
+8856 explog.txt
+580
+580
+
+### tool_use
+Bash: cd /tmp/claude-0/-home-user/db7054f3-75e8-5d58-9981-ce723c029a42/scratchpad/a13; grep EXISTS filestats.tsv | grep -E 'experiments/(default_experiments|tools|qm|calibration|measurements)/' | cut -f1-5 | sed 's#kexp/experiments/##' | column -t -s$'\t'
+
+### tool_result (truncated)
+Exit code 127
+/bin/bash: line 1: column: command not found
+
+### tool_use
+Bash: cd /tmp/claude-0/-home-user/db7054f3-75e8-5d58-9981-ce723c029a42/scratchpad/a13; grep EXISTS filestats.tsv | grep -E 'experiments/(default_experiments|tools|qm|calibration|measurements)/' | cut -f1-5 | sed 's#kexp/experiments/##' 
+
+### tool_result (truncated)
+calibration/apd_voltage_vs_state.py	22	2026-04-08	2026-09-10	jpagett:21,hpbroida:1
+calibration/basler_magnification.py	1	2026-06-15	2026-06-15	jpagett:1
+calibration/calibrate_hf_imaging.py	3	2025-05-02	2025-05-21	jpagett:3
+calibration/calibrate_lf_imaging.py	4	2025-05-16	2025-06-03	jpagett:4
+calibration/calibrate_lf_imaging_pid.py	4	2025-05-21	2025-06-06	jpagett:4
+calibration/find_hf_raman_transition_frequency.py	1	2025-11-13	2025-11-13	jpagett:1
+calibration/find_raman_transition_frequency.py	8	2025-06-06	2025-11-09	jpagett:7,hpbroida:1
+calibration/imaging_intensity_ramsey.py	8	2026-04-02	2026-04-15	jpagett:8
+calibration/imaging_intensity_ramsey_phase_jump.py	18	2026-04-15	2026-05-22	jpagett
+
+### tool_use
+Bash: cd /tmp/claude-0/-home-user/db7054f3-75e8-5d58-9981-ce723c029a42/scratchpad/a13; python3 - <<'EOF'
+import collections
+rows=[l.rstrip('\n').split('\t') for l in open('filestats.tsv')]
+rows=[r for r in rows if r[5]=='EXISTS']
+agg=collections.defaultdict(lambda: dict(n=0,last='',first='9999',recent=0,auth=collections.Counter(),commits=0))
+for f,n,first,last,auth,_ in rows:
+    p=f.split('/')
+    top=p[2] if len(p)>3 else '(root)'
+    a=agg[top]; a['n']+=1; a['last']=max(a['last'],last); a['first']=min(a['first'],first); a['commits']+=int(n)
+    if last>='2026-08-01': a['recent']+=1
+    for x in auth.split(','):
+        k,v=x.rsplit(':',1); a['auth'][k]+=int(v)
+for k,a in sorted(agg.items()):
+    print(f"{k:22s} files={a['n']:3d} commits={a['commits']:4d} first={a['first']} last={a['last']} recent(>=08-01)={a['recent']:3d} authors={dict(a['auth'].most_common(4))}")
+EOF
+
+### tool_result (truncated)
+(root)                 files=  2 commits=   4 first=2023-03-09 last=2026-05-05 recent(>=08-01)=  0 authors={'jpagett': 4}
+HF_experiments         files=118 commits= 717 first=2025-12-17 last=2026-09-27 recent(>=08-01)= 64 authors={'jpagett': 674, 'hpbroida': 40, 'jeremyrestes': 3}
+JE                     files= 71 commits= 570 first=2025-04-21 last=2026-09-16 recent(>=08-01)=  7 authors={'jpagett': 564, 'hpbroida': 3, 'Jared Pagett': 2, 'Herbert-Broida': 1}
+JK                     files= 13 commits=  53 first=2025-07-03 last=2026-09-24 recent(>=08-01)=  4 authors={'jpagett': 43, 'hpbroida': 10}
+JP                     files= 91 commits= 251 first=2025-05-28 last=2026-09-10 recent(>=08-01)= 19 au
+
+### tool_use
+Bash: cd /home/user/k-exp/kexp/experiments/default_experiments; for f in mot_tof.py gm_tof.py cmot_tof.py; do echo "=== $f"; cat -n $f; done
+
+### tool_result (truncated)
+=== mot_tof.py
+     1	from artiq.experiment import *
+     2	from artiq.experiment import delay
+     3	from kexp import Base, cameras
+     4	import numpy as np
+     5	
+     6	class gm_tof(EnvExperiment, Base):
+     7	
+     8	    def prepare(self):
+     9	        Base.__init__(self,
+    10	                      camera_select=cameras.xy_basler,
+    11	                      save_data=True)
+    12	
+    13	        # self.xvar('frequency_detuned_imaging',np.arange(-50.,50.,5)*1.e6)
+    14	
+    15	        # self.xvar('dumdum',np.linspace(1.,50.,50))
+    16	
+    17	        # self.xvar('t_tof',np.linspace(0.03,1.2,10)*1.e-3)
+    18	
+    19	        self.p.t_tof = 0.05e-3
+    20	        # self.xvar('det
+
+### tool_use
+Bash: cd /home/user/k-exp/kexp; sed -n 1,140p base/base.py
+
+### tool_result (truncated)
+import numpy as np
+import os
+
+from artiq.experiment import *
+from artiq.language.core import kernel_from_string, now_mu, delay
+
+from waxa.data import DataSaver
+from waxa.config.img_types import img_types as img
+from waxx.base.expt import Expt
+from waxx.config.timeouts import INIT_KERNEL_CAMERA_CONNECTION_TIMEOUT
+from waxx.util import console
+
+from kexp.base import Devices, Cooling, Image, Cameras, Control, Clients
+from kexp.base.cameras import resolve_run_config
+from kexp.config.camera_id import cameras
+from kexp.config.ip import PATHS, server_talk
+from kexp.config.data_vault import DataVault
+
+from kexp.util.artiq.async_print import aprint
+
+class Base(Expt, Devices, Cooling, Image, Cameras, 
+
+### tool_use
+Bash: cd /home/user/k-exp/kexp; grep -n "def \|detune_d2_r_mot\|v_xshim_current\b" base/cooling.py | head -120
+
+### tool_result (truncated)
+24:    def __init__(self):
+39:    def warmup_kernel(self):
+56:    def prepare_hf_tweezers(self,
+152:    def ramp_down_painting(self):
+167:    def tweezer_squeeze(self, cubic_ramp=False):
+183:    def prepare_lf_tweezers(self):
+276:    def flash_repump(self,t=dv,detune=dv,amp=dv):
+290:    def pump_to_F1(self,t=dv,
+293:                   v_xshim_current = dv):
+301:        if v_xshim_current == dv:
+302:            v_xshim_current = self.params.v_xshim_current_magtrap
+306:                        v_xshim_current=self.params.v_xshim_current_magtrap)
+315:    def flash_cooler(self,t=dv,detune=dv,amp=dv):
+330:    def kill_mot(self,t):
+338:    def load_2D_mot(self, t,
+399:    def mot(self,t,
+409:      
+
+### tool_use
+Bash: cd /home/user/k-exp/kexp; sed -n 20,60p base/cooling.py; sed -n 330,460p base/cooling.py
+
+### tool_use
+Bash: cd /home/user/k-exp/kexp; sed -n 975,1125p base/cooling.py
+
+### tool_result (truncated)
+    @kernel
+    def release(self):
+        self.inner_coil.igbt_ttl.off()
+        self.switch_d2_3d(0)
+        self.switch_d1_3d(0)
+
+    ## AOM group control
+
+    @kernel
+    def switch_d2_2d(self,state):
+        if state == 1:
+            with parallel:
+                self.dds.d2_2dh_c.on()
+                self.dds.d2_2dh_r.on()
+                self.dds.d2_2dv_c.on()
+                self.dds.d2_2dv_r.on()
+        elif state == 0:
+            with parallel:
+                self.dds.d2_2dh_c.off()
+                self.dds.d2_2dh_r.off()
+                self.dds.d2_2dv_c.off()
+                self.dds.d2_2dv_r.off()
+
+    @kernel
+    def switch_d2_3d(self,state):
+        if state == 1:
+       
+
+### tool_result (truncated)
+from kexp.util.artiq.async_print import aprint
+
+class Cooling():
+    def __init__(self):
+        # just to get syntax highlighting
+        self.dds = dds_frame()
+        self.ttl = ttl_frame()
+        self.dac = dac_frame()
+        self.inner_coil = hbridge_magnet()
+        self.outer_coil = igbt_magnet()
+        self.tweezer = tweezer()
+        self.lightsheet = lightsheet()
+        self.params = ExptParams()
+        self.raman = RamanBeamPair()
+        self.p = self.params
+
+    ## meta stages
+    @kernel
+    def warmup_kernel(self):
+        """One imaging-free preparation, run N times before the first real
+        shot when Base.__init__(warmup_shots=N) is given (see Base.pre_scan).
+
+     
+
+### tool_use
+Bash: cd /home/user/k-exp/kexp/experiments/tools; cat -n mot_observe.py; echo ======; cat -n monitor.py
+
+### tool_result (truncated)
+     1	"""MOT Observe: puts the machine in its MOT-loading idle state.
+     2	
+     3	init_kernel re-initializes every DDS (force_dds_init) and switches them all
+     4	off, and initializes the DAC, imaging, sampler, lightsheet, Rydberg lasers
+     5	and coils (both coils off).  Then Cooling.mot_observe: 3D MOT D2 light, the
+     6	2D MOT light and the push beam on at their ExptParams MOT settings, 3D D1 off,
+     7	the x/y/z shims and the 2D MOT supply at their ExptParams values, the INNER
+     8	COIL ON at i_mot, the outer coil off, and the imaging light on.  The tweezer
+     9	AWG, the SLM and the shuttler are not touched.
+    10	
+    11	The Device Control GUI's "Run MOT Observe" button r
+
+### tool_use
+Bash: cd /home/user/k-exp/kexp/experiments/tools; cat -n auto_tof.py
+
+### tool_result (truncated)
+     1	"""BEC TOF loop: the experiment the Device Control GUI's "BEC TOF loop" card runs
+     2	back to back (the monitor server's run loop, waxx.util.device_state.run_loop).
+     3	
+     4	High-field tweezer BEC (prepare_hf_tweezers), 100 ms hold, tweezer off, time of
+     5	flight, absorption image on the Andor. t_tof scanned 1-4 ms in 9 points, 5
+     6	repeats, shuffled: 45 shots per run, after 2 warm-up shots.
+     7	
+     8	A copy of default_experiments/hf_tweezer_bec.py made for the loop on
+     9	2026-09-26, and deliberately independent of it: edit this file only to change
+    10	what the loop measures. No run-done email (a loop would send one per run) and
+    11	no monitor restart b
+
+### tool_use
+Bash: cd /home/user/k-exp/kexp/config; cat -n ip.py
+
+### tool_result (truncated)
+     1	﻿import os
+     2	from datetime import datetime
+     3	from waxa.data.server_talk import server_talk as st
+     4	
+     5	from waxx.config.ip import EMAIL_CREDENTIALS_FILEPATH  # noqa: F401  (re-exported for kexp consumers)
+     6	INTERLOCK_EMAIL_CREDENTIALS_FILEPATH = r"G:\Shared drives\Tweezers\Environments and Profiles\interlock_gmail_credentials.txt"
+     7	
+     8	### data, filepaths
+     9	DATA_DIR = os.getenv("data")
+    10	_CODE_DIR = os.getenv("code")
+    11	
+    12	
+    13	def _safe_join(base, *parts):
+    14	    """os.path.join that tolerates a missing (None) base.
+    15	
+    16	    On driveless client machines ``DATA_DIR`` / ``code`` may be unset; path
+    17	    constant
+
+### tool_use
+Bash: cd /home/user/k-exp; grep -rn --include=*.py --include=*.bat --include=*.ps1 --include=*.md --include=*.json --include=*.lnk -E "experiments[/\\\\.]|default_experiments|mot_observe\.py|auto_tof|mot_tof|gm_tof|hf_tweezer_bec" . 2>/dev/null | grep -v "^./kexp/experiments/" | grep -v "egg-info" | head -60
+
+### tool_result (truncated)
+./kexp/util/profiling/KERNEL_INVARIANTS_PLAN.md:53:| `DataContainer.shot_data` | **rebound in a kernel** at `experiments/test/sampler_data_saver_test.py:41` |
+./kexp/util/profiling/KERNEL_INVARIANTS_PLAN.md:63:| `camera_params.exposure_time` | kernel-written in `experiments/test/hf_image_test.py:44` |
+./kexp/util/profiling/KERNEL_INVARIANTS_PLAN.md:162:| `experiments/default_experiments/mot_tof.py` | plain path; also assigns `p.v_zshim_current` in a kernel |
+./kexp/util/profiling/KERNEL_INVARIANTS_PLAN.md:163:| one under `HF_experiments/feedback/` | `Feedback` set + MRO shadowing (Stage 4) |
+./kexp/util/profiling/KERNEL_INVARIANTS_PLAN.md:165:| `experiments/test/sampler_data_saver_test.py` |
+
+### tool_use
+Bash: cd /home/user/k-exp/kexp/_bat; ls; echo; cat mot_observe.bat background_field.bat; ls shortcuts; for f in shortcuts/*.bat; do echo "== $f"; cat "$f"; done
+
+### tool_result (truncated)
+ODT_picomotor_control.bat
+__init__.py
+_restart_all_tray_launcher_scripts.bat
+_start_all_tray_launcher_scripts.bat
+_terminate_tray_launcher_scripts.bat
+als_gui.bat
+als_server.bat
+auto-launch
+background_field.bat
+basler_gui.bat
+bootstrap_pc.ps1
+bristol_wavemeter_gui.bat
+bristol_wavemeter_server.bat
+camera_viewer.bat
+client_dashboard.bat
+dashboard
+data_browser.bat
+dc205_server.bat
+delete_artiq_dataset_garbage.bat
+detuning_plotter.bat
+device_control_gui.bat
+ethernet_relay_gui.bat
+fix_run_id.bat
+interlock_gui.bat
+keysight_gui.bat
+live_od.bat
+live_od_viewer.bat
+magnetometer_arduino_gui.bat
+magnetometer_gui.bat
+magnetometer_server.bat
+monitor_server_gui.bat
+mot_observe.bat
+old
+precilaser_gui.bat
+pr
+
+### tool_use
+Bash: cd /home/user/k-exp/kexp/_bat; grep -n -i "\bar\b\|artiq_run\|ar\.lnk\|art\.lnk\|doskey\|kpy" setup_shortcuts.ps1 bootstrap_pc.ps1 | head -40; strings -el shortcuts/ar.lnk | head -20; strings shortcuts/ar.lnk | head -30
+
+### tool_result (truncated)
+setup_shortcuts.ps1:4:      1. PATH     adds %code%\k-exp\kexp\_bat\shortcuts to the system PATH, so `ar`, `art` and
+setup_shortcuts.ps1:6:      2. PATHEXT  adds .LNK to the system PATHEXT, so typing `ar` runs ar.lnk.
+code
+.venv
+SScripts
+ artiq_run.exe
+.\artiq_run.exe
+--device-db %db%
+%code%\.venv\Scripts\artiq_run.exe
+S-1-5-21-3740996998-4287474371-850412322-1001
+CFSF
+code
+VENV~1
+Scripts
+AR3201~1.EXE
+C:\Users\
+\\PHYS-10KROOL\Users
+bananas\code\.venv\Scripts\artiq_run.exe
+%code%\.venv\Scripts\artiq_run.exe
+phys-10krool
+1SPS
+1SPS
+
+### tool_use
+Bash: cd /home/user/k-exp/kexp/_bat; sed -n 1,40p setup_shortcuts.ps1; grep -n "kpy" -r /home/user/k-exp/kexp/_bat/*.ps1 | head
+
+### tool_result (truncated)
+<#
+    Makes the lab shortcuts in kexp\_bat\shortcuts usable on this PC.
+
+      1. PATH     adds %code%\k-exp\kexp\_bat\shortcuts to the system PATH, so `ar`, `art` and
+                  the GUI shortcuts run from any terminal.
+      2. PATHEXT  adds .LNK to the system PATHEXT, so typing `ar` runs ar.lnk.
+      3. Search   adds the folder to the Windows Search index, so Start-menu search finds
+                  "Server Dashboard", "LiveOD Server", ...
+
+    Safe to re-run: every step checks first and leaves anything already in place alone.
+
+    PATH and PATHEXT are edited in the registry directly, never with setx: setx cuts values at
+    1024 characters, and the usual `setx PATH "%PATH%;..."`
+
+### tool_use
+Bash: cd /tmp/claude-0/-home-user/db7054f3-75e8-5d58-9981-ce723c029a42/scratchpad/wiki; grep -n "kpy\|\`ar \|ar mot\|artiq_run" *.md | head -30
+
+### tool_result (truncated)
+LiveOD---Camera-acquisition-and-previewer.md:42:The server must be started on the computer that has the cameras connected.  Use the **liveOD** Start Menu shortcut, or from a `kpy` terminal on that machine:
+LiveOD---Camera-acquisition-and-previewer.md:52:Anyone on the lab network can open a viewer window using the **Viewer (LiveOD)** Start Menu shortcut on their machine, or from a `kpy` terminal:
+PC-Setup.md:17:3. Follow the prompts. There are two administrator (UAC) prompts, and it waits while you sign in to Google Drive as `weldlabucsb@ucsb.edu`. Meanwhile it installs the programs with winget (Git, Python 3.13 and `uv`, LLVM 22.1.3, the C++ build tools, Google Drive, VS Code, GitHub Desktop
+
+### tool_use
+Bash: cd /home/user/k-exp/kexp/experiments/default_experiments; for f in mag_trap.py lightsheet_load.py hf_lightsheet_evap.py; do echo "=== $f"; cat -n $f; done
+
+### tool_result (truncated)
+=== mag_trap.py
+     1	from artiq.experiment import *
+     2	from artiq.experiment import delay
+     3	from kexp import Base, cameras, aprint, Adjust
+     4	import numpy as np
+     5	from kexp.calibrations import high_field_imaging_detuning
+     6	
+     7	from artiq.coredevice.shuttler import DCBias, DDS, Relay, Trigger, Config, shuttler_volt_to_mu
+     8	
+     9	# T32 = 1<<32
+    10	
+    11	class mag_trap(EnvExperiment, Base):
+    12	
+    13	    def prepare(self):
+    14	        Base.__init__(self,
+    15	        camera_select=cameras.xy_basler,
+    16	        save_data=True)
+    17	
+    18	        self.p.t_tof = 7.e-3
+    19	        self.xvar('t_tof',np.linspace(5.,10.,7)*1.e-3)
+    20	
+  
+
+### tool_use
+Bash: cd /home/user/k-exp/kexp; cat -n base/adjust.py; cat -n __init__.py
+
+### tool_result (truncated)
+     1	from waxx.base import Scanner
+     2	
+     3	class Adjust(Scanner):
+     4	    def __init__(self):
+     5	        self.adjust('t_tof',min_val=20.e-6, max_val=20.e-3)
+     6	
+     7	        self.adjust('i_mot', min_val=0., max_val=80.)
+     8	
+     9	        
+    10	        self.adjust('t_mot_load',min_val=0.1,max_val=3.)
+    11	        self.adjust('v_xshim_current',min_val=0.,max_val=9.9)
+    12	        self.adjust('v_yshim_current',min_val=0.,max_val=9.9)
+    13	        self.adjust('v_zshim_current',min_val=0.,max_val=9.9)
+    14	
+    15	        self.adjust('t_d1cmot',min_val=1.e-3, max_val=50.e-3)
+    16	
+    17	        self.adjust('detune_d1_c_gm', min_val=0., max_val=13.)
+    18	 
+
+### tool_use
+Bash: cd /home/user/wax/waxx-src/waxx/base; grep -n "def xvar\|def adjust\|already\|WARNING\|raise " scanner.py | head -60
+
+### tool_result (truncated)
+21:# Exceptions a channel write can raise itself.  A run that ends on one may
+123:    def xvar(self,key,values):
+131:            raise ValueError(f"xvar key {key!r} is already registered as an adjust param.")
+134:            raise ValueError(f"xvar of key {this_xvar.key} is assigned more than once.")
+137:        # check if params has this xvar key already -- if not, add it
+152:            raise ValueError("Key contains forbidden characters.")
+154:    def adjust(self, param_key, min_val=None, max_val=None, step=None, dtype=None,
+182:                raise ValueError(
+183:                    f"param {param_key!r} does not already exist, so a dtype or default_val must be provided"
+193:          
+
+### tool_use
+Bash: cd /home/user/wax/waxx-src/waxx/base; sed -n 100,320p scanner.py
+
+### tool_result (truncated)
+        self._param_keylist_arrays = []
+
+        self._dummy_array = np.zeros(10000,dtype=float)
+        self._N = 0
+
+        # Where scan() copies every channel's kernel-side state when an
+        # exception ends it.  A no-op until Expt.finish_prepare_wax hands over
+        # the monitor's snapshot kernel and arrays.
+        self._abort_snapshot_kernels = [kernel_from_string(SNAPSHOT_PARAMS, "pass")]
+        self._abort_snap_dds_f = np.zeros(1)
+        self._abort_snap_dds_a = np.zeros(1)
+        self._abort_snap_dds_v = np.zeros(1)
+        self._abort_snap_dds_sw = np.zeros(1, dtype=np.int32)
+        self._abort_snap_dac_v = np.zeros(1)
+        self._abort_snap_ttl_s = np.zeros(1, dtype=n
+
+### tool_use
+Bash: cd /home/user/wax/waxx-src/waxx/base; grep -n "def init_xvars\|def get_N_img\|Scan:\|dumdum\|dummy\|N_repeats\|shuffle" scanner.py | head -50
+
+### tool_result (truncated)
+6:from waxa.dummy.camera_params import CameraParams
+89:        from waxx.control.artiq.dummy_core import DummyCore
+102:        self._dummy_array = np.zeros(10000,dtype=float)
+537:        # self._dummy_array[:] = 0.
+553:            N, self._dummy_array = self.fetch_array(idx)
+554:            self._xvar_writer_arrays[idx](self,self._dummy_array[0:N])
+582:        self._dummy_array[0:N] = vars(self.params)[self._param_keylist_arrays[i]]
+583:        return (N, self._dummy_array)
+680:        # dummy, overloaded by kexp.image.cleanup_image_count
+683:    def init_xvars(self, shuffle=True, N_repeats=[]):
+691:            self.xvar("dummy",[0])
+697:        self.repeat_xvars(N_repeats=N_repeats)
+699:   
+
+### tool_use
+Bash: cd /home/user/wax/waxx-src/waxx/base; sed -n 675,778p scanner.py
+
+### tool_result (truncated)
+        except Exception as e:
+            print(e)
+            print('Derived parameters were not updated.')
+
+    def cleanup_image_count(self):
+        # dummy, overloaded by kexp.image.cleanup_image_count
+        pass
+
+    def init_xvars(self, shuffle=True, N_repeats=[]):
+        from waxa import img_types
+        if self.run_info.imaging_type == img_types.ABSORPTION:
+            if self.params.N_pwa_per_shot > 1:
+                print("You indicated more than one PWA per shot, but the analysis is set to absorption imaging. Setting # PWA to 1.")
+            self.params.N_pwa_per_shot = 1
+
+        if not self.xvarnames:
+            self.xvar("dummy",[0])
+        if self.xvarnames and not s
+
+### tool_use
+Bash: cd /home/user; grep -rn "ExptBuilder\|expt_builder" --include=*.py k-exp wax | grep -v "egg-info" | head -40
+
+### tool_result (truncated)
+k-exp/kexp/util/guis/_old/dac/DAC_GUI.py:12:from DAC_GUI_ExptBuilder import DACGUIExptBuilder, CHDACGUIExptBuilder
+k-exp/kexp/util/guis/_old/dac/DAC_GUI.py:120:                ch_builder = CHDACGUIExptBuilder()
+k-exp/kexp/util/guis/_old/dac/DAC_GUI.py:123:            ch_builder = CHDACGUIExptBuilder()
+k-exp/kexp/util/guis/_old/dac/DAC_GUI.py:243:            builder = DACGUIExptBuilder()
+k-exp/kexp/util/guis/_old/dac/DAC_GUI_ExptBuilder.py:5:class DACGUIExptBuilder():
+k-exp/kexp/util/guis/_old/dac/DAC_GUI_ExptBuilder.py:62:#####CHDACGUIExptBuilder for HOPEFULLY 1 CH. only
+k-exp/kexp/util/guis/_old/dac/DAC_GUI_ExptBuilder.py:65:class CHDACGUIExptBuilder():
+k-exp/kexp/util/guis/_old/ttl/TTL_GUI
+
+### tool_use
+Bash: cd /home/user; grep -rln "ExptBuilder\|expt_builder\|Expt_Builder" --include=*.py k-exp wax | grep -v "egg-info"; echo; grep -rn "cp1252" --include=*.py k-exp wax | head -20
+
+### tool_result (truncated)
+k-exp/kexp/util/guis/_old/dac/DAC_GUI.py
+k-exp/kexp/util/guis/_old/dac/DAC_GUI_ExptBuilder.py
+k-exp/kexp/util/guis/_old/ttl/TTL_GUI.py
+k-exp/kexp/util/guis/_old/ttl/TTL_GUI_ExptBuilder.py
+k-exp/kexp/util/guis/_old/dds/DDSSpinner.py
+k-exp/kexp/util/guis/_old/dds/dds_gui.py
+k-exp/kexp/util/guis/_old/dds/dds_gui_ExptBuilder.py
+k-exp/kexp/util/guis/_old/dds/old/dds_gui.py
+k-exp/kexp/util/guis/_old/dds/old/dds_gui_ExptBuilder.py
+k-exp/kexp/experiments/Mloop testing/integration/lf_lightsheet_exp.py
+k-exp/kexp/experiments/Mloop testing/integration/hf_no_painting_exp.py
+k-exp/kexp/experiments/Mloop testing/integration/lf_exp.py
+k-exp/kexp/experiments/Mloop testing/integration/upstream_cooling_post_l
+
+### tool_use
+Bash: cd /home/user; grep -rn "class .*Builder\|import .*[Bb]uilder" k-exp wax --include=*.py | grep -v egg-info | head -30
+
+### tool_result (truncated)
+k-exp/kexp/util/guis/_old/dac/DAC_GUI.py:12:from DAC_GUI_ExptBuilder import DACGUIExptBuilder, CHDACGUIExptBuilder
+k-exp/kexp/util/guis/_old/dac/DAC_GUI_ExptBuilder.py:5:class DACGUIExptBuilder():
+k-exp/kexp/util/guis/_old/dac/DAC_GUI_ExptBuilder.py:65:class CHDACGUIExptBuilder():
+k-exp/kexp/util/guis/_old/ttl/TTL_GUI.py:12:from TTL_GUI_ExptBuilder import TTLGUIExptBuilder
+k-exp/kexp/util/guis/_old/ttl/TTL_GUI_ExptBuilder.py:10:class TTLGUIExptBuilder():
+k-exp/kexp/util/guis/_old/dds/DDSSpinner.py:12:from kexp.util.guis.dds.dds_gui_ExptBuilder import DDSGUIExptBuilder
+k-exp/kexp/util/guis/_old/dds/DDSSpinner.py:13:# from DDS_GUIExptBuilder import DDSGUIExptBuilder
+k-exp/kexp/util/guis/_old/d
+
+### tool_use
+Bash: cd "/home/user/k-exp/kexp/experiments/HF_experiments/Rydberg/expt_builders"; ls; cat -n ry_scan_expt_builder.py | head -150
+
+### tool_result (truncated)
+ry_scan_expt_builder.ipynb
+ry_scan_expt_builder.py
+ry_scan_expt_builder_fixed.ipynb
+     1	import numpy as np
+     2	from subprocess import PIPE, run
+     3	import matplotlib.pyplot as plt
+     4	import os
+     5	import textwrap
+     6	
+     7	class ExptBuilder():
+     8	    def __init__(self):
+     9	        self.__code_path__ = os.environ.get('code')
+    10	        self.__temp_exp_path__ = os.path.join(self.__code_path__, "k-exp", "kexp", "experiments", "ml_expt.py")
+    11	
+    12	    def run_expt(self):
+    13	        expt_path = self.__temp_exp_path__
+    14	        run_expt_command = r"%kpy% & ar " + expt_path
+    15	        result = run(run_expt_command, stdout=PIPE, stderr=PIPE, univ
+
+### tool_use
+Bash: cd /home/user/wax; git rev-parse --is-shallow-repository; git log --oneline | wc -l; git log -S"cp1252" --format='%h %as %an %s' | head
+
+### tool_result (truncated)
+true
+53
+0a5eb82 2026-09-27 jpagett liveOD: RUN_EXITED and "no_reply" -- a run whose experiment stops talking
+5b76811 2026-09-26 jpagett liveOD: run integrity -- run tokens, ready once armed, clean shutdown
+396f4af 2026-09-26 jpagett device state: held connections run in their own agent process; reset-title and run-announce follow-ups
+6f1e5b0 2026-09-26 jpagett woop
+55068f8 2026-09-24 jpagett live_od: release / open a camera over the wire; camera_cli
+
+### tool_use
+Bash: cd /tmp/claude-0/-home-user/db7054f3-75e8-5d58-9981-ce723c029a42/scratchpad/a13; timeout 180 git clone --bare --filter=blob:none https://github.com/ucsb-amo/wax wax_full.git 2>&1 | tail -2; git -C wax_full.git log --oneline main | wc -l; git -C wax_full.git log --format='%h %as %s' main -3
+
+### tool_result (truncated)
+Cloning into bare repository 'wax_full.git'...
+681
+acc4621 2026-09-27 oscilloscopes: read every Siglent sample in BYTE and WORD width; keep a run's traces when one capture fails
+0a5eb82 2026-09-27 liveOD: RUN_EXITED and "no_reply" -- a run whose experiment stops talking
+9afb69d 2026-09-27 liveOD: status strip shows "no reply" and "exited" runs
+
+### tool_use
+Bash: cd /tmp/claude-0/-home-user/db7054f3-75e8-5d58-9981-ce723c029a42/scratchpad/a13; git -C wax_full.git log main -S"ExptBuilder pipes" --format='%h %as %an %s' | tail -3
+
+### tool_result (truncated)
+Auto packing the repository in background for optimum performance.
+See "git help gc" for manual housekeeping.
+Auto packing the repository in background for optimum performance.
+See "git help gc" for manual housekeeping.
+Auto packing the repository in background for optimum performance.
+See "git help gc" for manual housekeeping.
+Auto packing the repository in background for optimum performance.
+See "git help gc" for manual housekeeping.
+Auto packing the repository in background for optimum performance.
+See "git help gc" for manual housekeeping.
+Auto packing the repository in background for optimum performance.
+See "git help gc" for manual housekeeping.
+Auto packing the repository in backgroun
+
+### tool_use
+Bash: cd /tmp/claude-0/-home-user/db7054f3-75e8-5d58-9981-ce723c029a42/scratchpad/a13; git -C wax_full.git config gc.auto 0; git -C kexp_full.git config gc.auto 0; git -C wax_full.git show 2553082 --stat --format='%h %as %an%n%B' | head -40
+
+### tool_result (truncated)
+2553082 2026-09-23 jpagett
+console: one process-wide verbosity level for run-time terminal output
+
+waxx.util.console holds a single level -- QUIET (warnings only), NORMAL
+(one-line milestones: run id, scan summary, quarter progress, completion),
+VERBOSE (everything) -- set by Expt(verbosity=...) or WAX_VERBOSITY and
+copied to Expt._verbosity for kernel-side gating. Milestone prints in
+expt.py, scanner.py, the AD9910 fast init and the SLM go through
+console.info; warnings and anything bearing on data integrity stay
+unconditional. Per-shot progress prints every shot only at VERBOSE. The
+scan summary is ASCII so ExptBuilder can pipe it through cp1252.
+
+Co-Authored-By: Claude Fable 5.1 <noreply@
+
+### tool_use
+Bash: cd "/home/user/k-exp/kexp/experiments/Mloop testing"; find . -type f | sort; sed -n 1,80p integration/hf_exp.py
+
+### tool_result (truncated)
+./M-LOOP_archives/checkpoint
+./M-LOOP_archives/controller_archive_2026-08-08_02-45.txt
+./M-LOOP_archives/controller_archive_2026-08-08_02-54.txt
+./M-LOOP_archives/controller_archive_2026-08-08_03-09.txt
+./M-LOOP_archives/controller_archive_2026-08-08_03-17.txt
+./M-LOOP_archives/controller_archive_2026-09-08_19-20.txt
+./M-LOOP_archives/controller_archive_2026-09-08_19-21.txt
+./M-LOOP_archives/controller_archive_2026-09-08_19-25.txt
+./M-LOOP_archives/controller_archive_2026-09-08_19-26.txt
+./M-LOOP_archives/learner_archive_2026-09-08_19-26.txt
+./M-LOOP_archives/neural_net_archive_2026-09-08_19-26_TnsjpCCf.ckpt.data-00000-of-00001
+./M-LOOP_archives/neural_net_archive_2026-09-08_19-26_TnsjpCCf.c
+
+### tool_use
+Bash: cd /tmp/claude-0/-home-user/db7054f3-75e8-5d58-9981-ce723c029a42/scratchpad/a13; grep EXISTS filestats.tsv | grep -E 'Mloop|_old/|LF_exp|NF_exp|MBL|JWY|JK/' | cut -f1-5 | sed 's#kexp/experiments/##' | grep -v "M-LOOP_archives\|M-LOOP_logs"
+
+### tool_result (truncated)
+HF_experiments/feedback/_old/_old.7z	1	2026-07-20	2026-07-20	jpagett:1
+JK/coil_test.py	5	2025-07-31	2026-09-24	jpagett:3,hpbroida:2
+JK/hf_lightsheet_bec_ry.py	1	2026-07-20	2026-07-20	hpbroida:1
+JK/hf_lightsheet_evap.py	24	2025-07-24	2026-07-30	jpagett:21,hpbroida:3
+JK/hf_lightsheet_evap_tweezer_overlap.py	1	2026-07-18	2026-07-18	hpbroida:1
+JK/hf_lightsheet_evap_with_tweezer.py	1	2026-03-18	2026-03-18	jpagett:1
+JK/hf_tweezer_nova.py	1	2025-08-26	2025-08-26	jpagett:1
+JK/lf_lightsheet_evap.py	6	2025-08-13	2026-09-24	jpagett:4,hpbroida:2
+JK/lf_tweezer_evap.py	4	2025-08-13	2026-09-09	jpagett:4
+JK/lf_tweezer_evap_dep.py	1	2026-09-09	2026-09-09	jpagett:1
+JK/lightsheet_bec.py	4	2025-10-15	2025-10-16
+
+### tool_use
+Bash: cd /home/user/k-exp/kexp/experiments; find HF_experiments -maxdepth 2 | sort | head -80; echo; find JE JP -maxdepth 1 | sort
+
+### tool_result (truncated)
+HF_experiments
+HF_experiments/Hansel_and_Gretel
+HF_experiments/Hansel_and_Gretel/calibrations
+HF_experiments/Hansel_and_Gretel/expt_params_feedback.py
+HF_experiments/Hansel_and_Gretel/statistics_check.py
+HF_experiments/Hansel_and_Gretel/statistics_check_clean.py
+HF_experiments/Rydberg
+HF_experiments/Rydberg/align_rydberg.py
+HF_experiments/Rydberg/expt_builders
+HF_experiments/Rydberg/gimme_two_becs.py
+HF_experiments/Rydberg/hf_bec_405_scan.py
+HF_experiments/Rydberg/hf_bec_rydberg_calibrate_absorption_405_loss.py
+HF_experiments/Rydberg/hf_bec_rydberg_calibrate_apd_405_loss.py
+HF_experiments/Rydberg/hf_bec_rydberg_calibrate_apd_pci_loss.py
+HF_experiments/Rydberg/hf_bec_rydberg_scan.py
+HF_experi
+
+### tool_use
+Bash: cd /tmp/claude-0/-home-user/db7054f3-75e8-5d58-9981-ce723c029a42/scratchpad/a13; git -C kexp_full.git log main --since=2026-08-01 --format='@@' --name-only -- kexp/experiments | grep -v '^@@' | grep -v '^$' | sort | uniq -c | sort -rn | head -45
+
+### tool_result (truncated)
+fatal: invalid --pretty format: @@
+
+### tool_use
+Bash: cd /tmp/claude-0/-home-user/db7054f3-75e8-5d58-9981-ce723c029a42/scratchpad/a13; git -C kexp_full.git log main --since=2026-08-01 --format='format:' --name-only -- kexp/experiments | grep -v '^$' | sort | uniq -c | sort -rn | head -50
+
+### tool_result (truncated)
+     22 kexp/experiments/default_experiments/hf_tweezer_bec.py
+     16 kexp/experiments/HF_experiments/feedback/calibrations/check_rabi_frequency.py
+     13 kexp/experiments/HF_experiments/feedback/tools/align_apd_alternate_spin.py
+     12 kexp/experiments/HF_experiments/feedback/calibrations/check_lightshift.py
+     10 kexp/experiments/HF_experiments/feedback/expt_params_feedback.py
+      9 kexp/experiments/default_experiments/lightsheet_load.py
+      9 kexp/experiments/HF_experiments/feedback/calibrations/apd_voltage_vs_state_2.py
+      9 kexp/experiments/HF_experiments/Rydberg/hf_bec_rydberg_scan.py
+      9 kexp/experiments/HF_experiments/Rydberg/expt_builders/ry_scan_expt_builder_fixed.i
+
+### tool_use
+Bash: cd /tmp/claude-0/-home-user/db7054f3-75e8-5d58-9981-ce723c029a42/scratchpad/a13; sort -t$'\t' -k2 -rn filestats.tsv | grep EXISTS | head -30 | cut -f1-4
+
+### tool_result (truncated)
+kexp/experiments/JE/trouble_shoot_cooling/magtrap.py	110	2025-04-21	2026-09-08
+kexp/experiments/JE/trouble_shoot_cooling/lightsheet_load.py	89	2025-04-25	2026-09-08
+kexp/experiments/JE/trouble_shoot_cooling/hf_tweezer_evap.py	80	2025-06-07	2026-08-11
+kexp/experiments/HF_experiments/hf_raman.py	75	2025-12-17	2026-09-08
+kexp/experiments/default_experiments/mag_trap.py	59	2024-04-23	2026-09-21
+kexp/experiments/default_experiments/gm_tof.py	58	2024-04-16	2026-09-27
+kexp/experiments/default_experiments/hf_tweezer_bec.py	54	2025-12-16	2026-09-26
+kexp/experiments/JE/trouble_shoot_cooling/lf_tweezer_evap.py	46	2025-06-22	2025-11-05
+kexp/experiments/HF_experiments/feedback/expt_params_feedback.py	42	
+
+### tool_use
+Bash: cd /home/user/k-exp/kexp/experiments/default_experiments; for f in hf_tweezer_bec.py hf_tweezer_LOAD.py; do echo "=== $f"; cat -n $f; done
+
+### tool_result (truncated)
+=== hf_tweezer_bec.py
+     1	
+     2	import numpy as np
+     3	from artiq.experiment import *
+     4	from artiq.language.core import delay, kernel
+     5	from kexp import Base, img_types, cameras, Adjust
+     6	
+     7	
+     8	class hf_bec(EnvExperiment, Base):
+     9	
+    10	    def prepare(self):
+    11	        Base.__init__(self,
+    12	                      save_data=True,
+    13	                      camera_select=cameras.andor,
+    14	                      imaging_type=img_types.ABSORPTION,
+    15	                      warmup_shots=4)
+    16	
+    17	        self.p.t_mot_load = 1.0
+    18	        self.p.t_tweezer_hold = 100.e-3
+    19	
+    20	        # self.xvar('t_tof',np.linspace(1000
+
+### tool_use
+Bash: cd /home/user/wax/waxx-src/waxx/base; grep -n "def end\|def end_wax\|restart_monitor\|notify" expt.py | head -40
+
+### tool_result (truncated)
+220:        self._notify_shot_complete()
+222:    def _notify_shot_complete(self):
+223:        """RPC: notify the liveOD server that one shot has completed."""
+372:            self._restart_monitor_once()
+386:    def end_wax(self, expt_filepath,
+387:                notify=True,
+388:                restart_monitor=True):
+413:        if notify:
+422:            if restart_monitor:
+
+### tool_use
+Bash: cd /home/user/wax/waxx-src/waxx/base; sed -n 330,520p expt.py; grep -n "def end" /home/user/k-exp/kexp/base/*.py
+
+### tool_result (truncated)
+        self._abort_snapshot_kernels = m._snapshot_kernels
+        self._abort_snap_dds_f = m._snap_dds_f
+        self._abort_snap_dds_a = m._snap_dds_a
+        self._abort_snap_dds_v = m._snap_dds_v
+        self._abort_snap_dds_sw = m._snap_dds_sw
+        self._abort_snap_dac_v = m._snap_dac_v
+        self._abort_snap_ttl_s = m._snap_ttl_s
+
+    def _report_abort_state(self, what, dds_f, dds_a, dds_v, dds_sw, dac_v, ttl_s):
+        """RPC from scan()'s exception handler, with every channel's state in
+        the kernel at the abort (``what``: the exception's name when the
+        handler could tell, else '').  Sends it to the monitor server as this
+        run's end state and restarts the mo
+
+### tool_use
+Bash: cd /home/user/wax/waxx-src/waxx; grep -n "def signal_end" -A30 base/monitor.py | head -50; grep -rn "restart_monitor" --include=*.py . | head
+
+### tool_result (truncated)
+318:    def signal_end(self):
+319-        self._monitor_client.send_end()
+320-
+321-    def signal_ready(self):
+322-        if self._composites_enabled:
+323-            self._register_ops()
+324-        self._monitor_client.send_ready()
+325-
+326-    def connection_call(self, key, cmd, **kwargs):
+327-        """Host side (a composite op's host step): run a driver command on one
+328-        of the monitor server's connections -- the tweezer AWG is held by the
+329-        server between runs, not by this process.  Returns the result; raises
+330-        RuntimeError with the server's reason when it did not run."""
+331-        reply = self._monitor_client.connection_call(key, cmd, _jsonable(kwargs)
+
+### tool_use
+Bash: cd /tmp/claude-0/-home-user/db7054f3-75e8-5d58-9981-ce723c029a42/scratchpad/a13; git -C kexp_full.git log main --format='%h %as %an %s' -S"restart_monitor=False" -- kexp/experiments/default_experiments/hf_tweezer_bec.py 2>&1 | grep -v "Auto packing\|git help gc"
+
+### tool_result (truncated)
+0816b10f 2026-09-24 jpagett hf_tweezer_bec: current scan config (t_tof 1-4 ms, 10 repeats, shuffled, no monitor restart)
+
+### tool_use
+Bash: cd /tmp/claude-0/-home-user/db7054f3-75e8-5d58-9981-ce723c029a42/scratchpad/a13; git -C kexp_full.git log main --format='%h %as %an %s' -- kexp/experiments/default_experiments/hf_tweezer_bec.py | head -25; git -C kexp_full.git show 0816b10f --format='%B' | head -30
+
+### tool_result (truncated)
+5eb97bcc 2026-09-26 jpagett experiments: current lab configs of hf_tweezer_bec, check_lightshift, check_rabi_frequency
+0816b10f 2026-09-24 jpagett hf_tweezer_bec: current scan config (t_tof 1-4 ms, 10 repeats, shuffled, no monitor restart)
+63f56400 2026-09-22 jpagett expts
+e7c73dfd 2026-09-21 jpagett gamin
+05710b6a 2026-09-21 jpagett expts
+548ada0c 2026-09-16 jpagett gamin
+5a688e2c 2026-09-10 jpagett apd to camera type, stage control
+9e7e1633 2026-09-09 jpagett expts, apd stages
+5f3507d3 2026-09-08 jpagett Update hf_tweezer_bec.py
+82a0af79 2026-09-08 jpagett expts
+fc3830c2 2026-09-07 jpagett pre ta chip death
+0dce125f 2026-09-02 jpagett m
+904bafca 2026-09-01 jpagett expts
+f7d8bce9 2026-08-31
+
+### tool_use
+Bash: cd /home/user/k-exp/tests; cat -n test_state_reset_expt.py; sed -n 1,60p test_monitor_compiles.py
+
+### tool_result (truncated)
+     1	"""The Device Control GUI's Run MOT Observe runs kexp's reset experiment through
+     2	the monitor server (kexp.config.ip.RESET_STATE_EXPT_PATH): tools/mot_observe.py.
+     3	Its docstring names the button and is what the GUI shows before a reset, and
+     4	its end() is what reports the end state that marks the device state trusted."""
+     5	from pathlib import Path
+     6	
+     7	import kexp
+     8	from kexp.config import ip
+     9	from waxx.util.device_state.state_reset import describe_expt
+    10	from waxx.util.guis.device_summary import reset_title
+    11	
+    12	MOT_OBSERVE = Path(kexp.__file__).parent / "experiments" / "tools" / "mot_observe.py"
+    13	
+    14	
+    15	def tes
+
+### tool_use
+Bash: cd /home/user/wax/waxx-src/waxx/util/device_state; sed -n 1,80p run_loop.py
+
+### tool_result (truncated)
+"""Run one experiment file back to back, from the monitor server.
+
+The lab's use: the BEC TOF loop (kexp: ``experiments/tools/auto_tof.py``),
+started and stopped from a card on the Device Control GUI's Composite tab.  It
+runs in the monitor server because that process outlives the GUIs and already
+launches experiments the lab's way (``%kpy% & ar <file>``, as
+:class:`~waxx.util.device_state.state_reset.StateReset` does).
+
+One run at a time:
+
+* Before every run the machine must be free: liveOD reachable, no run in
+  progress there and no Abort pending, no other run announced to the server,
+  nothing else of the server's (a state reset) holding the core.  At Start a
+  failed check refuses the S
+
+### tool_use
+Bash: cd /home/user/wax/waxx-src/waxx/util/device_state; grep -n "def ar_command" -A30 monitor_manager.py
+
+### tool_result (truncated)
+84:def ar_command(expt_path) -> str:
+85-    """The shell command that runs one experiment file, as the lab does."""
+86-    return r"%kpy% & ar " + str(expt_path)
+87-
+88-
+89-def environment_report() -> list[str]:
+90-    """Lines describing the launch environment, for failure post-mortems."""
+91-    lines = []
+92-    for var in _LAUNCH_ENV_VARS:
+93-        value = os.environ.get(var)
+94-        lines.append(f"%{var}% = {value if value else '<UNSET>'}")
+95-    found = shutil.which("ar") or shutil.which("artiq_run")
+96-    lines.append(f"'ar'/'artiq_run' on PATH = {found or '<NOT FOUND>'}")
+97-    lines.append(f"working directory = {os.getcwd()}")
+98-    return lines
+99-
+100-
+101-class MonitorMa
+
+### tool_use
+Bash: cd /tmp/claude-0/-home-user/db7054f3-75e8-5d58-9981-ce723c029a42/scratchpad/wiki; grep -n "mot_observe\|auto_tof\|BEC TOF\|MOT Observe\|monitor.py\|experiments/" *.md | grep -v "^Real-Time" | head -30; echo; grep -n "mot_observe\|auto_tof\|BEC TOF loop\|experiments/" "Real-Time-Device-Control-(Monitor).md" | head -40
+
+### tool_result (truncated)
+Code-architecture---kexp-waxa-waxx.md:17:- **`kexp`** — *the potassium machine.* Everything specific to *our* experiment: which AOM is on which DDS channel (`config/*_id.py`), our parameter values (`config/expt_params.py`), our composite devices (coils, lightsheet, tweezers, Raman), and the actual experiment files in `kexp/experiments/`. `kexp.Base` stitches the layers together.
+Code-architecture---kexp-waxa-waxx.md:46:| The Monitor (real-time control between shots) | `waxx/base/monitor.py` | `from waxx.base import Monitor` |
+DataVault---Saving-experiment-data.md:59:From [`kexp/experiments/test/sampler_data_saver_test.py`](https://github.com/ucsb-amo/k-exp/blob/main/kexp/experiments/test/sam
+
+### tool_use
+Bash: cd /tmp/claude-0/-home-user/db7054f3-75e8-5d58-9981-ce723c029a42/scratchpad/wiki; grep -n -i "run loop\|TOF loop\|run_loop\|RUN_LOOP" *.md | head; sed -n 375,410p "Real-Time-Device-Control-(Monitor).md"
+
+### tool_result (truncated)
+Real-Time-Device-Control-(Monitor).md:735:  run loop's next run would otherwise take it straight back); a GUI may
+trusted `abort_state`, see *Aborted runs* above), or by
+**Trust state…** on that banner (you assert the file is right; recorded in
+the journal with your name).  Coil ramps from the Composite tab start from
+the Keysight's *measured* current while the state is untrusted, and are
+refused if there is no fresh reading.
+
+**Run MOT Observe** on the same banner (also in the status row next to
+**Start monitor**, usable any time) puts the hardware in a known state
+instead of vouching for it.  The banner itself only says the state is
+untrusted; hover it for why.  The button takes its name f
+
+### tool_use
+Bash: cd /home/user/k-exp/kexp/experiments/default_experiments; for f in lf_tweezer_evap.py lf_tweezer.py lf_tweezer_LOAD.py; do echo "=== $f"; cat -n $f | grep -v "^\s*[0-9]*\s*#" ; done
+
+### tool_result (truncated)
+=== lf_tweezer_evap.py
+     1	from artiq.experiment import *
+     2	from artiq.experiment import delay
+     3	from kexp import Base, img_types, cameras
+     4	import numpy as np
+     5	from kexp.util.artiq.async_print import aprint
+     6	from kexp.calibrations.tweezer import tweezer_vpd1_to_vpd2
+     7	from kexp.calibrations.imaging import high_field_imaging_detuning
+     8	
+     9	class tweezer_load(EnvExperiment, Base):
+    10	
+    11	    def prepare(self):
+    12	        Base.__init__(self,setup_camera=True,
+    13	                      camera_select=cameras.andor,
+    14	                      save_data=True)
+    15	
+    17	        self.p.v_pd_lf_tweezer_1064_ramp_end=8.9
+    18	        
+
+### tool_use
+Bash: cd /home/user/k-exp/kexp; cat -n base/cameras.py | sed -n 1,164p
+
+### tool_result (truncated)
+     1	import numpy as np
+     2	import logging
+     3	from collections import namedtuple
+     4	
+     5	from artiq.experiment import *
+     6	from artiq.experiment import delay, parallel, sequential
+     7	
+     8	from waxa.data.run_info import RunInfo
+     9	
+    10	from waxx.control.artiq.TTL import TTL, DummyTTL
+    11	from waxx.control.slm.slm import SLM
+    12	from waxx.control.beat_lock import BeatLockImaging, PolModBeatLock
+    13	
+    14	from kexp.config.dds_id import dds_frame
+    15	from kexp.config.ttl_id import ttl_frame
+    16	from kexp.config.expt_params import ExptParams
+    17	from kexp.config.camera_id import cameras, img_types, CameraParams
+    18	
+    19	class ImagingConf
+
+### tool_use
+Bash: cd /home/user/k-exp/kexp/config; cat -n camera_id.py
+
+### tool_result (truncated)
+     1	from waxx.control.cameras.camera_param_classes import CameraParams, BaslerParams, AndorParams, APDParams, img_types
+     2	from waxx.config.camera_id import camera_frame as camera_frame_waxx
+     3	
+     4	class camera_frame(camera_frame_waxx):
+     5	    def __init__(self):
+     6	
+     7	        self.setup()
+     8	
+     9	        # Andor DU897_EXF vertical-clock settings. Dark-frame CIC sweep on
+    10	        # 2026-09-23 (EM gain 300, 10 us exposure, -63 C, 20 frames/config,
+    11	        # fixed threshold = gain-1 bias + 6 sigma):
+    12	        #   vs=0.5 us, +3 (old):    2.7e-2 events/pix/frame, readout 18.1 ms
+    13	        #   vs=0.3 us, Normal:       3.9e-4 events/pix/fra
+
+### tool_use
+Bash: cd /home/user/k-exp/kexp; grep -n "    def " base/image.py; grep -n "frequency_detuned_imaging_m1\|frequency_detuned_hf_f1m1\|imaging_state\|frequency_detuned_imaging\b\|frequency_detuned_imaging =\|t_tof\b\|t_tof =\|N_repeats\|t_mot_load\|t_2D_mot_load_delay\|t_tweezer_hold =" config/expt_params.py
+
+### tool_result (truncated)
+35:    def __init__(self):
+63:    def record_imaging_conditions(self):
+82:    def set_imaging_shutters(self):
+106:    def close_imaging_shutters(self):
+113:    def light_image(self, t=dv):
+129:    def dark_image(self):
+137:    def pulse_imaging_light(self,t=dv,
+203:    def pulse_img_beam(self,t):
+212:    def pulse_2d_mot_beams(self,t,
+250:    def pulse_resonant_mot_beams(self,t,
+282:    def pulse_D1_beams(self,t,
+310:    def dispersive_image(self,repeats=1,repeat_delay=100.e-3):
+317:    def abs_image(self, leave_traps_on=False):
+331:    def abs_image_in_trap(self):
+337:    def abs_image_and_apd(self, data_container,
+356:    def pwoa_and_dark_img(self):
+368:    def kill_imaging_light(self):  
+
+### tool_use
+Bash: cd /home/user/k-exp/kexp; sed -n 300,518p base/image.py
+
+### tool_result (truncated)
+        self.dds.d1_3d_r.set_dds_gamma(detune_r, v_pd=v_pd_r)
+        with parallel:
+            self.dds.d1_3d_c.on()
+            self.dds.d1_3d_r.on()
+        delay(t)
+        with parallel:
+            self.dds.d1_3d_c.off()
+            self.dds.d1_3d_r.off()
+
+    @kernel
+    def dispersive_image(self,repeats=1,repeat_delay=100.e-3):
+        for n in range(repeats):
+            self.trigger_camera()
+            self.pulse_imaging_light(self.params.t_imaging_pulse * s)
+            delay(repeat_delay)
+
+    @kernel
+    def abs_image(self, leave_traps_on=False):
+        """Takes a light image (PWA), delays, another light image (PWOA), delay,
+        then a dark image.
+        """        
+    
+
+### tool_use
+Bash: cd /home/user/k-exp/kexp/experiments/default_experiments; for f in hf_raman.py hf_imaging.py align_raman.py align_gm.py; do echo "=== $f"; cat -n $f | grep -v "^\s*[0-9]*\s*#" | grep -v "^\s*[0-9]*\s*$"; done
+
+### tool_result (truncated)
+=== hf_raman.py
+     2	import numpy as np
+     3	from artiq.experiment import *
+     4	from artiq.language.core import delay, kernel
+     5	from kexp import Base, img_types, cameras
+     8	class hf_bec(EnvExperiment, Base):
+    10	    def prepare(self):
+    11	        Base.__init__(self,setup_camera=True,save_data=True,
+    12	                      camera_select=cameras.andor,
+    13	                      imaging_type=img_types.ABSORPTION)
+    15	        self.p.t_tweezer_hold = 1.e-3
+    16	        self.p.t_tof = 300.e-6
+    18	        self.p.fraction_power_raman = .2
+    20	        self.p.N_repeats = 1
+    21	        self.p.t_mot_load = 1.0
+    23	        self.finish_prepare(shuffle=True)
+ 
+
+### tool_use
+Bash: cd /home/user/k-exp/kexp/config; sed -n 1,30p expt_params.py; grep -n "def \|class " expt_params.py
+
+### tool_result (truncated)
+import numpy as np
+from numpy import int64
+from waxx.config.expt_params import ExptParams as ExptParamsWaxx
+from kexp.config.dds_calibration import DDS_VVA_Calibration
+
+class ExptParams(ExptParamsWaxx):
+    def __init__(self):
+        super().__init__()
+
+        self.t_rtio = 8.e-9
+
+        self.N_shots = 1
+        self.N_warmup_shots = 0
+        self.N_repeats = 1
+        self.N_img = 1
+        self.N_shots_with_repeats = 1
+        self.N_pwa_per_shot = 1
+
+        #Magnet
+        self.t_keysight_analog_response = 27.2e-3
+        self.t_hbridge_switch_delay = 80.e-3
+        self.t_contactor_close_delay = 25.e-3
+        self.t_contactor_open_delay = 12.e-3
+
+        #Imaging
+        self.t_ima
+
+### tool_use
+Bash: cd /tmp; python3 -c "import numpy, sys; print(numpy.__version__, sys.version)"; PYTHONPATH=/home/user/k-exp:/home/user/wax/waxx-src:/home/user/wax/waxa-src python3 -c "
+from kexp.config.expt_params import ExptParams
+p=ExptParams()
+print(len(vars(p)))
+" 2>&1 | tail -3
+
+### tool_result (truncated)
+Traceback (most recent call last):
+  File "<string>", line 1, in <module>
+ModuleNotFoundError: No module named 'numpy'
+  File "/home/user/k-exp/kexp/config/expt_params.py", line 1, in <module>
+    import numpy as np
+ModuleNotFoundError: No module named 'numpy'
+
+### tool_use
+Bash: mkdir -p /tmp/claude-0/-home-user/db7054f3-75e8-5d58-9981-ce723c029a42/scratchpad/a13 && cat > /tmp/claude-0/-home-user/db7054f3-75e8-5d58-9981-ce723c029a42/scratchpad/a13/lint.py <<'EOF'
+import ast, re, os, sys, glob, json
+KEXP='/home/user/k-exp/kexp'; WAXX='/home/user/wax/waxx-src/waxx'; WAXA='/home/user/wax/waxa-src/waxa'
+def self_assigns(path):
+    src=open(path,encoding='utf-8',errors='replace').read()
+    names=set(re.findall(r'self\.(\w+)\s*(?::[^=\n]+)?=(?!=)',src))
+    names|=set(re.findall(r"vars\(self\)\[['\"](\w+)['\"]\]",src))
+    return names
+params=set()
+for p in [f'{KEXP}/config/expt_params.py', f'{WAXX}/config/expt_params.py', f'{WAXA}/config/expt_params.py']:
+    if os.path.exists(p): params|=self_assigns(p)
+# methods available on Base
+meths=set()
+for d in [f'{KEXP}/base', f'{WAXX}/base', f'{WAXA}/base']:
+    for f in glob.glob(d+'/*.py'):
+        src=open(f,encoding='utf-8',errors='replace').read()
+        meths|=set(re.findall(r'^\s+def (\w+)\(',src,re.M))
+# base attributes (self.X = in base mixins) e.g. dds, ttl, tweezer
+battrs=set()
+for d in [f'{KEXP}/base', f'{WAXX}/base', f'{WAXA}/base']:
+    for f in glob.glob(d+'/*.py'):
+        battrs|=self_assigns(f)
+def lint(path):
+    src=open(path,encoding='utf-8',errors='replace').read()
+    try: tree=ast.parse(src)
+    except SyntaxError as e: return {'syntax':str(e)}
+    # strip comments handled by AST
+    reads=set(); local_param_sets=set(); xvars=set(); adjusts=set(); calls=set(); local_defs=set(); selfattr
+
+### tool_result (truncated)
+{
+ "default_experiments/mot_tof.py": {
+  "classes": [
+   "gm_tof"
+  ],
+  "unknown_params": [],
+  "unknown_calls": [],
+  "misassign": [
+   "detune_d2_c_hmot",
+   "detune_d2_c_mot",
+   "detune_d2_r_hmot",
+   "detune_d2_r_mot",
+   "v_xshim_current"
+  ],
+  "xvars": [],
+  "adjusts": [],
+  "imports": [
+   [
+    "kexp",
+    [
+     "Base",
+     "cameras"
+    ]
+   ]
+  ]
+ },
+ "default_experiments/hf_imaging.py": {
+  "classes": [
+   "hf_imaging"
+  ],
+  "unknown_params": [
+   "t_lightsheet_rampdown",
+   "t_lightsheet_rampdown2",
+   "v_pd_lightsheet_rampdown2_end"
+  ],
+  "unknown_calls": [],
+  "misassign": [],
+  "xvars": [
+   "frequency_detuned_imaging",
+   "i_evap2_current"
+  ],
+  "adjusts": [],
+  "impo
+
+### tool_use
+Bash: cat >> /tmp/claude-0/-home-user/db7054f3-75e8-5d58-9981-ce723c029a42/scratchpad/a13/lint.py <<'EOF'
+
+ROOTS={'kexp':'/home/user/k-exp','waxx':'/home/user/wax/waxx-src','waxa':'/home/user/wax/waxa-src'}
+def mod_path(mod):
+    top=mod.split('.')[0]
+    base=os.path.join(ROOTS[top],*mod.split('.'))
+    if os.path.isdir(base) and os.path.exists(base+'/__init__.py'): return base+'/__init__.py'
+    if os.path.exists(base+'.py'): return base+'.py'
+    return None
+def defined_names(path):
+    src=open(path,encoding='utf-8',errors='replace').read()
+    names=set(re.findall(r'^(?:def|class)\s+(\w+)',src,re.M))
+    names|=set(re.findall(r'^(\w+)\s*=',src,re.M))
+    names|=set(re.findall(r'import\s+.*?\bas\s+(\w+)',src))
+    for m in re.findall(r'^from\s+\S+\s+import\s+\(?([^\n)]+)',src,re.M):
+        for part in m.split(','):
+            part=part.strip()
+            if not part: continue
+            names.add(part.split(' as ')[-1].strip())
+    names|=set(re.findall(r"'(\w+)':\s*\(",src))  # lazy table
+    # submodules
+    d=os.path.dirname(path)
+    if path.endswith('__init__.py'):
+        for f in os.listdir(d):
+            if f.endswith('.py'): names.add(f[:-3])
+            elif os.path.isdir(os.path.join(d,f)): names.add(f)
+    return names
+def check_imports(imps):
+    bad=[]
+    for mod,names in imps:
+        p=mod_path(mod)
+        if p is None: bad.append(f'{mod} (module missing)'); continue
+        dn=defined_names(p)
+        for n in names:
+            if n!='*' and n not in dn
+
+### tool_result (truncated)
+(root) {'files': 1, 'clean': 1}
+HF_experiments {'files': 89, 'clean': 78, 'misassign': 6, 'unknown_params': 9, 'unknown_calls': 2, 'syntax': 1}
+JE {'files': 62, 'unknown_params': 27, 'bad_imports': 1, 'clean': 34, 'misassign': 3, 'unknown_calls': 1}
+JK {'files': 13, 'bad_imports': 2, 'clean': 10, 'unknown_calls': 1}
+JP {'files': 89, 'unknown_params': 9, 'clean': 59, 'unknown_calls': 16, 'bad_imports': 2, 'syntax': 3, 'misassign': 2}
+JWY {'files': 12, 'bad_imports': 4, 'misassign': 2, 'clean': 7, 'unknown_calls': 2, 'unknown_params': 1}
+LF_experiments {'files': 6, 'unknown_calls': 4, 'unknown_params': 3, 'clean': 2}
+MBL {'files': 5, 'clean': 5}
+Mloop testing {'files': 8, 'clean': 6, 'bad_impo
+
+### tool_use
+Bash: cd /tmp/claude-0/-home-user/db7054f3-75e8-5d58-9981-ce723c029a42/scratchpad/a13; python3 - <<'EOF'
+import json,os
+r=json.load(open('lint_all.json'))
+base='/home/user/k-exp/kexp/experiments/'
+for f,v in r.items():
+    rel=f[len(base):]
+    if not rel.split('/')[0] in ('default_experiments','tools','calibration','measurements','qm','test'): continue
+    if 'syntax' in v: print(rel,'SYNTAX',v['syntax']); continue
+    iss={k:v[k] for k in ('unknown_params','unknown_calls','bad_imports','misassign') if v[k]}
+    print(f"{rel:70s} cls={v['classes']} xv={v['xvars']} adj={len(v['adjusts'])} {iss if iss else ''}")
+EOF
+
+### tool_result (truncated)
+calibration/apd_voltage_vs_state.py                                    cls=['sigma_z'] xv=['t_raman_pulse'] adj=0 
+calibration/basler_magnification.py                                    cls=['gm_tof'] xv=['t_tof'] adj=0 
+calibration/calibrate_hf_imaging.py                                    cls=['calibrate_hf_image_detuning'] xv=['hf_imaging_detuning', 'i_feshbach_current'] adj=0 
+calibration/calibrate_lf_imaging.py                                    cls=['calibrate_hf_image_detuning'] xv=['i_lf_current', 'lf_imaging_detuning'] adj=0 
+calibration/calibrate_lf_imaging_pid.py                                cls=['calibrate_hf_image_detuning'] xv=['lf_imaging_detuning'] adj=0 
+calibration/find_h
+
+### tool_use
+Bash: cd /home/user/k-exp/kexp; grep -rn "t_raman_pulse" config/expt_params.py base/*.py | head; grep -n "def prep_raman" -A25 base/*.py | head -40
+
+### tool_result (truncated)
+base/control.py:237:        play (t_raman_pulse = 0) can hand back within a microsecond of the
+base/feedback.py:172:        # p.t_raman_pulse / p.t_raman_pulse_ideal unless the caller sets them
+base/feedback.py:175:        dt_eff = self.t_raman_pulse_current
+base/feedback.py:176:        dt_ideal = self.t_raman_pulse_ideal_current
+base/feedback.py:374:        t_raman_pulse,
+base/feedback.py:380:        t_raman_pulse_mu = np.int64(t_raman_pulse * 1.0e9)
+base/feedback.py:385:            + t_raman_pulse_mu
+base/feedback.py:398:            t_raman_pulse=self.p.t_raman_pulse,
+base/feedback.py:457:        self.t_raman_pulse_current = float(getattr(self.p, "t_raman_pulse", 0.0))
+base/feedback.py:458
+
+### tool_use
+Bash: cd /home/user/k-exp/kexp; grep -rn "t_raman_pulse\|t_raman_pi_pulse" config/ | head; cd /tmp/claude-0/-home-user/db7054f3-75e8-5d58-9981-ce723c029a42/scratchpad/a13; git -C kexp_full.git log main --format='%h %as %an %s' -S"self.t_raman_pulse" -- kexp/config/expt_params.py 2>&1 | grep -v "Auto pack\|git help" | head
+
+### tool_result (truncated)
+Command did not complete within its 300s timeout and was moved to the background (ID: bh6hjrhh3). Output is being written to: /tmp/claude-0/-home-user/db7054f3-75e8-5d58-9981-ce723c029a42/tasks/bh6hjrhh3.output. If it exits while you are still working you will be notified, but it is terminated when you give your final response and no notification can follow that — so do not end your turn to wait for it; if you need its result, wait for it before giving your final response. To check interim output, use Read on that file path.
+Session cwd remains /home/user; directory changes made by the backgrounded command do not apply to subsequent commands.
+
+### tool_use
+Bash: cd /home/user/k-exp/kexp/experiments/default_experiments; cat -n hf_raman.py | sed -n 1,25p; grep -rn "t_raman_pulse" /home/user/k-exp/kexp/control /home/user/wax/waxx-src/waxx/control/raman_beams.py | head -5
+
+### tool_result (truncated)
+     1	
+     2	import numpy as np
+     3	from artiq.experiment import *
+     4	from artiq.language.core import delay, kernel
+     5	from kexp import Base, img_types, cameras
+     6	
+     7	
+     8	class hf_bec(EnvExperiment, Base):
+     9	
+    10	    def prepare(self):
+    11	        Base.__init__(self,setup_camera=True,save_data=True,
+    12	                      camera_select=cameras.andor,
+    13	                      imaging_type=img_types.ABSORPTION)
+    14	        
+    15	        self.p.t_tweezer_hold = 1.e-3
+    16	        self.p.t_tof = 300.e-6
+    17	
+    18	        self.p.fraction_power_raman = .2
+    19	
+    20	        self.p.N_repeats = 1
+    21	        self.p.t_mot_load = 1.0
+  
+
+### tool_use
+Bash: cd /tmp/claude-0/-home-user/db7054f3-75e8-5d58-9981-ce723c029a42/scratchpad/a13; for rev in $(git -C kexp_full.git log main --format=%h --until=2026-07-17 -1) $(git -C kexp_full.git log main --format=%h --until=2026-08-15 -1) $(git -C kexp_full.git log main --format=%h --until=2026-09-10 -1); do echo "$rev $(git -C kexp_full.git show $rev:kexp/config/expt_params.py 2>/dev/null | grep -c 't_raman_pulse')"; done
+
+### tool_result (truncated)
+884da71f 0
+6e88f202 0
+1e60dd55 0
+
+### tool_use
+Bash: cd /home/user/k-exp/kexp; grep -rn "t_raman_pulse\s*=" --include=*.py . | grep -v "experiments/" | head; grep -rln "p.t_raman_pulse\s*=" experiments | head -5; grep -rn "t_raman_pulse" /home/user/wax --include=*.py | grep -v tests | head -5
+
+### tool_result (truncated)
+./base/feedback.py:398:            t_raman_pulse=self.p.t_raman_pulse,
+./base/control.py:237:        play (t_raman_pulse = 0) can hand back within a microsecond of the
+./analysis/rabi_posterior_cli.py:541:    kw = dict(apd=rd.apd, t_raman_pulse=rd.t_eff, calibration=copy.deepcopy(cal))
+./analysis/rabi_posterior_cli.py:586:    return dict(apd=rd.apd, t_raman_pulse=rd.t_eff, calibration=copy.deepcopy(cal),
+./analysis/rabi_posterior_cli.py:735:        jb = RabiJointPosterior(None, apd=rd.apd[idx], t_raman_pulse=rd.t_eff[idx],
+./analysis/rabi_posterior_cli.py:816:        jb = RabiJointPosterior(None, apd=rd.apd, t_raman_pulse=rd.t_eff, calibration=c,
+./analysis/rabi_posterior_cli.py:856:    rp =
+
+### tool_use
+Bash: cd /home/user/k-exp/kexp/experiments/default_experiments; for f in find_hf_lightsheet_imaging_detuning_direct.py find_hf_lightsheet_imaging_detuning_from_loss.py find_hf_tweezer_imaging_detuning_direct.py find_hf_tweezer_imaging_detuning_from_loss.py; do echo "=== $f"; cat -n $f | grep -v "^\s*[0-9]*\s*#" | grep -v "^\s*[0-9]*\s*$"; done
+
+### tool_result (truncated)
+=== find_hf_lightsheet_imaging_detuning_direct.py
+     1	from artiq.experiment import *
+     2	from artiq.language.core import delay, now_mu, at_mu
+     3	from kexp import Base, Adjust
+     4	import numpy as np
+     5	from kexp.calibrations import high_field_imaging_detuning
+     6	from kexp import Base, img_types, cameras
+     8	from artiq.coredevice.shuttler import DCBias, DDS, Relay, Trigger, Config, shuttler_volt_to_mu
+    10	T32 = 1<<32
+    12	class mag_trap(EnvExperiment, Base):
+    14	    def prepare(self):
+    15	        Base.__init__(self,
+    16	                      save_data=True,
+    17	                      camera_select=cameras.xy_basler,
+    18	                      imaging_t
+
+### tool_use
+Bash: cat /tmp/claude-0/-home-user/db7054f3-75e8-5d58-9981-ce723c029a42/tasks/bh6hjrhh3.output | grep -v "Auto pack\|git help"; grep -n "t_raman_pi_pulse\|frequency_detuned_in_trap\|imaged_state_mF" /home/user/k-exp/kexp/config/expt_params.py
+
+### tool_result (truncated)
+grep: config/__pycache__/expt_params.cpython-311.pyc: binary file matches
+config/expt_params.py:159:        # self.t_raman_pi_pulse = 8.3588e-06 #76021, 2026-08-20
+config/expt_params.py:160:        # self.t_raman_pi_pulse = 8.8237e-06 #76038, 2026-08-20
+config/expt_params.py:161:        # self.t_raman_pi_pulse = 8.9806e-06 #76115, 2026-08-21
+config/expt_params.py:162:        # self.t_raman_pi_pulse = 8.6438e-06 #76216, 2026-08-24
+config/expt_params.py:163:        # self.t_raman_pi_pulse = 6.5333e-06 #78264, 2026-09-02
+config/expt_params.py:164:        # self.t_raman_pi_pulse = 6.70885e-06 #78301 rabi posterior 2026-09-02
+config/expt_params.py:165:        # self.t_raman_pi_pulse = 7.1284e-06 
+
+### tool_use
+Bash: cd /home/user/k-exp/kexp/experiments/default_experiments; for f in andor_repeats.py init_dds.py find_img_amplitude_andor.py find_img_amplitude_xy.py find_resonant_0_field_img_detuning.py; do echo "=== $f"; cat -n $f | grep -v "^\s*[0-9]*\s*#" | grep -v "^\s*[0-9]*\s*$"; done
+
+### tool_result (truncated)
+=== andor_repeats.py
+     1	from artiq.experiment import *
+     2	from artiq.experiment import delay
+     3	from kexp import Base
+     4	import numpy as np
+     5	from kexp.util.artiq.async_print import aprint
+     7	class lightsheet_from_magtrap(EnvExperiment, Base):
+     9	    def prepare(self):
+    10	        Base.__init__(self,setup_camera=True,camera_select='andor',save_data=False)
+    11	        self.xvar('dummy',[0]*10000)
+    12	        self.finish_prepare(shuffle=True)
+    14	    @kernel
+    15	    def scan_kernel(self):
+    16	        delay(0.25)
+    17	        self.flash_repump()
+    18	        self.abs_image()
+    20	    @kernel
+    21	    def run(self):
+    22	        self.init_
+
+### tool_use
+Bash: cd /home/user; grep -rn "amp_imaging" wax/waxx-src/waxx/base wax/waxx-src/waxx/control/cameras/camera_param_classes.py k-exp/kexp/base k-exp/kexp/config/expt_params.py | head -30
+
+### tool_result (truncated)
+wax/waxx-src/waxx/control/cameras/camera_param_classes.py:156:            self.amp_imaging = self.__amp_absorption__
+wax/waxx-src/waxx/control/cameras/camera_param_classes.py:160:            self.amp_imaging = self.__amp_fluorescence__
+wax/waxx-src/waxx/control/cameras/camera_param_classes.py:164:            self.amp_imaging = self.__amp_dispersive__
+wax/waxx-src/waxx/control/cameras/camera_param_classes.py:246:            self.amp_imaging = self.__amp_absorption__
+wax/waxx-src/waxx/control/cameras/camera_param_classes.py:250:            self.amp_imaging = self.__amp_fluorescence__
+wax/waxx-src/waxx/control/cameras/camera_param_classes.py:254:            self.amp_imaging = self.__amp_dispers
+
+### tool_use
+Bash: cd /home/user/k-exp/kexp; sed -n 140,370p base/base.py
+
+### tool_result (truncated)
+    @kernel
+    def init_kernel(self, run_id = True,
+                    init_dds =  True, 
+                    init_dac = True,
+                    dds_set = True, 
+                    dds_off = True, 
+                    init_sampler = True,
+                    init_imaging = True,
+                    beat_ref_on=True,
+                    init_shuttler = True, 
+                    init_lightsheet = True,
+                    setup_awg = True, 
+                    setup_slm = True,
+                    init_magnets = True,
+                    init_ry = True,
+                    force_dds_init = True):
+        """
+        force_dds_init: run the full AD9910 init on every channel. By default
+  
+
+### tool_use
+Bash: cd /home/user/k-exp; git log --format='%h %as %an %s' -S"force_dds_init = True" -- kexp/base/base.py; git log --format='%h %as %an %s' -S"force_dds_init = False" -- kexp/base/base.py; git log --format='%h %as %an %s' -S"force_dds_init" -- kexp/base/base.py
+
+### tool_result (truncated)
+c5fd0b0 2026-09-24 jpagett kexp: every public name in kexp/__init__ is lazy
+5c86c33 2026-09-23 jpagett handoff/handback
+c5fd0b0 2026-09-24 jpagett kexp: every public name in kexp/__init__ is lazy
+5c86c33 2026-09-23 jpagett handoff/handback
+
+### tool_use
+Bash: cd /tmp/claude-0/-home-user/db7054f3-75e8-5d58-9981-ce723c029a42/scratchpad/a13; timeout 280 git -C kexp_full.git log main --since=2026-08-01 --format='%h %as %an %s' -S"force_dds_init = True" -- kexp/base/base.py 2>&1 | grep -v "Auto pack\|git help"
+
+### tool_result (truncated)
+68d8dcb8 2026-09-22 jpagett cut prints, conditional ry 980 siglent reset
+
+### tool_use
+Bash: cd /tmp/claude-0/-home-user/db7054f3-75e8-5d58-9981-ce723c029a42/scratchpad/a13; git -C kexp_full.git show 68d8dcb8 -- kexp/base/base.py | grep -n "force_dds_init" ; git -C kexp_full.git show 68d8dcb8 --stat --format='%B' | head -20
+
+### tool_result (truncated)
+23:-                    force_dds_init = False):
+24:+                    force_dds_init = True):
+26:         force_dds_init: run the full AD9910 init on every channel. By default
+cut prints, conditional ry 980 siglent reset
+
+
+ kexp/base/base.py | 6 +++---
+ 1 file changed, 3 insertions(+), 3 deletions(-)
+
+### tool_use
+Bash: cd /home/user/k-exp/kexp; grep -n "def init_all_dds" -A60 base/devices.py | head -80
+
+### tool_result (truncated)
+305:    def init_all_dds(self, force=False):
+306-        """Brings up every AD9910, skipping the ones that still hold their PLL /
+307-        SYNC setup from an earlier run (~1.4 s a run). See
+308-        waxx.control.ad9910_fast_init. force=True runs the full init on every
+309-        channel -- Base.init_kernel(force_dds_init=True)."""
+310-        self.dds_initializer.init(force)
+311-
+312-    @kernel
+313-    def init_all_cpld(self):
+314-        for ddss in self.dds.dds_array:
+315-            ddss[0].cpld_device.init()
+316-            delay(1e-3)
+317-        for dds in self.dds.dds_list:
+318-            dds.dds_device.set_att(0.*dB)
+319-
+320-    # def shutdown_sources(self):
+321-    #     f
+
+### tool_use
+Bash: cd /home/user/k-exp/kexp/experiments/default_experiments; for f in ramsey_measure_T2star.py spin_echo_measure_T2.py scan_2d_mot.py hybrid_mot.py; do echo "=== $f"; cat -n $f | grep -v "^\s*[0-9]*\s*#" | grep -v "^\s*[0-9]*\s*$"; done
+
+### tool_result (truncated)
+=== ramsey_measure_T2star.py
+     1	from artiq.experiment import *
+     2	from artiq.experiment import delay
+     3	from kexp import Base, img_types, cameras
+     4	import numpy as np
+     5	from kexp.calibrations.tweezer import tweezer_vpd1_to_vpd2
+     6	from kexp.calibrations.imaging import high_field_imaging_detuning
+     7	from artiq.coredevice.sampler import Sampler
+     8	from artiq.language import now_mu
+    10	class hf_raman(EnvExperiment, Base):
+    12	    def prepare(self):
+    13	        Base.__init__(self,setup_camera=True,
+    14	                      camera_select=cameras.andor,
+    15	                      save_data=True,
+    16	                      imaging_type=img_types.AB
+
+### tool_use
+Bash: cd /home/user/k-exp/kexp/experiments/default_experiments; for f in hf_bec_lifetime.py hf_evap_vs_endpoint_and_paint.py gm_tof_basler_Fk.py mot_gm_overlap.py mot_gm_magtrap_lightsheet_overlap.py; do echo "=== $f"; cat -n $f | grep -v "^\s*[0-9]*\s*#" | grep -v "^\s*[0-9]*\s*$"; done
+
+### tool_result (truncated)
+=== hf_bec_lifetime.py
+     2	import numpy as np
+     3	from artiq.experiment import *
+     4	from artiq.language.core import delay, kernel
+     5	from kexp import Base, img_types, cameras
+     8	class hf_bec(EnvExperiment, Base):
+    10	    def prepare(self):
+    11	        Base.__init__(self,
+    12	                      setup_camera=True,
+    13	                      save_data=True,
+    14	                      camera_select=cameras.andor,
+    15	                      imaging_type=img_types.ABSORPTION)
+    17	        self.p.N_repeats = 3
+    19	        self.p.ramp_down_painting = 0
+    20	        self.xvar('ramp_down_painting',[0,1])
+    22	        self.p.t_tweezer_hold = 10.e-3
+    23	  
+
+### tool_use
+Bash: cd /home/user/wax/waxx-src/waxx/control/cameras; sed -n 1,329p camera_param_classes.py | grep -n "self\.\w* =\|def \|class " | head -90
+
+### tool_result (truncated)
+7:class RunFieldRefused(ValueError):
+11:    def __init__(self, field, value, reason):
+13:        self.field = field
+14:        self.value = value
+15:        self.reason = reason
+18:def _as_str(field, value):
+30:def _as_int(field, value):
+42:def _as_roi(value):
+57:def full_frame_roi(detector_shape):
+63:def roi_resolution(sensor_roi):
+69:def check_andor_run_fields(trigger_mode, frame_transfer, sensor_roi,
+117:class BaslerParams(CameraParams):
+119:    def __init__(self,serial_number='40320384',
+129:        self.key = key
+130:        self.camera_type = "basler"
+131:        self.serial_no = serial_number
+132:        self.trigger_source = trigger_source
+134:        self.resolution = resolution
+136
+
+### tool_use
+Bash: cd /home/user/k-exp/kexp/experiments/tools; for f in turn_on_imaging_andor.py turn_on_imaging_xy.py turn_on_magnet.py turn_on_raman.py; do echo "=== $f"; cat -n $f | grep -v "^\s*[0-9]*\s*#" | grep -v "^\s*[0-9]*\s*$"; done
+
+### tool_result (truncated)
+=== turn_on_imaging_andor.py
+     1	from artiq.experiment import *
+     2	from artiq.experiment import delay
+     3	from kexp import Base, img_types, cameras
+     4	from kexp.base.cameras import img_config
+     6	class turn_on_imaging(EnvExperiment, Base):
+     8	    def prepare(self):
+     9	        Base.__init__(self,
+    10	                      imaging_type=img_types.ABSORPTION,
+    11	                      setup_camera=False)
+    13	        self.configure_imaging_system(img_config.PID)
+    16	        self.ttl.camera = self.ttl.andor 
+    18	        self.camera_params = cameras.andor
+    20	        self.finish_prepare(shuffle=False)
+    22	    @kernel
+    23	    def run(self):
+    24	   
+
+### tool_use
+Bash: cd /home/user/wax; sed -n 1,80p waxa-src/waxa/dummy/camera_params.py; grep -n "class CameraParams" -r waxx-src waxa-src
+
+### tool_result (truncated)
+class CameraParams():
+    # DO NOT ASSIGN DEFAULT PARAMETERS HERE -- INSTEAD ASSIGN THEM IN kexp.config.camera_id!
+    def __init__(self):
+        self.camera_type = ""
+        self.key = ""
+        # DO NOT ASSIGN DEFAULT PARAMETERS HERE -- INSTEAD ASSIGN THEM IN kexp.config.camera_id!
+        self.pixel_size_m = 0.
+        # DO NOT ASSIGN DEFAULT PARAMETERS HERE -- INSTEAD ASSIGN THEM IN kexp.config.camera_id!
+        self.magnification = 13
+        # DO NOT ASSIGN DEFAULT PARAMETERS HERE -- INSTEAD ASSIGN THEM IN kexp.config.camera_id!
+        self.exposure_delay = 0.
+        # DO NOT ASSIGN DEFAULT PARAMETERS HERE -- INSTEAD ASSIGN THEM IN kexp.config.camera_id!
+        self.exposure_tim
+
+### tool_use
+Bash: cd /home/user/wax/waxx-src/waxx/control/cameras; sed -n 117,130p camera_param_classes.py; sed -n 183,195p camera_param_classes.py; grep -n "super().__init__" camera_param_classes.py
+
+### tool_result (truncated)
+class BaslerParams(CameraParams):
+    # DO NOT ASSIGN DEFAULT PARAMETERS HERE -- INSTEAD ASSIGN THEM IN kexp.config.camera_id!
+    def __init__(self,serial_number='40320384',
+                trigger_source='Line1',
+                exposure_time_fluor = 1.e-3, amp_fluorescence=0.5, gain_fluor = 0.,
+                exposure_time_abs = 19.e-6, amp_absorption = 0.248, gain_abs = 0.,
+                exposure_time_dispersive = 100.e-6, amp_dispersive = 0.248, gain_dispersive = 0.,
+                t_light_only_image_delay=25.e-3, t_dark_image_delay=20.e-3,
+                resolution = (1200,1920,),
+                magnification = 0.75,
+                key = ""):
+        super().__init__()
+        s
+
+### tool_use
+Bash: cd /home/user/k-exp/kexp/experiments/tools; for f in turn_on_ry405.py turn_on_ry980.py turn_on_tweezer.py tweezer_on.py background_field.py; do echo "=== $f"; cat -n $f | grep -v "^\s*[0-9]*\s*#" | grep -v "^\s*[0-9]*\s*$"; done
+
+### tool_result (truncated)
+=== turn_on_ry405.py
+     1	from artiq.experiment import *
+     2	from artiq.experiment import delay
+     3	from kexp import Base, img_types, cameras
+     4	from kexp.base.cameras import img_config
+     6	class turn_on_imaging(EnvExperiment, Base):
+     8	    def prepare(self):
+     9	        Base.__init__(self,
+    10	                      imaging_type=img_types.ABSORPTION,
+    11	                      setup_camera=False)
+    13	        self.finish_prepare(shuffle=False)
+    15	    @kernel
+    16	    def run(self):
+    17	        self.init_kernel(setup_awg=False,
+    18	                         setup_slm=False,
+    19	                         init_lightsheet=False,
+    20	                  
+
+### tool_use
+Bash: cd /tmp/claude-0/-home-user/db7054f3-75e8-5d58-9981-ce723c029a42/scratchpad/wiki; sed -n 404,440p "Real-Time-Device-Control-(Monitor).md"
+
+### tool_result (truncated)
+`finish_prepare` tells the server a run is about to take the core
+(`run_pending`, with its run id and a random token).  From then composite ops
+are refused -- so none can be queued in the gap before the monitor is
+interrupted -- until one of:
+
+* the run takes the core (the monitor is interrupted), or its end state
+  arrives;
+* the run **withdraws** at exit: a run that dies before its kernel takes the
+  core (a compile error -- ARTIQ compiles before it connects -- or an
+  exception in `finish_prepare` or host code) is otherwise invisible to the
+  server, so `Monitor.announce_run` registers an `atexit` handler that sends
+  `run_withdrawn` with the token unless the run's end state was accepted;
+
+### tool_use
+Bash: cd /home/user/wax/waxx-src/waxx/util/guis; sed -n 100,230p monitor_server_headless.py
+
+### tool_result (truncated)
+    def _setup_udp_server(self) -> None:
+        self.server_thread = QThread()
+        self.udp_server = MonitorUDPServer(config_file_path=self.config_file_path,
+                                           journal_dir=self.journal_dir,
+                                           reset_expt_path=self.reset_expt_path,
+                                           run_loops=self.run_loops,
+                                           connections=self.connection_defs)
+        log.info("ops journal: %s", self.journal_dir or "in memory only (no directory given)")
+        for spec in self.run_loops:
+            log.info("run loop '%s': %s", spec.title, spec.expt_path)
+        for c in self.udp_server.con
+
+### tool_use
+Bash: cd /home/user/k-exp/kexp/experiments/tools; sed -n 1,60p awg_force_trigger_check.py; echo ====; sed -n 1,50p readout_clock_smear_test.py
+
+### tool_result (truncated)
+"""Does the tweezer AWG's software trigger apply queued tones?  (Run by hand.)
+
+The monitor server holds the AWG between runs.  "Apply traps" writes the tones
+through it and then pulses the AWG's hardware trigger (awg_trg_ttl) from the
+monitor's kernel.  If the card's software trigger (M2CMD_CARD_FORCETRIGGER)
+also executes the queued tones -- with the card's ext0-only trigger mask and
+the DDS trigger source set to the card -- the server could apply tones without
+the monitor experiment.  Spectrum's own DDS examples use it; nobody has
+checked it on this card.  This script does, through the server's connection
+(no second connection to the card, nothing through ARTIQ).
+
+What you need: the monit
+
+### tool_use
+Bash: cd /home/user/k-exp/kexp/experiments/tools; sed -n 1,40p check_apd_alignment.py; echo ====; sed -n 1,30p SLM_alignment/SLM_find_spot.py; echo ===; sed -n 1,25p mot_current_ramp_loop.py
+
+### tool_result (truncated)
+from artiq.experiment import *
+from artiq.experiment import delay
+from kexp import Base, img_types, cameras
+import numpy as np
+from kexp.calibrations.tweezer import tweezer_vpd1_to_vpd2
+from kexp.calibrations.imaging import high_field_imaging_detuning
+from artiq.coredevice.sampler import Sampler
+
+class tweezer_load(EnvExperiment, Base):
+
+    def prepare(self):
+        Base.__init__(self,setup_camera=True,
+                      camera_select=cameras.andor,
+                      save_data=False,
+                      imaging_type=img_types.ABSORPTION)
+
+        # self.xvar('i_lf_tweezer_load_current',np.linspace(12.,17.,15))
+
+        # self.xvar('v_pd_lf_tweezer_1064_ramp_end',np.linspace(5.,9.
+
+### tool_use
+Bash: cd /home/user/k-exp/kexp/config; grep -n "inner_coil_supply\|supply_current_2dmot\|zshim_current_control" dac_id.py | head
+
+### tool_result (truncated)
+24:        self.supply_current_2dmot = self.assign_dac_ch(4,v=2.447)
+27:        self.zshim_current_control = self.assign_dac_ch(7,self.p.v_zshim_current)
+28:        self.inner_coil_supply_current = self.assign_dac_ch(8)
+31:        self.inner_coil_supply_voltage = self.assign_dac_ch(11)
+
+### tool_use
+Bash: cd /home/user/k-exp/kexp/experiments/qm; cat -n qm_rabi_frequency.py
+
+### tool_result (truncated)
+     1	from artiq.experiment import *
+     2	from artiq.experiment import delay
+     3	from kexp import Base, img_types, cameras
+     4	import numpy as np
+     5	from kexp.calibrations.tweezer import tweezer_vpd1_to_vpd2
+     6	from kexp.calibrations.imaging import high_field_imaging_detuning
+     7	from artiq.coredevice.sampler import Sampler
+     8	from artiq.language import now_mu
+     9	
+    10	class hf_raman(EnvExperiment, Base):
+    11	
+    12	    def prepare(self):
+    13	        Base.__init__(self,setup_camera=True,
+    14	                      camera_select=cameras.andor,
+    15	                      imaging_type=img_types.ABSORPTION,
+    16	                      warmup_shots=0)
+   
+
+### tool_use
+Bash: cd /home/user/k-exp/kexp/base; sed -n 180,324p control.py
+
+### tool_result (truncated)
+        delay(4.7e-3)
+        if phase_mode == 1:
+            self.raman.set_phase(t_phase_origin_mu=now_mu())
+
+    @kernel
+    def warmup_imaging(self):
+        self.ttl.imaging_shutter_x.off()
+        delay(3.e-3)
+        self.imaging.pulse(1.e-3)
+        self.ttl.imaging_shutter_x.on()
+        
+
+    @kernel
+    def handoff_to_quantum_machines(self):
+        """Start one OPX shot: arm the hand-back gate, trigger the OPX, turn
+        the ARTIQ RF on for it to gate. Pairs with
+        wait_for_quantum_machines_handback().
+
+        The handshake, one shot, with the ExptParams values of 2026-09-25
+        (the OPX half is framed by kexp.control.opx.builder from the channel
+        map, which 
+
+### tool_use
+Bash: cd /home/user/k-exp; ls kexp/control; ls kexp/control/opx 2>&1; grep -rn "opx\|quantum_machines\|qua\b\|from qm\|import qm" --include=*.py -il . | grep -v egg | head -40
+
+### tool_result (truncated)
+__init__.py
+awg_tweezer.py
+big_coil.py
+doubled_rf.py
+ethernet_relay.py
+misc
+painted_lightsheet.py
+quarto
+rydberg_lasers.py
+serial
+ls: cannot access 'kexp/control/opx': No such file or directory
+./kexp/util/dashboard/server_dashboard_app.py
+./kexp/config/ttl_id.py
+./kexp/config/composite_devices.py
+./kexp/config/expt_params.py
+./kexp/experiments/qm/qm_detect_apd_no_atoms.py
+./kexp/experiments/qm/qm_detect_apd_with_atoms.py
+./kexp/experiments/qm/qm_rabi_frequency.py
+./kexp/base/base.py
+./kexp/base/control.py
+./kexp/analysis/apd_state_mapping.py
+./tests/test_dashboard_monitor_controls.py
+./tests/test_apd_state_mapping.py
+./tests/test_composite_devices.py
+
+### tool_use
+Bash: cd /tmp/claude-0/-home-user/db7054f3-75e8-5d58-9981-ce723c029a42/scratchpad/a13; G="git -C kexp_full.git"; $G log --format='%h %as %an %s' jep/opx-integration -12; echo; $G log main --format='%h %as %an %s' --grep -i "opx\|quantum\|handoff\|handback\|qm" | head -30; echo; $G merge-base main jep/opx-integration; $G branch --contains $($G rev-parse jep/opx-integration) | head
+
+### tool_result (truncated)
+cace6abd 2026-09-27 jpagett Merge main into jep/opx-integration: OPX branch = main + the OPX work
+c8faf77a 2026-09-27 jpagett _bat: bootstrap_pc.ps1, the public one-line start of a K PC setup
+c04c97bc 2026-09-27 jpagett _bat/shortcuts: remove the Client and Server Dashboard shortcuts
+b2c3210e 2026-09-27 jpagett OPX handshake: hand-back hold split into three params; control.py reads them
+69509c80 2026-09-27 jpagett dashboard: monitor server LED and Start/Stop/Restart on the Device Control panel header
+e44946fe 2026-09-27 jpagett test: RTIO-event count experiment; analyzer fetch test leaves a stopped monitor alone
+49c06a67 2026-09-27 jpagett experiments: gm_tof runs cmot/gm/gm_ramp again
+8cc42
+
+### tool_use
+Bash: cd /tmp/claude-0/-home-user/db7054f3-75e8-5d58-9981-ce723c029a42/scratchpad/a13; G="git -C kexp_full.git"; $G log main --format='%h %as %an %s' -i -E --grep='opx|quantum|handoff|handback|hand-back|qm' | head -30; echo; $G diff --stat main jep/opx-integration | tail -30
+
+### tool_result (truncated)
+b2c3210e 2026-09-27 jpagett OPX handshake: hand-back hold split into three params; control.py reads them
+5eb97bcc 2026-09-26 jpagett experiments: current lab configs of hf_tweezer_bec, check_lightshift, check_rabi_frequency
+01e46fcb 2026-09-26 jpagett test: RTIO analyzer fetch test
+468a539c 2026-09-26 jpagett base: handoff TTL low in init_kernel; imaging and raman RF off in cleanup
+6840f21d 2026-09-26 jpagett device control: Composite tab definitions, monitor composite ops, telemetry, pre-run device-state stamp
+b0b71927 2026-09-26 jpagett base/calibrations: optical pumping without dds.op_r; inner-coil slope in calibrations; DDS-init record
+a3b7c46e 2026-09-24 Jared Pagett Merge pull request 
+
+### tool_use
+Bash: cd /home/user/k-exp; sed -n 230,255p kexp/analysis/apd_state_mapping.py; ls kexp/experiments/HF_experiments/feedback/ | head -30
+
+### tool_result (truncated)
+                    current=self.current, current_opx=self.current_opx, param_warnings=list(self.param_warnings),
+                    proposed={k: dict(old=o, new=n, how=h) for k, (o, n, h) in self.proposed_values().items()},
+                    params_block=self.params_block(), scope_chain=SCOPE_CHAIN, calibration=self.cal.to_dict())
+
+
+def current_feedback_params():
+    """The values the feedback params files hold now (instantiated read-only)."""
+    cur, opx = {}, {}
+    try:
+        from kexp.experiments.HF_experiments.feedback.expt_params_feedback import ExptParams
+        p = ExptParams()
+        cur = {k: float(getattr(p, k)) for k in FEEDBACK_FIELDS if hasattr(p, k)}
+    except Except
+
+### tool_use
+Bash: cd /home/user/wax/waxx-src/waxx/util/seqview; ls; grep -rn -i "qua\b\|QUA\|opx" *.py | head -30
+
+### tool_result (truncated)
+__init__.py
+__main__.py
+app.py
+bundle.py
+code_pane.py
+items.py
+launch.py
+timefmt.py
+window.py
+__init__.py:6:code pane. The window is machine-agnostic: the producer (for the OPX,
+__init__.py:7:``kexp.control.opx.viewer``) does all the lab-specific work.
+bundle.py:8:timeline. The producer (kexp.control.opx.viewer for the OPX) does every
+bundle.py:21:    dt_ns                    float   analog sample period (1.0 for the OPX+)
+bundle.py:44:            src_line, src_lines, qua_line, note, data_key, kind:
+bundle.py:47:    event  {id, lane, t, kind, label, detail, src_line, qua_line,
+code_pane.py:1:"""The code dock: source tabs (sequence Python, generated QUA, config) with
+code_pane.py:281:    ORDE
+
+### tool_use
+Bash: cd /home/user/k-exp/kexp; grep -n "opx\|OPX" config/expt_params.py base/control.py config/ttl_id.py | grep -v "^base/control.py:2[0-9][0-9]" | head -30; grep -n "T_OPX" -r . --include=*.py | head
+
+### tool_result (truncated)
+config/expt_params.py:434:        ### OPX+ (quantum machines) handshake -- timing diagram on
+config/expt_params.py:435:        ### Control.handoff_to_quantum_machines; the OPX half is framed by
+config/expt_params.py:436:        ### kexp.control.opx.builder from kexp_channel_map, which reads the
+config/expt_params.py:438:        ### them (kexp.control.opx.opx_config.CONFIG_TIME_PARAMS; refused).
+config/expt_params.py:442:        #     ASSUMPTION, NOT MEASURED (milestone M1): the OPX has seen the
+config/expt_params.py:447:        #   artiq_side + opx_side: ARTIQ returns to the caller; the OPX body
+config/expt_params.py:449:        #     ChannelMap.t_handoff_settle_s). 1.35 us is 337.5 OPX cloc
+
+### tool_use
+Bash: cd /home/user/k-exp/kexp; sed -n 430,478p config/expt_params.py; grep -n "quantum_machines" config/ttl_id.py
+
+### tool_result (truncated)
+        #
+        self.v_integrated_apd_adc_background = -2.1
+
+        ### OPX+ (quantum machines) handshake -- timing diagram on
+        ### Control.handoff_to_quantum_machines; the OPX half is framed by
+        ### kexp.control.opx.builder from kexp_channel_map, which reads the
+        ### same parameters. These are CONFIG-TIME: never scan or live-adjust
+        ### them (kexp.control.opx.opx_config.CONFIG_TIME_PARAMS; refused).
+        # Handoff, after the ARTIQ trigger edge:
+        #   artiq_side: ARTIQ turns its steady-state RF on (imaging and raman
+        #     switch AOMs) and raises the handoff TTL, all at one timestamp.
+        #     ASSUMPTION, NOT MEASURED (milestone M1): the OP
+
+### tool_use
+Bash: cd /tmp/claude-0/-home-user/db7054f3-75e8-5d58-9981-ce723c029a42/scratchpad/a13; G="git -C kexp_full.git"; $G log --format='%h %as %an %s' main..jep/opx-integration | head -40; echo; $G log --format='%h %as %an %s' --merges main --since=2026-09-20 | head
+
+### tool_result (truncated)
+cace6abd 2026-09-27 jpagett Merge main into jep/opx-integration: OPX branch = main + the OPX work
+80b028a3 2026-09-27 jpagett analysis: rabi_posterior_cli (RabiPosterior + RabiJointPosterior with gates)
+536fd6e3 2026-09-27 jpagett analysis: apd_state_mapping CLI (APD voltage -> spin state from APD-vs-state runs)
+9e4e8526 2026-09-27 jpagett params: phase_slm_mask 2.028 pi (#83135-83143)
+69c5217a 2026-09-27 jpagett phase_spot_optimize: compute up_first in the kernel; record it per shot
+2bd69a7b 2026-09-27 jpagett test: underflow_traceback_test forces an RTIOUnderflow in scan_kernel
+1f96309b 2026-09-27 jpagett base: cleanup_abort_kernel = the warm-up cleanup
+6fca991f 2026-09-27 jpagett base: dr
+
+### tool_use
+Bash: cd /home/user/k-exp/kexp/experiments/qm; diff qm_detect_apd_no_atoms.py qm_detect_apd_with_atoms.py; cat -n qm_detect_apd_with_atoms.py | grep -v "^\s*[0-9]*\s*#" | grep -v "^\s*[0-9]*\s*$"
+
+### tool_use
+Bash: cd /tmp/claude-0/-home-user/db7054f3-75e8-5d58-9981-ce723c029a42/scratchpad/a13; G="git -C kexp_full.git"; $G show jep/opx-integration:kexp/experiments/qm/qm_rabi_frequency_opx.py | head -80; $G diff main jep/opx-integration -- kexp/experiments/qm/qm_rabi_frequency.py
+
+### tool_result (truncated)
+18c18
+<         self.xvar('dummy',0)
+---
+>         self.xvar('make_atoms',[0,1,2])
+29,33c29,37
+<         self.imaging.set_power(2.)
+<         # self.imaging.set_power(self.camera_params.amp_imaging)
+< 
+< 
+<         # self.prepare_hf_tweezers()
+---
+>         if self.p.make_atoms == 2:
+>             self.imaging.set_power(0.05)
+>         else:
+>             self.imaging.set_power(2.)
+> 
+>         if self.p.make_atoms == 1:
+>             self.prepare_hf_tweezers()
+>         else:
+>             delay(1.)
+43a48,49
+>         self.tweezer.off()
+> 
+46,51c52
+<         self.init_kernel(setup_awg=False,
+<                          init_shuttler=False,
+<                          init_ry=False,
+<         
+
+### tool_result (truncated)
+"""qm_rabi_frequency rebuilt on the OPX program builder (kexp.control.opx).
+
+Same physics as qm_rabi_frequency.py, but instead of running the OPX
+program by hand on the side (customer-weld-ucsb/experiments/00d), the
+framework compiles and launches it at finish_prepare: one job looping over
+all shots, t_raman_pulse delivered per shot in the shuffled scan order.
+Readout stays ARTIQ's Andor absorption image, so the result compares
+directly against both the manual-OPX and the ARTIQ-native raman.pulse
+versions of the flop.
+
+*** NOT YET RUN ON HARDWARE (milestone M2). Verify the handshake on a scope
+(milestone M1) before running this with atoms. ***
+"""
+
+from artiq.experiment import *
+from artiq.e
+
+### tool_use
+Bash: cd /home/user/k-exp/kexp/experiments/test; cat -n underflow_traceback_test.py; echo =====; cat -n sampler_data_saver_test.py
+
+### tool_result (truncated)
+     1	"""Forces an RTIOUnderflow in scan_kernel, to check the scan loop's abort path:
+     2	cleanup_scan_kernel runs first, then the ORIGINAL exception is re-raised, so the
+     3	core-device traceback names the channel, the timestamp and this file's line.
+     4	
+     5	No atoms, no imaging, nothing saved (save_data=False), camera not set up (the
+     6	APD stage is not moved).  One shot: wait until the RTIO counter reaches the
+     7	timeline cursor, then pulse a TTL at that (now past) time.
+     8	"""
+     9	from artiq.experiment import *
+    10	from artiq.language.core import now_mu
+    11	from kexp import Base, cameras
+    12	
+    13	
+    14	class underflow_traceback_test(EnvExperimen
+
+### tool_use
+Bash: cat -n /home/user/k-exp/kexp/config/data_vault.py; grep -n "def add_data_container\|def put_data\|shot_data" /home/user/wax/waxx-src/waxx/config/data_vault.py | head -20
+
+### tool_result (truncated)
+     1	import numpy as np
+     2	from waxx.config.data_vault import DataVault as DataVaultWax, DataContainer
+     3	
+     4	class DataVault(DataVaultWax):
+     5	    def __init__(self, expt):
+     6	        super().__init__(expt)
+     7	        
+     8	        self.apd = self.add_data_container(1, np.float64)
+     9	
+    10	        self.post_shot_absorption = self.add_data_container(4)
+    11	
+    12	        self.b = self.add_data_container(1)
+    13	
+    14	        # Outer-coil current at the first camera trigger of each shot (A),
+    15	        # written once per shot by Image.record_imaging_conditions. Analysis
+    16	        # switches the absorption cross section on it
+    17	        # 
+
+### tool_use
+Bash: cd /home/user/k-exp/kexp/experiments/test; sed -n 1,80p analyzer_fetch_test.py
+
+### tool_result (truncated)
+"""RTIO analyzer fetch test (2026-09-26).
+
+Question: does fetching the analyzer buffer (port 1382) while a kernel is still
+submitting events lose those events, and how long does a fetch take? The
+firmware in our tree disarms recording for the whole transfer (master
+runtime/analyzer.rs, satellite satman/analyzer.rs); the Kasli-SoC master runs
+artiq-zynq, which is not vendored.
+
+Touches ONLY ttl84 (TTLOut, DRTIO destination 2, unassigned in the TTL frames,
+cleared for this test by the user) and the master's RTIO log channel
+(rtio_log markers, no physical output). No Base, no liveOD, nothing written to
+the run archive. Raw dumps + a summary go to OUT_DIR.
+
+Monitor: only if it is running at prep
+
+### tool_use
+Bash: cd /tmp/claude-0/-home-user/db7054f3-75e8-5d58-9981-ce723c029a42/scratchpad/a13; G="git -C kexp_full.git"; $G log main --format='%h %as %an%n%B%n----' -- kexp/experiments/test/analyzer_fetch_test.py kexp/experiments/test/hf_bec_event_count.py kexp/experiments/test/underflow_traceback_test.py | grep -v "Co-Authored" | head -60
+
+### tool_result (truncated)
+e44946fe 2026-09-27 jpagett
+test: RTIO-event count experiment; analyzer fetch test leaves a stopped monitor alone
+
+- hf_bec_event_count.py (new, 2026-09-26): a copy of hf_tweezer_bec (t_tof 2 ms,
+  1 shot) that fetches the RTIO analyzer around the shot to count events per
+  device (sizing per-shot analyzer recording; runs 83109/83111).
+- analyzer_fetch_test.py: announces to the monitor server and restarts the
+  monitor afterwards only if it was running at prepare(); dumps go to the local
+  C:\lab\skynet_log\outputs folder.
+
+
+----
+e7836c35 2026-09-27 jpagett
+test: underflow_traceback_test forces an RTIOUnderflow in scan_kernel
+
+One shot, no atoms, nothing saved, camera not set up (APD stage n
+
+### tool_use
+Bash: cd /home/user/k-exp/kexp/experiments/test; sed -n 1,40p hf_bec_event_count.py; grep -n "def \|OUT_DIR\|print(" hf_bec_event_count.py | head -30
+
+### tool_result (truncated)
+"""How many RTIO events does one hf_tweezer_bec shot put on each device?
+(2026-09-26, for sizing per-shot RTIO analyzer recording.)
+
+A copy of default_experiments/hf_tweezer_bec.py (as of aea22be5) with:
+  - t_tof = 2 ms, N_repeats = 1 (one shot) -- the user's request;
+  - analyzer fetches (port 1382), each inside a host call the kernel is
+    blocked in, so nothing is submitted while the analyzer is disarmed:
+      pre_run   top of run(), before init_kernel    (clears the buffer)
+      preamble  first _check_for_abort_signal()      (init_kernel, 2D MOT,
+                                                      the 4 warm-up shots)
+      shot0     _notify_shot_complete()              (init_scan_
+
+### tool_use
+Bash: cd /home/user/k-exp/kexp/experiments/tools/tweezerbalance; sed -n 1,40p Set_VPID1_Expt_Builder.py; sed -n 1,20p balance_tweezer_functions.py
+
+### tool_result (truncated)
+from subprocess import PIPE, run
+import os
+import textwrap
+
+class ExptBuilder():
+    def __init__(self):
+        self.__code_path__ = os.environ.get('code')
+        self.__temp_exp_path__ = os.path.join(self.__code_path__, "k-exp", "kexp", "experiments", "ml_expt.py")
+
+    def run_expt(self):
+        expt_path = self.__temp_exp_path__
+        run_expt_command = r"%kpy% & artiq_run " + expt_path
+        result = run(run_expt_command, stdout=PIPE, stderr=PIPE, universal_newlines=True, shell=True)
+        print(result.returncode, result.stdout, result.stderr)
+        os.remove(self.__temp_exp_path__)
+        return result.returncode
+    
+    def write_experiment_to_file(self, program):
+        
+
+### tool_use
+Bash: cd /home/user/k-exp; cat .gitignore; ls kexp/experiments/ | grep ml_expt; cat kexp/experiments/requirements.txt | head -20
+
+### tool_result (truncated)
+*.h5
+*.pyc
+*.pyon
+*.zip
+*.mdb
+*.mdb-lock
+*.gif
+*.PKL
+kexp/util/.DS_Store
+.DS_Storeanyio==4.13.0
+anysqlite==0.0.5
+arc==1.0
+arc-alkali-rydberg-calculator==3.10.2
+argon2-cffi==25.1.0
+argon2-cffi-bindings==25.1.0
+arrow==1.4.0
+-e file:///C:/Users/jarjarbinks/code/artiq
+asteval==1.0.8
+asttokens==3.0.1
+async-lru==2.3.0
+attrs==26.1.0
+babel==2.18.0
+beautifulsoup4==4.14.3
+bleach==6.3.0
+blinker==1.9.0
+certifi==2026.4.22
+cffi==2.0.0
+charset-normalizer==3.4.7
+clr-loader==0.2.10
+
+### tool_use
+Bash: cd /home/user/wax; grep -rn "__class__.__name__\|type(self).__name__\|expt_class\|xvarnames\b.*filename\|expt_name" --include=*.py waxx-src/waxx/base waxa-src/waxa/base waxa-src/waxa/data | head -20
+
+### tool_result (truncated)
+waxx-src/waxx/base/expt.py:421:                                              expt=self._expt_name_from_filepath(expt_filepath))
+waxx-src/waxx/base/expt.py:436:        expt_name = self._expt_name_from_filepath(expt_filepath)
+waxx-src/waxx/base/expt.py:437:        name_str = f"  ({expt_name})" if expt_name else ""
+waxx-src/waxx/base/expt.py:448:    def _expt_name_from_filepath(expt_filepath):
+waxx-src/waxx/base/expt.py:537:            'expt_class': str(self.run_info.expt_class),
+waxa-src/waxa/data/run_info.py:40:            self.expt_class = expt_obj.__class__.__name__
+waxa-src/waxa/data/run_info.py:42:            self.expt_class = "expt"
+waxa-src/waxa/data/data_saver.py:337:        expt_class
+
+### tool_use
+Bash: cd /home/user/wax/waxa-src/waxa/data; sed -n 320,350p data_saver.py; sed -n 25,50p run_info.py
+
+### tool_result (truncated)
+                        print(f"Failed to save attribute \"{key}\" of {obj}.")
+                        print(e)
+        except Exception as e:
+            print(e)
+
+    def _class_attr_to_attr(self,dset,obj):
+        try:
+            keys = list(vars(obj))  
+            for key in keys:
+                value = vars(obj)[key]
+                dset.attrs[key] = value
+        except Exception as e:
+            print(e)
+
+    def _data_path(self,run_info,lite=False):
+        this_data_dir = self._data_dir
+        run_id_str = f"{str(run_info.run_id).zfill(7)}"
+        expt_class = self._bytes_to_str(run_info.expt_class)
+        datetime_str = self._bytes_to_str(run_info.run_datetime_str)
+        i
+
+### tool_use
+Bash: cd /home/user/wax/waxx-src/waxx/base; grep -n "_serialize_end_payload" -A45 expt.py | grep -v "^\-\-$" | head -70
+
+### tool_result (truncated)
+399:            payload = self._serialize_end_payload(expt_filepath)
+400-            # print(payload)
+401-            _client.end_run(payload)
+402-        else:
+403-            # Legacy fallback
+404-            if self.setup_camera:
+405-                if self.run_info.save_data:
+406-                    self.write_data(expt_filepath)
+407-                else:
+408-                    self.remove_incomplete_data()
+409-
+410-        # Data is saved at this point. The Gmail round trip takes seconds, so
+411-        # send it in the background while the monitor state is written and the
+412-        # process winds down (non-daemon thread: exit waits for it).
+413-        if notify:
+414-            fr
+
+### tool_use
+Bash: cd /home/user/wax/waxx-src/waxx/base; sed -n 584,627p expt.py
+
+### tool_result (truncated)
+            dv[key] = {
+                'data': dc._run_data,
+                'data_gotten': bool(dc._data_gotten),
+                'external': bool(dc._external_data_bool),
+            }
+
+        # Source file texts (read from client filesystem via ds)
+        expt_text = self.ds._read_text_file_safe(expt_filepath, "experiment") if expt_filepath else ""
+        params_text = self.ds._read_text_file_safe(self.ds._expt_params_path, "params")
+
+        base_class_texts = {}
+        if self.ds._base_class_dir and os.path.isdir(self.ds._base_class_dir):
+            try:
+                filenames = sorted(os.listdir(self.ds._base_class_dir))
+            except Exception:
+                filenames 
+
+### tool_use
+Bash: cd /home/user/wax; grep -rn "expt_file_text\|experiment_filepath\|expt_filepath" waxa-src/waxa/data/data_saver.py waxa-src/waxa/atomdata*.py | head -20
+
+### tool_result (truncated)
+waxa-src/waxa/data/data_saver.py:110:    def save_data(self,expt:DummyExpt,expt_filepath="",data_object=None):
+waxa-src/waxa/data/data_saver.py:150:            if expt_filepath:
+waxa-src/waxa/data/data_saver.py:151:                f['run_info']['experiment_filepath'][...] = expt_filepath
+waxa-src/waxa/data/data_saver.py:152:                f.attrs['experiment_filepath'] = expt_filepath
+waxa-src/waxa/data/data_saver.py:154:            self._save_expt_files_text(f,expt_filepath)
+waxa-src/waxa/data/data_saver.py:267:                              expt_filepath):
+waxa-src/waxa/data/data_saver.py:272:        f.attrs["expt_file"] = self._read_text_file_safe(expt_filepath, "experiment") if expt_file
+
+### tool_use
+Bash: cd /home/user/k-exp/kexp; sed -n 368,380p base/base.py; grep -n "def finish_prepare_wax" -A80 /home/user/wax/waxx-src/waxx/base/expt.py | grep -n "print\|console\|raise\|WARNING" | head -30
+
+### tool_result (truncated)
+    def end(self, expt_filepath, notify=True, restart_monitor=True):
+        self.end_wax(expt_filepath=expt_filepath, notify=notify, restart_monitor=restart_monitor)44:181-                console.info(f"Run ID: {self.run_info.run_id}")
+47:184-                raise RuntimeError(
+52:189-                print(
+53:190-                    "[LiveOD] WARNING: No liveOD server connection — "
+58:195-            print(
+59:196-                "[adjust] WARNING: adjustable params detected with save_data=True. "
+71:208-                print(f"[Monitor] note: could not announce this run to the monitor "
+
+### tool_use
+Bash: cd /home/user/wax/waxx-src/waxx/base; sed -n 130,222p expt.py
+
+### tool_result (truncated)
+        # Why the run is being stopped, set where host code raises to stop it
+        # (the liveOD Abort button, a shot abandoned on an RTIO error), for
+        # the device-state report of scan()'s exception handler.
+        self._abort_cause = ""
+        self._shot_abort = ""
+        self._monitor_restart_sent = False
+
+    def finish_prepare_wax(self,shuffle=True,N_repeats=[]):
+        """
+        To be called at the end of prepare. 
+        
+        Automatically adds repeats either if specified in N_repeats argument or
+        if previously specified in self.params.N_repeats. 
+        
+        Shuffles xvars if specified (defaults to True). Computes the number of
+        images to be ta
+
+### tool_use
+Bash: cd /home/user/wax/waxa-src/waxa/base; grep -n "def repeat_xvars" -A45 dealer.py
+
+### tool_result (truncated)
+36:    def repeat_xvars(self,N_repeats=[]):
+37-        """
+38-        For each xvar in the scan_xvars list, replaces xvar.values with
+39-        np.repeat(xvar.values,self.params.N_repeats).
+40-
+41-        Parameters
+42-        ----------
+43-        N_repeats (int/list/ndarray, optional): The number of repeats to be
+44-        implemented. Can be omitted to use the stored value of
+45-        self.params.N_repeats. Must be either int or list/array of length one,
+46-        or a list/array with one element per element of self.xvarnames.
+47-        """        
+48-        Nvars = self.Nvars
+49-
+50-        # allow user to overwrite repeats number when repeat_xvars called
+51-        if N_repeats !
+
+### tool_use
+Bash: cd /home/user/k-exp/kexp; sed -n 56,152p base/cooling.py
+
+### tool_result (truncated)
+    def prepare_hf_tweezers(self,
+                            do_tweezer_evap_2=True,
+                            ramp_down_painting = False,
+                            squeeze=False,
+                            cubic_ramp_squeeze=True,
+                            ):
+        """prepares hf evap tweezers at i_outer = ExptParams.i_non_inter with
+        PID enabled.
+        """
+        if squeeze:
+            ramp_down_painting = True
+
+
+        self.switch_d2_2d(1)
+        self.mot(self.p.t_mot_load)
+        self.dds.push.off()
+        self.cmot_d1(self.p.t_d1cmot * s)
+        
+        self.gm(self.p.t_gm * s)
+        self.gm_ramp(self.p.t_gmramp)
+
+        # delay(200.e-3)
+
+        self.magtr
+
+### tool_use
+Bash: cd /home/user/k-exp/kexp; for k in t_mot_load t_d1cmot t_gm t_gmramp t_lightsheet_rampup t_magtrap t_magtrap_ramp t_magtrap_rampdown t_feshbach_field_rampup t_hf_lightsheet_rampdown t_feshbach_field_ramp t_hf_tweezer_1064_ramp t_lightsheet_rampdown3 t_feshbach_field_ramp2 t_hf_tweezer_1064_rampdown t_hf_tweezer_1064_rampdown2 t_recover t_lightsheet_hold t_tweezer_hold t_2D_mot_load_delay t_magtrap_hold t_yshim_rampdown; do printf "%s: " $k; grep -E "^\s+self\.$k\s*=" config/expt_params.py | tail -1 | sed 's/^\s*//'; done
+
+### tool_result (truncated)
+t_mot_load: self.t_mot_load = 1.0
+t_d1cmot: self.t_d1cmot = 10.e-3
+t_gm: self.t_gm = 3.e-3
+t_gmramp: self.t_gmramp = 6.e-3 #CC changed from 6.5e-3
+t_lightsheet_rampup: self.t_lightsheet_rampup = 75.e-3
+t_magtrap: self.t_magtrap = 1.2
+t_magtrap_ramp: self.t_magtrap_ramp = .4
+t_magtrap_rampdown: self.t_magtrap_rampdown = .05
+t_feshbach_field_rampup: self.t_feshbach_field_rampup = 50.e-3
+t_hf_lightsheet_rampdown: self.t_hf_lightsheet_rampdown = 0.15
+t_feshbach_field_ramp: self.t_feshbach_field_ramp = 12.e-3
+t_hf_tweezer_1064_ramp: self.t_hf_tweezer_1064_ramp = 0.19 # 0.16 # .285
+t_lightsheet_rampdown3: self.t_lightsheet_rampdown3 = 62e-3
+t_feshbach_field_ramp2: self.t_feshbach_field_ramp2 = 12.
+
+### tool_use
+Bash: cd /home/user/k-exp/kexp; sed -n 892,975p base/cooling.py
+
+### tool_result (truncated)
+    def magtrap_and_load_lightsheet(self,
+                                    do_lightsheet_ramp=True,
+                                    do_magtrap_rampup=True,
+                                    do_magtrap_hold=True,
+                                    do_magtrap_rampdown=True,
+                                    paint_lightsheet=False,
+                                    t_lightsheet_ramp=dv,
+                                    t_magtrap_ramp=dv,
+                                    t_magtrap_rampdown=dv,
+                                    v_pd_lightsheet_ramp_start=dv,
+                                    v_pd_lightsheet_ramp_end=dv,
+                                    v_awg_paint_amp_l
+
+### tool_use
+Bash: cd /tmp/claude-0/-home-user/db7054f3-75e8-5d58-9981-ce723c029a42/scratchpad/wiki; grep -n -i "tof\|plot\|atom number\|sum od\|roi\|temperature\|analyzer" LiveOD---Camera-acquisition-and-previewer.md | head -40
+
+### tool_result (truncated)
+7:liveOD is a separate program that captures images from the cameras during a scan and displays the OD, atom number, and Gaussian fits in near real-time — shot by shot — so you can monitor progress without waiting until a run finishes.
+115:| **ROI dropdown** | Selects the region of interest used for OD display and fitting |
+117:| **Clear** | Clears the current plots |
+118:| **Reset zoom** | Resets plot axes to their default range |
+163:| **Andor** | EM gain, exposure, the amplifier mode (`hs_speed` and `preamp` as one checked setting: refused if the camera does not offer that pair, rather than silently substituted), `vs_speed`, `vs_amp`, baseline clamp, then `apply_run_fields`: trigger mode,
+
+### tool_use
+Bash: cd /home/user/wax/waxx-src/waxx/util/live_od/gui; sed -n 1,30p fk_tof_window.py; grep -rn "fk_tof\|FkTof\|live_scalar" main_window.py viewer.py | head
+
+### tool_result (truncated)
+"""
+FK TOF — Fast-Kinetics Time-of-Flight live analysis window.
+
+When N_pwa_per_shot > 1 with absorption imaging, each shot produces multiple
+probe-with-atoms (PWA) images sharing one light and one dark reference.
+This window receives per-shot Gaussian widths (sigma_x, sigma_y, one per PWA)
+from the Analyzer, builds a time axis from user-specified t0 and dt, fits a
+GaussianTemperatureFit to sigma(t), and displays the resulting temperature live.
+"""
+
+import re
+import numpy as np
+import pyqtgraph as pg
+from PyQt6.QtCore import Qt, pyqtSlot
+from PyQt6.QtGui import QFont
+from PyQt6.QtWidgets import (
+    QComboBox,
+    QHBoxLayout,
+    QLabel,
+    QLineEdit,
+    QVBoxLayout,
+    QWidget,
+)
+
+_KEY
+
+### tool_use
+Bash: cd /tmp/claude-0/-home-user/db7054f3-75e8-5d58-9981-ce723c029a42/scratchpad/a13; timeout 250 git -C wax_full.git log main --format='%h %as %an %s' -S"Setting # PWA to 1" 2>&1 | grep -v "Auto pack\|git help"; timeout 100 git -C wax_full.git log main --format='%h %as %an %s' --diff-filter=A -- waxx-src/waxx/util/live_od/gui/fk_tof_window.py 'waxx/util/live_od/gui/fk_tof_window.py' | tail -3
+
+### tool_result (truncated)
+7a35ac1 2026-03-20 jpagett xvar intialization to waxx
+deea180 2025-10-16 bowjun create wax
+442366f 2026-09-19 jpagett liveOD migration: move liveOD from kexp.util.live_od into waxx
+
+### tool_use
+Bash: cd /home/user/wax/waxx-src/waxx/util/live_od/gui; grep -n "fk_tof_signal\|N_pwa\|imaging_type" analyzer.py | head -20
+
+### tool_result (truncated)
+22:    fk_tof_signal = pyqtSignal(object)       # emits per-shot FK TOF data (N_pwa > 1 only)
+82:    def get_img_number(self, N_img, N_shots, N_pwa_per_shot):
+85:        self.N_pwa_per_shot = N_pwa_per_shot
+87:    def get_analysis_type(self, imaging_type):
+88:        self.imaging_type = imaging_type
+92:        if len(self.imgs) == (self.N_pwa_per_shot + 2):
+98:        self.img_light = self.imgs[self.N_pwa_per_shot]
+99:        self.img_dark = self.imgs[self.N_pwa_per_shot + 1]
+100:        self.od_raw = compute_OD(self.img_atoms, self.img_light, self.img_dark, imaging_type=self.imaging_type)
+233:        """Compute Gaussian sigma for each PWA image and emit fk_tof_signal.
+235:        Only runs 
+
+### tool_use
+Bash: cat /home/user/wax/waxa-src/waxa/config/img_types.py
+
+### tool_result (truncated)
+class ImagingType():
+    def __init__(self):
+        self.ABSORPTION = 0
+        self.DISPERSIVE = 1
+        self.FLUORESCENCE = 2
+        self.POLMOD = 3
+
+img_types = ImagingType()
+
+### tool_use
+Bash: cd /home/user/k-exp/kexp; grep -n "def awg_init" -A30 control/awg_tweezer.py | head -45; cat config/monitor_connections.py | head -40
+
+### tool_result (truncated)
+"""Host-side connections the K-machine monitor server holds between runs.
+
+Shown on the Composite tab's connection bar (one pill each).  The server opens
+them when the monitor is running, releases them before it replies to a run's
+announcement (the run opens the AWG itself in ``init_kernel``), and runs each
+in its own agent process -- see ``waxx.util.device_state.connections`` and
+``waxx.util.device_state.connection_agent``.
+
+Light on purpose: the server, the Device Control GUI and
+``kexp.config.composite_devices`` all import this; the driver itself is only
+imported inside the agent process.
+"""
+
+from waxx.util.device_state.connections import Connection
+
+from kexp.config.ip import AWG_IP
+
+#:
+
+### tool_use
+Bash: cat -n /home/user/k-exp/kexp/base/clients.py
+
+### tool_result (truncated)
+     1	from waxx.base import Monitor
+     2	from kexp.config.ip import MONITOR_STATE_FILEPATH
+     3	
+     4	from waxx.util.device_state.monitor_controller import MonitorController
+     5	
+     6	from waxx.util.guis.HMR_magnetometer.hmr_magnetometer_client import HMRClient, HMRDummy
+     7	from kexp.control.misc.pdxc_apd_stage import APDStageClient
+     8	from waxx.util.live_od.live_od_client import LiveODClient
+     9	
+    10	# Construct on demand with ``MonitorController()`` — it discovers the monitor
+    11	# server over the network and needs no shared-drive access.  We avoid building
+    12	# it at import time so importing this module never blocks on discovery.
+    13	monitor_controller 
+
+### tool_use
+Bash: cd /home/user/wax/waxx-src/waxx/util/live_od; grep -n "capture_images" server.py client.py data/*.py | head -30
+
+### tool_result (truncated)
+grep: server.py: No such file or directory
+grep: client.py: No such file or directory
+
+### tool_use
+Bash: cd /home/user/wax/waxx-src/waxx/util/live_od; ls; grep -rn "capture_images" --include=*.py . | head -30
+
+### tool_result (truncated)
+MIGRATION_PLAN.md
+__init__.py
+camera_cli.py
+camera_connection_widget.py
+camera_host
+camera_mother.py
+camera_nanny.py
+config.py
+console_guard.py
+data
+frame_alignment.py
+gui
+live_od_broadcaster.py
+live_od_client.py
+live_od_server.py
+log.py
+marker_store.py
+shot_cross_section.py
+./camera_host/host.py:16:    begin_run(token, key, capture_images, camera_params)  INIT_RUN, before the
+./camera_host/host.py:258:    capture_images: bool
+./camera_host/host.py:875:    def begin_run(self, token: str, camera_key: str, capture_images: bool,
+./camera_host/host.py:879:        A run without a camera (``capture_images`` False), or on an entry with
+./camera_host/host.py:890:        run = _Run(token=token, key=c
+
+### tool_use
+Bash: cd /home/user/wax/waxx-src/waxx/util/live_od; sed -n 880,960p live_od_server.py; sed -n 1060,1090p gui/main_window.py
+
+### tool_result (truncated)
+            images_received=self._images_received_now(),
+        )
+
+    def _handle_init_run(self, msg: dict) -> dict:
+        # The new run's name, provisional until this INIT_RUN is accepted: one
+        # that is refused leaves the run in progress as it was (its token, so
+        # its messages still count; its camera; its state).
+        token = uuid.uuid4().hex
+        save_data = bool(msg.get("save_data", False))
+        capture_images = bool(msg.get("capture_images", False))
+        camera_key = str(msg.get("camera_key", ""))
+        imaging_type = int(msg.get("imaging_type", 0))
+        camera_params = msg.get('camera_params', {})
+
+        # host mode: the run's camera is locked here
+
+### tool_use
+Bash: cd /tmp/claude-0/-home-user/db7054f3-75e8-5d58-9981-ce723c029a42/scratchpad/a13; python3 - <<'EOF'
+import collections
+rows=[l.rstrip('\n').split('\t') for l in open('filestats.tsv')]
+rows=[r for r in rows if r[5]=='EXISTS']
+agg=collections.defaultdict(lambda: dict(n=0,last='',recent=0,c=0))
+for f,n,first,last,auth,_ in rows:
+    p=f.split('/')[2:]
+    if p[0] not in ('HF_experiments','JE','JP','JK','JWY','MBL','LF_experiments','NF_experiments','Mloop testing'): continue
+    key='/'.join(p[:2]) if len(p)>2 else p[0]+'/(files)'
+    a=agg[key]; a['n']+=1; a['last']=max(a['last'],last); a['c']+=int(n)
+    if last>='2026-08-15': a['recent']+=1
+for k,a in sorted(agg.items()): print(f"{k:50s} n={a['n']:3d} commits={a['c']:4d} last={a['last']} recent(>=08-15)={a['recent']}")
+EOF
+
+### tool_result (truncated)
+HF_experiments/(files)                             n= 12 commits= 127 last=2026-09-23 recent(>=08-15)=4
+HF_experiments/Hansel_and_Gretel                   n=  9 commits=  21 last=2026-09-10 recent(>=08-15)=5
+HF_experiments/Rydberg                             n= 20 commits=  81 last=2026-09-24 recent(>=08-15)=7
+HF_experiments/feedback                            n= 33 commits= 290 last=2026-09-27 recent(>=08-15)=28
+HF_experiments/monitored_rabi                      n= 41 commits= 193 last=2026-09-19 recent(>=08-15)=12
+HF_experiments/squeeze                             n=  3 commits=   5 last=2026-09-10 recent(>=08-15)=1
+JE/(files)                                         n=  2 commits=   2 last
+
+### tool_use
+Bash: cd /tmp/claude-0/-home-user/db7054f3-75e8-5d58-9981-ce723c029a42/scratchpad/a13; git -C kexp_full.git log main --format='@%h %as %s' --name-only -- kexp/experiments | awk '/^@/{if(h)print n" "h; h=$0; n=0; next} NF{n++} END{print n" "h}' | sort -rn | head -15
+
+### tool_result (truncated)
+91 @cec7f8ee 2024-08-14 updated `build` everywhere to `prepare`
+68 @8d3a4e5d 2025-01-23 kill underscore folder names
+63 @8e167e86 2023-11-16 move everything
+57 @e4489fb5 2024-08-14 rename folders to have underscores (folders before files in dashboard)
+54 @d6c4f6d7 2024-02-02 keysight gui, rm old files
+48 @827dc912 2025-12-31 no_painting
+46 @2b9a92d9 2025-12-23 .
+43 @2e3b1012 2024-08-14 expt class names to file name
+38 @5d322dba 2026-09-10 restructure stage control to be simpler
+38 @264bd3ca 2026-09-10 restructure stage control to be simpler
+35 @405e12df 2024-08-14 zip test files to hide from repo scan
+34 @6cfd9adf 2026-08-10 fringes, compression investigation, monrab overnight
+30 @fb825cb2 2

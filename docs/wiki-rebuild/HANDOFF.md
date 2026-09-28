@@ -52,20 +52,20 @@ Read in this order: `PROMPT.md` (the full task spec, verbatim) → this file →
 | # | Area | Brief | Report status at handoff |
 |---|---|---|---|
 | 01 | Startup, PCs, network | `briefs/01_startup_pcs.md` | written (319 lines) |
-| 02 | Package layering and code map | `briefs/02_layering_codemap.md` | agent was writing when stopped — see §4 |
+| 02 | Package layering and code map | `briefs/02_layering_codemap.md` | written |
 | 03 | Experiment lifecycle | `briefs/03_lifecycle.md` | written |
-| 04 | Scanning and parameters | `briefs/04_scanning_params.md` | see §4 |
-| 05 | Device layer | `briefs/05_device_layer.md` | see §4 |
+| 04 | Scanning and parameters | `briefs/04_scanning_params.md` | NOT written; agent stopped mid-research. Its compact transcript extract is `salvage/NN_<area>_transcript.md`; covered by a consolidation agent (§4) |
+| 05 | Device layer | `briefs/05_device_layer.md` | NOT written; agent stopped mid-research. Its compact transcript extract is `salvage/NN_<area>_transcript.md`; covered by a consolidation agent (§4) |
 | 06 | Hardware drivers | `briefs/06_hardware_drivers.md` | written (191 lines) |
-| 07 | Monitor and device state | `briefs/07_monitor_device_state.md` | see §4 |
+| 07 | Monitor and device state | `briefs/07_monitor_device_state.md` | NOT written; agent stopped mid-research. Its compact transcript extract is `salvage/NN_<area>_transcript.md`; covered by a consolidation agent (§4) |
 | 08 | Cameras and LiveOD | `briefs/08_cameras_liveod.md` | written (317 lines) |
 | 09 | Data pipeline | `briefs/09_data_pipeline.md` | written (267 lines) |
 | 10 | Analysis | `briefs/10_analysis.md` | written (258 lines) |
 | 11 | GUIs, dashboards, telemetry | `briefs/11_guis_dashboards.md` | written (289 lines) |
 | 12 | Calibrations and feedback | `briefs/12_calibrations_feedback.md` | written (224 lines) |
-| 13 | Experiments catalog | `briefs/13_experiments_catalog.md` | see §4 |
-| 14 | Loud failures / Error Message Index | `briefs/14_loud_failures.md` | see §4 |
-| 15 | Demon hunter and wiki auditor | `briefs/15_demons_audit.md` | see §4 |
+| 13 | Experiments catalog | `briefs/13_experiments_catalog.md` | NOT written; agent stopped mid-research. Its compact transcript extract is `salvage/NN_<area>_transcript.md`; covered by a consolidation agent (§4) |
+| 14 | Loud failures / Error Message Index | `briefs/14_loud_failures.md` | NOT written; agent stopped mid-research. Its compact transcript extract is `salvage/NN_<area>_transcript.md`; covered by a consolidation agent (§4) |
+| 15 | Demon hunter and wiki auditor | `briefs/15_demons_audit.md` | NOT written; agent stopped mid-research. Its compact transcript extract is `salvage/NN_<area>_transcript.md`; covered by a consolidation agent (§4) |
 
 `ls reports/` is the authority: any `NN_*.md` present was written by its agent in full. The
 per-agent transcripts of the stopped agents are not in the repo (they were in the old session's
@@ -137,6 +137,7 @@ finish: re-run its brief.
   `checker_plain.md`, `checker_expert.md`, `checker_qbank_answerer.md`, `checker_qbank_grader.md`.
 - `reports/` — research reports (15-section format).
 - `drafts/glossary_groups_1_4.md`, `drafts/ia_plan_provisional.md`.
+- `salvage/` — transcript extracts of the six stopped research agents (areas 04, 05, 07, 13, 14, 15).
 - `bootstrap_resume.sh` — recreates the scratchpad layout for a new session.
 - `../wiki/` — the deliverable folder: `README.md`, `sync_wiki.sh`, `sync_wiki.ps1` (pages to come).
 

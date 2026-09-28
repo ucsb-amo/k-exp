@@ -581,3 +581,96 @@ Error sending stop signal to UDP server: {e}
 ```
 `stop()` calls `sendall` on a socket it never connected, so this prints on every clean stop of a `UdpServer` (the windowed monitor server); it is harmless — inferred (Python raises on `sendall` of an unconnected TCP socket; exact WinError text: needs a human).
 
+---
+
+## 7. demon_candidates
+
+**D1. The dashboard started before the lab network: nothing autostarts, everything looks calm.**
+Evidence: `resolve_host_ip()` returns `None` when no `192.168.1.x` address is active (`host_config.py:66-88`); `load_autostart_set(None)` returns `set()` without applying `"*"` (`host_config.py:106-107`); panels still build and sit grey (IDLE); status bar `kong  unknown`; the only record is `Host IP resolved: None (hostname=kong)` and `Autostart set: []` at INFO in `dashboard__kong.log` (`server_dashboard_app.py:181-186`). After a power cut the PC can finish booting before the switch, and a dashboard started at login would hit this. Also: the saved layout is keyed on the IP, so the layout falls back to defaults under `unknown` (`dashboard_window.py:820-822`).
+Confidence: code *seen and confirmed*; the power-cut scenario is the *best explanation — still needs checking* (whether the dashboard is started at login at all: needs a human).
+
+**D2. The Server Dashboard "does nothing" when double-clicked.**
+Evidence: `server_dashboard.bat:7` uses `start "" pythonw`; imports at `server_dashboard_app.py:26-105` run before logging/excepthook are set up (`:173`, `logging_setup.py:210-218`). Any import-time exception (missing package after a `uv sync`, a syntax error in `kexp.config.*` or in a registry module, a broken `%code%`) kills the process with no window and no log line. The console window of the .bat closes immediately in every case, so success and failure look the same for the first seconds. Since 2026-09-24 (ac3a6c6). Same for `client_dashboard.bat`.
+Confidence: *seen and confirmed* in code; not observed in a report.
+
+**D3. `B:` missing at start: all servers stay grey, including the interlock, and nobody retries.**
+Evidence: `requires_data_dir=True` default for every spec (`panel_spec.py:150`); precheck failure → IDLE, one throttled `[ERR]` line per server (`server_supervisor.py:385-405`); no timer retries it. The status-bar `data dir UNREACHABLE` label is re-probed every 30 s (`dashboard_window.py:752-756`) and will turn to `data dir OK` once `B:` is back, while the servers stay stopped: the healthy-looking label then contradicts the grey panels. Fix is Servers → `Start autostart set (10)`.
+Confidence: *seen and confirmed* (code); the interlock-safety implication needs a human.
+
+**D4. "Monitor server running" is not "monitor running".**
+Evidence: after any dashboard (re)start the Device Control header LED is green (server process alive) while the pill is red `Monitor not running` (sub-state `never_started`) (`monitor_server_headless.py:84-99`; `device_control_gui.py:2074-2076`). Clicks on Device Control are then not applied (`device_summary.py:52`). By design, to avoid stealing the core from a running experiment. It self-heals after the next experiment ends (`run complete`).
+Confidence: *seen and confirmed* (code + in-code rationale).
+
+**D5. Runs without the magnetometer server record B = 0.**
+Evidence: `HMRDummy` returns `0.0`/zeros (`waxx/util/guis/HMR_magnetometer/hmr_magnetometer_client.py:43-55`); `Clients` swaps it in after one print (`kexp/base/clients.py:28-32`); `Control.read_magnetometer` stores the value into `data.b` (`kexp/base/control.py:146-151`). The saved file then carries plausible-looking zeros, not NaN, and nothing in the file says the magnetometer was a dummy.
+Confidence: *seen and confirmed* (code); how often `read_magnetometer` is used in current experiments: the data agent should check.
+
+**D6. Runs without the monitor server: one print, then no fence, no end state, stale Device Control.**
+Evidence: `Failed to connect to Monitor: {e}` (`clients.py:18-22`); every later monitor step is skipped under `hasattr(self,'monitor')` (`waxx/base/expt.py:157,203,350,417`). The monitor server never hears about the run, so the device-state file keeps the pre-run values and Device Control shows them as current; the monitor is not restarted afterwards. Typical trigger: dashboard not started yet after a power cut, or started with D1/D3.
+Confidence: *seen and confirmed* (code); the Device Control appearance afterwards: monitor agent to confirm.
+
+**D7. APD stage silently not moved when the PDXC server is missing.**
+Evidence: `APDStageClient.__init__` catches every exception and prints the `[PDXC] WARNING` text, whatever `raise_on_error` is; later calls print `[PDXC] WARNING: not connected -- skipping {what}.` (`kexp/control/misc/pdxc_apd_stage.py:36-52`). A run that needs the APD pickoff moved (or moved out) proceeds with the stage wherever it was.
+Confidence: *seen and confirmed* (code); physical consequence needs a human.
+
+**D8. Device Control on another PC lags by up to 10 s when UDP 50100 is blocked.**
+Evidence: state pushes go to `192.168.1.255:50100` (`state_broadcast.py:26-27`); the Network page opens only 50099; `StateListener.run` returns silently if it cannot bind (`state_broadcast.py:86-90`); a blocked inbound datagram is simply never seen; the GUI still refreshes via the 10 s reconcile (`device_control_gui.py:64,2993-2995`). Symptom: a change made on kong appears on the other PC's GUI 0-10 s later; your own edits look instant.
+Confidence: *best explanation — still needs checking* (firewall behaviour for directed broadcasts on the client: needs a human).
+
+**D9. A bad `%db%` silently changes the monitor's name and its state file.**
+Evidence: any failure in `get_core_addr()` → `None` → server id `monitor` (not `monitor:75`) and `MONITOR_STATE_FILEPATH = %data%\device_state_config.json` (not `_75.json`) (`hardware_id.py:38-116`; `kexp/config/ip.py:55-62`). Only a WARNING in the server's log. Clients whose `%db%` works look for `monitor:75` and report `Monitor server unreachable`; a monitor server started with the bad db reads/writes a different, possibly old, state file.
+Confidence: *seen and confirmed* (code); not observed.
+
+**D10. Two liveOD windows with the same hardware id.**
+Evidence: no duplicate guard in liveOD (5.16); both beacon `live_od:75`; experiments take whichever `NetClient` resolves (beacon behaviour); each liveOD reserves run IDs from the same `%data%\run_id.py`. The `[server_talk] WARNING: run ID ... maps to 2 data files` collision warning (E12 in the question bank) names "two liveOD servers" as a cause. A liveOD on krool with `%db%` = the kong device db is enough.
+Confidence: *best explanation — still needs checking*.
+
+**D11. Double Basler or TPI server.**
+Evidence: `basler` and `tpi` specs have no `server_id`, so `check_external()` cannot see a server started by `basler_gui.bat`/`tpi_gui.bat` (`server_registry.py:142-154,198-211`; `server_supervisor.py:294-317`); `basler` and `tpi` autostart on every lab-subnet PC (`dashboard_hosts.py:24-27`). Two Basler servers contend for the same USB cameras (and with liveOD). Symptom depends on beacon (needs a human).
+Confidence: *seen and confirmed* (the missing protection); effect *best explanation*.
+
+**D12. Windowed monitor server already running → red LED on Device Control while everything works.**
+Evidence: monitor spec has no `server_id` (no EXTERNAL detection); the dashboard's headless server finds the existing beacon, logs 6.6 and exits 1 → CRASHED (red) (`monitor_server_headless.py:238-251`; `server_supervisor.py:584-590`). Device Control itself still talks to the windowed server, so the pill can read `Monitor ready` beside a red header LED.
+Confidence: *seen and confirmed* (code path); not observed.
+
+**D13. SLM over Remote Desktop** (existing Demons entry). Code-confirmed parts: `Error: Failed to load LUT!` path (`slm_server.py:206-211`); experiments send without `"seq"` and never wait (`slm_protocol.py:13-23`); hourly re-init (`run_server.py:14-15`). `server.bat` hand-back added 2026-09-26 (7003175) and, per the Demons page, not yet tried on winky.
+Confidence: as on the Demons page (best explanation for the RDP cause).
+
+**D14. Logs go to the local disk for the whole session if `B:` was missing at start.**
+Evidence: `logging_setup._resolve_log_dir` chooses once (`logging_setup.py:102-131`); the notice shows 10 s in the status bar (`dashboard_window.py:366-368`). Someone looking in `B:\_K\PotassiumData\_logs\server\` later finds no entries for that session.
+Confidence: *seen and confirmed* (code).
+
+**D15. `Dashboard` typed on the wrong PC starts servers there.**
+Evidence: `Dashboard.lnk` is on every PC's PATH after `setup_shortcuts.ps1`; it opens the **Server** Dashboard (`Dashboard.lnk` → `server_dashboard.bat`), which autostarts `basler` + `tpi` on any lab-subnet PC (`dashboard_hosts.py:24-27`). Since the Client/Server Dashboard shortcuts were removed (c04c97b, 2026-09-27), `Dashboard` is the only dashboard shortcut left.
+Confidence: *seen and confirmed* (files); effect *best explanation*.
+
+**D16. Server `print()` output shows up late in the Log dock.**
+Evidence: children are pipes without `PYTHONUNBUFFERED`; the reason is spelled out in `monitor_manager.py:3-10`. Servers that print (rather than log) appear frozen in the Log dock while running fine, and their last lines before a crash may never appear.
+Confidence: *best explanation — still needs checking* per server.
+
+---
+
+## 8. symptoms
+
+| Where you look | What you see (verbatim) | What you expected | What is really going on | Misleading signal | Ref |
+|---|---|---|---|---|---|
+| kong desktop | You double-click the Dashboard shortcut or `server_dashboard.bat`; a black window flashes; nothing else | the `kexp Server Dashboard - kong` window | Python died while importing (pythonw, no console) | the flash looks like any normal launch | D2; run `python -m kexp.util.dashboard.server_dashboard_app` in a kpy terminal |
+| Server Dashboard | all panels grey, status bar `○ 10 idle`, host `kong  unknown` | `● 10 running` | lab adapter was down at start: autostart set empty | no error anywhere; `data dir OK` may be showing | D1 |
+| Server Dashboard | all panels grey; Log dock lines `[ERR] DATA_DIR unreachable; map-network-drives bat not found at G:\...\map_network_drives.bat — cannot start`; later status bar `data dir OK` | servers running | `B:`/`G:` missing when the precheck ran; no retry | `data dir OK` after the drive returns | D3, 6.4 |
+| Device Control (in dashboard) | header LED green; pill red `Monitor not running`; notice `Monitor not running: edits are not applied until it is started` | pill `Monitor ready` | monitor experiment never started (by design) | the green LED | D4 |
+| Device Control | header LED red; pill `Monitor ready` | green LED | a windowed/other monitor server owns `monitor:75`; the dashboard's copy refused | the red LED | D12, 6.6 |
+| Device Control on krool | pill `Monitor server unreachable` / `click the status to retry` | `Monitor ready` | kong's server is `monitor:75`; krool's `%db%` unset or different; or UDP 50099 blocked | the monitor works fine from kong | D9, 6.2, 6.9 |
+| Device Control on another PC | values change 0-10 s after someone edits on kong | instant | UDP 50100 blocked on this PC | your own edits look instant | D8 |
+| Experiment terminal | `Failed to connect to Monitor: ...` then the run proceeds normally | run with monitor fence | monitor server not running | run "works" | D6 |
+| Experiment terminal | `Failed to connect to HMR Magnetometer server: ...` | — | magnetometer dummy: field recorded as 0 | the run and the file look normal | D5 |
+| Experiment terminal | `[PDXC] WARNING: no connection to the PDXC stage server: ...` | stage moved | stage untouched for this run | run proceeds | D7 |
+| Experiment terminal | ~10 s pause at start, then `RuntimeError: [LiveOD] Could not connect to LiveOD server: ...` | `Run ID: 83xxx` | liveOD window not running on kong (or blocked beacon) | — | 6.1 |
+| Experiment terminal | starts ~19 s slower than usual, several `Failed to connect ...` lines | quick start | Server Dashboard not running at all | — | 4.11 |
+| `art` output | `discover 'live_od:75'` span ≈ 10 s, or `discover 'monitor:75'` ≈ 3 s | short spans | that server was not found | the run may still proceed | 5.20 |
+| LiveOD window | status strip `Next run: (unavailable)` | `Next run: 83xxx` | `server_talk.get_run_id()` raised: run-ID file on `B:` unreachable | window otherwise looks ready | `main_window.py:514-519` |
+| LiveOD console | no "Mother is watching..." line ever appears | the wiki says it should | that line no longer exists in the code | — | section 11 |
+| FIx Run ID shortcut | a window flashes and closes | run ID fixed | the target script does not exist | — | 6.14 |
+| SLM server window (winky) | `Blink SDK was successfully initialized.` then `Error: Failed to load LUT!`; commands still echo `Received command: ...` | `LUT Loaded Successfully.` | started from Remote Desktop (best explanation) | the success line and the 1920x1200 size | D13 |
+| B:\_K\PotassiumData\_logs\server | no dashboard entries for today | today's log | `B:` was missing when the dashboard started: logs are under `%LOCALAPPDATA%\kexp\dashboard\_logs` | — | D14 |
+| krool | a Basler server and a TPI server appeared on krool | nothing | someone typed `Dashboard` on krool | the Server Dashboard window looks normal | D15 |
+

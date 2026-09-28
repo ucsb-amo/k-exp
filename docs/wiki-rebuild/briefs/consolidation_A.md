@@ -1,0 +1,6 @@
+# Consolidation agent A — areas 04, 05, 07. Report: SP/reports/CONSOLIDATED_A.md
+TRANSCRIPTS = /root/.claude/projects/-home-user/db7054f3-75e8-5d58-9981-ce723c029a42/subagents/workflows
+Read `SP/briefs/consolidation_shared.md` first, then these per-area briefs and cover them in this order:
+1. `SP/briefs/04_scanning_params.md` — scanning and parameters (scanner.py, dealer.py, expt_params.py ×3, adjust; precedence; shuffle/N_repeats/sort_idx; param writer types; the Scan-loop and Numerology pages). Settle: does `waxa/base/dealer.py` implement the `shuffle='axis'` / `run_info/shot_order` behaviour the Scan-loop and DataVault pages describe, or not? Question bank N5, N6, N15, E2, E3, E4, E16, E17.
+2. `SP/briefs/05_device_layer.md` — device frames and wrappers, `*_id.py`, `ad9910_fast_init`, DDS/DAC/TTL semantics, adding hardware, device_db. Question bank N13, E18, E19.
+3. `SP/briefs/07_monitor_device_state.md` — the monitor server, device state file, trust, run fence, composite ops, run loop, connections (AWG). The Monitor wiki page (2026-09-27) is fresh: audit it at claim level only where you have doubts; concentrate on the symptom table for the Device Control GUI and on `status_json` states. Question bank N11, N12, N18, E13, E14.
