@@ -71,7 +71,7 @@ class MonitorPanel(WidgetPanelBase):
         from kexp.config.ip import (MONITOR_EXPT_PATH, MONITOR_STATE_FILEPATH, LOG_DIR,  # noqa: PLC0415
                                     RESET_STATE_EXPT_PATH, RUN_LOOP_EXPTS)
         from kexp.util.guis.device_state_gui.monitor_server_headless import (  # noqa: PLC0415
-            monitor_connections, monitor_slm_reinit)
+            monitor_connections, monitor_slm_reinit, monitor_state_generator)
 
         self._gui = MonitorServerGUI(monitor_expt_path=MONITOR_EXPT_PATH,
                                      config_file_path=MONITOR_STATE_FILEPATH,
@@ -80,7 +80,8 @@ class MonitorPanel(WidgetPanelBase):
                                      reset_expt_path=RESET_STATE_EXPT_PATH,
                                      run_loops=loop_specs(RUN_LOOP_EXPTS),
                                      connections=monitor_connections(),
-                                     slm_reinit=monitor_slm_reinit())
+                                     slm_reinit=monitor_slm_reinit(),
+                                     state_generator=monitor_state_generator())
         layout = QVBoxLayout(self)
         layout.setContentsMargins(0, 0, 0, 0)
         layout.addWidget(self._gui)

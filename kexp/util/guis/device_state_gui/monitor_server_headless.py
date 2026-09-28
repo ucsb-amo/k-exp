@@ -52,6 +52,18 @@ def monitor_slm_reinit():
     return SlmReinitConfig(host=SLM_HOST, port=SLM_PORT, label="SLM")
 
 
+def monitor_state_generator():
+    """The "Regenerate state file" defaults (kexp...state_defaults); None if
+    it fails to load -- the server then does not offer it."""
+    try:
+        from kexp.util.guis.device_state_gui.state_defaults import (  # noqa: PLC0415
+            default_device_state)
+    except Exception:
+        log.exception("State defaults failed to load; the server will not regenerate the file.")
+        return None
+    return default_device_state
+
+
 def check_config() -> list[str]:
     """Return one message per unresolved kexp monitor config constant."""
     problems = []
@@ -99,7 +111,7 @@ def main() -> int:
     return run(MONITOR_EXPT_PATH, config_file_path=MONITOR_STATE_FILEPATH,
                journal_dir=journal_dir, reset_expt_path=RESET_STATE_EXPT_PATH,
                run_loops=loop_specs(RUN_LOOP_EXPTS), connections=monitor_connections(),
-               slm_reinit=monitor_slm_reinit())
+               slm_reinit=monitor_slm_reinit(), state_generator=monitor_state_generator())
 
 
 if __name__ == "__main__":
