@@ -61,8 +61,11 @@ class apd_joint_calibration(EnvExperiment, Base, RandomRamanPulseTimes):
         # configuration than the calibration was taken in, which inverts the
         # sign of the state-dependent APD response (see runs 76245 / 76269, and
         # RabiJointPosterior.polarity_check).
-        Base.__init__(self, setup_camera=False,
-                      camera_select=cameras.andor,
+        # cameras.apd + setup_camera=True: the readout is the APD, so the
+        # pickoff stage moves IN (no liveOD frames). With a camera and
+        # setup_camera=False the stage stayed wherever the last run left it.
+        Base.__init__(self, setup_camera=True,
+                      camera_select=cameras.apd,
                       imaging_type=img_types.DISPERSIVE,
                       save_data=True,
                       expt_params=self.p)
@@ -97,7 +100,11 @@ class apd_joint_calibration(EnvExperiment, Base, RandomRamanPulseTimes):
         self.data.apd_reference = \
             self.data.add_data_container(self.p.N_reference_reads)
 
-        self.finish_prepare(shuffle=False)
+        # Shuffled: in order, the N_repeats shots of each duration run back to
+        # back, so any readout drift over the run lines up with the duration.
+        # The analysis reads each shot's realized durations (data.t_raman_pulse),
+        # so it does not depend on the order.
+        self.finish_prepare(shuffle=True)
 
     @kernel
     def scan_kernel(self):
@@ -129,6 +136,10 @@ class apd_joint_calibration(EnvExperiment, Base, RandomRamanPulseTimes):
         # premise of this experiment is that it is already correct. phase_mode=1
         # anchors the DDS phase origin, so on resonance every pulse in the train
         # rotates about the same equatorial axis.
+        # warmup_imaging as in rabi_posterior_pulse_train and the APD-state
+        # calibration (apd_voltage_vs_state_2), so the readout runs at the same
+        # imaging warm-up as the constants it refines.
+        self.warmup_imaging()
         self.prep_raman()
 
         t0_mu = now_mu()
