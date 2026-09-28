@@ -1408,21 +1408,25 @@ def _feedback_kwargs_from_atomdata(ad):
 
 def feedback_grid_omega(p, fractional_initial_offset=None, guess_span_Omega=None,
                         frequency_raman_transition=None, t_raman_pi_pulse=None,
-                        feedback_grid_size=None):
+                        feedback_grid_size=None, grid_center_exact_offset=None):
     """Hypothesis grid (rad/s) and the index that sits exactly on resonance.
 
     A numpy re-implementation of Feedback._initialize_frequency_grid, term
     for term, including the snap, so the host (OPX tables, replay) and the
     kernel agree:
 
-        n_off  = round(fractional_initial_offset)          # half-to-even
+        c      = offset                  (grid_center_exact_offset = 1)
+               = round(offset)           (= 0: runs before 2026-09-27; half-to-even)
         t_j    = -1 + j * 2/(m-1)                           # j = 0..m-1
-        w_j    = omega_res + Omega * (n_off - span * t_j)   # DESCENDING in j
+        w_j    = omega_res + Omega * (c - span * t_j)       # DESCENDING in j
         zidx   = argmin_j |w_j - omega_res|                 # first minimum
         w_j   += omega_res - w_zidx                         # snap onto resonance
 
     Every argument defaults to the corresponding attribute of ``p``; pass a
     value explicitly for a per-shot quantity (a scanned initial offset).
+    ``grid_center_exact_offset`` defaults to ``p.feedback_grid_center_exact_offset``
+    and, when ``p`` has none (a run file from before the parameter, or
+    ``p`` is None), to 0 -- the placement those runs were taken with.
     Returns ``(omega_grid, zidx)`` with ``omega_grid`` float64 of length m and
     ``omega_grid[zidx] == 2*pi*frequency_raman_transition`` exactly.
     """
@@ -1436,13 +1440,16 @@ def feedback_grid_omega(p, fractional_initial_offset=None, guess_span_Omega=None
     f_res = float(pick(frequency_raman_transition, "frequency_raman_transition"))
     offset = float(pick(fractional_initial_offset, "feedback_fractional_initial_offset"))
     span = float(pick(guess_span_Omega, "feedback_guess_span_Omega"))
+    if grid_center_exact_offset is None:
+        grid_center_exact_offset = getattr(p, "feedback_grid_center_exact_offset", 0)
+    exact = int(grid_center_exact_offset)
 
     Omega = np.pi / t_pi
     omega_res = 2.0 * np.pi * f_res
-    n_off = round(offset)                    # python round == kernel round
+    center = offset if exact else float(round(offset))   # python round == kernel round
     scale = 2.0 / (m - 1)
     t = -1.0 + np.arange(m, dtype=np.float64) * scale
-    grid = omega_res + Omega * (n_off - span * t)
+    grid = omega_res + Omega * (center - span * t)
     zidx = int(np.argmin(np.abs(grid - omega_res)))
     grid = grid + (omega_res - grid[zidx])
     return grid, zidx
