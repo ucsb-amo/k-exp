@@ -4,6 +4,9 @@ from waxa.data.server_talk import server_talk as st
 
 from waxx.config.ip import EMAIL_CREDENTIALS_FILEPATH  # noqa: F401  (re-exported for kexp consumers)
 INTERLOCK_EMAIL_CREDENTIALS_FILEPATH = r"G:\Shared drives\Tweezers\Environments and Profiles\interlock_gmail_credentials.txt"
+# Remote Control's Google Voice number, notification addresses and whitelist, kept off GitHub
+# (format: kexp.util.remote_control.rc_config)
+REMOTE_CONTROL_CONFIG_FILEPATH = r"G:\Shared drives\Tweezers\Environments and Profiles\remote_control.json"
 
 ### data, filepaths
 DATA_DIR = os.getenv("data")
@@ -119,6 +122,7 @@ PDXC_COM = "COM40"
 AWG_IP = 'TCPIP::192.168.1.83::inst0::INSTR'
 
 ### remote control
+# The old whitelist file, read once to move its entries into REMOTE_CONTROL_CONFIG_FILEPATH
 WHITELIST_PATH = (
     os.path.join(DATA_DIR, "remote_whitelist.json")
     if DATA_DIR
