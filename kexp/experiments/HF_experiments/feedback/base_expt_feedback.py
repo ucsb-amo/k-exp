@@ -87,7 +87,12 @@ class FeedbackExpt(Base, Feedback, RandomRamanPulseTimes):
         # self.slm.write_phase_mask_kernel(phase=self.p.phase_slm_mask, verbose=False)
         self.imaging.set_power(self.p.amp_imaging)
 
-        self.prepare_hf_tweezers(squeeze=True)
+        # squeeze=False (user, 2026-09-27): the APD-state and joint calibrations
+        # (apd_voltage_vs_state_2, apd_joint_calibration) prepare unsqueezed
+        # tweezers, and with squeeze=True the on-resonance simulation check
+        # (83204) did not match the calibrated readout.
+        # self.prepare_hf_tweezers(squeeze=True)
+        self.prepare_hf_tweezers(squeeze=False)
         self.prep_raman(frequency_transition=self.omega_raman/(2*np.pi),
                         phase_mode=0)
 
