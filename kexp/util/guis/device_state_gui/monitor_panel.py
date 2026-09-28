@@ -14,11 +14,25 @@ from __future__ import annotations
 from waxx.util.dashboard.embed_helpers import WidgetPanelBase, embed_main_window
 
 
+def _slm_kwargs() -> dict:
+    """The SLM pill's "Launch spot finder" (kexp...slm_tools); a failure
+    costs that menu item only."""
+    import logging  # noqa: PLC0415
+    try:
+        from kexp.util.guis.device_state_gui.slm_tools import launch_spot_finder  # noqa: PLC0415
+    except Exception:
+        logging.getLogger(__name__).exception(
+            "SLM tools failed to load; the SLM pill has no spot finder launcher.")
+        return {}
+    return {"spot_finder_launcher": launch_spot_finder}
+
+
 def _composite_kwargs(dds, dac) -> dict:
     """The Composite tab's definitions (kexp.config.composite_devices), its
     scenes, the monitor's connections (the tab's connection bar), what their
-    readbacks need, and the read-only telemetry (kexp...telemetry_providers).
-    A failure here costs the tab (or only the measured values), not the
+    readbacks need, and the read-only telemetry (kexp...telemetry_providers);
+    and the SLM pill's spot finder launcher (_slm_kwargs).  A failure here
+    costs the tab (or only the measured values, or the launcher), not the
     whole GUI."""
     import logging  # noqa: PLC0415
     log = logging.getLogger(__name__)
@@ -34,13 +48,14 @@ def _composite_kwargs(dds, dac) -> dict:
                   "composite_frames": SimpleNamespace(dds=dds, dac=dac)}
     except Exception:
         log.exception("Composite device definitions failed to load; the Composite tab is off.")
-        return {}
+        return _slm_kwargs()
     try:
         from waxx.util.device_state.telemetry import TelemetryHub  # noqa: PLC0415
         from kexp.util.guis.device_state_gui.telemetry_providers import default_providers  # noqa: PLC0415
         kwargs["composite_telemetry"] = TelemetryHub(default_providers())
     except Exception:
         log.exception("Telemetry providers failed to load; the cards show no measured values.")
+    kwargs.update(_slm_kwargs())
     return kwargs
 
 
