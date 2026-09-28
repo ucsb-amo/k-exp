@@ -124,6 +124,28 @@ class Base(Expt, Devices, Cooling, Image, Cameras, Control, Clients):
         # unless self.opx.use(...) was called in prepare().
         self.opx.on_finish_prepare()
 
+    def pre_init_run(self):
+        """Just before INIT_RUN (waxx Expt.finish_prepare_wax): an SLM reinit
+        that is due -- or already running -- is done now, between runs, and
+        this run waits for it (waxx SLM.reinit_if_due). The SLM server never
+        re-initialises by itself, and the monitor server asks for it only
+        while the machine is idle, which back-to-back runs or a run loop may
+        never leave it; no reinit ever starts during a run. A run on the Andor
+        path (the SLM is in its beam) does not start on an SLM whose reinit
+        failed; any other run starts with a warning. What happened is saved
+        with the run ('slm_at_start'). The monitor experiment is not a run."""
+        if getattr(self, '_is_monitor', False):
+            return
+        import json
+        uses_slm = self.camera_params.optical_path_key == cameras.andor.key
+        record = self.slm.reinit_if_due(by=f"run start ({self._expt_file_stem()})",
+                                        required=uses_slm)
+        record["uses_slm"] = uses_slm
+        try:
+            self._extra_file_texts["slm_at_start"] = json.dumps(record, default=repr)
+        except Exception as e:
+            print(f"[slm] WARNING: could not store the SLM state at run start ({e!r}).")
+
     def _stamp_device_state(self):
         """Pre-run check: the report from the monitor server -- device state,
         trust, hazards, journal since the last run -- stored as the run's

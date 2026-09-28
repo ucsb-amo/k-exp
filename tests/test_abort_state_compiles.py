@@ -12,6 +12,7 @@ generated there).  Host behaviour is in waxx tests/test_abort_state.py.
 
 Each compile takes ~5-10 s.  Skipped when %db% / %code% are not set.
 """
+import json
 import os
 from types import SimpleNamespace
 
@@ -73,6 +74,11 @@ def _build(monkeypatch, tmp_path, with_monitor=True):
     monkeypatch.setattr(kclients, "APDStageClient",
                         lambda *a, **k: SimpleNamespace(set_apd_stage=lambda *a, **k: None))
     monkeypatch.setattr(kclients, "HMRClient", kclients.HMRDummy)
+    # finish_prepare asks the real SLM server whether a reinit is due (and
+    # would ask it for one): never from a test.
+    from waxx.control.slm.slm import SLM
+    monkeypatch.setattr(SLM, "reinit_if_due",
+                        lambda self, **kw: {"result": "compile test", "by": kw.get("by")})
 
     class _NoWavemeter(wavemeter_id.WavemeterController):
         def __init__(self, *a, **k):
@@ -105,6 +111,10 @@ def test_scan_with_the_monitor_snapshot_compiles(monkeypatch, tmp_path):
     try:
         assert exp._abort_snapshot_kernels is exp.monitor._snapshot_kernels
         assert len(exp._abort_snap_dds_f) == len(exp.monitor._snap_dds_keys)
+        # the run-start SLM step ran (stubbed) and its record is kept for the file
+        slm = json.loads(exp._extra_file_texts["slm_at_start"])
+        assert slm["result"] == "compile test" and slm["by"].startswith("run start (")
+        assert slm["uses_slm"] is False                      # an xy_basler run
         _compile(cls, exp)
     finally:
         device_mgr.close_devices()
