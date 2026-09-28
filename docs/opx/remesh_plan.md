@@ -1,5 +1,132 @@
 # Remesh with pole-return for the OPX feedback loop — design plan
 
+## 2026-09-28 update (read first)
+
+Status (later on 2026-09-28): **implemented offline** as the sequence
+`bayesian_feedback_remesh` (opx_sequences/feedback.py; module docstring
+"Remesh with pole return"), the float64 emulation
+(`run_shot_fixed_point_emulation(..., remesh=, follow=)`) and the replay
+(`FeedbackOPXReplay` on remesh runs). It follows the ARTIQ experiment
+`feedback_reinit.py` rather than §3–§5 below where they differ: the pole
+pulse keeps the drive axis and only its length is chosen (θ* from
+`a = y`, `b = z` of the co-rotating state: no `frame_rotation`, so §7.2's
+hardware sign check is not needed), rounded to a tabled pole level; one
+remesh per shot; states reset to `(0, 0, s0)`; log-weights interpolated
+linearly in L. Not yet run on the QOP simulator or hardware. Tests: the
+emulation against an independent double-precision oracle (decisions and
+P0 to 1e-6), the frame-advance power trick against the lattice table, the
+QUA trace (one classical `if_`, no element statements in it), the finish
+hook, the replay of synthetic run files through the real finish hook
+(fixed point: identical to float64 rounding; double precision: 1e-4 with
+the applied integer-Hz drive, flips only at exact ties) with forced and
+unforced triggers in every rule branch, perturbed and impossible recorded
+decisions, invalid shots and what-ifs, and a physics check of the pole
+rule against the true Bloch vector. See the review section below.
+
+The tables came first; three simplifications of the plan below, each
+verified by an offline test in `k-exp/tests/test_feedback_opx.py`:
+
+1. **§6 needs no phase accumulators and no origin reset.** The co-rotating
+   recurrence the sequence already runs uses only the pulse-to-pulse
+   intervals: `dphi0_i = frac(f_0 (t_{i+1} - t_i))`, never `t_i` itself.
+   After a pole return every hypothesis is `(0, 0, ±|s̄|)`, which is
+   frame-invariant, so moving the time origin changes nothing
+   (`test_reset_model_is_origin_free_after_a_pole_reset`, with a control
+   showing that a mid-shot origin move *without* the reset does change the
+   posterior).
+2. **§3.1 needs no rotation on the OPX, and the §7.1 sign is settled.**
+   After the update of pulse i the stored co-rotating `(x, y)` of hypothesis
+   j equal the lab-frame vector of `generate_posterior` rotated by
+   `Rz(-phi_{j,i+1})` — exactly the §3.1 formula with the phase of the
+   NEXT pulse start (`test_corotating_state_is_the_drive_frame_vector`:
+   agreement < 1e-8; the opposite sign is off by > 1e-2). So
+   `X̄ = Σ P_j x_j`, `Ȳ = Σ P_j y_j` straight from the OPX state. The
+   implementation plays no `frame_rotation`, so the hardware sign of
+   `frame_rotation_2pi` (§7.2, M4) is needed only if the §3.2 ψ* rotation
+   is ever built (the one way to reach the true pole, see the review).
+3. **§6's tables are a lattice, not per-remesh trig.** With the new grid's
+   points on the lattice `remesh_lattice_w` (step `dw / ratio^(L)`, the run
+   grid's span) and its step `dw / ratio^l`, every table is host-built:
+   `lattice_frame_advances` (frame advance of every lattice frequency,
+   `n_lat × N` per shot: 81 × 17 for m = 21, two levels of halving),
+   `spacing_frame_advances` (`n_spacing × N`), `remesh_level_tables` /
+   `remesh_axis_tables` (rotation / seed / axis tables per spacing level;
+   depend on the step only, so the centre can sit anywhere on the lattice).
+   `test_remesh_lattice_and_spacing_tables_match_direct` and
+   `test_remesh_grid_posterior_from_lattice_tables_matches_generate_posterior`
+   (P0 to 1e-6 against the double-precision posterior on a remeshed grid).
+   Constraint this puts on §5.1: the remesh scale factor is `1/ratio`
+   (ratio an integer ≥ 2) and the new grid's point 0 is a lattice point
+   (snap the centre to the lattice, not only to an old grid point).
+
+Also: `back_action_coherence` is 0.7746 since the 83203 joint fit, not the
+0.62 quoted in §4. (An earlier version of this note suggested running the
+trigger's weights pass in the split update's "pre-read window"; withdrawn:
+there is no such window as built, see the review below.)
+
+## 2026-09-28 review (four adversarial reviewers) and what changed
+
+No blockers. The QUA text was run through an offline interpreter against
+the float64 emulation (37 configurations, float and 4.28 fixed point):
+identical decisions, |ΔL| ≤ 2e-7. Changed after the review:
+
+- **Pole step schedule.** The pole pulse no longer shortens its hold to
+  keep the drawn schedule (that ate the compute window by up to
+  (1 − fmin) t_π + t_off ≈ 3.4 µs while the remesh block was added). Its
+  hold is the normal one plus `t_opx_remesh_hold`; the step gap is ARTIQ's
+  formula with the pole duration, and later pulses shift
+  (`remesh_pulse_starts_cc`). Model-exact: the tables are interval-based,
+  and the pole step's own frame advance acts on states the remesh resets to
+  the z axis (the replay test checks this numerically: identical to 1e-15
+  up to the pole, float64 phase rounding ≤ 4e-12 after it).
+- **Required measured keys:** `t_opx_feedback_compute_budget[...]_remesh`
+  (the trigger block runs after every pulse's update) and
+  `t_opx_remesh_hold`, besides the overhead key; `sim_remesh_timing.py`
+  measures all three (not run).
+- **Arithmetic the emulation cannot see:** `Math.div` with divisors below
+  1/8 replaced by `Math.inv(8 Sw)` (documented domain |x| > 1/8); the pole
+  level by an exact bit shift (`opx_remesh_pole_levels` must be 2^q + 1)
+  instead of `Cast.mul_int_by_fixed` (undocumented rounding).
+- **Refusals:** an empty trigger window; an alias exclusion that can
+  leave no point beyond it (QUA would wrap M + 8); a margin ≥ 8 × scale
+  nats (unreachable with floored log-weights; ARTIQ has no ceiling);
+  `feedback_reinit_span_Omega` ≠ span / ratio. Pole levels shorter than 4
+  cycles are clamped (model tables follow the played duration).
+- **Finish hook:** idempotent (applied durations first), slip line names
+  the keys used and the step where the slip changed, `remesh_trigger_metric`
+  (std in Ω or margin in nats; the raw stream is kept) and `s_z_on_grid`.
+- **Replay:** what was played is rebuilt from the run's own params;
+  structural edits of `fr.p` refused; both engines read the same model;
+  impossible recorded decisions exclude their shot (count + reason
+  printed); exact argmax ties counted separately.
+- **Split update:** one loop (the prologue interval differed); its premise
+  is contradicted (ctx.measure's own save is the first read, and the
+  2026-09-25 QOP 2.6 measurement) — expect no gain.
+
+Open, in order of importance:
+
+1. **The remesh shows no measurable benefit in a float64 Monte Carlo**
+   (physics reviewer, same truth and seeds, N = 1000 paired): final error
+   remesh − no remesh = −0.014 ± 0.024 Ω (σ_p 0.159, method 1),
+   −0.011 ± 0.023 (method 0), −0.028 ± 0.030 (σ_p 0.347, N = 20). With the
+   std trigger at 0.5 Ω, 93 % of triggers are forced (σ_p 0.347), and the
+   truth is outside the one-shot fine grid (±0.625 Ω) after the remesh in
+   22 % (σ_p 0.159) to 47 % (σ_p 0.347) of shots, which then end with a
+   median error of 1.3–1.5 Ω. Same as ARTIQ's `feedback_reinit` defaults —
+   a design question, not a port error.
+2. **The pole pulse reaches only the (y, z) projection:** it rotates about
+   the drive axis; the MAP vector's x (along-axis) part stays. |z_after| /
+   |s_MAP| median 0.925 (< 0.9 in 44 % of shots); for the true atoms
+   |S_z| / |s| after the pole pulse median 0.60. Reaching the pole needs
+   §3.2's ψ* rotation (and §7.2's sign check).
+3. **QUA semantics to confirm on the simulator:** Math.argmax's tie rule
+   (first index assumed; pulse 0 ties exactly), Math.inv precision.
+4. **Timing** (`sim_remesh_timing.py`), then QUA memory at the largest
+   shot count: the remesh adds 2N per-shot values (10N instead of 8N,
+   continuous; 9N instead of 7N, levels) plus 162 run-constant lattice IFs.
+
+---
+
 Date: 2026-09-25. Status: **plan only, nothing implemented.** Builds on the
 reset-phase-model port (`feedback_port_report.md`) and on the ARTIQ remesh code
 in `kexp/base/feedback.py` (`maybe_remesh`, `remesh_to_centered`, and the

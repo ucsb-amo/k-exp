@@ -56,7 +56,10 @@ from kexp.experiments.opx_sequences.feedback import (          # noqa: E402
     feedback_constants, build_feedback_shot_tables, feedback_finish,
     feedback_step_gaps_cc, scheduled_pulse_starts_s,
     log_weights_to_probabilities, timestamps_cc_to_seconds, volts2raw,
-    open_loop_drive_indices, BLOCK_EDGE_CC)
+    open_loop_drive_indices, BLOCK_EDGE_CC,
+    remesh_spacing_steps, remesh_lattice_w, remesh_grid_lattice_indices,
+    lattice_frame_advances, spacing_frame_advances, remesh_level_tables,
+    remesh_axis_tables)
 from kexp.analysis.feedback_opx import (                       # noqa: E402
     FeedbackOPXReplay, FixedPointState, FixedPointRangeError,
     posterior_update_fixed_point_emulation, run_shot_fixed_point_emulation,
@@ -110,8 +113,31 @@ class FeedbackOPXExpt:
         pass
 
 
+# The APD calibration of run 78309 (the OPX placeholder copies before
+# 2026-09-27). The QUA-trace tests pin it rather than inherit the params
+# file, whose calibration moves: their literals were computed for it --
+# v_down_raw = -0.19702 V * 5000 ns / 4096 = -0.24050..., k1 = 1/(raw range)
+# / n_split = 11.159 / 2 = 5.5796..., and n_split = 2 sets how many doublings
+# the photon fraction gets. test_params_file_* checks the file's own values.
+SIGMA_P_78309 = 212.75 / 1336.2
+CAL_78309 = dict(v_apd_all_up_opx=-0.12361, v_apd_all_down_opx=-0.19702,
+                 std_photon_fraction_opx=SIGMA_P_78309,
+                 std_n_photons_per_shot=SIGMA_P_78309 * 1336.0)   # _params' n = 1336
+
+# The model constants of the params files before the 2026-09-27 write-back
+# of the joint fit 83203 (C 0.62 -> 0.7746, f_LS 40.61 -> 50.11 kHz, t_pi
+# 6.5821 -> 6.4393 us; t_raman_pulse = t_pi/2 as the params file derives
+# it). The trace pins only C (the seed-phasor literal "0.62*" is the only
+# trace literal among them); the replay round trip pins all three (its
+# 1e-6 bound is set by the sincos-table error, which moves with them).
+MODEL_PRE_83203 = dict(back_action_coherence=0.62, frequency_lightshift=40610.,
+                       t_raman_pi_pulse=6.5821e-6, t_raman_pulse=6.5821e-6 / 2)
+TRACE_PIN = dict(CAL_78309,
+                 back_action_coherence=MODEL_PRE_83203['back_action_coherence'])
+
+
 def _trace(seq, xvars, cmap=None, **kw):
-    ex = FeedbackOPXExpt(xvars, **kw)
+    ex = FeedbackOPXExpt(xvars, **{**TRACE_PIN, **kw})
     tables = build_shot_tables(ex)
     b = OPXProgramBuilder(seq, cmap or make_transition_map(ex), tables, tables.n_shots)
     prog, ctx = b.trace()
@@ -369,7 +395,8 @@ def test_params_file_inherits_and_forces_no_remesh():
         assert getattr(p, key) == getattr(base, key)
     assert p.v_apd_all_up_opx == base.v_apd_all_up            # placeholder copies
     assert p.v_apd_all_down_opx == base.v_apd_all_down
-    assert p.std_photon_fraction_opx == pytest.approx(212.75 / 1336.2)
+    # derived from the ARTIQ calibration's ratio (was the literal 212.75 / 1336.2 of 78309)
+    assert p.std_photon_fraction_opx == pytest.approx(base.std_n_photons_per_shot / base.n_photons_per_shot)
     assert p.t_raman_pulse_offset_opx == 127.e-9
     assert p.t_opx_feedback_compute_budget > 0.
     assert p.t_opx_feedback_align_overhead >= 0.
@@ -389,7 +416,14 @@ def test_params_file_inherits_and_forces_no_remesh():
     assert c.inv_sigma_p_s == pytest.approx(c.inv_sigma_p / 8)
     # the floor: -8 - the largest decrement (3/sigma_p/8)^2 (+ a 2^-16 margin)
     assert c.L_floor == pytest.approx(-8 + (3 * c.inv_sigma_p / 8) ** 2 + 2 ** -16)
-    assert -2.5 < c.L_floor < -2.4 and 32 * c.L_floor == pytest.approx(-78.5, abs=0.1)
+    # derived from the calibration, not a free parameter (-2.45 = -78.5 nats
+    # at the 78309 sigma_p 0.159; it moves with std_photon_fraction_opx).
+    # What feedback_constants needs of it: room below 0 for the lazy
+    # normalisation (it raises otherwise), and floor - largest decrement
+    # still inside QUA fixed, so L stays in [-8, 0] by construction
+    assert c.L_floor < -1e-3
+    assert c.L_floor - (3 * c.inv_sigma_p_s) ** 2 == pytest.approx(-8 + 2 ** -16)
+    assert c.L_floor - (3 * c.inv_sigma_p_s) ** 2 >= -8.
     assert _const(p, sincos_lut_bits=0).sincos_lut_bits == 0
     assert _const(p, exp_lut_bits=0).exp_lut_bits == 0
     q = ExptParamsFeedbackOPX()
@@ -402,7 +436,12 @@ def test_params_file_inherits_and_forces_no_remesh():
     assert c.flat_threshold == pytest.approx(21 / 1.15)
     assert c.flat_threshold4 == pytest.approx(21 / 4.6) and c.flat_threshold4 < 8
     assert c.f_Omega_hz == pytest.approx(1. / (2 * p.t_raman_pi_pulse))
-    assert c.inv_sigma_p < 8 and c.n_split == 2       # 1/range_raw = 11.2 -> two factors
+    # the photon-fraction split: the smallest n in (1, 2, 4, 8) that puts
+    # k1 = 1/(raw range)/n inside QUA fixed (78309: 11.2 -> 2; the file's
+    # calibration decides, _split_factor raises past 8)
+    assert c.inv_sigma_p < 8 and c.n_split in (1, 2, 4, 8)
+    assert abs(c.k1) < 8 and c.k1 == pytest.approx(c.inv_range_raw / c.n_split)
+    assert c.n_split == 1 or abs(c.inv_range_raw) / (c.n_split // 2) >= 8
     assert c.t_img_cc == 1250 and c.extra_gap_cc == 0
     assert c.budget_cc == s_to_cc(p.t_opx_feedback_compute_budget)
     # the file runs the levels structure, which has its own measured overhead
@@ -1182,7 +1221,13 @@ def _synthetic_ad(p, seeds, detune=0.37, noise=True, drop_last=False,
 
 
 def test_replay_class_roundtrip_synthetic():
-    p = _params(N=8, m=9, span=2.0, offset=0.0)
+    # model constants pinned (MODEL_PRE_83203): with no floors the
+    # double-precision vs emulation agreement below is set by the 12-bit
+    # sincos table the emulation inherits from the params file (exact trig:
+    # ~1e-10), and that error moves with C, f_LS and t_pi (2026-09-27:
+    # 4.9e-7 before the 83203 write-back, 1.05e-6 after; the table's design
+    # accuracy, <= 2.3e-5 on P0, is the numerics tests' business)
+    p = _params(N=8, m=9, span=2.0, offset=0.0, **MODEL_PRE_83203)
     ad, T, floors, omega_true, d_used = _synthetic_ad(p, [1, 2, 3, 4])
     fr = FeedbackOPXReplay(ad)
     assert fr.n_shots == 4 and fr.N_step == 8 and fr.m == 9
@@ -1271,7 +1316,12 @@ def test_replay_class_roundtrip_synthetic():
     # (0.5 Omega = one grid step) with noiseless measurements is reproduced
     # exactly by its own hypothesis, so the posterior argmax must be that
     # hypothesis on every shot and the posterior concentrated on it
-    p20 = _params(N=20, m=9, span=2.0, offset=0.0)
+    # sigma_p pinned at the 78309 value the thresholds below were written for
+    # (0.159); the params file's calibration moves (0.18-0.24 on 2026-09-27)
+    # and would change how concentrated the null-test posterior gets
+    sp20 = 212.75 / 1336.2
+    p20 = _params(N=20, m=9, span=2.0, offset=0.0,
+                  std_photon_fraction_opx=sp20, std_n_photons_per_shot=sp20 * 1336.0)
     ad20, _T, _f, _o, _d = _synthetic_ad(p20, [1, 2])
     fr20 = FeedbackOPXReplay(ad20)
     s20 = fr20.simulate_feedback_run_apd(detuning_offset_Omega=0.5, seed=2, noise_scale=0.)
@@ -1474,3 +1524,1218 @@ def test_apd_volts_and_true_step_conventions():
                             c.Omega, 2 * np.pi * 40.e3, 5.e-6, 0.62)
     assert hz == pytest.approx(0., abs=1e-12)
     assert np.hypot(s[0], s[1]) == pytest.approx(0.62, abs=1e-12)
+
+
+# ---------------------------------------------------------------------------
+# 2026-09-28: exact grid step, the split update, remesh-ready tables
+# ---------------------------------------------------------------------------
+
+def _circ(a, b):
+    """Circular distance of two angles in turns."""
+    d = np.abs(np.mod(np.asarray(a) - np.asarray(b), 1.0))
+    return np.minimum(d, 1.0 - d)
+
+
+def test_grid_step_exact_keeps_tables_run_constant_in_offset_scans():
+    """The grid step comes from the construction (2 span/(m-1)). Before
+    2026-09-28 it was w_grid[0] - w_grid[1], whose ~1e-13 rounding varied
+    with the scanned offset: the axis tables became per-shot arrays and the
+    levels structure (the params file's default) refused an offset scan."""
+    p = _params(N=6, m=21, span=2.5, offset=0.0)
+    c = _const(p)
+    offsets = [-2.5, -1.5, 0., 1.5, 2.5]
+    n = len(offsets)
+
+    def col(k):
+        if k == 'feedback_fractional_initial_offset':
+            return np.asarray(offsets, dtype=float)
+        return np.full(n, float(np.asarray(getattr(p, k), dtype=float).reshape(-1)[0]))
+    T = build_feedback_shot_tables(col, n, c, seeds=np.arange(1, n + 1))
+    assert np.all(T.dw == 2 * 2.5 / 20)
+    np.testing.assert_allclose(T.w_grid[:, 0] - T.w_grid[:, 1], T.dw, atol=1e-9)
+    xv = [('feedback_fractional_initial_offset', offsets)]
+    for lev, keys in ((8, ('rot_Am', 'rot_B', 'rot_Cc', 'rot_D', 'rot_cth',
+                           'seed_cos_beta', 'seed_sin_beta')),
+                      (0, ('axis_h', 'axis_ux', 'axis_uz', 'axis_ux2', 'axis_uxuz'))):
+        ex, tables, b, prog, ctx = _trace(bayesian_feedback, xv, N=4, m=21, span=2.5,
+                                          t_raman_pulse_n_levels=lev)
+        assert not any(k in ctx._shot_arrays for k in keys), lev
+        assert 'if_table_80_hz' in ctx._shot_arrays          # the grid itself is per shot
+    # the exact seed tables equal the w_grid form to its rounding
+    lev_b = np.linspace(0.2, 0.6, 8)
+    s0 = level_seed_tables(lev_b, T.w_grid[0], c.phi_LS)
+    s1 = level_seed_tables(lev_b, T.w_grid[0], c.phi_LS, dw=float(T.dw[0]))
+    for k in ('cb', 'sb', 'cdb', 'sdb', 'beta', 'dbeta'):
+        np.testing.assert_allclose(s0[k], s1[k], atol=1e-11)
+
+
+SPLIT_TRACE = dict(opx_feedback_split_update=1,
+                   # provisional values so the structure traces; the real ones
+                   # are measured on the QOP simulator (docs/opx/sim_split_timing.py)
+                   t_opx_feedback_align_overhead_split=328.e-9,
+                   t_opx_feedback_align_overhead_levels_split=344.e-9)
+
+SPLIT_TIMING_ORDER = [
+    r"update_frequency\('raman_150'", r"reset_if_phase\('raman_80'\)",
+    r"reset_if_phase\('raman_150'\)", r"align\('raman_80', 'raman_150', 'raman_switch'\)",
+    r"play\('pass', 'raman_switch', duration=a\d+\[.*timestamp_stream=r\d+\)",
+    r"play\('block', 'raman_switch'\)", r"align\('raman_switch', 'imaging_switch'\)",
+    r"align\('imaging_switch', 'apd'\)", r"play\('pass', 'imaging_switch', duration=1250\)",
+    r"play\('block', 'imaging_switch'\)"]
+
+
+def test_split_update_trace():
+    xv = [('t_raman_pulse_seed', [11, 12, 13])]
+    N, m = 4, 5
+    # refused until the split structure's sync overhead is given explicitly
+    with pytest.raises(ValueError, match='overhead'):
+        _const(_params(opx_feedback_split_update=1))
+    assert not _const(_params()).split_update
+    for lev in (0, 8):
+        ex, tables, b, prog, ctx = _trace(bayesian_feedback, xv, N=N, m=m,
+                                          t_raman_pulse_n_levels=lev, **SPLIT_TRACE)
+        c = _const(ex.params)
+        key = ('t_opx_feedback_align_overhead_levels_split' if lev
+               else 't_opx_feedback_align_overhead_split')
+        assert c.split_update and c.overhead_cc == s_to_cc(SPLIT_TRACE[key])
+        # the same streams with the same per-shot counts as the default
+        assert ctx._save_counts == {
+            'apd': N, 'drive_index': N, 's_z': N, 'log_weights': N * m,
+            't_pulse_start_cc': N}
+        assert set(b.stream_specs()) == set(fbseq.STREAM_KEYS) | set(RESERVED_STREAMS)
+        src = _qua(prog)
+        assert not any(x.startswith('with if_(') for x in _stmts(src))
+        # ONE for_ over all N pulses (no prologue / epilogue: every interval
+        # has the loop structure the one sync overhead is measured for)
+        assert src.count('Math.argmax(') == 1
+        meas = [mm.start() for mm in re.finditer(r"measure\('acquire'", src)]
+        assert len(meas) == 1
+        start = meas[0]
+        # the timing statements of the pulse, in the pass-3b order
+        head = src[src.rfind("update_frequency('raman_80'", 0, start):start]
+        pos = 0
+        for pat in SPLIT_TIMING_ORDER:
+            mm = re.compile(pat).search(head, pos)
+            assert mm is not None, pat
+            pos = mm.end()
+        i_wait = src.index("'raman_switch')", src.index("wait(a", start))
+        i_pm = src.index('--0.24050', start)            # the photon-fraction assignment
+        i_argmax = src.index('Math.argmax(', start)
+        pre, post = src[i_wait:i_pm], src[i_pm:i_argmax]
+        # the REVIEWED premise limit: ctx.measure saves the ADC value right
+        # after the measure statement, before the hold -- that save is the
+        # first read of v, so the thread waits for the result before the
+        # "pre-read" half is reached (docstring: EXPECT NO GAIN)
+        assert src.index('save(', start) < i_wait
+        # before the photon fraction: the rotation, p1_j into its array, the
+        # phasors, and no saves
+        assert re.search(r"assign\(a\d+\[v\d+\], \(0\.5\*\(1\.0\+v\d+\)\)\)", pre)
+        assert 'Util.cond(' not in pre and 'save(' not in pre
+        assert ('Cast.unsafe_cast_int(' in pre) == (lev == 0)    # sincos table (continuous)
+        # after it: the two clamps and the likelihood's floor only
+        assert post.count('Util.cond(') == 3
+        assert 'Cast.unsafe_cast_int(' not in post and '(0.5*(1.0+' not in post
+        # the saves follow the argmax, as in the default structure
+        assert src[i_argmax:].count('save(') >= 3
+    # the flat rule traces in the split structure too
+    _trace(bayesian_feedback, xv, N=N, m=m, feedback_flat_rule_bool=1, **SPLIT_TRACE)
+
+
+def test_remesh_lattice_and_spacing_tables_match_direct():
+    """Every table a remeshed grid needs is a run constant or a lattice
+    table: the co-rotating frame advance depends on the grid's point-0
+    frequency and the pulse intervals only (dphi0 = frac(f_0 dt_i)), the
+    step and the rotation / seed tables on the spacing level only."""
+    p = _params(N=12, m=21, span=2.5, offset=0.0, t_raman_pulse_n_levels=8)
+    c = _const(p)
+    T = _tables_for(p, [5])
+    t_ext = T.t_start_ext_cc[0].astype(float) * CLOCK_NS * 1e-9
+    m, n_sp, r = 21, 3, 2
+    w0, dw = float(T.w_grid[0, 0]), float(T.dw[0])
+    lat_w = remesh_lattice_w(w0, dw, m, n_sp, r)
+    assert lat_w.size == 20 * 4 + 1 and lat_w[0] == w0
+    np.testing.assert_allclose(lat_w[::4], T.w_grid[0], atol=1e-9)   # the run grid is on it
+    f_lat = (c.omega_res + c.Omega * lat_w) / (2 * np.pi)
+    A0 = lattice_frame_advances(f_lat, t_ext)
+    steps = remesh_spacing_steps(dw, n_sp, r)
+    np.testing.assert_allclose(steps, dw / np.array([1., 2., 4.]))
+    DD = spacing_frame_advances(steps * c.f_Omega_hz, t_ext)
+    assert A0.shape == (lat_w.size, p.N_pulses) and DD.shape == (n_sp, p.N_pulses)
+    assert np.all((A0 >= 0.) & (A0 < 1.)) and np.all((DD >= 0.) & (DD < 1.))
+    # level 0 with point 0 on lattice point 0: the run's own tables
+    assert np.max(_circ(A0[0], T.dphi0[0])) < 1e-9
+    assert np.max(_circ(DD[0], T.ddphi[0])) < 1e-9
+    # any remeshed grid on the lattice: the direct tables of that grid
+    for level, n0 in ((0, 0), (1, 0), (1, 17), (1, 40), (2, 3), (2, 60)):
+        idx = remesh_grid_lattice_indices(n0, level, m, n_sp, r)
+        d0, dd = corotating_phase_tables(f_lat[idx], t_ext)
+        assert np.max(_circ(A0[n0], d0)) < 1e-9, (level, n0)
+        assert np.max(_circ(DD[level], dd)) < 1e-9, (level, n0)
+    with pytest.raises(ValueError):
+        remesh_grid_lattice_indices(70, 2, m, n_sp, r)          # leaves the lattice
+    with pytest.raises(ValueError):
+        remesh_grid_lattice_indices(0, 3, m, n_sp, r)           # no such level
+    # the rotation / seed / axis tables per spacing level are the per-grid
+    # builders at dw_l (nothing about where the grid sits)
+    a_lev = (T.level_s[0] - c.t_offset_s) / (2 * c.t_pi)
+    b_lev = T.level_s[0] / (2 * c.t_pi)
+    R = remesh_level_tables(a_lev, b_lev, dw, m, n_sp, r, c.phi_LS)
+    AX = remesh_axis_tables(dw, m, n_sp, r)
+    assert R['Am'].shape == (n_sp, 8, 2 * m - 1) and R['cb'].shape == (n_sp, 8, m)
+    for l, dwl in enumerate(steps):
+        mt = level_matrix_tables(a_lev, dwl, m)
+        st = level_seed_tables(b_lev, m, c.phi_LS, dw=dwl)
+        for k in ('Am', 'B', 'Cc', 'D', 'cth'):
+            np.testing.assert_array_equal(R[k][l], mt[k])
+        for k in ('cb', 'sb', 'cdb', 'sdb'):
+            np.testing.assert_array_equal(R[k][l], st[k])
+        for k, v in axis_tables(dwl, m).items():
+            np.testing.assert_array_equal(AX[k][l], v)
+
+
+def test_remesh_grid_posterior_from_lattice_tables_matches_generate_posterior():
+    """A grid of spacing level 1 centred away from the run grid, fed only the
+    lattice / per-level frame tables, against the double-precision ARTIQ
+    posterior on that grid: the tables carry the physics of a data-dependent
+    grid with no per-grid trig."""
+    p = _params(N=16, m=21, span=2.5, offset=0.0)
+    c = _const(p, sincos_lut_bits=0)
+    T = _tables_for(p, [7])
+    t_ext = T.t_start_ext_cc[0].astype(float) * CLOCK_NS * 1e-9
+    m, n_sp, r = 21, 2, 2
+    lat_w = remesh_lattice_w(T.w_grid[0, 0], T.dw[0], m, n_sp, r)
+    f_lat = (c.omega_res + c.Omega * lat_w) / (2 * np.pi)
+    A0 = lattice_frame_advances(f_lat, t_ext)
+    DD = spacing_frame_advances(remesh_spacing_steps(T.dw[0], n_sp, r) * c.f_Omega_hz, t_ext)
+    n0, level, zj = 13, 1, 6
+    w_grid = lat_w[remesh_grid_lattice_indices(n0, level, m, n_sp, r)]
+    grid = c.omega_res + c.Omega * w_grid
+    rng = np.random.default_rng(7)
+    omega_true = c.omega_res + c.Omega * (w_grid[zj] + 0.3 * (w_grid[0] - w_grid[1]))
+    measure, _ = _synthetic_measure(p, c, omega_true, T.t_start_s[0], T.d_s[0], rng)
+    fb = _artiq_feedback(p)
+    fb.omega_guess_list = grid
+    fb.omega_sq_list = grid * grid
+    fb.reset_feedback_state()
+    st = FixedPointState.uniform(m)
+    d = 10
+    for i in range(p.N_pulses):
+        w_d = float(w_grid[d])
+        p_meas = measure(i, w_d)
+        fb.omega_raman = c.omega_res + c.Omega * w_d
+        fb.t_raman_pulse_current = float(T.d_s[0, i])
+        fb.t_raman_pulse_ideal_current = float(T.d_s[0, i]) - c.t_offset_s
+        fb.generate_posterior(float(fb.N_photons_per_shot) * p_meas, float(T.t_start_s[0, i]),
+                              phase_raman_pulse_start=0.0, update_raman_frequency=1,
+                              update_rabi_frequency=0, include_photon_noise=1)
+        u = posterior_update_fixed_point_emulation(
+            st, d, p_meas, T.a[0, i], T.b[0, i], A0[n0, i], DD[level, i], w_grid, c, zidx=zj)
+        np.testing.assert_allclose(u['P0'], fb.P0, atol=1e-6)
+        assert u['s_z'] == pytest.approx(float(fb.state_z[zj]), abs=1e-9)
+        d = int(u['jmax'])
+
+
+def test_reset_model_is_origin_free_after_a_pole_reset():
+    """remesh_plan section 6: once every hypothesis is azimuth-free (spin up
+    at shot start, or reset to (0, 0, z) by a pole return) only the pulse
+    intervals matter -- moving the time origin changes nothing -- so a remesh
+    needs no per-hypothesis phase accumulators and no origin reset. Control:
+    with transverse states present, moving the origin mid-shot does change
+    the posterior (the test would see a wrong claim)."""
+    p = _params(N=14, m=21, span=2.5, offset=0.0)
+    c = _const(p)
+    T = _tables_for(p, [3])
+    t, d_s, grid = T.t_start_s[0], T.d_s[0], T.omega_grid[0]
+    rng = np.random.default_rng(3)
+    pm = rng.uniform(0.0, 1.0, size=p.N_pulses)      # any readings: a statement about the model
+    drives = rng.integers(3, 18, size=p.N_pulses)
+    r = 6
+
+    def run(shift=0.0, reset_at=None, z_reset=0.6, shift_from=None, extra=0.0):
+        fb = _artiq_feedback(p)
+        fb.omega_guess_list = grid
+        fb.omega_sq_list = grid * grid
+        fb.reset_feedback_state()
+        out = []
+        for i in range(p.N_pulses):
+            if reset_at is not None and i == reset_at:
+                fb.state_x[:] = 0.0
+                fb.state_y[:] = 0.0
+                fb.state_z[:] = z_reset
+            ti = float(t[i]) + shift
+            if shift_from is not None and i >= shift_from:
+                ti += extra
+            fb.omega_raman = grid[drives[i]]
+            fb.t_raman_pulse_current = float(d_s[i])
+            fb.t_raman_pulse_ideal_current = float(d_s[i]) - c.t_offset_s
+            fb.generate_posterior(float(fb.N_photons_per_shot) * pm[i], ti,
+                                  phase_raman_pulse_start=0.0, update_raman_frequency=1,
+                                  update_rabi_frequency=0, include_photon_noise=1)
+            out.append(fb.P0.copy())
+        return np.array(out)
+
+    base = run()
+    np.testing.assert_allclose(run(shift=3.7e-4), base, atol=1e-8)          # any origin
+    ref = run(reset_at=r)
+    # origin moved to the reset pulse (or anywhere) after the reset: identical
+    np.testing.assert_allclose(run(reset_at=r, shift_from=r, extra=-float(t[r])), ref, atol=1e-8)
+    np.testing.assert_allclose(run(shift=2.1e-4, reset_at=r, shift_from=r, extra=5.3e-5), ref,
+                               atol=1e-8)
+    # control: no reset, origin moved mid-shot -> a different posterior
+    moved = run(shift_from=r, extra=5.3e-5)
+    assert np.max(np.abs(moved[r:] - base[r:])) > 1e-3
+
+
+def test_corotating_state_is_the_drive_frame_vector():
+    """remesh_plan sections 3.1 / 7.1: after the update of pulse i the OPX's
+    stored (x, y) of hypothesis j are the lab-frame vector of
+    generate_posterior rotated by Rz(-phi_{j,i+1}), phi_{j,i+1} = -omega_j
+    t_{i+1} the drive-axis azimuth at the NEXT pulse start (the plan's 3.1
+    formula, x' = x cos phi + y sin phi, y' = -x sin phi + y cos phi): they
+    already are the components along / across the next pulse's drive axis,
+    which the pole-return rotation needs -- X, Y = sum_j P_j x_j,
+    sum_j P_j y_j with no rotation on the OPX. The opposite sign fails (the
+    test would catch a sign error)."""
+    p = _params(N=10, m=21, span=2.5, offset=0.0)
+    c = _const(p, sincos_lut_bits=0)
+    T = _tables_for(p, [4])
+    t_ext = T.t_start_ext_cc[0].astype(float) * CLOCK_NS * 1e-9
+    grid, w_grid = T.omega_grid[0], T.w_grid[0]
+    fb = _artiq_feedback(p)
+    fb.omega_guess_list = grid
+    fb.omega_sq_list = grid * grid
+    fb.reset_feedback_state()
+    st = FixedPointState.uniform(21)
+    rng = np.random.default_rng(4)
+    d = int(T.d_init[0])
+    worst, worst_flipped, transverse = 0.0, 0.0, 0.0
+    for i in range(p.N_pulses):
+        p_meas = float(rng.uniform(0.1, 0.9))
+        fb.omega_raman = grid[d]
+        fb.t_raman_pulse_current = float(T.d_s[0, i])
+        fb.t_raman_pulse_ideal_current = float(T.d_s[0, i]) - c.t_offset_s
+        fb.generate_posterior(float(fb.N_photons_per_shot) * p_meas, float(T.t_start_s[0, i]),
+                              phase_raman_pulse_start=0.0, update_raman_frequency=1,
+                              update_rabi_frequency=0, include_photon_noise=1)
+        posterior_update_fixed_point_emulation(
+            st, d, p_meas, T.a[0, i], T.b[0, i], T.dphi0[0, i], T.ddphi[0, i], w_grid, c)
+        phi = 2 * np.pi * np.mod(-(grid / (2 * np.pi)) * t_ext[i + 1], 1.0)
+        for sgn in (1.0, -1.0):
+            xr = np.cos(phi) * fb.state_x + sgn * np.sin(phi) * fb.state_y
+            yr = -sgn * np.sin(phi) * fb.state_x + np.cos(phi) * fb.state_y
+            err = max(np.max(np.abs(xr - st.x)), np.max(np.abs(yr - st.y)))
+            if sgn > 0:
+                worst = max(worst, err)
+            else:
+                worst_flipped = max(worst_flipped, err)
+        transverse = max(transverse, float(np.max(np.hypot(st.x, st.y))))
+        np.testing.assert_allclose(st.z, fb.state_z, atol=1e-9)
+        d = int(rng.integers(0, 21))
+    assert transverse > 0.1                    # there is a transverse state to check
+    assert worst < 1e-8
+    assert worst_flipped > 1e-2
+
+
+# ---------------------------------------------------------------------------
+# 2026-09-28: the remesh with pole return (bayesian_feedback_remesh)
+# ---------------------------------------------------------------------------
+
+from kexp.experiments.opx_sequences.feedback import (          # noqa: E402
+    bayesian_feedback_remesh, pole_level_durations_cc, remesh_pulse_starts_cc,
+    STREAM_KEYS_REMESH, HOST_KEYS_REMESH)
+from kexp.analysis.feedback_opx import (                       # noqa: E402
+    remesh_trigger_fixed_point_emulation, remesh_apply_fixed_point_emulation)
+
+# provisional values so the structures trace -- the real ones are measured on
+# the QOP simulator (docs/opx/sim_remesh_timing.py) -- DISTINCT per key, so a
+# key mix-up shows as a slip
+RM = dict(opx_remesh_enable=1,
+          t_opx_feedback_align_overhead_remesh=328.e-9,
+          t_opx_feedback_align_overhead_levels_remesh=344.e-9,
+          t_opx_feedback_align_overhead_split_remesh=332.e-9,
+          t_opx_feedback_align_overhead_levels_split_remesh=348.e-9,
+          t_opx_feedback_compute_budget_remesh=12.e-6,
+          t_opx_feedback_compute_budget_levels_remesh=11.e-6,
+          t_opx_feedback_compute_budget_split_remesh=12.004e-6,
+          t_opx_feedback_compute_budget_levels_split_remesh=11.004e-6,
+          t_opx_remesh_hold=2.e-6)
+
+
+def _rm_tables(T, s=0):
+    return dict(lat_w=T.lat_w[s], lat_adv=T.lat_adv[s], fine_adv=T.fine_adv[s],
+                pole_a=T.pole_a, pole_b=T.pole_b, n_res=int(T.n_res[s]),
+                wq=T.w_grid[s] / 4.0)
+
+
+def _remesh_detector(p, c, T, s, detune, seed, noise=True, level_map=None):
+    """A synthetic APD for remesh shot s: the true Bloch vector stepped by
+    the reset model. The pole pulse (announced by the emulation's on_pole)
+    plays its level's duration -- or level_map(level)'s, to play a wrong
+    one -- and every later pulse starts (d_pole - d_drawn) + t_opx_remesh_hold
+    later, as the OPX does. Returns (measure, on_pole, rec): rec['hz'] the
+    true z seen per pulse, rec['t'] the pulse starts played (s)."""
+    rng = np.random.default_rng(seed)
+    omega_true = c.omega_res + c.Omega * detune
+    fb = _artiq_feedback(p)
+    pole_d = T.pole_d_cc.astype(float) * CLOCK_NS * 1e-9
+    hold = c.remesh_hold_cc * CLOCK_NS * 1e-9
+    st = dict(s=(0.0, 0.0, 1.0), shift=0.0, pole=None)
+    rec = dict(hz=[], t=[])
+
+    def on_pole(i, k):
+        st['pole'] = (i, k if level_map is None else int(level_map(k)))
+
+    def measure(i, w_d):
+        d_drawn = float(T.d_s[s, i])
+        d = d_drawn
+        t = float(T.t_start_s[s, i]) + st['shift']
+        pole_here = st['pole'] is not None and st['pole'][0] == i
+        if pole_here:
+            d = float(pole_d[st['pole'][1]])
+        omega_ctrl = c.omega_res + c.Omega * float(w_d)
+        hz, st['s'] = true_bloch_step(st['s'], omega_ctrl, omega_true, d - c.t_offset_s, d, t,
+                                      c.Omega, 2 * np.pi * p.frequency_lightshift,
+                                      c.t_img_s, c.C)
+        rec['hz'].append(hz)
+        rec['t'].append(t)
+        if pole_here:
+            st['shift'] += (d - d_drawn) + hold
+        p1 = float(fb.expected_photon_fraction(hz))
+        return p1 + (rng.normal(0.0, c.sigma_p) if noise else 0.0)
+    return measure, on_pole, rec
+
+
+def _oracle_remesh_shot(p, c, T, measure, follow=None, on_pole=None):
+    """The remesh in double precision, independent of the fixed-point code:
+    generate_posterior (phase 0) for every update, exact exp / atan2 for the
+    trigger and the pole angle -- from the lab-frame state rotated into the
+    next pulse's drive frame -- and the same grid / interpolation / reset
+    rules (feedback_reinit.py's, with the OPX's lattice snap and L-linear
+    interpolation). The posterior uses the DRAWN schedule: after the pole
+    pulse the OPX starts every pulse later by a constant, which the reset to
+    the z axis makes irrelevant (the replay tests use the actual starts)."""
+    m, R, N = c.m, c.remesh_ratio, c.N
+    n_pole = c.n_pole
+    t_ext = T.t_start_ext_cc[0].astype(float) * CLOCK_NS * 1e-9
+    fb = _artiq_feedback(p)
+    grid = T.omega_grid[0].copy()
+    fb.omega_guess_list = grid
+    fb.omega_sq_list = grid * grid
+    fb.reset_feedback_state()
+    pole_d_s = T.pole_d_cc.astype(float) * CLOCK_NS * 1e-9
+    n0, pole_now, fired, pole_k, sz_lat = 0, False, False, 0, 0.0
+    rec = dict(pulse=-1, n0=0, k=-1, s0=0.0)
+    d = int(T.d_init[0])
+    rows = []
+    for i in range(N):
+        if follow is not None:
+            # the recorded decisions, driven at the recorded applied frequency
+            d = int(follow['drives'][i])
+            pole_now = (i == follow['remesh_pulse'])
+            if pole_now:
+                pole_k = int(follow['pole_level'])
+        w_cur = (grid - c.omega_res) / c.Omega
+        if pole_now and on_pole is not None:
+            on_pole(i, pole_k)
+        p_meas = measure(i, float(w_cur[d]))
+        dur = pole_d_s[pole_k] if pole_now else float(T.d_s[0, i])
+        fb.omega_raman = grid[d] if follow is None else float(follow['omega'][i])
+        fb.t_raman_pulse_current = dur
+        fb.t_raman_pulse_ideal_current = dur - c.t_offset_s
+        fb.generate_posterior(float(fb.N_photons_per_shot) * p_meas, float(T.t_start_s[0, i]),
+                              phase_raman_pulse_start=0.0, update_raman_frequency=1,
+                              update_rabi_frequency=0, include_photon_noise=1)
+        jmax = int(np.argmax(fb.P0))
+        if pole_now:
+            pmu = float(np.clip(p_meas, -2.0, 3.0))
+            s0 = float(np.clip(2 * pmu - 1, -1, 1)) if c.reinit_state_source == 0 else sz_lat
+            n0 = int(np.clip(jmax * R - (m - 1) // 2, 0, (m - 1) * (R - 1)))
+            if follow is not None:
+                n0 = int(follow['remesh_n0'])
+            lp = np.log(np.maximum(fb.P0, 1e-300))
+            pos = n0 + np.arange(m)
+            k, f = pos // R, (pos % R) / R
+            k1 = np.minimum(k + 1, m - 1)
+            Ln = lp[k] + f * (lp[k1] - lp[k])
+            Pn = np.exp(Ln - Ln.max())
+            fb.P0[:] = Pn / Pn.sum()
+            fb.state_x[:] = 0.0
+            fb.state_y[:] = 0.0
+            fb.state_z[:] = s0
+            grid = c.omega_res + c.Omega * T.lat_w[0, n0 + np.arange(m)]
+            fb.omega_guess_list = grid
+            fb.omega_sq_list = grid * grid
+            jmax = int(np.argmax(fb.P0))
+            rec = dict(pulse=i, n0=n0, k=pole_k, s0=s0)
+            pole_now = False
+        rows.append(dict(P0=fb.P0.copy(), d=d, grid=grid.copy()))
+        if follow is not None:
+            if i == follow['remesh_pulse'] - 1:
+                # the model S_z at the recorded level (state source 1)
+                phi = 2 * np.pi * np.mod(-(grid / (2 * np.pi)) * t_ext[i + 1], 1.0)
+                a = -np.sin(phi) * fb.state_x + np.cos(phi) * fb.state_y
+                b = fb.state_z.copy()
+                kf = int(follow['pole_level'])
+                cp, sp = np.cos(2 * np.pi * T.pole_a[kf]), np.sin(2 * np.pi * T.pole_a[kf])
+                sz_lat = (float(b[jmax] * cp - a[jmax] * sp) if c.reinit_method == 0
+                          else float(np.sum(fb.P0 * (b * cp - a * sp))))
+            continue
+        if not fired:
+            P = fb.P0
+            w = (grid - c.omega_res) / c.Omega
+            if c.reinit_trigger_mode == 0:
+                mean = np.sum(P * w)
+                ok = np.sqrt(max(np.sum(P * w * w) - mean * mean, 0.0)) < c.reinit_std_thr
+            else:
+                outside = np.abs(np.arange(m) - jmax) > c.reinit_margin_excl
+                pout = np.max(P[outside]) if outside.any() else 0.0
+                ok = (np.log(P[jmax] / pout) if pout > 0 else 100.0) >= c.reinit_margin_s * c.scale
+            forced = c.reinit_force_pulse > 0 and i >= c.reinit_force_pulse - 1
+            window = c.reinit_min_pulse - 1 <= i <= N - 3
+            phi = 2 * np.pi * np.mod(-(grid / (2 * np.pi)) * t_ext[i + 1], 1.0)
+            a = -np.sin(phi) * fb.state_x + np.cos(phi) * fb.state_y
+            b = fb.state_z.copy()
+            if c.reinit_method == 0:
+                th = -np.arctan2(a[jmax], b[jmax]) / (2 * np.pi)
+            else:
+                th = 0.5 * np.arctan2(-2 * np.sum(P * a * b),
+                                      np.sum(P * b * b) - np.sum(P * a * a)) / (2 * np.pi)
+            th = th + 0.5 if th < 0 else th
+            th = th - 0.5 if th >= 0.5 else th
+            k = int(np.clip(np.floor(2 * (n_pole - 1) * (th + 1 / (4 * (n_pole - 1)))),
+                            0, n_pole - 1))
+            cp, sp = np.cos(2 * np.pi * T.pole_a[k]), np.sin(2 * np.pi * T.pole_a[k])
+            szp = (b[jmax] * cp - a[jmax] * sp if c.reinit_method == 0
+                   else float(np.sum(P * (b * cp - a * sp))))
+            if window and (ok or forced):
+                pole_now, fired, pole_k, sz_lat = True, True, k, float(szp)
+        d = jmax
+    return rows, rec
+
+
+@pytest.mark.parametrize('cfg', [
+    dict(t_raman_pulse_n_levels=0, feedback_reinit_trigger_mode=0, feedback_reinit_method=1,
+         feedback_reinit_state_source=0, seed=5, detune=0.37),
+    dict(t_raman_pulse_n_levels=0, feedback_reinit_trigger_mode=1, feedback_reinit_method=0,
+         feedback_reinit_state_source=1, seed=8, detune=-0.8),
+    dict(t_raman_pulse_n_levels=8, feedback_reinit_trigger_mode=0, feedback_reinit_method=1,
+         feedback_reinit_state_source=0, seed=11, detune=1.1),
+    # fires on its metric (no forcing)
+    dict(t_raman_pulse_n_levels=8, feedback_reinit_trigger_mode=0, feedback_reinit_method=0,
+         feedback_reinit_state_source=1, feedback_reinit_force_pulse=0,
+         feedback_reinit_std_threshold_Omega=1.2, seed=13, detune=0.45),
+])
+def test_remesh_emulation_matches_double_precision_oracle(cfg):
+    cfg = dict(cfg)
+    seed, detune = cfg.pop('seed'), cfg.pop('detune')
+    p = _params(N=16, m=21, span=2.5, offset=0.0, **{**RM, **cfg})
+    c = _const(p, sincos_lut_bits=0, exp_lut_bits=0)       # exact: compare the algorithm
+    assert c.remesh and c.remesh_ratio == 4 and c.n_pole == 17
+    T = _tables_for(p, [seed], sincos_lut_bits=0, exp_lut_bits=0)
+    m1, op1, _r1 = _remesh_detector(p, c, T, 0, detune, seed)
+    em = run_shot_fixed_point_emulation(
+        T.w_grid[0], int(T.zidx[0]), T.a[0], T.b[0], T.dphi0[0], T.ddphi[0], c, m1,
+        d_init=int(T.d_init[0]), remesh=_rm_tables(T), on_pole=op1)
+    m2, op2, _r2 = _remesh_detector(p, c, T, 0, detune, seed)
+    rows, rec = _oracle_remesh_shot(p, c, T, m2, on_pole=op2)
+    assert em['remesh_pulse'] >= 0, 'the trigger never fired'
+    if c.reinit_force_pulse == 0:
+        assert em['remesh_pulse'] >= c.reinit_min_pulse
+    assert (em['remesh_pulse'], em['remesh_n0'], em['remesh_pole_level']) == \
+        (rec['pulse'], rec['n0'], rec['k'])
+    assert em['remesh_s0'] == pytest.approx(rec['s0'], abs=1e-6)
+    for i, r in enumerate(rows):
+        assert em['d_used'][i] == r['d'], i
+        np.testing.assert_allclose(em['P0'][i], r['P0'], atol=1e-6, err_msg=f"pulse {i}")
+        np.testing.assert_allclose(c.omega_res + c.Omega * em['grid'][i], r['grid'], rtol=0,
+                                   atol=1e-3)
+    # the pole pulse played its level's rotation; the fine grid is dw/4 wide and on the lattice
+    p_idx = em['remesh_pulse']
+    assert em['a_used'][p_idx] == T.pole_a[em['remesh_pole_level']]
+    g = em['grid'][p_idx]
+    np.testing.assert_allclose(-np.diff(g), T.dw[0] / 4, atol=1e-12)
+    np.testing.assert_allclose(g, T.lat_w[0, em['remesh_n0'] + np.arange(21)])
+
+
+def test_remesh_frame_advance_by_integer_powers_matches_the_lattice():
+    """The QUA seeds build the fine grid's point-0 frame advance as
+    (run point 0) x (run step)^u x (fine step)^v, n0 = R u + v, by
+    branch-free square-and-multiply (power_bits in the sequence); the same
+    statements in numpy reproduce the lattice table for every n0 and pulse."""
+    p = _params(N=12, m=21, span=2.5, offset=0.0, **RM)
+    c = _const(p)
+    T = _tables_for(p, [3])
+    R, lg = c.remesh_ratio, c.remesh_log2
+    n0_max = 20 * (R - 1)
+    nbu = max(1, int(n0_max >> lg).bit_length())
+
+    def power(acc, base, e, nbits):
+        acc, base = complex(*acc), complex(*base)
+        for bit in range(nbits):
+            t = acc * base
+            if (e >> bit) & 1:
+                acc = t
+            if bit < nbits - 1:
+                base = base * base
+        return acc
+    worst = 0.0
+    for i in range(p.N_pulses):
+        p0 = (np.cos(2 * np.pi * T.dphi0[0, i]), np.sin(2 * np.pi * T.dphi0[0, i]))
+        pdd = (np.cos(2 * np.pi * T.ddphi[0, i]), np.sin(2 * np.pi * T.ddphi[0, i]))
+        pe = (np.cos(2 * np.pi * T.fine_adv[0, i]), np.sin(2 * np.pi * T.fine_adv[0, i]))
+        for n0 in range(n0_max + 1):
+            u, v = n0 >> lg, n0 - ((n0 >> lg) << lg)
+            acc = power(p0, pdd, u, nbu)
+            acc = power((acc.real, acc.imag), pe, v, lg)
+            want = np.exp(2j * np.pi * T.lat_adv[0, n0, i])
+            worst = max(worst, abs(acc - want))
+    assert worst < 1e-9
+
+
+def test_remesh_sequence_trace_and_refusals():
+    xv = [('feedback_fractional_initial_offset', [-2., 0., 2.])]
+    N, m = 8, 21
+    for lev in (0, 8):
+        for split in (0, 1):
+            ex, tables, b, prog, ctx = _trace(bayesian_feedback_remesh, xv, N=N, m=m, span=2.5,
+                                              t_raman_pulse_n_levels=lev,
+                                              opx_feedback_split_update=split, **RM)
+            c = _const(ex.params)
+            key = ('t_opx_feedback_compute_budget' + ('_levels' if lev else '')
+                   + ('_split' if split else '') + '_remesh')
+            assert c.budget_key == key and c.budget_cc == s_to_cc(RM[key])
+            assert c.overhead_key == key.replace('compute_budget', 'align_overhead')
+            assert ctx._save_counts == {
+                'apd': N, 'drive_index': N, 's_z': N, 'log_weights': N * m,
+                't_pulse_start_cc': N, 'remesh_pulse': 1, 'remesh_n0': 1,
+                'remesh_pole_level': 1, 'remesh_s0': 1, 'remesh_trigger': 1}
+            assert set(b.stream_specs()) == (set(fbseq.STREAM_KEYS) | set(STREAM_KEYS_REMESH)
+                                             | set(RESERVED_STREAMS))
+            assert set(HOST_KEYS_REMESH) <= set(ctx._host_data_values)
+            assert {'remesh_trigger_metric', 's_z_on_grid'} <= set(ctx._host_data_values)
+            # the offset scan keeps the (spacing, level, k) tables run constants
+            for k in ('rot_Am', 'seed_cos_beta', 'axis_h', 'axis_ux2'):
+                assert k not in ctx._shot_arrays
+            src = _qua(prog)
+            st = _stmts(src)
+            # the only if_: the remesh, classical statements only (one loop in
+            # both structures, so one if_)
+            starts = [n for n, s in enumerate(st) if s.startswith('with if_(')]
+            assert len(starts) == 1
+            lines = src.splitlines()
+            for n, ln in enumerate(lines):
+                if ln.strip().startswith('with if_('):
+                    ind = len(ln) - len(ln.lstrip())
+                    body = []
+                    for ln2 in lines[n + 1:]:
+                        if ln2.strip() and len(ln2) - len(ln2.lstrip()) <= ind:
+                            break
+                        body.append(ln2.strip())
+                    for bad in ('play(', 'wait(', 'align(', 'measure(', 'update_frequency(',
+                                'reset_if_phase(', 'save(', 'frame_rotation'):
+                        assert not any(x.startswith(bad) for x in body), bad
+                    assert any('Math.argmax(' in x for x in body)
+            # the pulse's duration: the pole level's on the pole pulse; its hold
+            # is the drawn step's plus pole_now * t_opx_remesh_hold (500 cycles)
+            assert re.search(r"assign\(v\d+, Util\.cond\(\(v\d+==1\),a\d+\[v\d+\],a\d+\[", src)
+            assert re.search(r"play\('pass', 'raman_switch', duration=v\d+, timestamp_stream", src)
+            assert re.search(r"wait\(\(a\d+\[.*\]\+\(v\d+\*500\)\), 'raman_switch'\)", src)
+            assert 'Math.atan2_2pi(' in src
+            # the pole level by the exact bit shift (17 levels: 2 (n-1) = 2^5),
+            # and no division outside Math.inv's documented domain
+            assert re.search(r"Cast\.unsafe_cast_int\(\(v\d+\+0\.015625\)\)>>23", src)
+            assert 'Math.div(' not in src and 'mul_int_by_fixed' not in src
+            assert 'Math.inv((v' in src
+    # the bit shift is floor(2 (n-1) x) on the 4.28 grid, for every level count
+    rng = np.random.default_rng(0)
+    for n_pole in (3, 5, 9, 17, 33, 257):
+        q = int(round(np.log2(2 * (n_pole - 1))))
+        x = np.round((rng.uniform(0, 0.5, 5000) + 1 / (4 * (n_pole - 1))) * 2 ** 28)
+        np.testing.assert_array_equal(x.astype(np.int64) >> (28 - q),
+                                      np.floor(2 * (n_pole - 1) * x / 2 ** 28).astype(np.int64))
+    # refusals
+    with pytest.raises(RuntimeError, match='bayesian_feedback_remesh'):
+        _trace(bayesian_feedback, xv, N=N, m=m, span=2.5, **RM)
+    with pytest.raises(RuntimeError, match='bayesian_feedback'):
+        _trace(bayesian_feedback_remesh, xv, N=N, m=m, span=2.5)
+    for bad, match in (
+            (dict(opx_remesh_ratio=3), 'opx_remesh_ratio'),
+            (dict(opx_remesh_pole_levels=2), 'opx_remesh_pole_levels'),
+            (dict(opx_remesh_pole_levels=16), 'opx_remesh_pole_levels'),
+            (dict(feedback_reinit_pole_enabled=0), 'feedback_reinit_pole_enabled'),
+            (dict(feedback_reinit_center_mode=1), 'feedback_reinit_center_mode'),
+            (dict(feedback_reinit_temper_beta=0.5), 'feedback_reinit_temper_beta'),
+            (dict(feedback_flat_rule_bool=1), 'flat rule'),
+            (dict(N=2), 'N_pulses >= 3'),
+            (dict(feedback_reinit_method=2), '0 or 1'),
+            (dict(N=4, feedback_reinit_min_pulse=3), 'trigger window'),
+            (dict(feedback_reinit_trigger_mode=1, feedback_reinit_margin_excl=10),
+             'feedback_reinit_margin_excl'),
+            (dict(feedback_reinit_trigger_mode=1, feedback_reinit_margin_nats=300.),
+             'feedback_reinit_margin_nats'),
+            (dict(feedback_reinit_span_Omega=0.5), 'feedback_reinit_span_Omega'),
+            (dict(t_opx_remesh_hold=None), 't_opx_remesh_hold'),
+            (dict(t_opx_feedback_compute_budget_remesh=None),
+             't_opx_feedback_compute_budget_remesh'),
+            (dict(t_opx_feedback_align_overhead_remesh=None), 'overhead')):
+        kw = {k: v for k, v in {**RM, **bad}.items() if v is not None}
+        n_p = kw.pop('N', 16)
+        with pytest.raises(ValueError, match=match):
+            _const(_params(N=n_p, span=2.5, **kw))
+    # consistent keys are accepted
+    _const(_params(N=16, span=2.5, feedback_reinit_span_Omega=2.5 / 4, **RM))
+    with pytest.raises(ValueError, match='closed-loop'):
+        fbseq.make_feedback_sequence(open_loop=True, remesh=True)
+    # a switch offset under 4 cycles: pole level 0 is played at the 4-cycle
+    # minimum, and its model rotation is that of the played 16 ns
+    c0 = _const(_params(N=8, m=21, span=2.5, t_raman_pulse_offset_opx=0.0, **RM))
+    d0, a0, b0 = pole_level_durations_cc(c0)
+    assert d0[0] == 4 and np.all(np.diff(d0) >= 0)
+    assert a0[0] == pytest.approx(16e-9 / (2 * c0.t_pi)) and b0[0] == a0[0]
+
+
+def _remesh_finish_stub(n_shots, N, m, **kw):
+    stub = FeedbackOPXExpt([('t_raman_pulse_seed', np.arange(1, n_shots + 1))], N=N, m=m,
+                           span=2.5, offset=0.0, **RM, **kw)
+    data = DataVault(expt=stub)
+    for key, spec in bayesian_feedback_remesh.resolve_measurements(stub.params).items():
+        setattr(data, key, data.add_data_container(spec.shape, spec.np_dtype))
+    for key, spec in bayesian_feedback_remesh.resolve_host_data(stub.params).items():
+        setattr(data, key, data.add_data_container(spec.shape, np.float64))
+    for key, spec in RESERVED_STREAMS.items():
+        setattr(data, key, data.add_data_container(spec.shape, np.int64))
+    setattr(data, VALID_MASK_KEY, data.add_data_container((1,), np.int32))
+    data.init()
+    stub.data = data
+    return stub, data
+
+
+def test_remesh_finish_hook(capsys):
+    n_shots, N, m = 2, 8, 21
+    stub, d = _remesh_finish_stub(n_shots, N, m)
+    p = stub.params
+    c = _const(p)
+    T = _tables_for(p, [1, 2], terms=_fake_terms())
+    rng = np.random.default_rng(1)
+    didx = rng.integers(0, m, (n_shots, N)).astype(np.int64)
+    d.apd._run_data[:] = -0.16
+    d.drive_index._run_data[:] = didx
+    d.if_table_hz._run_data[:] = T.if_hz.astype(float)
+    d.if_lattice_hz._run_data[:] = T.if_lat_hz.astype(float)
+    d.omega_raman_mesh._run_data[:] = np.repeat(T.omega_grid[:, None, :], N + 1, axis=1)
+    d.log_weights._run_data[:] = -rng.uniform(0, 2, (n_shots, N, m))
+    d_s = T.d_s.copy()
+    d.t_raman_pulse._run_data[:] = d_s               # the DRAWN durations, as the host ships them
+    rp, kpl = np.array([3, -1]), np.array([5, -1])
+    pole_d_cc, _a, _b = pole_level_durations_cc(c)
+    d_app_cc = T.d_cc.copy()
+    d_app_cc[0, 3] = pole_d_cc[5]
+    # the OPX's pulse starts: the pole step is ARTIQ's formula with the pole
+    # duration plus t_opx_remesh_hold, so the later pulses start later
+    t_cc = remesh_pulse_starts_cc(d_app_cc, c, rp)
+    shift = t_cc - T.t_start_cc
+    assert np.all(shift[0, :4] == 0) and np.all(shift[1] == 0)
+    assert np.all(shift[0, 4:] == pole_d_cc[5] - T.d_cc[0, 3] + c.remesh_hold_cc)
+    d.t_pulse_start_cc._run_data[:] = 500 + t_cc
+    d.remesh_pulse._run_data[:] = rp.reshape(d.remesh_pulse._run_data.shape)
+    d.remesh_n0._run_data[:] = np.array([17, 0]).reshape(d.remesh_n0._run_data.shape)
+    d.remesh_pole_level._run_data[:] = kpl.reshape(d.remesh_pole_level._run_data.shape)
+    d.remesh_trigger._run_data[:] = np.array([0.01, 0.0]).reshape(d.remesh_trigger._run_data.shape)
+    getattr(d, VALID_MASK_KEY)._run_data[:] = 1
+    feedback_finish(stub, d)
+    out = capsys.readouterr().out
+    assert 'slip: 0.0 cycles' in out and '***' not in out     # held to the pole-step schedule
+    om = d.omega_raman._run_data / (2 * np.pi)
+    R = c.remesh_ratio
+    for s, (pp, n0) in enumerate(((3, 17), (-1, 0))):
+        lat = np.where((np.arange(N) > pp) & (pp >= 0), n0 + didx[s], didx[s] * R)
+        f_exp = 2.0 * (T.if_lat_hz[s, lat, 1] - T.if_lat_hz[s, lat, 0])
+        np.testing.assert_allclose(om[s], f_exp, rtol=0, atol=1e-6)
+    np.testing.assert_allclose(om[1], 2.0 * (T.if_hz[1, didx[1], 1] - T.if_hz[1, didx[1], 0]),
+                               rtol=0, atol=1e-6)
+    mesh = d.omega_raman_mesh._run_data
+    np.testing.assert_allclose(mesh[0, :4], np.repeat(T.omega_grid[:1], 4, axis=0))
+    fine = c.omega_res + c.Omega * T.lat_w[0, 17 + np.arange(m)]
+    np.testing.assert_allclose(mesh[0, 4:], np.repeat(fine[None], N + 1 - 4, axis=0), atol=1e-3)
+    np.testing.assert_allclose(mesh[1], np.repeat(T.omega_grid[1:2], N + 1, axis=0))
+    tr = d.t_raman_pulse._run_data
+    assert tr[0, 3] == pytest.approx(pole_d_cc[5] * 4e-9)
+    np.testing.assert_allclose(np.delete(tr[0], 3), np.delete(d_s[0], 3))
+    np.testing.assert_allclose(tr[1], d_s[1])
+    np.testing.assert_allclose(d.t._run_data, d.t_pulse_start._run_data + tr + p.t_img_pulse)
+    # the trigger value in physical units: var(w/4) = 0.01 -> std 0.4 Omega
+    tm = d.remesh_trigger_metric._run_data.reshape(-1)
+    assert tm[0] == pytest.approx(0.4) and np.isnan(tm[1])
+    # s_z_on_grid: resonance (run index 10 -> lattice 40) is off shot 0's fine
+    # grid (lattice 17..37) from the pole pulse's own save on
+    on = d.s_z_on_grid._run_data
+    np.testing.assert_array_equal(on[0], [1, 1, 1, 0, 0, 0, 0, 0])
+    np.testing.assert_array_equal(on[1], np.ones(N))
+    assert '5 s_z value(s) in 1 shot(s)' in out
+    # idempotent: a second pass gives the same containers and still no slip
+    keys = ('t_raman_pulse', 't', 't_pulse_start', 'omega_raman', 'omega_raman_mesh',
+            'probabilities', 'remesh_trigger_metric', 's_z_on_grid')
+    snap = {k: np.array(getattr(d, k)._run_data, copy=True) for k in keys}
+    feedback_finish(stub, d)
+    out2 = capsys.readouterr().out
+    assert 'slip: 0.0 cycles' in out2 and '***' not in out2
+    for k in keys:
+        np.testing.assert_array_equal(getattr(d, k)._run_data, snap[k], err_msg=k)
+    # a slip: named with the overhead / budget keys this structure used and
+    # the step where the slip changed
+    d.t_pulse_start_cc._run_data[0, 5:] += 3
+    feedback_finish(stub, d)
+    out3 = capsys.readouterr().out
+    assert '***' in out3 and '4->5: 1' in out3
+    assert 't_opx_feedback_align_overhead_remesh = 328 ns' in out3 and '(12000 ns)' in out3
+
+
+def _synthetic_remesh_run(p, offsets, seeds, detune, perturb=None, invalid=(), noise=True):
+    """A remesh run file as the experiment side produces it: per shot the
+    OPX loop (the emulation, closed loop, trigger / pole pulse / remesh)
+    on a synthetic detector that plays the pole pulse and shifts the later
+    pulse starts as the OPX does; its streams and host data put into
+    DataVault containers as the manager fills them; the real finish hook run
+    on them. perturb(s, out) -> a follow dict or None: the recording then
+    plays those decisions (as hardware rounding could make a decision the
+    emulation would not). invalid: shots the OPX did not run (streams
+    INT_MISSING / NaN, valid flag 0, as the manager fills them). Returns
+    (ad, T, runs, recs): ad an atomdata-like object with the run's params
+    (offset scanned) and the containers after finish, runs the emulation's
+    per-shot outputs (the OPX's own values), recs the detector records."""
+    n = len(offsets)
+    c = _const(p)
+    N, m = c.N, c.m
+    stub = FeedbackOPXExpt([('feedback_fractional_initial_offset', np.asarray(offsets))],
+                           **{k: getattr(p, k) for k in ('N_pulses', 'feedback_grid_size')},
+                           **{'span': p.feedback_guess_span_Omega})
+    stub.params = p
+    stub.p = p
+    data = DataVault(expt=stub)
+    meas_specs = bayesian_feedback_remesh.resolve_measurements(p)
+    for key, spec in meas_specs.items():
+        setattr(data, key, data.add_data_container(spec.shape, spec.np_dtype))
+    for key, spec in bayesian_feedback_remesh.resolve_host_data(p).items():
+        setattr(data, key, data.add_data_container(spec.shape, np.float64))
+    for key, spec in RESERVED_STREAMS.items():
+        setattr(data, key, data.add_data_container(spec.shape, np.int64))
+    setattr(data, VALID_MASK_KEY, data.add_data_container((1,), np.int32))
+    data.init()
+    stub.data = data
+
+    def col(k):
+        if k == 'feedback_fractional_initial_offset':
+            return np.asarray(offsets, dtype=float)
+        return np.full(n, float(np.asarray(getattr(p, k), dtype=float).reshape(-1)[0]))
+    T = build_feedback_shot_tables(col, n, c, seeds=np.asarray(seeds), terms=_fake_terms())
+
+    def shot(s, follow=None):
+        meas, on_pole, rec = _remesh_detector(p, c, T, s, detune, 1000 + seeds[s], noise=noise)
+        out = run_shot_fixed_point_emulation(
+            T.w_grid[s], int(T.zidx[s]), T.a[s], T.b[s], T.dphi0[s], T.ddphi[s], c, meas,
+            d_init=int(T.d_init[s]), remesh=_rm_tables(T, s), follow=follow, on_pole=on_pole)
+        return out, rec
+    runs, recs = [], []
+    for s in range(n):
+        out, rec = shot(s)
+        fol = perturb(s, out) if perturb is not None else None
+        if fol is not None:
+            out, rec = shot(s, fol)
+        runs.append(out)
+        recs.append(rec)
+    rp = np.array([o['remesh_pulse'] for o in runs])
+    kpl = np.array([o['remesh_pole_level'] for o in runs])
+    d_app_cc = T.d_cc.copy()
+    for s in np.flatnonzero(rp >= 0):
+        d_app_cc[s, rp[s]] = T.pole_d_cc[kpl[s]]
+    t_cc = remesh_pulse_starts_cc(d_app_cc, c, rp)
+    # the pulse starts the detector's physics used ARE the sequence's schedule
+    for s in range(n):
+        np.testing.assert_allclose(np.asarray(recs[s]['t']), t_cc[s] * CLOCK_NS * 1e-9,
+                                   rtol=0, atol=1e-15)
+    d = data
+    shp = lambda dc, v: np.asarray(v).reshape(dc._run_data.shape)
+    d.apd._run_data[:] = np.array([p.v_apd_all_down_opx + o['p_meas']
+                                   * (p.v_apd_all_up_opx - p.v_apd_all_down_opx) for o in runs])
+    d.drive_index._run_data[:] = np.array([o['d_used'] for o in runs])
+    d.s_z._run_data[:] = np.array([o['s_z'] for o in runs])
+    d.log_weights._run_data[:] = np.array([o['L'] for o in runs])
+    d.t_pulse_start_cc._run_data[:] = 700 + np.arange(n)[:, None] * 400000 + t_cc
+    for key in ('remesh_pulse', 'remesh_n0', 'remesh_pole_level', 'remesh_s0', 'remesh_trigger'):
+        getattr(d, key)._run_data[:] = shp(getattr(d, key), [o[key] for o in runs])
+    d.t_raman_pulse._run_data[:] = T.d_s
+    d.t_raman_pulse_seed._run_data[:] = shp(d.t_raman_pulse_seed, T.seed.astype(float))
+    d.omega_raman_mesh._run_data[:] = np.repeat(T.omega_grid[:, None, :], N + 1, axis=1)
+    d.if_table_hz._run_data[:] = T.if_hz.astype(float)
+    d.if_lattice_hz._run_data[:] = T.if_lat_hz.astype(float)
+    getattr(d, VALID_MASK_KEY)._run_data[:] = 1
+    for s in invalid:
+        for key in meas_specs:
+            arr = getattr(d, key)._run_data
+            arr[s] = INT_MISSING if np.issubdtype(arr.dtype, np.integer) else np.nan
+        getattr(d, VALID_MASK_KEY)._run_data[s] = 0
+    feedback_finish(stub, d)
+    keys = (list(meas_specs) + list(bayesian_feedback_remesh.resolve_host_data(p))
+            + [VALID_MASK_KEY])
+    arrays = SimpleNamespace(**{k: np.asarray(getattr(d, k)._run_data).copy() for k in keys})
+    q = copy.copy(p)
+    q.feedback_fractional_initial_offset = np.asarray(offsets, dtype=float)
+    ad = SimpleNamespace(p=q, data=arrays, run_info=SimpleNamespace(run_id=4343),
+                         xvarnames=['feedback_fractional_initial_offset'], xvardims=[n])
+    return ad, T, runs, recs
+
+
+@pytest.mark.parametrize('lev, split', [(8, 0), (0, 0), (8, 1)])
+def test_remesh_replay_matches_the_experiment_side(lev, split, capsys):
+    """The replay of a remesh run file (streams + the finish hook's
+    containers) against what produced it. The file comes from the float64
+    emulation, so this checks the replay's plumbing and engines, not the
+    QUA semantics (2^-28 rounding, Math.argmax's tie rule). The fixed-point
+    replay reproduces the file's posterior, s_z, grids, decisions and
+    trigger values to float64 rounding, in both control modes, with the
+    actual pulse starts (after the pole pulse later than the drawn schedule)
+    or the recomputed schedule. The double-precision replay agrees in P0 to
+    < 1e-4 (measured 3-9e-6: the <= 3 Hz integer-Hz drive offset) and its
+    argmax differs only at exact ties of the recorded posterior. Every shot
+    fires, forced at pulse 6 (unforced firing: the oracle test's last case
+    and test_remesh_replay_unforced_triggers)."""
+    p = _params(N=16, m=21, span=2.5, offset=0.0, t_raman_pulse_n_levels=lev,
+                opx_feedback_split_update=split, **RM)
+    c = _const(p)
+    offsets = [-2.0, 0.5, 1.5, 0.0]
+    seeds = [21, 22, 23, 24]
+    ad, T, runs, recs = _synthetic_remesh_run(p, offsets, seeds, detune=0.6)
+    capsys.readouterr()
+    fired = np.array([o['remesh_pulse'] for o in runs])
+    assert np.all(fired >= 0)                      # force 6: every shot fires by pulse 6
+    fr = FeedbackOPXReplay(ad)
+    assert fr.remesh and fr.remesh_ratio == 4
+    # compatibility: the replay's applied frequencies = the finish hook's omega_raman
+    np.testing.assert_allclose(fr.omega_applied_rr, ad.data.omega_raman, rtol=0, atol=1e-6)
+    P_rec = ad.data.probabilities[:, 1:]
+    mesh_rec = ad.data.omega_raman_mesh[:, 1:]
+    rec_metric = ad.data.remesh_trigger_metric.reshape(-1)
+    for mode in ('measured', 'recomputed'):
+        for actual in (True, False):
+            res = fr.emulate_fixed_point(True).replay_measured(control_omega_source=mode,
+                                                                use_actual_timestamps=actual)
+            # identical up to the pole pulse; after it the file's tables came
+            # from the drawn starts and the replay's from the later actual /
+            # scheduled ones -- the same intervals, but the phase tables are
+            # formed from absolute times (f t ~ 4e4 turns), so they round
+            # differently at ~1e-11 turns (an error of the shift itself would
+            # be O(1): 0.48 turns per cycle)
+            for s in range(4):
+                pp = int(fired[s])
+                np.testing.assert_allclose(res.P0_rr[s, :pp + 1], P_rec[s, :pp + 1], atol=1e-15,
+                                           err_msg=f"{mode} {actual} {s}")
+            np.testing.assert_allclose(res.P0_rr, P_rec, atol=1e-11, err_msg=f"{mode} {actual}")
+            np.testing.assert_allclose(res.s_z_rr, ad.data.s_z, atol=1e-11)
+            np.testing.assert_allclose(res.mesh_rr, mesh_rec, rtol=0, atol=1e-3)
+            rm = res.remesh
+            assert rm['n_agree'] == rm['n_valid'] == 4, (mode, actual, rm)
+            np.testing.assert_array_equal(rm['played']['pulse'], fired)
+            assert rm['s0_max_abs_diff'] < 1e-12 and rm['n_s0_compared'] == 4
+            np.testing.assert_allclose(rm['recorded']['trigger_metric'], rec_metric, rtol=1e-12)
+            np.testing.assert_allclose(rm['played']['trigger_metric'], rec_metric, rtol=1e-9)
+            np.testing.assert_allclose(rm['replay']['trigger_metric'], rec_metric, rtol=1e-9)
+            np.testing.assert_array_equal(rm['replay']['s_z_on_grid'], ad.data.s_z_on_grid)
+            np.testing.assert_array_equal(rm['recorded']['s_z_on_grid'], ad.data.s_z_on_grid)
+            np.testing.assert_allclose(res.slip_rr, 0.0, atol=1e-15)
+            np.testing.assert_allclose(res.t_raman_pulse_rr, ad.data.t_raman_pulse, atol=1e-15)
+            rep = fr.compare_with_opx(res, verbose=False)
+            assert rep['max_abs_dP'] < 1e-11 and rep['argmax_agreement_fraction'] == 1.0
+            assert rep['n_argmax_ties_disagree'] == 0
+            assert rep['remesh_decisions_agree'] == 4
+    # the schedule the OPX kept: the drawn one up to the pole pulse, later by
+    # (d_pole - d_drawn) + t_opx_remesh_hold after it
+    t_sched = fr.scheduled_starts_rr()
+    for s in range(4):
+        pp = int(fired[s])
+        shift = (int(T.pole_d_cc[runs[s]['remesh_pole_level']]) - int(T.d_cc[s, pp])
+                 + c.remesh_hold_cc) * CLOCK_NS * 1e-9
+        np.testing.assert_allclose(t_sched[s, :pp + 1], T.t_start_s[s, :pp + 1], atol=1e-15)
+        np.testing.assert_allclose(t_sched[s, pp + 1:], T.t_start_s[s, pp + 1:] + shift,
+                                   atol=1e-15)
+    # the double-precision replay following the recording ('measured': the
+    # recorded decisions, driven at the applied integer-Hz frequency, <= 3 Hz
+    # from the grid point): the same trajectory to 1e-4, the replay's own
+    # remesh decisions and trigger values = the recorded ones, and the only
+    # argmax flips are EXACT ties of the recorded posterior (pulse 0 from the
+    # pole: hypotheses d +- k are symmetric; the OPX takes the first index,
+    # the double posterior's 1e-5 differences can take the other)
+    res2 = fr.emulate_fixed_point(False).replay_measured(control_omega_source='measured')
+    rep2 = fr.compare_with_opx(res2, verbose=False)
+    assert rep2['max_abs_dP'] < 1e-4, rep2['summary']
+    assert rep2['argmax_agreement_fraction'] == 1.0, rep2['summary']
+    assert rep2['remesh_decisions_agree'] == 4, rep2['summary']
+    np.testing.assert_allclose(res2.remesh['played']['trigger_metric'], rec_metric, rtol=1e-4)
+    np.testing.assert_allclose(res2.s_z_rr, ad.data.s_z, atol=1e-4)
+    np.testing.assert_array_equal(res2.remesh['replay']['s_z_on_grid'], ad.data.s_z_on_grid)
+    flips = np.argwhere(res2.P0_rr.argmax(-1) != P_rec.argmax(-1))
+    for s, i in flips:
+        top = np.sort(P_rec[s, i])[-2:]
+        assert top[1] - top[0] < 1e-9, (s, i, top)
+    # its next drive is the next recorded applied drive (<= 3 Hz), except
+    # after an exact tie
+    far = np.abs(res2.omega_recomputed_rr[:, :-1] - fr.omega_applied_rr[:, 1:]) > 2 * np.pi * 3.5
+    for s, i in np.argwhere(far):
+        top = np.sort(P_rec[s, i])[-2:]
+        assert top[1] - top[0] < 1e-9, (s, i, top)
+    # the double-precision closed loop on its own ('recomputed') reproduces the
+    # recorded drives up to the first exact tie, where it may break the other
+    # way and then (the readings belonging to other drives) diverge
+    res4 = fr.emulate_fixed_point(False).replay_measured(control_omega_source='recomputed')
+    for s in range(4):
+        diff = np.flatnonzero(np.abs(res4.omega_control_rr[s] - fr.omega_applied_rr[s])
+                              > 2 * np.pi * 10.0)
+        if diff.size:
+            i = int(diff[0])
+            assert i >= 1
+            top = np.sort(P_rec[s, i - 1])[-2:]
+            assert top[1] - top[0] < 1e-9, (s, i, top)
+    # the double-precision engine against the test oracle, both following
+    # shot 0's recorded decisions at the recorded applied frequency; the
+    # oracle uses the DRAWN schedule, the replay the actual (later after the
+    # pole pulse) starts -- equal because the remesh resets to the z axis
+    rec = iter(runs[0]['p_meas'])
+    follow = dict(drives=ad.data.drive_index[0], remesh_pulse=int(runs[0]['remesh_pulse']),
+                  remesh_n0=int(runs[0]['remesh_n0']), pole_level=int(runs[0]['remesh_pole_level']),
+                  omega=fr.omega_applied_rr[0])
+    rows, orc = _oracle_remesh_shot(p, c, _one_shot(T, 0), lambda i, w: next(rec), follow=follow)
+    assert orc['s0'] == pytest.approx(float(res2.remesh['replay']['s0'][0]), abs=1e-12)
+    for i, r in enumerate(rows):
+        np.testing.assert_allclose(res2.P0_rr[0, i], r['P0'], atol=1e-9, err_msg=f"pulse {i}")
+        np.testing.assert_allclose(res2.mesh_rr[0, i], r['grid'], rtol=0, atol=1e-6)
+    # what-ifs: a model edit moves both engines alike and never changes what
+    # was played; a structural edit is refused
+    base_f = fr.emulate_fixed_point(True).replay_measured().P0_rr
+    base_d = fr.emulate_fixed_point(False).replay_measured().P0_rr
+    for key, val in (('t_raman_pi_pulse', p.t_raman_pi_pulse * 1.01),
+                     ('t_raman_pulse_offset_opx', p.t_raman_pulse_offset_opx + 8e-9),
+                     ('back_action_coherence', 0.5)):
+        old = getattr(fr.p, key)
+        setattr(fr.p, key, val)
+        rf = fr.emulate_fixed_point(True).replay_measured()
+        rd = fr.emulate_fixed_point(False).replay_measured()
+        for r_ in (rf, rd):
+            np.testing.assert_allclose(r_.t_raman_pulse_rr, ad.data.t_raman_pulse, atol=1e-15)
+            np.testing.assert_allclose(r_.omega_control_rr, fr.omega_applied_rr, rtol=0,
+                                       atol=2 * np.pi * 3.5)
+        moved = float(np.nanmax(np.abs(rf.P0_rr - base_f)))
+        assert moved > 1e-4, key
+        assert float(np.nanmax(np.abs((rf.P0_rr - base_f) - (rd.P0_rr - base_d)))) \
+            < 0.05 * moved + 2e-5, key
+        setattr(fr.p, key, old)
+    for key, val in (('opx_remesh_ratio', 2), ('opx_remesh_pole_levels', 33),
+                     ('opx_remesh_enable', 0), ('t_opx_remesh_hold', 4e-6)):
+        old = getattr(fr.p, key)
+        setattr(fr.p, key, val)
+        for fp in (True, False):
+            with pytest.raises(ValueError, match='was edited'):
+                fr.emulate_fixed_point(fp).replay_measured()
+        setattr(fr.p, key, old)
+    with pytest.raises(ValueError, match='override'):
+        fr.simulate_counterfactual(control_omega_source='override',
+                                   omega_control_rr=ad.data.omega_raman)
+    with pytest.raises(ValueError, match='return_full_state'):
+        fr.replay_measured(return_full_state=True)
+    with pytest.raises(NotImplementedError):
+        fr.simulate_feedback_run_apd()
+
+
+def _one_shot(T, s):
+    """Shot s of a FeedbackShotTables as a one-shot view (the oracle reads row 0)."""
+    view = copy.copy(T)
+    for name in ('d_s', 'd_cc', 't_start_s', 't_start_ext_cc', 'omega_grid', 'w_grid',
+                 'd_init', 'lat_w', 'a', 'b', 'dphi0', 'ddphi', 'zidx', 'n_res'):
+        setattr(view, name, np.asarray(getattr(T, name))[s:s + 1])
+    return view
+
+
+UNFORCED = [(mode, method, source) for mode in (0, 1) for method in (0, 1) for source in (0, 1)]
+
+
+@pytest.mark.parametrize('mode, method, source', UNFORCED)
+def test_remesh_replay_unforced_triggers(mode, method, source, capsys):
+    """No forcing: the shots fire on their trigger metric (posterior std or
+    alias margin) or not at all, and every branch of the decision rules --
+    trigger mode, pole-angle method, s0 source; continuous and level
+    durations -- runs through FeedbackOPXReplay in both engines against the
+    recording. (In margin mode not every shot fires: with continuous
+    durations the posterior keeps an alias beyond +-1 step within ~0.3 nats
+    of the MAP for 10 pulses on most of these shots.)"""
+    lev = 8 if (mode + method + source) % 2 else 0
+    thr = (dict(feedback_reinit_std_threshold_Omega=1.2) if mode == 0
+           else dict(feedback_reinit_margin_nats=0.25))
+    p = _params(N=12, m=21, span=2.5, offset=0.0, t_raman_pulse_n_levels=lev,
+                feedback_reinit_force_pulse=0, feedback_reinit_trigger_mode=mode,
+                feedback_reinit_method=method, feedback_reinit_state_source=source,
+                **thr, **RM)
+    c = _const(p)
+    ad, T, runs, recs = _synthetic_remesh_run(p, [-1.0, 0.5, 1.5, 0.0], [41, 42, 43, 44],
+                                              detune=0.4)
+    capsys.readouterr()
+    fired = np.array([o['remesh_pulse'] for o in runs])
+    on = fired >= 0
+    assert np.sum(on) >= 2, fired
+    assert np.all(fired[on] >= c.reinit_min_pulse), fired      # on the metric, no forcing
+    rec_metric = ad.data.remesh_trigger_metric.reshape(-1)
+    assert np.all(np.isnan(rec_metric[~on]))
+    if mode == 0:
+        assert np.all(rec_metric[on] < 1.2)
+    else:
+        assert np.all(rec_metric[on] >= 0.25)
+    fr = FeedbackOPXReplay(ad)
+    P_rec = ad.data.probabilities[:, 1:]
+    for how in ('measured', 'recomputed'):
+        res = fr.emulate_fixed_point(True).replay_measured(control_omega_source=how)
+        np.testing.assert_allclose(res.P0_rr, P_rec, atol=1e-11, err_msg=how)
+        np.testing.assert_allclose(res.s_z_rr, ad.data.s_z, atol=1e-11)
+        rm = res.remesh
+        np.testing.assert_array_equal(rm['replay']['pulse'], fired)
+        assert rm['n_agree'] == 4
+        assert rm['n_s0_compared'] == int(np.sum(on)) and rm['s0_max_abs_diff'] < 1e-11
+        np.testing.assert_allclose(rm['replay']['trigger_metric'], rec_metric, rtol=1e-9)
+    res2 = fr.emulate_fixed_point(False).replay_measured()
+    rep2 = fr.compare_with_opx(res2, verbose=False)
+    assert rep2['max_abs_dP'] < 1e-4, rep2['summary']
+    np.testing.assert_allclose(res2.remesh['played']['trigger_metric'], rec_metric,
+                               rtol=1e-3, atol=1e-4)
+
+
+def test_remesh_replay_follows_perturbed_decisions(capsys):
+    """A recording with decisions the emulation would not have made (as a
+    QUA rounding or tie flip could): the pole level +1 (shot 0), the fine
+    grid moved one lattice step (shot 1), the pole pulse one pulse later
+    (shot 2), shot 3 unchanged. Following the recording, the fixed-point
+    replay reproduces it exactly and plays the recorded decisions; the
+    replay's own decisions are reported and differ; recomputing, the
+    replay makes its own and differs from the recording."""
+    p = _params(N=16, m=21, span=2.5, offset=0.0, t_raman_pulse_n_levels=8, **RM)
+
+    def perturb(s, out):
+        k, n0, pp = out['remesh_pole_level'], out['remesh_n0'], out['remesh_pulse']
+        assert pp >= 0
+        if s == 0:
+            return dict(drives=None, remesh_pulse=pp, remesh_n0=n0, pole_level=(k + 1) % 17)
+        if s == 1:
+            return dict(drives=None, remesh_pulse=pp, remesh_n0=n0 - 1 if n0 > 0 else n0 + 1,
+                        pole_level=k)
+        if s == 2:
+            return dict(drives=None, remesh_pulse=pp + 1, remesh_n0=n0, pole_level=k)
+        return None
+    ad, T, runs, recs = _synthetic_remesh_run(p, [0.0, 0.5, -0.5, 1.0], [51, 52, 53, 54],
+                                              detune=0.3, perturb=perturb)
+    capsys.readouterr()
+    fr = FeedbackOPXReplay(ad)
+    P_rec = ad.data.probabilities[:, 1:]
+    res = fr.emulate_fixed_point(True).replay_measured()          # following
+    np.testing.assert_allclose(res.P0_rr, P_rec, atol=1e-12)
+    np.testing.assert_allclose(res.s_z_rr, ad.data.s_z, atol=1e-12)
+    rm = res.remesh
+    for k in ('pulse', 'n0', 'pole_level'):
+        np.testing.assert_array_equal(rm['played'][k], rm['recorded'][k])
+    np.testing.assert_array_equal(rm['decisions_agree_r'], [False, False, False, True])
+    assert rm['replay']['pole_level'][0] != rm['recorded']['pole_level'][0]
+    assert rm['replay']['n0'][1] != rm['recorded']['n0'][1]
+    assert rm['replay']['pulse'][2] == rm['recorded']['pulse'][2] - 1
+    res_r = fr.emulate_fixed_point(True).replay_measured(control_omega_source='recomputed')
+    for s in range(3):
+        assert np.nanmax(np.abs(res_r.P0_rr[s] - P_rec[s])) > 1e-3, s
+    np.testing.assert_allclose(res_r.P0_rr[3], P_rec[3], atol=1e-12)
+    res2 = fr.emulate_fixed_point(False).replay_measured()
+    for k in ('pulse', 'n0', 'pole_level'):
+        np.testing.assert_array_equal(res2.remesh['played'][k], res2.remesh['recorded'][k])
+    assert fr.compare_with_opx(res2, verbose=False)['max_abs_dP'] < 1e-4
+
+
+def test_remesh_replay_excludes_impossible_decisions_and_invalid_shots(capsys):
+    """A shot the OPX did not run (streams INT_MISSING / NaN, valid 0) is
+    NaN in the finish hook's containers and skipped by the replay; a valid
+    shot whose recorded decisions the sequence cannot have made (level -1
+    on a fired shot -- -1 is also INT_MISSING --, a fine grid off the
+    lattice, a pole pulse with no pulse after it) is excluded from the
+    replay with the count and reason printed, never indexed."""
+    p = _params(N=12, m=21, span=2.5, offset=0.0, t_raman_pulse_n_levels=8, **RM)
+    ad, T, runs, recs = _synthetic_remesh_run(p, [0.0, 0.5, -0.5, 1.0, 1.5],
+                                              [61, 62, 63, 64, 65], detune=0.3, invalid=(4,))
+    capsys.readouterr()
+    for key in ('omega_raman', 't_pulse_start', 't', 's_z_on_grid'):
+        assert np.all(np.isnan(getattr(ad.data, key)[4])), key
+    assert np.isnan(ad.data.remesh_trigger_metric.reshape(-1)[4])
+    assert np.all(np.isfinite(ad.data.omega_raman[:4]))
+    ad.data.remesh_pole_level.reshape(-1)[0] = -1
+    ad.data.remesh_n0.reshape(-1)[1] = 99
+    ad.data.remesh_pulse.reshape(-1)[2] = 11
+    fr = FeedbackOPXReplay(ad)
+    out = capsys.readouterr().out
+    assert out.count('excluded from the replay') == 3
+    assert fr.valid_r.tolist() == [False, False, False, True, False]
+    assert np.all(np.isnan(fr.omega_applied_rr[[0, 1, 2, 4]]))
+    for fp in (True, False):
+        res = fr.emulate_fixed_point(fp).replay_measured()
+        assert res.remesh['n_valid'] == 1 and res.remesh['n_agree'] == 1
+        assert np.all(np.isnan(res.P0_rr[[0, 1, 2, 4]]))
+        np.testing.assert_allclose(res.P0_rr[3], ad.data.probabilities[3, 1:],
+                                   atol=1e-12 if fp else 1e-4)
+        rep = fr.compare_with_opx(res, verbose=False)
+        assert rep['remesh_n_excluded'] == 3 and 'EXCLUDED' in rep['summary']
+
+
+def test_pole_pulse_brings_the_true_state_to_the_predicted_s_z():
+    """The physics of the pole rule, shared by every implementation (so a
+    sign or frame error common to all would pass the consistency tests):
+    noise-free readings, resonance on a grid point, method 0 (the MAP
+    hypothesis) and state source 1 (s0 = the model's S_z at the played
+    level). When the MAP is the true hypothesis, the TRUE Bloch vector after
+    the pole pulse has the predicted S_z; the mirrored level misses."""
+    p = _params(N=12, m=21, span=2.5, offset=0.0, feedback_reinit_method=0,
+                feedback_reinit_state_source=1, **RM)
+    c = _const(p, sincos_lut_bits=0, exp_lut_bits=0)
+    n_ok, worst, miss = 0, 0.0, 0.0
+    for seed in range(20):
+        T = _tables_for(p, [seed], sincos_lut_bits=0, exp_lut_bits=0)
+        j_true = 7 + seed % 7
+        detune = float(T.w_grid[0, j_true])
+
+        def run(level_map=None):
+            meas, on_pole, rec = _remesh_detector(p, c, T, 0, detune, seed, noise=False,
+                                                  level_map=level_map)
+            out = run_shot_fixed_point_emulation(
+                T.w_grid[0], int(T.zidx[0]), T.a[0], T.b[0], T.dphi0[0], T.ddphi[0], c, meas,
+                d_init=int(T.d_init[0]), remesh=_rm_tables(T), on_pole=on_pole)
+            return out, rec
+        out, rec = run()
+        pp = int(out['remesh_pulse'])
+        if pp < 0 or int(out['d_used'][pp]) != j_true:
+            continue                                # the MAP is not the truth at the trigger
+        n_ok += 1
+        worst = max(worst, abs(rec['hz'][pp] - out['remesh_s0']))
+        k = int(out['remesh_pole_level'])
+        _out2, rec2 = run(level_map=lambda kk, _km=c.n_pole - 1 - k: _km)
+        miss = max(miss, abs(rec2['hz'][pp] - out['remesh_s0']))
+    assert n_ok >= 10, n_ok
+    assert worst < 1e-6, worst
+    assert miss > 0.1, miss
+
+
+def test_remesh_replay_handles_a_shot_that_never_fires():
+    """No forcing and a threshold the posterior cannot reach in the one-pulse
+    trigger window (N = 4: only pulse 1): no pole pulse anywhere; the replay
+    agrees and keeps the run grid throughout."""
+    p = _params(N=4, m=21, span=2.5, offset=0.0, t_raman_pulse_n_levels=8,
+                feedback_reinit_std_threshold_Omega=0.01, feedback_reinit_force_pulse=0, **RM)
+    ad, T, runs, recs = _synthetic_remesh_run(p, [0.0, 1.0], [31, 32], detune=0.3)
+    assert all(o['remesh_pulse'] == -1 for o in runs)
+    np.testing.assert_array_equal(ad.data.remesh_pole_level.reshape(-1), [-1, -1])
+    assert np.all(np.isnan(ad.data.remesh_trigger_metric))
+    np.testing.assert_array_equal(ad.data.s_z_on_grid, 1.0)
+    fr = FeedbackOPXReplay(ad)
+    for fp in (True, False):
+        res = fr.emulate_fixed_point(fp).replay_measured()
+        assert res.remesh['n_agree'] == 2
+        np.testing.assert_allclose(res.mesh_rr, np.repeat(T.omega_grid[:, None, :], 4, axis=1),
+                                   rtol=0, atol=1e-3)
+        np.testing.assert_allclose(fr.scheduled_starts_rr(), T.t_start_s, atol=1e-15)
+        assert fr.compare_with_opx(res, verbose=False)['max_abs_dP'] < (1e-12 if fp else 1e-4)

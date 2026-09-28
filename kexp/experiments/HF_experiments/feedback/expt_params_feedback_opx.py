@@ -51,8 +51,42 @@ class ExptParams(ExptParamsFeedback):
         # re-run calibrations/apd_voltage_vs_state_2.py with the OPX doing
         # the imaging pulses (sequence rabi_raman_apd or a 5-pulse variant),
         # then k-jam/analysis/artisinal/apd_pulse_analysis_measured_pi.ipynb.
-        self.v_apd_all_up_opx = -0.12361    # V (OPX demod2volts) PLACEHOLDER, copied from 78309
-        self.v_apd_all_down_opx = -0.19702  # V (OPX demod2volts) PLACEHOLDER, copied from 78309
+        # self.v_apd_all_up_opx = -0.12361    # V (OPX demod2volts) PLACEHOLDER, copied from 78309
+        # self.v_apd_all_down_opx = -0.19702  # V (OPX demod2volts) PLACEHOLDER, copied from 78309
+        # self.v_apd_all_up_opx = -0.15945    # V (OPX demod2volts) PLACEHOLDER, copied from the ARTIQ calibration 83193-83194, 2026-09-27
+        # self.v_apd_all_down_opx = -0.19903  # V (OPX demod2volts) PLACEHOLDER, copied from the ARTIQ calibration 83193-83194, 2026-09-27
+        # self.v_apd_all_up_opx = -0.15417    # V (OPX demod2volts) PLACEHOLDER, copied from the ARTIQ calibration 83201-83202, 2026-09-27
+        # self.v_apd_all_up_opx = -0.14367   # V (OPX demod2volts) PLACEHOLDER, copied from the ARTIQ calibration 83217
+        # self.v_apd_all_up_opx = -0.15087   # V (OPX demod2volts) PLACEHOLDER, copied from the ARTIQ calibration 83227
+        # self.v_apd_all_up_opx = -0.15395   # V (OPX demod2volts) PLACEHOLDER, copied from the ARTIQ calibration 83237
+        # self.v_apd_all_up_opx = -0.15194   # V (OPX demod2volts) PLACEHOLDER, copied from the ARTIQ calibration 83237
+        # self.v_apd_all_up_opx = -0.15624   # V (OPX demod2volts) PLACEHOLDER, copied from the ARTIQ calibration 83246
+        # self.v_apd_all_up_opx = -0.15397   # V (OPX demod2volts) PLACEHOLDER, copied from the ARTIQ calibration 83257
+        # self.v_apd_all_up_opx = -0.15721   # V (OPX demod2volts) PLACEHOLDER, copied from the ARTIQ calibration 83284
+        # self.v_apd_all_up_opx = -0.16246   # V (OPX demod2volts) PLACEHOLDER, copied from the ARTIQ calibration 83294
+        # self.v_apd_all_up_opx = -0.16449   # V (OPX demod2volts) PLACEHOLDER, copied from the ARTIQ calibration 83304
+        # self.v_apd_all_up_opx = -0.15860   # V (OPX demod2volts) PLACEHOLDER, copied from the ARTIQ calibration 83314
+        # self.v_apd_all_up_opx = -0.16085   # V (OPX demod2volts) PLACEHOLDER, copied from the ARTIQ calibration 83324
+        # self.v_apd_all_up_opx = -0.15881   # V (OPX demod2volts) PLACEHOLDER, copied from the ARTIQ calibration 83334
+        # self.v_apd_all_up_opx = -0.15668   # V (OPX demod2volts) PLACEHOLDER, copied from the ARTIQ calibration 83345
+        # self.v_apd_all_up_opx = -0.16120   # V (OPX demod2volts) PLACEHOLDER, copied from the ARTIQ calibration 83350
+        self.v_apd_all_up_opx = -0.16306   # V (OPX demod2volts) PLACEHOLDER, copied from the ARTIQ calibration 83357
+        # self.v_apd_all_down_opx = -0.20248  # V (OPX demod2volts) PLACEHOLDER, copied from the ARTIQ calibration 83201-83202, 2026-09-27
+        # self.v_apd_all_down_opx = -0.20441   # V (OPX demod2volts) PLACEHOLDER, copied from the ARTIQ calibration 83217
+        # self.v_apd_all_down_opx = -0.20229   # V (OPX demod2volts) PLACEHOLDER, copied from the ARTIQ calibration 83227
+        # self.v_apd_all_down_opx = -0.19845   # V (OPX demod2volts) PLACEHOLDER, copied from the ARTIQ calibration 83237
+        # self.v_apd_all_down_opx = -0.19651   # V (OPX demod2volts) PLACEHOLDER, copied from the ARTIQ calibration 83237
+        # self.v_apd_all_down_opx = -0.19515   # V (OPX demod2volts) PLACEHOLDER, copied from the ARTIQ calibration 83246
+        # self.v_apd_all_down_opx = -0.19524   # V (OPX demod2volts) PLACEHOLDER, copied from the ARTIQ calibration 83257
+        # self.v_apd_all_down_opx = -0.19209   # V (OPX demod2volts) PLACEHOLDER, copied from the ARTIQ calibration 83284
+        # self.v_apd_all_down_opx = -0.18585   # V (OPX demod2volts) PLACEHOLDER, copied from the ARTIQ calibration 83294
+        # self.v_apd_all_down_opx = -0.18806   # V (OPX demod2volts) PLACEHOLDER, copied from the ARTIQ calibration 83304
+        # self.v_apd_all_down_opx = -0.19024   # V (OPX demod2volts) PLACEHOLDER, copied from the ARTIQ calibration 83314
+        # self.v_apd_all_down_opx = -0.19009   # V (OPX demod2volts) PLACEHOLDER, copied from the ARTIQ calibration 83324
+        # self.v_apd_all_down_opx = -0.19223   # V (OPX demod2volts) PLACEHOLDER, copied from the ARTIQ calibration 83334
+        # self.v_apd_all_down_opx = -0.19192   # V (OPX demod2volts) PLACEHOLDER, copied from the ARTIQ calibration 83345
+        # self.v_apd_all_down_opx = -0.18652   # V (OPX demod2volts) PLACEHOLDER, copied from the ARTIQ calibration 83350
+        self.v_apd_all_down_opx = -0.18928   # V (OPX demod2volts) PLACEHOLDER, copied from the ARTIQ calibration 83357
 
         # Photon-fraction noise of one weak measurement. Only the RATIO
         # sigma/N enters the posterior (the Gaussian likelihood with the
@@ -123,6 +157,58 @@ class ExptParams(ExptParamsFeedback):
         # structure (feedback_flat_rule_bool = 1) has NOT been measured;
         # expect the slip line to fire until it is.
         self.t_opx_feedback_align_overhead_levels = 344.e-9  #simulator, 2026-09-25
+
+        # Split update (2026-09-28, ported from the ARTIQ fast path): 1 = the
+        # measurement-independent half of the update (seeds, rotation,
+        # phasors, p1_j) is issued before the photon-fraction assignment and
+        # only the likelihood follows it. Same timing statements in the same
+        # order, same arithmetic. 0 = the pass-3b structure the budget and
+        # overheads above were measured for. EXPECT NO GAIN: ctx.measure
+        # saves the ADC value right after the measure statement (that is the
+        # first read), and on QOP 2.6 reordering the prediction around the
+        # pulse statements already did not help (docs/opx/
+        # feedback_port_report.md). Before setting 1, measure on the QOP
+        # simulator (docs/opx/sim_split_timing.py) its sync overhead (below --
+        # the sequence refuses to trace without it) and whether the per-pulse
+        # compute shrinks at all.
+        self.opx_feedback_split_update = 0
+        # self.t_opx_feedback_align_overhead_split = ...          # s, continuous durations, to measure
+        # self.t_opx_feedback_align_overhead_levels_split = ...   # s, discrete levels, to measure
+
+        # Remesh with pole return (2026-09-28; sequence bayesian_feedback_remesh,
+        # the OPX port of HF_experiments/feedback/feedback_reinit.py with the
+        # same feedback_reinit_* meanings): once per shot, when the trigger
+        # fires after pulse i, pulse i+1 is a pole pulse (length from the
+        # pole angle, rounded to one of opx_remesh_pole_levels durations over
+        # [0, pi]); after its update every hypothesis restarts at (0, 0, s0)
+        # and the grid step becomes dw / opx_remesh_ratio, centred on the MAP.
+        # Differences from the ARTIQ experiment: log-weights are interpolated
+        # linearly in L (ARTIQ: linear in P); the pole pulse is always played;
+        # only the MAP centre and no tempering; the pole pulse's step is longer
+        # by (d_pole - d_drawn) + t_opx_remesh_hold and later pulses shift (as
+        # ARTIQ's schedule does). NOT YET RUN on the simulator or hardware;
+        # the structure needs three measured values the sequence refuses to
+        # trace without (docs/opx/sim_remesh_timing.py): its sync overhead
+        # (t_opx_feedback_align_overhead[_levels][_split]_remesh), its compute
+        # budget (t_opx_feedback_compute_budget[_levels][_split]_remesh: the
+        # trigger block runs after EVERY pulse's update) and the pole step's
+        # extra hold for the remesh block (t_opx_remesh_hold).
+        self.opx_remesh_enable = 0
+        self.opx_remesh_ratio = 4               # span 2.5 -> 0.625 Omega, as feedback_reinit.py
+        self.opx_remesh_pole_levels = 17        # 2^q + 1: pole angle resolution pi/16
+        self.feedback_reinit_trigger_mode = 0   # 0: posterior std < threshold; 1: alias margin
+        self.feedback_reinit_std_threshold_Omega = 0.5
+        self.feedback_reinit_margin_nats = 2.0
+        self.feedback_reinit_margin_excl = 1
+        self.feedback_reinit_min_pulse = 2
+        self.feedback_reinit_force_pulse = 6    # 0 = never forced
+        self.feedback_reinit_method = 1         # 0: MAP; 1: posterior-weighted pole angle
+        self.feedback_reinit_state_source = 0   # 0: measured S_z of the pole readout; 1: model
+        # self.t_opx_feedback_align_overhead_remesh = ...          # s, to measure
+        # self.t_opx_feedback_align_overhead_levels_remesh = ...   # s, to measure
+        # self.t_opx_feedback_compute_budget_remesh = ...          # s, to measure
+        # self.t_opx_feedback_compute_budget_levels_remesh = ...   # s, to measure
+        # self.t_opx_remesh_hold = ...                             # s, to measure
 
         # Free-evolution knob, like ARTIQ's delta_t_mu: lengthens every
         # per-step interval by this much (s, multiple of 4 ns). Enters the
