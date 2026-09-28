@@ -450,6 +450,11 @@ class Feedback:
         self.p.feedback_grid_size = int(self.p.feedback_grid_size)
         self.m = self.p.feedback_grid_size
         self.Omega = np.pi / self.p.t_raman_pi_pulse
+        # 1: the hypothesis grid is centred on the exact initial offset (any
+        # real value). 0: on round(offset), as every run before 2026-09-27 did;
+        # a run file without the parameter is such a run, so replay of it
+        # keeps its grid. New runs get 1 from expt_params_feedback.
+        self.grid_center_exact = int(getattr(self.p, "feedback_grid_center_exact_offset", 0))
         # Effective/ideal duration of the raman pulse currently being processed
         # by generate_posterior. Scalar experiments leave these at the param
         # values; randomized-pulse-time experiments (and replay) overwrite them
@@ -486,18 +491,21 @@ class Feedback:
     def _initialize_frequency_grid(self):
         """Kernel-safe loop-based grid initialisation (no numpy allocation)."""
         omega_resonance = self.two_pi * self.p.frequency_raman_transition
-        # NOTE: the grid is placed on an integer offset, while
-        # reset_initial_omega_from_params uses the unrounded value for the
-        # initial omega_raman. These agree only for whole-number offsets (every
-        # current config uses one). A fractional value would silently desync the
-        # grid centre from the initial guess -- and round() is half-to-even, so
-        # e.g. 0.5 rounds to 0.
-        n_grid_offset = round(self.p.feedback_fractional_initial_offset)
+        # Grid centre, in Omega from resonance. reset_initial_omega_from_params
+        # starts the drive at the exact offset, so the grid is centred there too
+        # (grid_center_exact = 1): any real offset works, and the snap below
+        # moves the grid by at most half a step. grid_center_exact = 0 is the
+        # old placement on round(offset) (half-to-even), kept only so runs taken
+        # with it replay as they ran: for a fractional offset it left the grid
+        # centre away from the initial drive (0.5 -> 0).
+        grid_center = float(self.p.feedback_fractional_initial_offset)
+        if self.grid_center_exact == 0:
+            grid_center = float(round(self.p.feedback_fractional_initial_offset))
         span = self.p.feedback_guess_span_Omega
         m = self.m
         Omega = self.Omega
 
-        # Build grid: omega[i] = omega_res + Omega*(offset - span*linspace(-1,1,m)[i])
+        # Build grid: omega[i] = omega_res + Omega*(center - span*linspace(-1,1,m)[i])
         # linspace(-1,1,m)[i] = -1 + i * 2/(m-1)
         scale = 2.0 / (m - 1)
         best_idx = 0
@@ -505,7 +513,7 @@ class Feedback:
         i = 0
         while i < m:
             t = -1.0 + i * scale
-            omega = omega_resonance + Omega * (n_grid_offset - span * t)
+            omega = omega_resonance + Omega * (grid_center - span * t)
             self.omega_guess_list[i] = omega
             dist = omega - omega_resonance
             if dist < 0.0:

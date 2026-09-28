@@ -18,6 +18,10 @@ class ExptParams(expt_params_kexp):
         self.N_pulses = 20
 
         self.feedback_fractional_initial_offset = 0.0
+        # Centre the hypothesis grid on the exact initial offset, so any real
+        # offset works (2026-09-27). 0 = the old placement on round(offset);
+        # run files without this key were taken with that, and replay honours it.
+        self.feedback_grid_center_exact_offset = 1
         self.feedback_guess_span_Omega = 5.0
 
         # Threshold for adaptive remesh: if posterior std < threshold * Omega,
