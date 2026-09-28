@@ -18,7 +18,8 @@ from waxx.util.dashboard import logging_setup
 from waxx.util.device_state.run_loop import loop_specs
 from kexp.config.ip import (MONITOR_EXPT_PATH, MONITOR_STATE_FILEPATH, LOG_DIR,
                             RESET_STATE_EXPT_PATH, RUN_LOOP_EXPTS)
-from kexp.util.guis.device_state_gui.monitor_server_headless import monitor_connections
+from kexp.util.guis.device_state_gui.monitor_server_headless import (
+    monitor_connections, monitor_slm_reinit, monitor_state_generator)
 
 log = logging.getLogger(__name__)
 
@@ -76,7 +77,9 @@ def main():
                                             if LOG_DIR else None),
                                reset_expt_path=RESET_STATE_EXPT_PATH,
                                run_loops=loop_specs(RUN_LOOP_EXPTS),
-                               connections=monitor_connections())
+                               connections=monitor_connections(),
+                               slm_reinit=monitor_slm_reinit(),
+                               state_generator=monitor_state_generator())
     except Exception:
         log.exception("Monitor server GUI failed to start")
         return 1

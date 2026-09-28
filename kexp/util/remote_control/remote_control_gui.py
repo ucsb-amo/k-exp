@@ -296,8 +296,7 @@ class WhitelistEditor(QDialog):
             if value in eh.phone_whitelist:
                 eh.phone_whitelist.remove(value)
             self._controller._labels.pop(value, None)
-            from kexp.util.remote_control.email_handler import GVOICE_NUMBER
-            gv_email = f"1{GVOICE_NUMBER}.1{value}.placeholder@txt.voice.google.com"
+            gv_email = f"1{eh.gvoice_number}.1{value}.placeholder@txt.voice.google.com"
             if gv_email in eh.whitelist:
                 eh.whitelist.remove(gv_email)
         elif kind == "email":
