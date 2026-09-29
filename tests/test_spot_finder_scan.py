@@ -483,14 +483,20 @@ def process_until(app, cond, timeout=10.0):
     return False
 
 
-def build_window(slm_host, monkeypatch, camera, **kwargs):
+def build_window(slm_host, monkeypatch, camera, served=None, **kwargs):
     """The spot finder window, with the stage, the SLM server and liveOD's
-    run state all fakes. Close it, then stop ``w._test_gate``."""
+    run state all fakes. Close it, then stop ``w._test_gate``.
+
+    ``served()`` makes the Andor the window opens itself when no camera is
+    given (make_own_andor_source); by default one whose camera refuses to
+    open -- never the lab's Andor, never a server announced on the network."""
     import stage_group
     import SLM_andor_main_gui as main_gui
     FakeStage.calls = []
     monkeypatch.setattr(stage_group, "APDStageClient", FakeStage)
     monkeypatch.setattr(main_gui.FinalScanPreviewDialog, "exec", lambda self: 0)
+    if hasattr(main_gui, "make_own_andor_source"):
+        monkeypatch.setattr(main_gui, "make_own_andor_source", served or refusing_served)
     # never the lab SLM PC, not even for the startup reachability probe
     monkeypatch.setattr(main_gui, "SLMController", lambda canvas_res, **kw: SLMController(
         canvas_res=canvas_res, server_ip="127.0.0.1", server_port=slm_host.port,
@@ -1621,7 +1627,8 @@ def test_find_liveod_andor_takes_only_a_liveod_host():
 
 
 @needs_stream
-def test_source_selection_falls_back_to_local_with_banner(app, slm_host, monkeypatch):
+def test_source_selection_falls_back_to_local_with_banner(app, slm_host, monkeypatch,
+                                                          served_env):
     import SLM_andor_main_gui as main_gui
     from frame_source import LocalAndorSource
     opened = []
@@ -1630,12 +1637,23 @@ def test_source_selection_falls_back_to_local_with_banner(app, slm_host, monkeyp
         opened.append(kw)
         return FakeCamera(SLMPattern())
 
+    def served():
+        # the Andor opened here, served (a package with served_source.py)
+        def backend():
+            opened.append("served")
+            return pattern_backend(SLMPattern())
+        return make_served(backend, sources=served_env["sources"])
+
     monkeypatch.setattr(main_gui, "AndorEMCCD", fake_andor)     # never the real SDK
+    if HAS_SERVED:
+        from served_source import ServedAndorSource as OwnSource
+    else:
+        OwnSource = LocalAndorSource
 
     # auto, and the directory finds nothing: the local camera, with the banner
     release = threading.Event()
     directory = FakeDirectory(release=release)
-    w = build_window(slm_host, monkeypatch, None, directory=directory)
+    w = build_window(slm_host, monkeypatch, None, served=served, directory=directory)
     try:
         assert process_until(app, lambda: directory.calls == 1)
         app.processEvents()                     # the GUI runs while discovery waits
@@ -1643,18 +1661,21 @@ def test_source_selection_falls_back_to_local_with_banner(app, slm_host, monkeyp
         assert not w._camera_connected() and not w.scan_btn.isEnabled()
         release.set()
         assert process_until(app, lambda: w._camera_connected())
-        assert isinstance(w.source, LocalAndorSource) and len(opened) == 1
+        assert isinstance(w.source, OwnSource) and len(opened) == 1
         assert not w.source_banner.isHidden()
         text = w.source_banner.text()
         assert "liveOD does not serve the Andor (camera host off)" in text
         assert "using the camera directly; release it in liveOD first" in text
+        if HAS_SERVED:
+            assert (f"It is served as {SERVED_ID}: liveOD's camera host can take it over"
+                    in text and "follows it there" in text)
         assert w.camera_pill.state == "open"
     finally:
         close_window(w)
 
     # a lookup that fails falls back the same way, and says why
     opened.clear()
-    w = build_window(slm_host, monkeypatch, None,
+    w = build_window(slm_host, monkeypatch, None, served=served,
                      directory=FakeDirectory(error=OSError("no route to the lab network")))
     try:
         assert process_until(app, lambda: w._camera_connected())
@@ -1667,7 +1688,8 @@ def test_source_selection_falls_back_to_local_with_banner(app, slm_host, monkeyp
     # --stream: nothing served means no camera at all; the andor button looks again
     opened.clear()
     directory = FakeDirectory()
-    w = build_window(slm_host, monkeypatch, None, directory=directory, source_mode="stream")
+    w = build_window(slm_host, monkeypatch, None, served=served, directory=directory,
+                     source_mode="stream")
     try:
         assert process_until(app, lambda: w.camera_pill.state == "failed")
         assert "--stream was given" in w.source_banner.text()
@@ -1683,11 +1705,14 @@ def test_source_selection_falls_back_to_local_with_banner(app, slm_host, monkeyp
 
     # --direct: liveOD's camera host is not asked
     directory = FakeDirectory()
-    w = build_window(slm_host, monkeypatch, None, directory=directory, source_mode="direct")
+    w = build_window(slm_host, monkeypatch, None, served=served, directory=directory,
+                     source_mode="direct")
     try:
         assert process_until(app, lambda: w._camera_connected())
         assert directory.calls == 0 and len(opened) == 1
         assert "--direct" in w.source_banner.text()
+        if HAS_SERVED:
+            assert "the spot finder then stops using it" in w.source_banner.text()
     finally:
         close_window(w)
 
@@ -1804,3 +1829,525 @@ def test_stream_source_satisfies_protocol():
     assert frame_source.is_liveod_server("camera_server:kong:liveod")
     assert not frame_source.is_liveod_server("camera_server:kong")
     assert not frame_source.is_liveod_server("basler_server:kong")
+
+
+# ----------------------------------------------------------------------
+# The Andor opened here, served so that liveOD's camera host can take it
+# over (served_source.ServedAndorSource). Its server is a real beacon core,
+# bound to 127.0.0.1 and never beaconing (QuietServedCore); the camera is a
+# PatternBackend; "liveOD" claims it with waxx's own ReservationKeeper, or
+# is a real waxx CameraHost with fakes.
+# ----------------------------------------------------------------------
+
+HAS_SERVED = HAS_STREAM and (SPOT_FINDER / "served_source.py").is_file()
+needs_served = pytest.mark.skipif(
+    not HAS_SERVED, reason=f"{SPOT_FINDER} has no served_source (or beacon is missing)")
+
+SERVED_ID = "camera_server:spot-test:spot_finder"     # never beaconed (QuietServedCore)
+READOUT = {"hs_speed": 0, "vs_speed": 1, "vs_amp": 3, "preamp": 2}
+
+if HAS_SERVED:
+    from served_source import ServedCore
+
+    class QuietServedCore(ServedCore):
+        """The spot finder's core, on 127.0.0.1, never beaconing."""
+
+        def __init__(self, server_id, **kw):
+            kw.update(bind_host="127.0.0.1", check_duplicate=False)
+            super().__init__(server_id, **kw)
+
+        def _start_beacon(self):
+            pass
+
+
+def pattern_backend(pattern):
+    """A PatternBackend whose EM gain goes down to 0, as the spot finder opens the Andor."""
+    b = PatternBackend(pattern)
+    b.ranges["gain"] = (0, 300)
+    return b
+
+
+def make_served(backend_factory, camera_id=ANDOR_ID, sources=None, **kw):
+    """A ServedAndorSource on a quiet core; listed in ``sources`` for shutdown."""
+    from served_source import ServedAndorSource
+    kw.setdefault("server_id", SERVED_ID)
+    kw.setdefault("local_addresses", {"127.0.0.1"})
+    src = ServedAndorSource(backend_factory, camera_id=camera_id, readout=dict(READOUT),
+                            core_factory=QuietServedCore, **kw)
+    if sources is not None:
+        sources.append(src)
+    return src
+
+
+def refusing_served():
+    """build_window's default: the Andor opened here refuses to open."""
+    def refuse():
+        raise AssertionError("the window opened the Andor directly")
+    return make_served(refuse)
+
+
+def liveod_claimer(source, camera_id=ANDOR_ID):
+    """What liveOD's camera host uses to take a camera from another server."""
+    from beacon.camera.reservations import Holder
+    from waxx.util.live_od.camera_host.claims import ReservationKeeper, ServerRef
+    ref = ServerRef(source.server_id, "127.0.0.1", source.core.port)
+    return ReservationKeeper(lambda cid: [ref] if cid == camera_id else [],
+                             Holder("liveod:test", server_id=HOST_ID, host="testhost", pid=1,
+                                    label="liveOD"))
+
+
+def v2(port, header, timeout_s=3.0):
+    import zmq
+    from waxx.util.live_od.camera_host.claims import v2_request
+    ctx = zmq.Context()
+    try:
+        return v2_request(ctx, "127.0.0.1", port, header, timeout_s, label="spot finder test")
+    finally:
+        ctx.term()
+
+
+@pytest.fixture
+def served_env(monkeypatch, tmp_path):
+    """No NetServer beacons; sources and claimers shut down afterwards."""
+    monkeypatch.setenv("BEACON_STATE_DIR", str(tmp_path / "beacon_state"))
+    if HAS_STREAM:
+        monkeypatch.setattr(NetServer, "_start_beacon", lambda self: None)
+    made = {"sources": [], "keepers": []}
+    yield made
+    for k in made["keepers"]:
+        k.shutdown(1.0)
+    for s in made["sources"]:
+        s.shutdown(5.0)
+
+
+@needs_served
+def test_served_source_satisfies_protocol_and_names_the_andor_as_liveod_does():
+    import inspect
+    import frame_source
+    import SLM_andor_main_gui as main_gui
+    from served_source import (ServedAndorSource, liveod_camera_id, DEFAULT_ANDOR_CAMERA_ID,
+                               RELINQUISH_CLOSE_S, HANDOVER_HOLD_S)
+    from run_gate import DEFAULT_MAX_AGE_S, POLL_PERIOD_S
+    from waxx.util.live_od.camera_host.host import ANDOR_CLAIM_TIMEOUT_S, camera_specs
+    members = [n for n, v in vars(frame_source.FrameSource).items()
+               if callable(v) and not n.startswith("_")]
+    for name in members:
+        want = list(inspect.signature(getattr(frame_source.FrameSource, name)).parameters)
+        got = list(inspect.signature(getattr(ServedAndorSource, name)).parameters)
+        assert got == want, (name, got, want)
+
+    # nothing is served or opened before open()
+    s = ServedAndorSource(lambda: None)
+    assert not s.is_open() and s.core is None and not s.video_running()
+    assert s.run_state() == frame_source.RunState()
+    assert s.check() == (True, "") and s.gate_snapshot()["state"] == "detached"
+    s.stop_video()
+    s.end_scan()
+    assert s.close() is None
+    s.shutdown()
+    with pytest.raises(RuntimeError, match="not connected"):
+        s.snap(1.0)
+    with pytest.raises(RuntimeError, match="not connected"):
+        s.begin_scan()
+    ok, msg = s.apply(0.01, 1)
+    assert not ok and "not connected" in msg
+
+    # liveOD's camera host's own id for the Andor: its rule, and kexp's camera table
+    andor = types.SimpleNamespace(key="andor", camera_type="andor")
+    assert liveod_camera_id(andor) == DEFAULT_ANDOR_CAMERA_ID == "andor_emccd:andor"
+    assert liveod_camera_id(types.SimpleNamespace(key="andor", camera_type="andor",
+                                                  serial_no="X1")) == "andor_emccd:X1"
+    assert liveod_camera_id(types.SimpleNamespace(key="", camera_type="andor")) \
+        == DEFAULT_ANDOR_CAMERA_ID
+    from kexp.config.camera_id import cameras
+    from kexp.config.live_od import CAMERA_BAR_KEYS
+    liveod_andor = [sp for sp in camera_specs([getattr(cameras, k) for k in CAMERA_BAR_KEYS])
+                    if sp.camera_type == "andor"]
+    assert [sp.camera_id for sp in liveod_andor] == [main_gui.andor_camera_id()]
+
+    # the bounds fit together: liveOD waits longer than the spot finder's close;
+    # the write hold outlasts a run gate answer from before the takeover
+    assert RELINQUISH_CLOSE_S < ANDOR_CLAIM_TIMEOUT_S
+    assert HANDOVER_HOLD_S > DEFAULT_MAX_AGE_S + POLL_PERIOD_S
+
+
+@needs_served
+def test_served_source_opens_serves_and_scans_like_the_local_camera(served_env):
+    pattern = SLMPattern()
+    backend = pattern_backend(pattern)
+    src = make_served(lambda: backend, sources=served_env["sources"])
+    src.open()
+    assert src.is_open() and backend.opened and src.core.port
+    assert src.core.snapshot()["policy"] == "persistent"
+    # opened with the lab's readout settings, internally triggered, shutter open
+    live = backend.applied[-1][0]
+    assert live["trigger_mode"] == "int" and live["shutter"] == "open" and live["gain"] == 0
+    assert {k: live[k] for k in READOUT} == READOUT
+    listed = {c["camera_id"]: c for c in v2(src.core.port, {"cmd": "LIST_CAMERAS"})["cameras"]}
+    assert listed[ANDOR_ID]["category"] == "andor_emccd" and listed[ANDOR_ID]["state"] == "open"
+
+    ok, msg = src.apply(0.02, 4)
+    assert ok and msg.startswith("Applied:"), msg
+    assert backend.settings["gain"] == 4 and backend.settings["exposure_time"] == pytest.approx(0.02)
+    assert src.frame_period() == pytest.approx(0.02)          # the camera's cycle time
+    ok, msg = src.set_shutter(False)
+    assert ok and backend.settings["shutter"] == "closed", msg
+    assert src.set_shutter(True)[0] and backend.settings["shutter"] == "open"
+
+    # the scan: every frame from a fresh acquisition, at its own position
+    slm = FakeSLM(pattern, delay_s=0.01, confirms=True)
+    _, _, points = scan_grid(100, 200, R=1, step=1, canvas_res=(1920, 1200))
+    src.begin_scan()
+    timeout = scan_group.frame_timeout_s(src)
+    shots, outcome = run_scan(points, slm.set_center_and_wait, lambda: src.snap(timeout), 0.005,
+                              should_stop=lambda: False, on_shot=lambda s: None)
+    src.end_scan()
+    assert outcome.startswith("finished") and len(shots) == len(points)
+    for s in shots:
+        assert exposed_at(s) == ((s.point.cx, s.point.cy),) * 2
+        assert mode_of(s.frame) == MODE_CODE["snap"]
+
+    # video: live frames until stopped; its live request was the only one
+    frames, stopped = [], threading.Event()
+    src.start_video(frames.append, stopped.set)
+    assert wait_until(lambda: len(frames) >= 3)
+    assert all(mode_of(f) == MODE_CODE["live"] for f in frames)
+    assert src.worker.state == "streaming"
+    src.stop_video()
+    assert stopped.is_set() and not src.video_running() and src.video_stop_reason == ""
+    assert wait_until(lambda: src.worker.state == "idle")
+
+    # released: closed (verified), still listed, opened again by the next open()
+    report = src.close()
+    assert not backend.opened and not src.is_open() and report.attached_after is False
+    listed = {c["camera_id"]: c for c in v2(src.core.port, {"cmd": "LIST_CAMERAS"})["cameras"]}
+    assert listed[ANDOR_ID]["state"] == "closed"
+    src.open()
+    assert backend.opened
+
+
+@needs_served
+def test_other_programs_may_watch_but_only_this_pc_may_take_the_andor(served_env):
+    src = make_served(lambda: pattern_backend(SLMPattern()), sources=served_env["sources"])
+    src.open()
+    wp = src._write_policy
+    assert wp("127.0.0.1", ANDOR_ID, ["relinquish"]) == (True, "")
+    assert wp("127.0.0.1", ANDOR_ID, ["return"]) == (True, "")
+    ok, why = wp("10.255.255.1", ANDOR_ID, ["relinquish"])
+    assert not ok and "is not this PC" in why and "10.255.255.1" in why
+    for keys in (["gain"], ["exposure_time", "shutter"], ["snap"], ["__live__"], ["name"],
+                 ["relinquish", "gain"]):
+        ok, why = wp("127.0.0.1", ANDOR_ID, keys)
+        assert not ok and "owns this Andor" in why, keys
+
+    # over the wire, from this PC: no settings, snaps or live stream for anyone else
+    port = src.core.port
+    for header in ({"cmd": "SET_SETTINGS", "camera_id": ANDOR_ID, "values": {"gain": 3}},
+                   {"cmd": "SNAP", "camera_id": ANDOR_ID},
+                   {"cmd": "START_LIVE", "camera_id": ANDOR_ID, "client_id": "viewer"}):
+        r = v2(port, header)
+        assert r["ok"] is False and "owns this Andor" in str(r), (header["cmd"], r)
+    # ... but watching is fine
+    frames = []
+    src.start_video(frames.append)
+    assert wait_until(lambda: len(frames) >= 2)
+    r = v2(port, {"cmd": "GET_FRAME", "camera_id": ANDOR_ID, "sources": ["live"]})
+    assert r["ok"] is True and r["frame"]["source"] == "live"
+    src.stop_video()
+
+
+@needs_served
+def test_liveod_takes_the_andor_over_mid_scan_and_gives_it_back(served_env):
+    from frame_source import Preempted
+    from served_source import is_lent_error
+    pattern = SLMPattern()
+    backend = pattern_backend(pattern)
+    src = make_served(lambda: backend, sources=served_env["sources"], hold_s=1.5)
+    handed, returned = [], []
+    src.on_handover = handed.append
+    src.on_returned = returned.append
+    src.open()
+    keeper = liveod_claimer(src)
+    served_env["keepers"].append(keeper)
+
+    slm = CountingSLM(pattern, delay_s=0.0)
+    _, _, points = scan_grid(100, 200, R=5, step=1, canvas_res=(1920, 1200))
+    filed, claimed = [], []
+    src.begin_scan()
+    timeout = scan_group.frame_timeout_s(src)
+    timer = threading.Timer(0.4, lambda: claimed.append(keeper.claim(ANDOR_ID, timeout_s=20.0)))
+    timer.start()
+    try:
+        shots, outcome = run_scan(points, slm.set_center_and_wait, lambda: src.snap(timeout),
+                                  0.01, should_stop=lambda: False, on_shot=filed.append)
+    finally:
+        timer.join()
+    n_writes = len(slm.calls)
+
+    # the scan stops at the takeover: frames filed only at their own positions,
+    # the one in flight left blank, no SLM write after it
+    assert 0 < len(shots) < len(points)
+    assert "camera taken over by another program" in outcome, outcome
+    assert "liveOD (on testhost, pid 1) took the Andor over" in outcome, outcome
+    assert filed == shots
+    for s in shots:
+        assert exposed_at(s) == ((s.point.cx, s.point.cy),) * 2
+        assert mode_of(s.frame) == MODE_CODE["snap"]
+    assert slm.calls[:len(shots)] == [(s.point.cx, s.point.cy) for s in shots]
+    assert len(shots) <= n_writes <= len(shots) + 1
+    time.sleep(0.3)
+    assert len(slm.calls) == n_writes
+
+    # liveOD's claim was answered after the close: the camera is shut here
+    assert claimed and claimed[0][0].server.server_id == SERVED_ID
+    assert not backend.opened and not src.is_open()
+    res = src.core.reservation(ANDOR_ID)
+    assert res["holder"]["label"] == "liveOD" and res["holder"]["holder_id"] == "liveod:test"
+    assert len(handed) == 1 and handed[0]["ok"] and handed[0]["holder"]["label"] == "liveOD"
+    assert handed[0]["close_report"]["attached_after"] is False
+    assert src.lent_to()["label"] == "liveOD"
+
+    # SLM writes blocked for hold_s after the takeover, then the run gate decides
+    ok, reason = src.check()
+    assert not ok and "liveOD (on testhost, pid 1) took the Andor over" in reason, reason
+    assert wait_until(lambda: src.check()[0], timeout=3.0)
+    assert src.gate_snapshot()["state"] == "detached"
+
+    # nothing here touches the camera while liveOD has it
+    with pytest.raises(Exception) as e:
+        src.open()
+    assert is_lent_error(e.value)
+    with pytest.raises(Preempted):
+        src.begin_scan()
+    ok, msg = src.apply(0.02, 1)
+    assert not ok and "liveOD" in msg
+
+    # liveOD's renewals take nothing new; it gives the camera back
+    head = v2(src.core.port, {"cmd": "RELINQUISH_CAMERA", "camera_ids": [ANDOR_ID],
+                              "holder": keeper.holder.to_wire(), "ttl_s": 30})
+    assert head["cameras"][ANDOR_ID]["renewed"] and len(handed) == 1
+    keeper.release(ANDOR_ID)
+    assert wait_until(lambda: returned) and src.lent_to() is None
+    assert returned[0]["holder"]["label"] == "liveOD"
+    assert not backend.opened                   # closed until opened here again
+    src.open()
+    assert backend.opened and src.check() == (True, "")
+
+
+@needs_served
+def test_a_takeover_ends_the_video_and_says_who(served_env):
+    backend = pattern_backend(SLMPattern())
+    src = make_served(lambda: backend, sources=served_env["sources"])
+    handed = []
+    src.on_handover = handed.append
+    src.open()
+    frames, stopped = [], threading.Event()
+    src.start_video(frames.append, stopped.set)
+    assert wait_until(lambda: len(frames) >= 2)
+    keeper = liveod_claimer(src)
+    served_env["keepers"].append(keeper)
+    keeper.claim(ANDOR_ID, timeout_s=20.0)
+    assert stopped.wait(3.0) and not src.video_running()
+    assert "liveOD (on testhost, pid 1) took the Andor over" in src.video_stop_reason
+    assert handed and handed[0]["video"] is True and not backend.opened
+
+
+@needs_served
+def test_liveod_camera_host_takes_the_andor_at_init_run_and_carries_on(served_env):
+    """The whole chain: waxx's CameraHost (fake cameras, not served) takes the
+    Andor from the spot finder's server at INIT_RUN, runs, and gives it back."""
+    import functools
+    from beacon.camera.fake_backend import FakeBackend
+    from beacon.camera.reservations import Holder
+    from waxx.util.live_od.camera_host import CameraHost, HostServerCore
+    from waxx.util.live_od.camera_host.claims import ReservationKeeper, ServerRef
+    from waxx.util.live_od.config import LiveODConfig
+    liveod_andor = "andor_emccd:andor"
+    served_backend = pattern_backend(SLMPattern())
+    src = make_served(lambda: served_backend, camera_id=liveod_andor,
+                      sources=served_env["sources"])
+    returned = []
+    src.on_returned = returned.append
+    src.open()
+    frames, stopped = [], threading.Event()
+    src.start_video(frames.append, stopped.set)
+    assert wait_until(lambda: len(frames) >= 2)
+
+    liveod_fakes = {}
+
+    def liveod_backend(spec):
+        fb = FakeBackend(spec.camera_id, category="andor_emccd", shape=(4, 6),
+                         choices={"trigger_mode": ("int", "software", "ext")},
+                         ranges={"exposure_time": (2e-5, 10.0), "gain": (0, 300)},
+                         settings={"trigger_mode": "int", "gain": 1, "exposure_time": 1e-3})
+        liveod_fakes[spec.key] = fb
+        return fb
+
+    ref = ServerRef(src.server_id, "127.0.0.1", src.core.port)
+    keeper = ReservationKeeper(lambda cid: [ref] if cid == liveod_andor else [],
+                               Holder("liveod:test", server_id=HOST_ID, host="testhost", pid=1,
+                                      label="liveOD"))
+    host = CameraHost(LiveODConfig(camera_params_list=[
+                          types.SimpleNamespace(key="andor", camera_type="andor")]),
+                      backend_factory=liveod_backend,
+                      core_factory=functools.partial(HostServerCore, check_duplicate=False,
+                                                     bind_host="127.0.0.1"),
+                      keeper=keeper, serve=False, local_addresses={"127.0.0.1"},
+                      server_id=HOST_ID)
+    host.start()
+    try:
+        run_params = dict(key="andor", camera_type="andor", exposure_time=1e-3, gain=300,
+                          trigger_mode="ext", frame_transfer=0, sensor_roi=(0, 512, 0, 512, 1, 1),
+                          hs_speed=0, preamp=2, vs_speed=1, vs_amp=3, baseline_clamp=1)
+        start = host.begin_run("tok", "andor", True, camera_params=run_params)
+        assert start.locked
+        # the spot finder let go first: video stopped, camera closed (verified)
+        assert not served_backend.opened and not src.is_open() and stopped.wait(3.0)
+        assert src.lent_to()["label"] == "liveOD"
+        assert host.snapshot()["cameras"]["andor"]["claims"][0]["server_id"] == SERVED_ID
+        # liveOD opens the Andor itself and carries on
+        host.note_run_id("tok", 7)
+        host.arm_run("tok", run_params, 1).result(5)
+        assert liveod_fakes["andor"].opened
+        host.end_run("tok")
+        assert src.core.reservation(liveod_andor) is not None   # kept after the run
+        host.request("andor", "close").result(10)
+        assert wait_until(lambda: returned) and src.lent_to() is None   # RETURN_CAMERA
+        assert not served_backend.opened
+    finally:
+        host.shutdown(5.0)
+
+
+def served_window(app, slm_host, monkeypatch, served_env, backend, **kwargs):
+    """build_window whose own Andor is ``backend``, served on a quiet core."""
+    made = []
+
+    def served():
+        made.append(make_served(lambda: backend, sources=served_env["sources"]))
+        return made[-1]
+
+    w = build_window(slm_host, monkeypatch, None, served=served, **kwargs)
+    w._test_served = made
+    return w
+
+
+def visible_directory(visible):
+    """A directory that finds the servers in ``visible`` (a dict it reads at each lookup)."""
+    return CameraDirectory(collect_for=0.0, request_timeout_s=1.0, store=NoAliases(),
+                           discover=lambda p: dict(visible) if p == "camera_server:" else {})
+
+
+@needs_served
+def test_window_follows_the_andor_to_liveod_when_liveod_takes_it_over(
+        app, slm_host, monkeypatch, host, served_env):
+    from frame_source import StreamSource
+    served_backend = pattern_backend(SLMPattern((7, 7)))
+    visible = {}
+    directory = visible_directory(visible)
+    w = served_window(app, slm_host, monkeypatch, served_env, served_backend,
+                      directory=directory)
+    try:
+        assert process_until(app, lambda: w._camera_connected())
+        own = w._test_served[0]
+        assert w.source is own and served_backend.opened
+        assert "liveOD does not serve the Andor" in w.source_banner.text()
+        assert f"served as {SERVED_ID}" in w.source_banner.text()
+        assert w.camera_pill.state == "open"
+        visible[SERVED_ID] = ("127.0.0.1", own.core.port)       # as the lab network would
+        frames = []
+        w._frame_sig.connect(frames.append)
+        w.video_btn.click()
+        assert process_until(app, lambda: len(frames) >= 3)
+        assert tuple(frames[-1][0]) == (7, 7, 7, 7)
+
+        # liveOD's camera host comes up and takes the Andor (its claim at start)
+        visible[HOST_ID] = ("127.0.0.1", host.core.port)
+        keeper = liveod_claimer(own)
+        served_env["keepers"].append(keeper)
+        keeper.claim(ANDOR_ID, timeout_s=20.0)
+        assert not served_backend.opened and own.lent_to()["label"] == "liveOD"
+        assert process_until(app, lambda: isinstance(w.source, StreamSource)
+                             and w._camera_connected())
+        text = w.source_banner.text()
+        assert "took the Andor over; following it there" in text and HOST_ID in text
+        # the video goes on, from liveOD's Andor now
+        n = len(frames)
+        assert process_until(app, lambda: len(frames) > n + 2
+                             and tuple(frames[-1][0]) == (0, 0, 0, 0))
+        assert w.video_btn.isChecked() and w.camera_pill.state == "grabbing"
+        assert process_until(app, lambda: w._gate_open)
+    finally:
+        close_window(w)
+    assert own.core is None                     # its server stopped with the window
+    assert host.worker.is_open                  # liveOD keeps its camera
+
+
+@needs_served
+def test_window_scan_stops_at_a_takeover_then_follows_liveod(
+        app, slm_host, monkeypatch, host, served_env):
+    from frame_source import StreamSource
+    pattern = SLMPattern()
+    # the camera looks at the pattern the stubbed SLM server last uploaded
+    pattern.get = lambda: tuple(slm_host.uploads[-1][1]) if slm_host.uploads else (0, 0)
+    served_backend = pattern_backend(pattern)
+    visible = {}
+    w = served_window(app, slm_host, monkeypatch, served_env, served_backend,
+                      directory=visible_directory(visible))
+    try:
+        assert process_until(app, lambda: w._camera_connected() and w._gate_open)
+        own = w._test_served[0]
+        outcomes = []
+        w.scan_R_sb.setValue(3)
+        w.settle_sb.setValue(10)
+        w.start_scan()
+        w.scan_worker.finished_sig.connect(lambda shots, outcome: outcomes.append(outcome))
+        assert w._scanning
+
+        visible[HOST_ID] = ("127.0.0.1", host.core.port)
+        keeper = liveod_claimer(own)
+        served_env["keepers"].append(keeper)
+        timer = threading.Timer(0.3, lambda: keeper.claim(ANDOR_ID, timeout_s=20.0))
+        timer.start()
+        try:
+            assert process_until(app, lambda: not w._scanning, timeout=20.0)
+        finally:
+            timer.join()
+        assert outcomes and "took the Andor over" in outcomes[0], outcomes
+        assert "took the Andor over" in w.scan_progress.text()
+        assert process_until(app, lambda: isinstance(w.source, StreamSource)
+                             and w._camera_connected())
+        assert not w.video_btn.isChecked()      # it was not running before the scan
+    finally:
+        close_window(w)
+
+
+@needs_served
+def test_window_direct_does_not_follow_and_opens_again_once_given_back(
+        app, slm_host, monkeypatch, served_env):
+    served_backend = pattern_backend(SLMPattern())
+    w = served_window(app, slm_host, monkeypatch, served_env, served_backend,
+                      directory=FakeDirectory(), source_mode="direct")
+    try:
+        assert process_until(app, lambda: w._camera_connected())
+        own = w._test_served[0]
+        assert "the spot finder then stops using it" in w.source_banner.text()
+        keeper = liveod_claimer(own)
+        served_env["keepers"].append(keeper)
+        keeper.claim(ANDOR_ID, timeout_s=20.0)
+        assert process_until(app, lambda: not w._camera_connected())
+        assert w.source is own and w.camera_pill.state == "closed"
+        assert "does not follow it to liveOD's camera host" in w.source_banner.text()
+        assert "took the Andor over" in w.cam_param_status.text()
+        # the andor button while liveOD has it: says so, opens nothing
+        w.camera_pill.click()
+        assert process_until(app, lambda: "has the Andor" in w.cam_param_status.text())
+        assert not served_backend.opened and not w._camera_connected()
+        # liveOD gives it back: the andor button opens it here again
+        keeper.release(ANDOR_ID)
+        assert process_until(app, lambda: "gave the Andor back" in w.source_banner.text())
+        w.camera_pill.click()
+        assert process_until(app, lambda: w._camera_connected())
+        assert served_backend.opened and w.camera_pill.state == "open"
+    finally:
+        close_window(w)
+    assert own.core is None

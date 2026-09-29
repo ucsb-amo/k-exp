@@ -17,7 +17,9 @@ A run ends the scan at once. A closed gate at step 0 stops it before the SLM
 is written again; a run taking the camera at step 3 (Preempted) stops it with
 the position in flight left blank -- not reached, not a failed frame -- and
 with no further SLM write. Through liveOD's camera host, the host restarting
-or the camera's settings changing under the scan are a Preempted too. Any other snap failure is a missing frame (a red X)
+or the camera's settings changing under the scan are a Preempted too, and so
+is liveOD's camera host taking over the Andor the spot finder opened itself
+(served_source). Any other snap failure is a missing frame (a red X)
 and the scan goes on, up to MAX_CONSECUTIVE_CAMERA_FAILURES in a row.
 
 What this replaced took "the next frame" out of free-running video 10 ms after
@@ -88,7 +90,7 @@ def preempt_text(e):
     """``(what, detail)`` for a Preempted: what took the camera, and the error's text.
 
     A run is "camera taken by run R"; liveOD's camera host restarting, the
-    camera moving, or its settings changing say so instead.
+    camera moving, being taken over, or its settings changing say so instead.
     """
     reason = getattr(e, "reason", "") or ""
     tag = getattr(e, "run_tag", None)
@@ -96,6 +98,7 @@ def preempt_text(e):
             "shutdown": "camera host shutting down",
             "host_lost": "camera host stopped answering",
             "moved": "camera moved to another server",
+            "reserved": "camera taken over by another program",
             "settings_changed": "camera settings changed by another program",
             "refused": "camera host refused the snap"}.get(reason)
     if what is None:

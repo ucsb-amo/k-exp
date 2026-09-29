@@ -15,14 +15,17 @@ class ExptParams(expt_params_kexp):
         self.include_photon_noise = 1
 
         self.feedback_grid_size = 21
-        self.N_pulses = 20
+        self.N_pulses = 17
+        self.N_repeats = 5
 
         self.feedback_fractional_initial_offset = 0.0
         # Centre the hypothesis grid on the exact initial offset, so any real
         # offset works (2026-09-27). 0 = the old placement on round(offset);
         # run files without this key were taken with that, and replay honours it.
         self.feedback_grid_center_exact_offset = 1
-        self.feedback_guess_span_Omega = 5.0
+        # 21 hypotheses at 0.25 Omega: feedback_guess_span_Omega is the grid
+        # HALF-width, so the step is 2 * 2.5 / 20.
+        self.feedback_guess_span_Omega = 2.5
 
         # Threshold for adaptive remesh: if posterior std < threshold * Omega,
         # halve the grid span and re-centre on omega_raman.  0.0 = disabled.
