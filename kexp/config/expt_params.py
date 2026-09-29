@@ -434,7 +434,7 @@ class ExptParams(ExptParamsWaxx):
 
         #
         self.v_integrated_apd_adc_background = -2.1
-        # integrator readout window (waxx Integrator; waxx defaults 0 / 0 / 1 us = the old timing)
+        # integrator readout window (waxx Integrator; old timing was 0 / 0 / 1 us)
         # light reaches the integrator ~1 us after its command (83668); output rings ~3-4 us after
         # the gate closes (83673/83674); checked through the production path in 83675
         # self.t_integrator_gate_delay = 0.
