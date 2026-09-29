@@ -37,6 +37,33 @@ def monitor_connections() -> tuple:
     return MONITOR_CONNECTIONS
 
 
+def monitor_slm_reinit():
+    """The SLM's hourly reinit: the SLM server marks it due, and the monitor
+    server asks for it only while the monitor is running and no run is
+    starting (waxx.util.device_state.slm_reinit); the SLM server puts the last
+    pattern back afterwards.  None if it fails to load -- the SLM server then
+    only reports the reinit due."""
+    try:
+        from waxx.util.device_state.slm_reinit import SlmReinitConfig  # noqa: PLC0415
+        from waxx.control.slm.slm_link import SLM_HOST, SLM_PORT  # noqa: PLC0415
+    except Exception:
+        log.exception("SLM reinit definition failed to load; the server will not ask for it.")
+        return None
+    return SlmReinitConfig(host=SLM_HOST, port=SLM_PORT, label="SLM")
+
+
+def monitor_state_generator():
+    """The "Regenerate state file" defaults (kexp...state_defaults); None if
+    it fails to load -- the server then does not offer it."""
+    try:
+        from kexp.util.guis.device_state_gui.state_defaults import (  # noqa: PLC0415
+            default_device_state)
+    except Exception:
+        log.exception("State defaults failed to load; the server will not regenerate the file.")
+        return None
+    return default_device_state
+
+
 def check_config() -> list[str]:
     """Return one message per unresolved kexp monitor config constant."""
     problems = []
@@ -83,7 +110,8 @@ def main() -> int:
     log.info("OPS JOURNAL DIR        = %s", journal_dir)
     return run(MONITOR_EXPT_PATH, config_file_path=MONITOR_STATE_FILEPATH,
                journal_dir=journal_dir, reset_expt_path=RESET_STATE_EXPT_PATH,
-               run_loops=loop_specs(RUN_LOOP_EXPTS), connections=monitor_connections())
+               run_loops=loop_specs(RUN_LOOP_EXPTS), connections=monitor_connections(),
+               slm_reinit=monitor_slm_reinit(), state_generator=monitor_state_generator())
 
 
 if __name__ == "__main__":

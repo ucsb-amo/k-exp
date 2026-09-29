@@ -670,9 +670,12 @@ class FeedbackReplayCore(Feedback):
         """Recompute hypothesis grid and resonance index for a given initial offset.
 
         The grid formula mirrors ``_initialize_frequency_grid``:
-            grid[j] = omega_res + Omega * (round(offset) - span * linspace(-1,1,m)[j])
-        followed by the rigid shift that snaps the nearest hypothesis exactly onto
-        resonance (kexp/base/feedback.py:518-525).
+            grid[j] = omega_res + Omega * (center - span * linspace(-1,1,m)[j])
+        with center = offset when the run has feedback_grid_center_exact_offset
+        = 1 (runs from 2026-09-27 on) and round(offset) otherwise (every run
+        before, whose files have no such parameter), followed by the rigid
+        shift that snaps the nearest hypothesis exactly onto resonance
+        (Feedback._initialize_frequency_grid in kexp/base/feedback.py).
 
         That shift is not cosmetic. The raw formula only lands a hypothesis on
         resonance when ``round(offset)`` happens to be a multiple of the grid
@@ -687,8 +690,11 @@ class FeedbackReplayCore(Feedback):
         Omega = float(self.Omega)
         m = int(self.m)
         span = float(self.p.feedback_guess_span_Omega)
-        n_center = float(np.round(float(fractional_initial_offset)))
-        grid = omega_res + Omega * (n_center - span * np.linspace(-1.0, 1.0, m))
+        if int(getattr(self.p, "feedback_grid_center_exact_offset", 0)):
+            center = float(fractional_initial_offset)
+        else:
+            center = float(np.round(float(fractional_initial_offset)))
+        grid = omega_res + Omega * (center - span * np.linspace(-1.0, 1.0, m))
         zidx = int(np.argmin(np.abs(grid - omega_res)))
         # Snap, exactly as the kernel does, so grid[zidx] == omega_res bit-for-bit.
         grid = grid + (omega_res - grid[zidx])

@@ -12,17 +12,17 @@ class hf_bec(EnvExperiment, Base):
                       save_data=True,
                       camera_select=cameras.andor,
                       imaging_type=img_types.ABSORPTION,
-                      warmup_shots=4)
+                      warmup_shots=3)
 
         self.p.t_mot_load = 1.0
         self.p.t_tweezer_hold = 100.e-3
 
         # self.xvar('t_tof',np.linspace(1000.,4000.,6)*1.e-6)
-        self.p.t_tof = 20.e-6
+        self.p.t_tof = 2.e-3
 
         self.data.apd = self.data.add_data_container(1)
 
-        self.p.N_repeats = 5
+        self.p.N_repeats = 3
 
         self.scanning()
         self.finish_prepare(shuffle=True)

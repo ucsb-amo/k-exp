@@ -1,30 +1,32 @@
-import json
-import os
-
-from kexp.config.ip import WHITELIST_PATH
+from kexp.config.ip import REMOTE_CONTROL_CONFIG_FILEPATH, WHITELIST_PATH
 from kexp.util.remote_control.command_handler import CommandHandler
+from kexp.util.remote_control.rc_config import load_settings, save_whitelist
 from waxx.util.notifications import send_email, _load_credentials
 import logging
 
-ALS_STARTUP_SLACK_RECIPIENT = "general-aaaaahzr4dmblwquygpk47q6le@weldlab.slack.com"
 ALS_STARTUP_SLACK_SUBJECT = "1064nm laser on in 3418"
 
 # Configure logging
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
 logger = logging.getLogger(__name__)
 
-ALL_OFF_NOTIFICATION_RECIPIENT = "herberthearsall@gmail.com"
-def send_all_off_command():
+def send_all_off_command(recipient):
+    """Send the "all off" notice to ``recipient`` (the settings file's
+    all_off_notification_recipient). Nothing calls this today."""
+    if not recipient:
+        logger.warning("No all_off_notification_recipient in the Remote Control settings file; not sent.")
+        return
     subject = "ALL OFF command executed"
     body = "All off command was run (all systems should be off)."
     try:
-        send_email(ALL_OFF_NOTIFICATION_RECIPIENT, subject, body)
-        logger.info("All off notification sent to %s: %s", ALL_OFF_NOTIFICATION_RECIPIENT, subject)
+        send_email(recipient, subject, body)
+        logger.info("All off notification sent to %s: %s", recipient, subject)
     except Exception as exc:
         logger.warning("Failed to send all off notification: %s", exc)
 
 class RemoteControl(CommandHandler):
-    def __init__(self):
+    def __init__(self, settings_path=REMOTE_CONTROL_CONFIG_FILEPATH,
+                 legacy_whitelist_path=WHITELIST_PATH):
         super().__init__()
 
         # Start with no server clients — the GUI buttons discover them in the background.
@@ -34,11 +36,22 @@ class RemoteControl(CommandHandler):
         # label store: maps phone/email value → human label string
         self._labels: dict = {}
 
-        # Load whitelist from JSON file (creates empty file on first run)
+        # The Google Voice number, the notification addresses and the whitelist live in a file on
+        # the lab's Google Drive, not in this public repository (rc_config).
+        self._settings_path = settings_path
+        self._settings, whitelist_source = load_settings(settings_path, legacy_whitelist_path)
+        self.email_handler.gvoice_number = self._settings["gvoice_number"]
+        self.email_handler.slack_channel = self._settings["slack_email"]
         self.load_whitelist_from_file()
 
         # Always allow the configured account to send commands to itself
         self.add_to_whitelist(self.email_handler.email_address)
+
+        if whitelist_source == "legacy":
+            # First start after the move: copy the old whitelist into the Drive file.
+            self.save_whitelist_to_file()
+            logger.info(f"Whitelist moved from {legacy_whitelist_path} to {settings_path}. "
+                        f"The old file is left in place; delete it once the Drive file is checked.")
 
         # Command handlers - maps keywords to handler functions
         self.add_command_handler(["sources","source","atoms"], self.handle_sources_command)
@@ -47,27 +60,12 @@ class RemoteControl(CommandHandler):
         self.add_command_handler(["all"], self.handle_all_command)
 
     def load_whitelist_from_file(self):
-        """Load whitelist from JSON file.
+        """Add the whitelist entries read from the settings file (self._settings).
 
         Supports both old format (plain strings) and new format
-        ({"value": ..., "label": ...} objects).  Creates an empty file if absent.
+        ({"value": ..., "label": ...} objects).
         """
-        if not os.path.exists(WHITELIST_PATH):
-            logger.info(f"Whitelist file not found — creating empty file at {WHITELIST_PATH}")
-            data = {"phones": [], "emails": []}
-            try:
-                os.makedirs(os.path.dirname(WHITELIST_PATH), exist_ok=True)
-                with open(WHITELIST_PATH, "w") as f:
-                    json.dump(data, f, indent=2)
-            except Exception as exc:
-                logger.warning(f"Could not write whitelist file: {exc}")
-        else:
-            try:
-                with open(WHITELIST_PATH, "r") as f:
-                    data = json.load(f)
-            except Exception as exc:
-                logger.error(f"Could not read whitelist file: {exc} — using empty whitelist")
-                return
+        data = self._settings
 
         def _entry(item):
             """Return (value, label) from either a plain string or a dict entry."""
@@ -91,28 +89,28 @@ class RemoteControl(CommandHandler):
         )
 
     def save_whitelist_to_file(self):
-        """Persist the current in-memory whitelist back to the JSON file."""
+        """Write the in-memory whitelist into the settings file, keeping its other keys."""
         def _obj(value):
             return {"value": value, "label": self._labels.get(value, "")}
 
-        data = {
-            "phones": [_obj(p) for p in self.email_handler.phone_whitelist],
-            "emails": [
-                _obj(addr) for addr in self.email_handler.whitelist
-                if not addr.endswith("@txt.voice.google.com")
-            ],
-        }
+        phones = [_obj(p) for p in self.email_handler.phone_whitelist]
+        emails = [
+            _obj(addr) for addr in self.email_handler.whitelist
+            if not addr.endswith("@txt.voice.google.com")
+        ]
         try:
-            os.makedirs(os.path.dirname(WHITELIST_PATH), exist_ok=True)
-            with open(WHITELIST_PATH, "w") as f:
-                json.dump(data, f, indent=2)
-            logger.info(f"Whitelist saved to {WHITELIST_PATH}")
+            save_whitelist(self._settings_path, phones, emails)
+            logger.info(f"Whitelist saved to {self._settings_path}")
         except Exception as exc:
             logger.error(f"Could not save whitelist: {exc}")
 
     def send_als_startup_notification(self):
         """Send ALS startup notification via Slack email."""
-        send_email(ALS_STARTUP_SLACK_RECIPIENT, ALS_STARTUP_SLACK_SUBJECT, ALS_STARTUP_SLACK_SUBJECT)
+        recipient = self._settings["slack_email"]
+        if not recipient:
+            logger.warning("No slack_email in the Remote Control settings file; ALS notice not sent.")
+            return
+        send_email(recipient, ALS_STARTUP_SLACK_SUBJECT, ALS_STARTUP_SLACK_SUBJECT)
 
     def handle_sources_command(self, value):
         """

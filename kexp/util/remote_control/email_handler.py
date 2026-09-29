@@ -10,32 +10,37 @@ from waxx.util.notifications import send_email, _load_credentials
 
 logger = logging.getLogger(__name__)
 
-GVOICE_NUMBER = "8053642409"
-SLACK_EMAIL = "general-aaaaahzr4dmblwquygpk47q6le@weldlab.slack.com"
 CHECK_EMAIL_INTERVAL = 10
 MAX_MESSAGE_AGE_SECONDS = 120
 
 class EmailHandler:
     """
     Handles all email-related functionality including IMAP, SMTP, and email processing
+
+    The Google Voice number and the Slack channel address are not in this public repository:
+    RemoteControl reads them from the settings file on the lab's Google Drive
+    (kexp.util.remote_control.rc_config) and sets ``gvoice_number`` and ``slack_channel``.
     """
-    
+
     def __init__(self, process_commands_method, parse_commands_method,
-                  email_whitelist=[], phone_whitelist=[]):
-        
+                  email_whitelist=None, phone_whitelist=None,
+                  gvoice_number="", slack_email=""):
+
         self.process_commands = process_commands_method
         self.parse_commands = parse_commands_method
-        
+
         self.email_address, self.email_password = _load_credentials()
-        self.whitelist = email_whitelist
-        self.phone_whitelist = phone_whitelist
-        self.slack_channel = SLACK_EMAIL
+        self.whitelist = list(email_whitelist or [])
+        self.phone_whitelist = list(phone_whitelist or [])
+        self.gvoice_number = gvoice_number
+        self.slack_channel = slack_email
 
         # Email server configuration
         self.imap_server = "imap.gmail.com"
 
     def print_instructions(self):
-        gvnumber = f"{GVOICE_NUMBER[:3]}-{GVOICE_NUMBER[3:6]}-{GVOICE_NUMBER[6:]}"
+        gv = self.gvoice_number
+        gvnumber = f"{gv[:3]}-{gv[3:6]}-{gv[6:]}" if gv else "(no Google Voice number configured)"
         logger.debug(f"Email check success. Send commands to {gvnumber} or to {self.email_address}.")
     
     def connect_to_email(self):
@@ -243,10 +248,16 @@ class EmailHandler:
             return False
         
         if clean_phone not in self.phone_whitelist:
+            # Kept even without a Google Voice number, so saving the whitelist never drops it
             self.phone_whitelist.append(clean_phone)
-            
+
+            if not self.gvoice_number:
+                logger.error(f"No Google Voice number in the Remote Control settings file: "
+                             f"texts from {clean_phone} will be refused until it is set.")
+                return True
+
             # Generate and add Google Voice email (note: third part may vary, but whitelist check handles this)
-            google_voice_email = f"1{GVOICE_NUMBER}.1{clean_phone}.placeholder@txt.voice.google.com"
+            google_voice_email = f"1{self.gvoice_number}.1{clean_phone}.placeholder@txt.voice.google.com"
             if google_voice_email not in self.whitelist:
                 self.whitelist.append(google_voice_email)
                 logger.info(f"Added phone {clean_phone} to whitelist")

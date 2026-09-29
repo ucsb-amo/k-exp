@@ -78,7 +78,7 @@ def make_live_od_config():
         # The camera host (k-jam/jpagett/camera_host/PLAN.md): liveOD owns its
         # cameras through one worker thread each and serves them to the spot
         # finder and the Camera Viewer. Off: CameraNanny opens them, as before.
-        use_camera_host=False,  # flip to True after the hardware smoke (k-jam/jpagett/camera_host/PLAN.md)
+        use_camera_host=True,  # flip to True after the hardware smoke (k-jam/jpagett/camera_host/PLAN.md)
         camera_host_claim_on_start=CAMERA_HOST_CLAIM_ON_START,
         camera_constraints={"andor_emccd": (du897_vs,)},
         # Kept exactly as it was: the pinned taskbar button's identity.

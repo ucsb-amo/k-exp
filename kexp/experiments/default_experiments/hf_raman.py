@@ -10,14 +10,19 @@ class hf_bec(EnvExperiment, Base):
     def prepare(self):
         Base.__init__(self,setup_camera=True,save_data=True,
                       camera_select=cameras.andor,
-                      imaging_type=img_types.ABSORPTION)
+                      imaging_type=img_types.DISPERSIVE,
+                      warmup_shots=3)
         
         self.p.t_tweezer_hold = 1.e-3
-        self.p.t_tof = 300.e-6
 
-        self.p.fraction_power_raman = .2
+        self.xvar('t_tof',np.linspace(20.e-6, 2.e-3, 2))
+        self.p.t_tof = 2.e-3
 
-        self.p.N_repeats = 1
+        # self.p.fraction_power_raman = .2
+
+        self.xvar('t_raman_pulse',np.linspace(0.,self.p.t_raman_pi_pulse,7))
+
+        self.p.N_repeats = 3
         self.p.t_mot_load = 1.0
 
         self.finish_prepare(shuffle=True)
@@ -25,7 +30,7 @@ class hf_bec(EnvExperiment, Base):
     @kernel
     def scan_kernel(self):
 
-        self.set_imaging_detuning(frequency_detuned=self.p.frequency_detuned_hf_f1m1)
+        self.set_imaging_detuning(frequency_detuned=self.p.frequency_detuned_hf_midpoint)
         self.imaging.set_power(self.camera_params.amp_imaging)
 
         self.prepare_hf_tweezers()

@@ -37,8 +37,11 @@ class rabi_posterior_pulse_train(EnvExperiment, Base, RandomRamanPulseTimes):
 
     def prepare(self):
         self.p = ExptParamsRabiPosterior()
-        Base.__init__(self, setup_camera=False,
-                      camera_select=cameras.andor,
+        # cameras.apd + setup_camera=True: the readout is the APD, so the
+        # pickoff stage moves IN (no liveOD frames). With a camera and
+        # setup_camera=False the stage stayed wherever the last run left it.
+        Base.__init__(self, setup_camera=True,
+                      camera_select=cameras.apd,
                       save_data=True,
                       imaging_type=img_types.DISPERSIVE,
                       expt_params=self.p)
