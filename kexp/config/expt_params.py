@@ -433,6 +433,15 @@ class ExptParams(ExptParamsWaxx):
 
         #
         self.v_integrated_apd_adc_background = -2.1
+        # integrator readout window (waxx Integrator; waxx defaults 0 / 0 / 1 us = the old timing)
+        # light reaches the integrator ~1 us after its command (83668); output rings ~3-4 us after
+        # the gate closes (83673/83674); checked through the production path in 83675
+        # self.t_integrator_gate_delay = 0.
+        self.t_integrator_gate_delay = 0.7e-6 #83675, 2026-09-29
+        # self.t_integrator_gate_extra = 0.
+        self.t_integrator_gate_extra = 1.0e-6 #83675, 2026-09-29
+        # self.t_integrator_settle = 1.e-6
+        self.t_integrator_settle = 4.0e-6 #83674, 2026-09-29
 
         ### OPX+ (quantum machines) handshake -- timing diagram on
         ### Control.handoff_to_quantum_machines; the OPX half is framed by
