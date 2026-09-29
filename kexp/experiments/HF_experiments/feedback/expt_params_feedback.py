@@ -91,7 +91,8 @@ class ExptParams(expt_params_kexp):
         # self.v_apd_all_up = -0.15881 #83334, 2026-09-28  # overnight auto-recal (user-approved), apd_state_mapping 83334 --sz-source params --degree 1 (Rabi frequency from the joint calibration, linear)
         # self.v_apd_all_up = -0.15668 #83345, 2026-09-28  # overnight auto-recal (user-approved), apd_state_mapping 83345 --sz-source params --degree 1 (Rabi frequency from the joint calibration, linear)
         # self.v_apd_all_up = -0.16120 #83350, 2026-09-28  # overnight auto-recal (user-approved), apd_state_mapping 83350 --sz-source params --degree 1 (Rabi frequency from the joint calibration, linear)
-        self.v_apd_all_up = -0.16306 #83357, 2026-09-28  # overnight auto-recal (user-approved), apd_state_mapping 83357 --sz-source params --degree 1 (Rabi frequency from the joint calibration, linear)
+        # self.v_apd_all_up = -0.16306 #83357, 2026-09-28  # overnight auto-recal (user-approved), apd_state_mapping 83357 --sz-source params --degree 1 (Rabi frequency from the joint calibration, linear)
+        self.v_apd_all_up = -0.10472 #83676, 2026-09-29  # +/- 0.0018 V, apd_state_mapping 83676 --sz-source params --degree 1, new integrator window (gate delay 0.7 / extra 1.0 / settle 4.0 us)
         # self.v_apd_all_down = -0.20248 #83201-83202, 2026-09-27  # +/- 0.0017 V with run-to-run scatter
         # self.v_apd_all_down = -0.20441 #83217, 2026-09-27  # overnight auto-recal (user-approved), apd_state_mapping 83217
         # self.v_apd_all_down = -0.20229 #83227, 2026-09-27  # overnight auto-recal (user-approved), apd_state_mapping 83227 --degree 1 (linear fallback, user-approved: curvature resolved, midpoint outside 0.35-0.65)
@@ -107,7 +108,8 @@ class ExptParams(expt_params_kexp):
         # self.v_apd_all_down = -0.19223 #83334, 2026-09-28  # overnight auto-recal (user-approved), apd_state_mapping 83334 --sz-source params --degree 1 (Rabi frequency from the joint calibration, linear)
         # self.v_apd_all_down = -0.19192 #83345, 2026-09-28  # overnight auto-recal (user-approved), apd_state_mapping 83345 --sz-source params --degree 1 (Rabi frequency from the joint calibration, linear)
         # self.v_apd_all_down = -0.18652 #83350, 2026-09-28  # overnight auto-recal (user-approved), apd_state_mapping 83350 --sz-source params --degree 1 (Rabi frequency from the joint calibration, linear)
-        self.v_apd_all_down = -0.18928 #83357, 2026-09-28  # overnight auto-recal (user-approved), apd_state_mapping 83357 --sz-source params --degree 1 (Rabi frequency from the joint calibration, linear)
+        # self.v_apd_all_down = -0.18928 #83357, 2026-09-28  # overnight auto-recal (user-approved), apd_state_mapping 83357 --sz-source params --degree 1 (Rabi frequency from the joint calibration, linear)
+        self.v_apd_all_down = -0.14504 #83676, 2026-09-29  # +/- 0.0019 V, apd_state_mapping 83676 --sz-source params --degree 1, new integrator window (gate delay 0.7 / extra 1.0 / settle 4.0 us)
         # self.n_photons_per_shot = 851.73 #83201-83202, 2026-09-27  # scope integral, up minus down per pulse, +/- 25 (SRS gain chain from the notebook, not measured in the run)
         # self.n_photons_per_shot = 1119.22 #83217, 2026-09-27  # overnight auto-recal (user-approved), apd_state_mapping 83217
         # self.n_photons_per_shot = 910.13 #83227, 2026-09-27  # overnight auto-recal (user-approved), apd_state_mapping 83227 --degree 1 (linear fallback, user-approved: curvature resolved, midpoint outside 0.35-0.65)
@@ -123,7 +125,8 @@ class ExptParams(expt_params_kexp):
         # self.n_photons_per_shot = 587.82 #83334, 2026-09-28  # overnight auto-recal (user-approved), apd_state_mapping 83334 --sz-source params --degree 1 (Rabi frequency from the joint calibration, linear)
         # self.n_photons_per_shot = 638.95 #83345, 2026-09-28  # overnight auto-recal (user-approved), apd_state_mapping 83345 --sz-source params --degree 1 (Rabi frequency from the joint calibration, linear)
         # self.n_photons_per_shot = 500.75 #83350, 2026-09-28  # overnight auto-recal (user-approved), apd_state_mapping 83350 --sz-source params --degree 1 (Rabi frequency from the joint calibration, linear)
-        self.n_photons_per_shot = 448.62 #83357, 2026-09-28  # overnight auto-recal (user-approved), apd_state_mapping 83357 --sz-source params --degree 1 (Rabi frequency from the joint calibration, linear)
+        # self.n_photons_per_shot = 448.62 #83357, 2026-09-28  # overnight auto-recal (user-approved), apd_state_mapping 83357 --sz-source params --degree 1 (Rabi frequency from the joint calibration, linear)
+        self.n_photons_per_shot = 562.39 #83676, 2026-09-29  # +/- 44, scope integral up minus down per pulse, apd_state_mapping 83676 --sz-source params --degree 1, new integrator window (gate delay 0.7 / extra 1.0 / settle 4.0 us)
         # self.std_n_photons_per_shot = 150.36 #83201-83202, 2026-09-27  # n * sigma_V / v_range = 851.7 * 8.53 mV / 48.31 mV (within-run, up: the larger endpoint noise)
         # self.std_n_photons_per_shot = 178.11 #83217, 2026-09-27  # overnight auto-recal (user-approved), apd_state_mapping 83217
         # self.std_n_photons_per_shot = 183.07 #83227, 2026-09-27  # overnight auto-recal (user-approved), apd_state_mapping 83227 --degree 1 (linear fallback, user-approved: curvature resolved, midpoint outside 0.35-0.65)
@@ -139,7 +142,8 @@ class ExptParams(expt_params_kexp):
         # self.std_n_photons_per_shot = 166.90 #83334, 2026-09-28  # overnight auto-recal (user-approved), apd_state_mapping 83334 --sz-source params --degree 1 (Rabi frequency from the joint calibration, linear)
         # self.std_n_photons_per_shot = 137.50 #83345, 2026-09-28  # overnight auto-recal (user-approved), apd_state_mapping 83345 --sz-source params --degree 1 (Rabi frequency from the joint calibration, linear)
         # self.std_n_photons_per_shot = 166.25 #83350, 2026-09-28  # overnight auto-recal (user-approved), apd_state_mapping 83350 --sz-source params --degree 1 (Rabi frequency from the joint calibration, linear)
-        self.std_n_photons_per_shot = 155.58 #83357, 2026-09-28  # overnight auto-recal (user-approved), apd_state_mapping 83357 --sz-source params --degree 1 (Rabi frequency from the joint calibration, linear)
+        # self.std_n_photons_per_shot = 155.58 #83357, 2026-09-28  # overnight auto-recal (user-approved), apd_state_mapping 83357 --sz-source params --degree 1 (Rabi frequency from the joint calibration, linear)
+        self.std_n_photons_per_shot = 161.66 #83676, 2026-09-29  # 562.4 * 11.59 mV / 40.32 mV (within-run, down), apd_state_mapping 83676 --sz-source params --degree 1, new integrator window (gate delay 0.7 / extra 1.0 / settle 4.0 us)
         # self.feedback_measurement_midpoint_fraction = 0.5 #83201-83202, 2026-09-27  # linear map (quadratic term not resolved)
         # self.feedback_measurement_midpoint_fraction = 0.5000 #83217, 2026-09-27  # overnight auto-recal (user-approved), apd_state_mapping 83217
         # self.feedback_measurement_midpoint_fraction = 0.5000 #83227, 2026-09-27  # overnight auto-recal (user-approved), apd_state_mapping 83227 --degree 1 (linear fallback, user-approved: curvature resolved, midpoint outside 0.35-0.65)
@@ -155,7 +159,8 @@ class ExptParams(expt_params_kexp):
         # self.feedback_measurement_midpoint_fraction = 0.5000 #83334, 2026-09-28  # overnight auto-recal (user-approved), apd_state_mapping 83334 --sz-source params --degree 1 (Rabi frequency from the joint calibration, linear)
         # self.feedback_measurement_midpoint_fraction = 0.5000 #83345, 2026-09-28  # overnight auto-recal (user-approved), apd_state_mapping 83345 --sz-source params --degree 1 (Rabi frequency from the joint calibration, linear)
         # self.feedback_measurement_midpoint_fraction = 0.5000 #83350, 2026-09-28  # overnight auto-recal (user-approved), apd_state_mapping 83350 --sz-source params --degree 1 (Rabi frequency from the joint calibration, linear)
-        self.feedback_measurement_midpoint_fraction = 0.5000 #83357, 2026-09-28  # overnight auto-recal (user-approved), apd_state_mapping 83357 --sz-source params --degree 1 (Rabi frequency from the joint calibration, linear)
+        # self.feedback_measurement_midpoint_fraction = 0.5000 #83357, 2026-09-28  # overnight auto-recal (user-approved), apd_state_mapping 83357 --sz-source params --degree 1 (Rabi frequency from the joint calibration, linear)
+        self.feedback_measurement_midpoint_fraction = 0.5 #83676, 2026-09-29  # linear map (quadratic term not resolved), apd_state_mapping 83676 --sz-source params --degree 1, new integrator window (gate delay 0.7 / extra 1.0 / settle 4.0 us)
 
         # run 76228 | multi-parameter grid fit result
         # self.back_action_coherence = 0.7925

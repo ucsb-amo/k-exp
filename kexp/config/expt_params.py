@@ -168,7 +168,8 @@ class ExptParams(ExptParamsWaxx):
         # self.t_raman_pi_pulse = 7.1210e-06 #80652, 2026-09-23
         # self.t_raman_pi_pulse = 6.5821e-06 #83102, 2026-09-26
         # self.t_raman_pi_pulse = 6.4393e-06 #83203, 2026-09-27 (joint fit f 79.21 +/- 0.37 kHz at t0 127 ns: 127 ns + 1/(2f); t_pi verdict WARN only for readout drift)
-        self.t_raman_pi_pulse = 6.6308e-06 #83465, 2026-09-28
+        # self.t_raman_pi_pulse = 6.6308e-06 #83465, 2026-09-28
+        self.t_raman_pi_pulse = 6.6588e-06 #83679, 2026-09-29 (absorption Rabi, f 75.09 +/- 1.49 kHz, rate 1/(2f); chi2/dof 11, errors scaled)
 
          
         # DAC controlled AO amplitudes
@@ -433,6 +434,15 @@ class ExptParams(ExptParamsWaxx):
 
         #
         self.v_integrated_apd_adc_background = -2.1
+        # integrator readout window (waxx Integrator; old timing was 0 / 0 / 1 us)
+        # light reaches the integrator ~1 us after its command (83668); output rings ~3-4 us after
+        # the gate closes (83673/83674); checked through the production path in 83675
+        # self.t_integrator_gate_delay = 0.
+        self.t_integrator_gate_delay = 0.7e-6 #83675, 2026-09-29
+        # self.t_integrator_gate_extra = 0.
+        self.t_integrator_gate_extra = 1.0e-6 #83675, 2026-09-29
+        # self.t_integrator_settle = 1.e-6
+        self.t_integrator_settle = 4.0e-6 #83674, 2026-09-29
 
         ### OPX+ (quantum machines) handshake -- timing diagram on
         ### Control.handoff_to_quantum_machines; the OPX half is framed by
