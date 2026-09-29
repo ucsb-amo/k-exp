@@ -4,10 +4,16 @@ The window and the scan ask a FrameSource for video, for one fresh frame per
 scan position (snap), and for the exposure/gain/shutter the panel sets. They
 never touch a camera object themselves, so the source can be swapped:
 
-- LocalAndorSource: the Andor opened in this process through the SDK, exactly
-  as the spot finder has always done it (CameraWorker, snap_frame,
+- ServedAndorSource (served_source.py): the Andor opened in this process
+  through beacon's camera server logic, as liveOD's camera host opens its
+  own, and served so that liveOD's camera host can take it over (the spot
+  finder closes it first, then follows it there). Used with --direct, and
+  whenever liveOD does not serve the Andor.
+- LocalAndorSource: the Andor opened in this process straight through the
+  SDK, as the spot finder always did (CameraWorker, snap_frame,
   apply_camera_params, reset_camera_state, setup_shutter -- unchanged). Used
-  with --direct, and whenever liveOD does not serve the Andor.
+  for a camera object handed to the window (tests), and when beacon is
+  missing; liveOD cannot take it over.
 - StreamSource: the Andor liveOD owns, through liveOD's camera host
   (beacon.camera.stream). liveOD keeps the camera open and runs it; the spot
   finder subscribes, and its video asks the host for the live stream
@@ -17,8 +23,8 @@ never touch a camera object themselves, so the source can be swapped:
   position.
 
 choose_source() picks between them: StreamSource when the directory finds an
-Andor on a liveOD camera host (``camera_server:<host>:liveod``), else the local
-camera, with a banner saying so.
+Andor on a liveOD camera host (``camera_server:<host>:liveod``), else the
+Andor opened here, with a banner saying so.
 
 Callbacks (on_frame, on_stopped) are called on the source's own thread. They
 must be quick and must not touch widgets; the window re-emits them as Qt
@@ -277,6 +283,7 @@ def _preempt_what(e) -> str:
     return {"restart": "liveOD's camera host restarted",
             "shutdown": "liveOD's camera host is shutting down",
             "moved": "the Andor moved to another camera server",
+            "reserved": "the Andor was lent to another program",
             "host_lost": "liveOD's camera host stopped answering",
             "settings_changed": "liveOD's Andor settings were changed by another program",
             "refused": "liveOD's camera host refused the spot finder",

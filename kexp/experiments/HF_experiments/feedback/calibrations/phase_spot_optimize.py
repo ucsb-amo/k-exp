@@ -27,7 +27,7 @@ class phase_spot(EnvExperiment, Base):
         # self.p.frequency_detuned_hf_midpoint = -5.0e6
 
         # self.xvar('phase_slm_mask', 0.387097 * np.pi + np.linspace(-0.2, 0.2, 5) * np.pi)
-        self.xvar('phase_slm_mask', np.linspace(0.0,2.6,50) * np.pi)
+        self.xvar('phase_slm_mask', np.linspace(0.0,1.0,15) * np.pi)
         # self.p.phase_slm_mask = 0.387097 * np.pi
 
         # self.xvar('dimension_slm_mask',np.linspace(15.e-6,250.e-6,10))
@@ -35,7 +35,7 @@ class phase_spot(EnvExperiment, Base):
         
         self.p.t_raman_pulse = self.p.t_raman_pi_pulse
         
-        self.p.N_repeats = 10
+        self.p.N_repeats = 4
 
         # apd slots: 0 = up, 1 = down, 2 = none (dark), 3 = superposition
         self.data.apd = self.data.add_data_container(4)

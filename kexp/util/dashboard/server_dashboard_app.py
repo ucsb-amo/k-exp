@@ -141,24 +141,29 @@ def placement_for(spec: PanelSpec, panel, layout: dict, *, realize_eagerly: bool
     )
 
 
+def confirm_server_action(parent, server_id: str, action: str) -> bool:
+    """Ask before Stop / Restart of the monitor server; other servers go ahead."""
+    from PyQt6.QtWidgets import QMessageBox  # noqa: PLC0415
+
+    if server_id != "monitor":
+        return True
+    title, text = _MONITOR_SERVER_CONFIRM[action]
+    reply = QMessageBox.question(parent, title, text,
+                                 QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No,
+                                 QMessageBox.StandardButton.No)
+    return reply == QMessageBox.StandardButton.Yes
+
+
 def wire_server_controls(panel, sup, server_id: str = "") -> None:
     """Give an extra client panel's server-style header (a ServerPanel's)
     the LED and Start / Stop / Restart of the hidden-panel server *sup*.
     Stop and Restart of the monitor server ask first."""
-    from PyQt6.QtWidgets import QMessageBox  # noqa: PLC0415
-
     header = panel.header()
     header.set_state(sup.state)
     sup.state_changed.connect(header.set_state)
 
     def confirmed(action: str) -> bool:
-        if server_id != "monitor":
-            return True
-        title, text = _MONITOR_SERVER_CONFIRM[action]
-        reply = QMessageBox.question(panel, title, text,
-                                     QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No,
-                                     QMessageBox.StandardButton.No)
-        return reply == QMessageBox.StandardButton.Yes
+        return confirm_server_action(panel, server_id, action)
 
     header.start_clicked.connect(
         lambda _c=False, s=sup: s.reset_and_start() if s.state.name in ("CRASHED", "FAILED") else s.start())
@@ -288,7 +293,7 @@ def main(argv: list[str] | None = None) -> int:
     entries = [(sid, labels.get(sid, sid), supervisors[sid]) for sid in supervisors]
     overview_panel = ClientPanel(
         "_running_servers", "Running Servers",
-        body_factory=lambda _e=entries: RunningServersPanel(_e),
+        body_factory=lambda _e=entries: RunningServersPanel(_e, confirm=confirm_server_action),
     )
     overview_spec = PanelSpec(id="_running_servers", label="Running Servers", default_dock_area="right")
     placements.append(placement_for(overview_spec, overview_panel, layout, realize_eagerly=True))
