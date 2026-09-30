@@ -15,6 +15,9 @@ Threading model
 * Trip-execution: the ``_kill_magnets_persistent`` loop runs on its own thread
   (called once per trip event) so it does not block the poll thread.
 * Email thread (IT5): a single-worker ``ThreadPoolExecutor`` queue.
+* History thread: appends every good sample to ``<history_dir>/YYYY-MM-DD.csv``
+  (``waxx.util.daily_csv``).  The poll thread only queues the row; it never
+  waits on the file.
 
 Locks
 -----
@@ -57,6 +60,7 @@ from typing import Callable, Optional
 import serial
 import serial.tools.list_ports
 
+from waxx.util.daily_csv import DailyCsvLog
 from kexp.util.guis.interlock import interlock_safe_mode as _sm
 
 
@@ -77,6 +81,12 @@ _SNAPSHOT_RELAY_TIMEOUT_S = 0.5
 # intermittently took >0.5 s to accept, and each miss logged an ERROR.
 # Service-initiated enable/kill force a fresh read on the next snapshot.
 _SNAPSHOT_RELAY_MIN_INTERVAL_S = 5.0
+
+# Daily history files.  temperature_plc_k is the PLC's reading as sent;
+# temperature_c is the value shown on the panel (plc_k - 273.0, the
+# conversion the original GUI used).
+_HISTORY_HEADER = ("epoch", "local_time", "temperature_plc_k", "temperature_c",
+                   "flow1_v", "flow2_v", "flow3_v", "flow4_v", "plc_tripped")
 
 
 def _ints_factor_into(n: int, primes: tuple[int, ...]) -> bool:
@@ -101,6 +111,8 @@ class InterlockConfig:
     watchdog_check_interval_s: float = 5.0
     heartbeat_interval_s: float = 5.0
     csv_path: Optional[str] = None
+    history_dir: Optional[str] = None
+    history_flush_interval_s: float = 10.0
     heartbeat_path: Optional[str] = None
     email_recipient: Optional[str] = None
     email_credentials_filepath: Optional[str] = None
@@ -111,6 +123,7 @@ class InterlockConfig:
 class _Sample:
     """One PLC message worth of structured readings."""
     epoch: float
+    temperature_k: Optional[float] = None   # as the PLC sent it
     temperature_c: Optional[float] = None
     flow_v: dict[int, float] = field(default_factory=dict)
     plc_tripped: bool = False
@@ -190,6 +203,14 @@ class InterlockService:
         self._samples: list[_Sample] = []
         self._samples_lock = threading.Lock()
         self._samples_max = 4096
+
+        # Append-only daily history (every good sample, kept indefinitely).
+        self._history: Optional[DailyCsvLog] = None
+        if config.history_dir:
+            self._history = DailyCsvLog(
+                config.history_dir, _HISTORY_HEADER,
+                name="ilock-history", logger=_LOG,
+            )
 
     # --- mutex (Windows only; degrades gracefully on other OSes) -----
 
@@ -300,6 +321,10 @@ class InterlockService:
         )
         self._poll_thread.start()
         self._start_watchdog_and_heartbeat()
+        if self._history is not None:
+            self._history.start(self._cfg.history_flush_interval_s)
+            _LOG.info("Appending PLC samples to %s/YYYY-MM-DD.csv every %.0f s",
+                      self._cfg.history_dir, self._cfg.history_flush_interval_s)
         _LOG.info("InterlockService started (com=%s baud=%s)", self._cfg.com_port, self._cfg.com_baud)
         return True
 
@@ -322,6 +347,8 @@ class InterlockService:
             self._watchdog_thread.join(timeout=2.0)
         if self._heartbeat_thread is not None:
             self._heartbeat_thread.join(timeout=2.0)
+        if self._history is not None:
+            self._history.stop(timeout=3.0)   # final flush of queued samples
         try:
             self._email_executor.shutdown(wait=False, cancel_futures=True)
         except Exception:
@@ -594,6 +621,8 @@ class InterlockService:
             self._samples.append(sample)
             if len(self._samples) > self._samples_max:
                 self._samples = self._samples[-self._samples_max:]
+        if self._history is not None:
+            self._history.add(sample.epoch, _history_row(sample))
 
         # Did the PLC explicitly report tripped?
         if sample.plc_tripped:
@@ -621,7 +650,8 @@ class InterlockService:
                 m = re.search(r"Temp is ([\d\.]+)k", segment)
                 if m:
                     checksum *= _CHECKSUM_PRIMES[4]
-                    sample.temperature_c = float(m.group(1)) - 273.0
+                    sample.temperature_k = float(m.group(1))
+                    sample.temperature_c = sample.temperature_k - 273.0
             elif "TRIPPED" in segment:
                 if re.search(r"I TRIPPED", segment):
                     sample.plc_tripped = True
@@ -816,6 +846,19 @@ class InterlockService:
                     ])
         except Exception:
             _LOG.exception("CSV flush failed (continuing)")
+
+
+def _history_row(s: _Sample) -> list:
+    """One daily-history row; blank cells are readings absent from the frame."""
+    return [
+        f"{s.epoch:.3f}",
+        time.strftime("%Y-%m-%d %H:%M:%S", time.localtime(s.epoch)),
+        "" if s.temperature_k is None else repr(s.temperature_k),
+        "" if s.temperature_c is None else f"{s.temperature_c:.3f}",
+        s.flow_v.get(1, ""), s.flow_v.get(2, ""),
+        s.flow_v.get(3, ""), s.flow_v.get(4, ""),
+        int(s.plc_tripped),
+    ]
 
 
 __all__ = ["InterlockService", "InterlockConfig"]
