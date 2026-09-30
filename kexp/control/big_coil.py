@@ -296,7 +296,8 @@ class igbt_magnet():
 
     @kernel
     def off(self):
-        self.ramp_supply(t=10.e-3, i_end=self.i_pid)
+        self.ramp_supply(t=10.e-3,
+                        i_end=min(self.i_pid, self.i_supply))
         self.rampdown()
         self.igbt_ttl.off()
         self.pid_ttl.off()

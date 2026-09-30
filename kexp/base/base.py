@@ -342,8 +342,20 @@ class Base(Expt, Devices, Cooling, Image, Cameras, Control, Clients):
         underflow, overflow or trigger timeout (waxx Scanner._scan runs this,
         then re-raises): the safety part of cleanup -- raman shutter closed,
         coils stopped and discharged, 1064 beams off -- without the shot's
-        data write or liveOD notification, as after a warm-up shot."""
+        data write or liveOD notification, as after a warm-up shot.
+
+        Then the raman DDS is taken out of fast-frequency-update mode (RAM
+        on, amplitude on the external OSK pin), as cleanup_scan_kernel does
+        after a normal shot or an underflow, so no error leaves it there.
+        A failure there is printed and swallowed: the original exception is
+        the one that must reach the host."""
         self.cleanup_warmup_kernel()
+        try:
+            self.core.break_realtime()
+            self.raman.clean_up_fast_frequency_update()
+        except:
+            aprint("[scan] cleanup_abort_kernel: restoring the raman DDS from fast "
+                   "frequency update mode failed; the next run's init_kernel re-inits it.")
 
     @kernel
     def cleanup_scan_kernel(self):

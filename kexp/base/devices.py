@@ -230,7 +230,8 @@ class Devices():
         
         self.integrator = Integrator(ttl_integrate=self.ttl.integrator_int_hold,
                                      ttl_reset=self.ttl.integrator_reset,
-                                     sampler_ch=self.sampler.apd_integrator)
+                                     sampler_ch=self.sampler.apd_integrator,
+                                     expt_params=self.params)
 
         # camera placeholder
         self.camera = DummyCamera()

@@ -70,9 +70,18 @@ MONITOR_EXPT_PATH = _safe_join(EXPT_PACKAGE_DIR, 'experiments', 'tools', 'monito
 RESET_STATE_EXPT_PATH = _safe_join(EXPT_PACKAGE_DIR, 'experiments', 'tools', 'mot_observe.py')
 # Run back to back by the monitor server from the Device Control GUI's Composite
 # tab (waxx.util.device_state.run_loop): key -> (card title, experiment file).
-# Only these files can be looped.
+# Only these files can be looped -- plus, for 'expt_loop' (Sequences tab, file
+# chosen at Start), any .py file under kexp/experiments except the monitor.
 AUTO_TOF_EXPT_PATH = _safe_join(EXPT_PACKAGE_DIR, 'experiments', 'tools', 'auto_tof.py')
-RUN_LOOP_EXPTS = {'auto_tof': ('BEC TOF loop', AUTO_TOF_EXPT_PATH)}
+EXPT_LOOP_ROOT = _safe_join(EXPT_PACKAGE_DIR, 'experiments')
+# The BEC TOF loop's scan, set from its card (⚙; waxx.util.device_state.loop_scan):
+# bounds and the defaults it starts with after a monitor server restart (SI).
+AUTO_TOF_SCAN = {'xvar': 't_tof', 'unit': 'ms', 'scale': 1.e-3,
+                 'minimum': 0., 'maximum': 25.e-3,
+                 'start': 1.e-3, 'stop': 4.e-3, 'n': 9, 'repeats': 5}
+RUN_LOOP_EXPTS = {'auto_tof': ('BEC TOF loop', AUTO_TOF_EXPT_PATH, AUTO_TOF_SCAN),
+                  'expt_loop': {'title': 'Experiment loop', 'root': EXPT_LOOP_ROOT,
+                                'exclude': (MONITOR_EXPT_PATH,)}}
 
 ### SRS control servers
 SRS_CONTROL_IP = "192.168.1.76"
