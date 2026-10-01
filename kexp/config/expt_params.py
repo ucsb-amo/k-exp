@@ -76,7 +76,8 @@ class ExptParams(ExptParamsWaxx):
         # SLM settings
         self.dimension_slm_mask = 40.e-6 
         # self.phase_slm_mask = 0.387097 * np.pi
-        self.phase_slm_mask = 0.57142857 * np.pi
+        # self.phase_slm_mask = 0.57142857 * np.pi
+        self.phase_slm_mask = 0.49 * np.pi #83725, 2026-09-29
         self.px_slm_grating_position_x = 994
         self.px_slm_grating_position_y = 824
         self.px_slm_phase_mask_position_x = 1021
@@ -156,21 +157,7 @@ class ExptParams(ExptParamsWaxx):
 
         self.t_feshbach_field_ramp_special = 20.e-3
 
-        # self.t_raman_pi_pulse = 8.3588e-06 #76021, 2026-08-20
-        # self.t_raman_pi_pulse = 8.8237e-06 #76038, 2026-08-20
-        # self.t_raman_pi_pulse = 8.9806e-06 #76115, 2026-08-21
-        # self.t_raman_pi_pulse = 8.6438e-06 #76216, 2026-08-24
-        # self.t_raman_pi_pulse = 6.5333e-06 #78264, 2026-09-02
-        # self.t_raman_pi_pulse = 6.70885e-06 #78301 rabi posterior 2026-09-02
-        # self.t_raman_pi_pulse = 7.1284e-06 #80159, 2026-09-09
-        # self.t_raman_pi_pulse = 6.9144e-06 #80599, 2026-09-21
-        # self.t_raman_pi_pulse = 5.7048e-06 #80622, 2026-09-22
-        # self.t_raman_pi_pulse = 7.1210e-06 #80652, 2026-09-23
-        # self.t_raman_pi_pulse = 6.5821e-06 #83102, 2026-09-26
-        # self.t_raman_pi_pulse = 6.4393e-06 #83203, 2026-09-27 (joint fit f 79.21 +/- 0.37 kHz at t0 127 ns: 127 ns + 1/(2f); t_pi verdict WARN only for readout drift)
-        # self.t_raman_pi_pulse = 6.6308e-06 #83465, 2026-09-28
-        self.t_raman_pi_pulse = 6.6588e-06 #83679, 2026-09-29 (absorption Rabi, f 75.09 +/- 1.49 kHz, rate 1/(2f); chi2/dof 11, errors scaled)
-
+        self.t_raman_pi_pulse = 6.8222e-06 #84525, 2026-10-01
          
         # DAC controlled AO amplitudes
         self.amp_d1_3d_c = 0.3
