@@ -60,6 +60,16 @@ class camera_frame(camera_frame_waxx):
         #                                  trigger_source='Line2')
         self.basler_2dmot = BaslerParams(serial_number='40277703', # camera replaced (user), 2026-09-26
                                          trigger_source='Line2')
+
+        # MOT fluorescence monitor (free-run, no trigger wired, served by the
+        # beacon Basler server on kong -- not on liveOD's bar). Used by the
+        # MOT viewer and by per-shot aux grabs (kexp.control.cameras
+        # .camera_stream); has no TTL, so camera_select=cameras.mot_basler
+        # correctly fails in choose_camera. Sensor model unverified:
+        # resolution/magnification are NOT trustworthy for this entry (frame
+        # size is auto-detected at grab setup); pixel size 3.45 um per user,
+        # 2026-09-30.
+        self.mot_basler = BaslerParams(serial_number='40277706')
         
         self.cleanup()
         
