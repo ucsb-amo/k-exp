@@ -6,8 +6,8 @@ Launched by the server dashboard as a subprocess; can also be run by hand:
 
 Every ``PUSH_INTERVAL_S`` it sends the field readings the magnetometer
 server has appended to ``%data%/magnetometer_data/hmr2300_YYYY-MM-DD.csv``
-since the last push (``waxa.climate.magnetometer.MagnetometerPusher``): one
-reading per ``MIN_SPACING_S``, each a log row as written (gauss), to the
+since the last push (``waxa.climate.magnetometer.MagnetometerPusher``): every
+row (one per second), each as written (gauss), to the
 trapper items ``k.magnetometer.bx`` / ``.by`` / ``.bz`` / ``.btot`` on the
 K host.  It only reads those files: it never talks to the magnetometer
 server or the sensor.
@@ -41,9 +41,11 @@ from kexp.util.guis.zabbix.coil_zabbix_server import CoilPushService, CoilZabbix
 LOGGER = logging.getLogger("kexp.dashboard.server.zabbix_magnetometer")
 
 SERVER_ID = "zabbix_magnetometer"
-PUSH_INTERVAL_S = 60.0
-# Send at most one reading per this many seconds (the field log has one per second).
-MIN_SPACING_S = 10.0
+PUSH_INTERVAL_S = 1.0
+# Send at most one reading per this many seconds.  0: every row, i.e. one per
+# second, since the field log already holds at most one per wall-clock second
+# (rows can be < 1 s apart, so 1.0 here would drop some of them).
+MIN_SPACING_S = 0.0
 
 
 class MagnetometerPushService(CoilPushService):

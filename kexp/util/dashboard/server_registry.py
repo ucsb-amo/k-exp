@@ -201,7 +201,7 @@ SERVER_SPECS: list[ServerSpec] = [
         label="Magnetometer → Zabbix",
         icon="🧲",
         # Headless and panel-less, like zabbix_coil: pushes the magnetometer
-        # field log (Bx, By, Bz, Btot) to Zabbix once a minute.
+        # field log (Bx, By, Bz, Btot) to Zabbix every second.
         body_factory=None,
         server_cmd=[_PY, "-m", "kexp.util.guis.zabbix.magnetometer_zabbix_server"],
         cwd=_REPO,
