@@ -103,6 +103,8 @@ PRECILASER_COM = 'COM20'
 ###
 MAGNETOMETER_COM = 'COM33'
 MAGNETOMETER_REFERENCE_CSV_PATH = _safe_join(DATA_DIR, 'magnetometer_reference.csv')
+# Daily field-log CSVs written by the magnetometer server (one reading per second).
+MAGNETOMETER_LOG_DIR = _safe_join(DATA_DIR, 'magnetometer_data')
 
 ### Interlock controller
 INTERLOCK_COM = 'COM5'

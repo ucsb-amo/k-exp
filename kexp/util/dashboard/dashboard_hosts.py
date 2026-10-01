@@ -23,7 +23,11 @@ HOST_AUTOSTART_SERVERS: dict[str, list[str]] = {
     # Lab control PC - runs every hardware-owning server.
     "*": [
         "basler",
-        "tpi"
+        "tpi",
+        # One instance for the lab: the first dashboard up runs it, the
+        # others show it EXTERNAL.
+        "zabbix_coil",
+        "zabbix_magnetometer",
     ],
     "192.168.1.76": [
         "als",

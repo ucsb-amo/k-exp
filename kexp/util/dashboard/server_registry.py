@@ -181,6 +181,36 @@ SERVER_SPECS: list[ServerSpec] = [
         default_dock_area="top",
     ),
     ServerSpec(
+        id="zabbix_coil",
+        label="Coil temp → Zabbix",
+        icon="🌡",
+        # Headless and panel-less: pushes the interlock log's coil temperature
+        # to Zabbix once a minute.  Listed in Running Servers and the Servers
+        # menu.  One instance for the lab: it beacons "zabbix_coil", so a
+        # second dashboard shows it EXTERNAL instead of starting another.
+        body_factory=None,
+        server_cmd=[_PY, "-m", "kexp.util.guis.zabbix.coil_zabbix_server"],
+        cwd=_REPO,
+        server_id="zabbix_coil",
+        graceful_stop_timeout_s=3.0,
+        restart_on_crash=True,
+        hidden_panel=True,
+    ),
+    ServerSpec(
+        id="zabbix_magnetometer",
+        label="Magnetometer → Zabbix",
+        icon="🧲",
+        # Headless and panel-less, like zabbix_coil: pushes the magnetometer
+        # field log (Bx, By, Bz, Btot) to Zabbix once a minute.
+        body_factory=None,
+        server_cmd=[_PY, "-m", "kexp.util.guis.zabbix.magnetometer_zabbix_server"],
+        cwd=_REPO,
+        server_id="zabbix_magnetometer",
+        graceful_stop_timeout_s=3.0,
+        restart_on_crash=True,
+        hidden_panel=True,
+    ),
+    ServerSpec(
         id="pdxc",
         label="PDXC Picomotor",
         icon="⚙",
