@@ -47,6 +47,12 @@ host_config.configure(
     layout_module="kexp.util.dashboard.dashboard_layout",
     subnet_prefix="192.168.1.",
 )
+try:
+    # the Camera Viewer's "Copy assignment line" in kexp's DiagnosticCamera form
+    from kexp.util.guis.basler.assignment_line import install as _install_assignment_line  # noqa: PLC0415
+    _install_assignment_line()
+except Exception:
+    pass
 
 
 def _parse_args(argv: list[str]) -> argparse.Namespace:

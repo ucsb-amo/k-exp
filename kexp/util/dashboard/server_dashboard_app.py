@@ -103,6 +103,12 @@ try:
     data_dir_guard.configure(_kexp_data_dir, _kexp_map_bat)
 except Exception:
     pass
+try:
+    # the Camera Viewer's "Copy assignment line" in kexp's DiagnosticCamera form
+    from kexp.util.guis.basler.assignment_line import install as _install_assignment_line  # noqa: PLC0415
+    _install_assignment_line()
+except Exception:
+    pass
 
 
 def _parse_args(argv: list[str]) -> argparse.Namespace:
