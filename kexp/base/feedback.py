@@ -11,13 +11,18 @@ class _FeedbackParamStore:
 
 
 class Feedback:
+    # N_photons_per_shot, v_apd_all_up, v_apd_all_down and v_range are NOT
+    # invariants: with p.preshot_endpoint_gain > 0 the kernel moves them every
+    # shot (update_shot_endpoints). Their calibration values are the *_cal copies.
     kernel_invariants = {
         "m",
-        "N_photons_per_shot",
+        "N_photons_per_shot_cal",
         "std_n_photons_per_shot",
-        "v_apd_all_up",
-        "v_apd_all_down",
-        "v_range",
+        "v_apd_all_up_cal",
+        "v_apd_all_down_cal",
+        "v_range_cal",
+        "preshot_endpoint_gain",
+        "preshot_endpoint_min_range_fraction",
         "feedback_measurement_midpoint_fraction",
         "feedback_measurement_midpoint_remap_enabled",
         "sin_lut",
@@ -79,6 +84,38 @@ class Feedback:
     @portable(flags={"fast-math"})
     def convert_measurement(self, v_apd):
         return round(self.N_photons_per_shot * (v_apd - self.v_apd_all_down) / self.v_range)
+
+    @portable(flags={"fast-math"})
+    def update_shot_endpoints(self, v_up_read, v_down_read) -> TInt32:
+        """Per-shot APD endpoints from the pre-shot reads (p.preshot_endpoint_gain = K > 0).
+
+        Each endpoint follows v <- v + K*(read - v), starting at the calibration
+        every run (K = 1: this shot's reads alone; K = 0: never called). The photon
+        number is rescaled with the contrast, N = N_cal * range / range_cal, and
+        std_n_photons_per_shot is kept: the APD voltage noise does not scale with
+        the contrast, so the likelihood sigma in volts stays the calibration's
+        (user rule 2026-09-28; std_n 142-146 photons in #83473/#83519/#83520 while
+        N went 432-600). K = 0.15 from the offline test (sim_preshot, 2026-09-28):
+        single pre-shot pairs (~11 mV contrast noise) did worse than the fixed
+        calibration; the smoothed estimate did better when the readout drifted.
+
+        Guard: a new range below preshot_endpoint_min_range_fraction x the
+        calibration range (or of the other sign) is not taken -- the shot keeps the
+        previous estimate -- and _preshot_guarded_counter counts it. Returns 1 when
+        the estimate was updated, 0 when guarded.
+        """
+        k = self.preshot_endpoint_gain
+        new_up = self.v_apd_all_up + k * (v_up_read - self.v_apd_all_up)
+        new_down = self.v_apd_all_down + k * (v_down_read - self.v_apd_all_down)
+        new_range = new_up - new_down
+        if new_range / self.v_range_cal < self.preshot_endpoint_min_range_fraction:
+            self._preshot_guarded_counter += 1
+            return 0
+        self.v_apd_all_up = new_up
+        self.v_apd_all_down = new_down
+        self.v_range = new_range
+        self.N_photons_per_shot = self.N_photons_per_shot_cal * new_range / self.v_range_cal
+        return 1
 
     @portable(flags={"fast-math"})
     def expected_photon_fraction(self, hz):
@@ -432,7 +469,7 @@ class Feedback:
         while i < self.m:
             self.state_x[i] = 0.0
             self.state_y[i] = 0.0
-            self.state_z[i] = 1.0
+            self.state_z[i] = self.initial_sz
             self.P0[i] = 1.0 / self.m
             i += 1
         self.P0_total = 1.0
@@ -455,6 +492,11 @@ class Feedback:
         # a run file without the parameter is such a run, so replay of it
         # keeps its grid. New runs get 1 from expt_params_feedback.
         self.grid_center_exact = int(getattr(self.p, "feedback_grid_center_exact_offset", 0))
+        # S_z every hypothesis (and the replay's true spin) starts from: +1 (all up)
+        # unless the run prepared all down with the pre-shot pi pulse
+        # (p.preshot_contrast -> feedback_initial_sz = -1, 2026-09-28). Run files
+        # without the key were all-up runs, so replay of them is unchanged.
+        self.initial_sz = float(np.ravel(getattr(self.p, "feedback_initial_sz", 1.0))[0])
         # Effective/ideal duration of the raman pulse currently being processed
         # by generate_posterior. Scalar experiments leave these at the param
         # values; randomized-pulse-time experiments (and replay) overwrite them
@@ -848,6 +890,21 @@ class Feedback:
         self.v_range = self.v_apd_all_up - self.v_apd_all_down
         if abs(self.v_range) < 1.0e-15:
             raise ValueError("APD calibration range is zero; cannot normalize APD.")
+        # Calibration copies: the per-shot endpoint estimate starts here every run
+        # and N_photons_per_shot is rescaled against them (update_shot_endpoints).
+        self.v_apd_all_up_cal = self.v_apd_all_up
+        self.v_apd_all_down_cal = self.v_apd_all_down
+        self.v_range_cal = self.v_range
+        self.N_photons_per_shot_cal = self.N_photons_per_shot
+        self.preshot_endpoint_gain = float(np.ravel(getattr(self.p, "preshot_endpoint_gain", 0.0))[0])
+        self.preshot_endpoint_min_range_fraction = float(
+            np.ravel(getattr(self.p, "preshot_endpoint_min_range_fraction", 0.25))[0])
+        if not (0.0 <= self.preshot_endpoint_gain <= 1.0):
+            raise ValueError(f"preshot_endpoint_gain must be in [0, 1]; got {self.preshot_endpoint_gain}.")
+        if self.preshot_endpoint_gain > 0.0 and map_enabled:
+            raise ValueError("preshot_endpoint_gain > 0 with feedback_apd_map_enabled: the pre-shot reads "
+                             "are raw APD volts, the endpoints are mapped; not supported.")
+        self._preshot_guarded_counter = 0
         # generate_posterior computes f = sigma/sqrt(npq)*exp(...) with
         # npq = sigma*sigma when include_photon_noise=1 (the default). A zero or
         # negative sigma makes that 0/0 -> NaN on every grid point, and because

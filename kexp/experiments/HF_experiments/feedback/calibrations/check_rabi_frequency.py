@@ -8,17 +8,16 @@ from artiq.coredevice.sampler import Sampler
 from artiq.language import now_mu
 
 class hf_raman(EnvExperiment, Base):
-
     def prepare(self):
         Base.__init__(self,setup_camera=True,
                       camera_select=cameras.andor,
                       imaging_type=img_types.ABSORPTION,
-                      warmup_shots=3)
+                      warmup_shots=5)
         
-        self.xvar('t_raman_pulse', np.linspace(0.,25.,31)*1.e-6)
+        self.xvar('t_raman_pulse', np.linspace(0.,60.,50)*1.e-6)
         self.p.t_raman_pulse = 0.
         self.p.t_tweezer_hold = 100.e-3
-        self.p.t_tof = 2.0e-3
+        self.p.t_tof = 2.5e-3
         self.p.N_repeats = 1
 
 

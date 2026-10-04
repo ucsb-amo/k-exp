@@ -126,6 +126,9 @@ class apd_joint_calibration(EnvExperiment, Base, RandomRamanPulseTimes):
         # operating point they describe.
         self.set_imaging_detuning(
             frequency_detuned=self.p.frequency_detuned_hf_midpoint)
+        # SLM phase-dot mask written every shot (2026-09-30, user: all APD experiments; with the
+        # mask written only at init the APD contrast fell 32 -> 14 mV within minutes, 83472/83473)
+        self.slm.write_phase_mask_kernel(phase=self.p.phase_slm_mask, dimension=self.p.dimension_slm_mask)
         self.imaging.set_power(self.p.amp_imaging)
 
         self.integrator.init()
