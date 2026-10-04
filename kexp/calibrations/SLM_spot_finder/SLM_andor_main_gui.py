@@ -12,11 +12,22 @@ try:
     # The Andor opened here goes through beacon's camera server logic, so that
     # liveOD's camera host can take it over (served_source).
     from served_source import (ServedAndorSource, DEFAULT_ANDOR_CAMERA_ID, describe_holder,
-                               handover_text, is_lent_error, liveod_camera_id)
+                               handover_text, is_lent_error, liveod_camera_id, trigger_summary)
     _SERVED_ERROR = ""
 except ImportError as _e:       # no beacon here: the Andor is opened straight through the SDK
     ServedAndorSource = None
     _SERVED_ERROR = f"{type(_e).__name__}: {_e}"
+
+    def trigger_summary(report):
+        return str(report)
+try:
+    # Frames on ARTIQ TTL edges: a precompiled pulse kernel on the Andor's
+    # trigger line (artiq_trigger); kexp's tables are read when it is made.
+    from artiq_trigger import make_andor_trigger
+    _TRIGGER_ERROR = ""
+except ImportError as _e:
+    make_andor_trigger = None
+    _TRIGGER_ERROR = f"{type(_e).__name__}: {_e}"
 from run_gate import RunGate, CombinedGate
 from slm_group import SLMController, SLMPreviewWidget
 from scan_group import ScanWorker, scan_grid, shots_to_grid
@@ -450,6 +461,16 @@ class UnifiedControlGUI(QtWidgets.QMainWindow):
         self._scan_last_t = None
         self._scan_start_center = None
 
+        # ARTIQ trigger (frames on TTL edges; the Camera Control tick box).
+        # The pulser is made when the box is first ticked, off the GUI thread
+        # (it reads kexp's tables and the device db); the source gets it
+        # whenever it can take triggered frames.
+        self._pulser = None
+        self._pulser_error = ""
+        self._pulser_loading = False
+        self._trigger_testing = False
+        self._trigger_test_video = False
+
         self.init_ui()
         if built_local and self._camera_connected():
             self.source.reset_to_video()
@@ -665,6 +686,33 @@ class UnifiedControlGUI(QtWidgets.QMainWindow):
         self.shutter_btn.setCheckable(True)
         self.shutter_btn.clicked.connect(self.toggle_shutter)
         cam_layout.addWidget(self.shutter_btn)
+
+        # Frames on ARTIQ TTL edges (served_source, triggered scans): the scan
+        # arms the Andor once and pulses its trigger line once per frame.
+        self.trigger_cb = QtWidgets.QCheckBox("Trigger frames from ARTIQ")
+        self.trigger_cb.setToolTip(
+            "Scan frames exposed on TTL edges fired from ARTIQ on the Andor's trigger line "
+            "(cameras.andor.trigger_ttl), as a run exposes them: the camera is armed once for "
+            "the scan (external trigger) and one precompiled core.reset + pulse kernel runs per "
+            "frame.\nThe scan takes the ARTIQ core from the monitor for its duration "
+            "(composite ops are fenced, the device state reads UNTRUSTED meanwhile) and the "
+            "monitor is restarted after it when no run is starting.\nNeeds the Andor opened "
+            "here, not liveOD's.")
+        self.trigger_cb.toggled.connect(self._on_trigger_toggled)
+        cam_layout.addWidget(self.trigger_cb)
+
+        self.trigger_test_btn = QtWidgets.QPushButton("Test trigger (one frame)")
+        self.trigger_test_btn.setToolTip(
+            "Arm the Andor for external triggers, fire one pulse from ARTIQ, show the frame "
+            "it exposed, disarm.")
+        self.trigger_test_btn.clicked.connect(self.on_test_trigger)
+        cam_layout.addWidget(self.trigger_test_btn)
+
+        self.trigger_status = QtWidgets.QLabel("")
+        self.trigger_status.setWordWrap(True)
+        self.trigger_status.setStyleSheet("color: gray;")
+        self.trigger_status.setVisible(False)
+        cam_layout.addWidget(self.trigger_status)
 
         cam_group.setLayout(cam_layout)
         sidebar.addWidget(cam_group)
@@ -1074,6 +1122,8 @@ class UnifiedControlGUI(QtWidgets.QMainWindow):
         print(f"[camera] source: {choice.kind} -- {banner}")
         self._set_source_banner(banner, choice.level)
         self.cam_param_status.setText("")
+        self._apply_trigger_to_source()
+        self._render_trigger_status()
         self._update_controls()
         if (self._connect_on_start or after) and not self._source_refused:
             self.connect_camera()
@@ -1163,6 +1213,8 @@ class UnifiedControlGUI(QtWidgets.QMainWindow):
         self._connected = True
         self._camera = getattr(self.source, "camera", None)
         self._camera_error = ""
+        self._apply_trigger_to_source()
+        self._render_trigger_status()
         if kind == "adopt":
             self._show_panel_settings(value)
         else:
@@ -1324,9 +1376,16 @@ class UnifiedControlGUI(QtWidgets.QMainWindow):
         """Enable what can be used now; the camera is shared by video, scan and connect."""
         self._render_camera_pill()
         ready = self._camera_connected() and not self._camera_busy
+        busy = self._scanning or self._trigger_testing
         for w in (self.video_btn, self.shutter_btn, self.apply_cam_btn):
-            w.setEnabled(ready and not self._scanning)
-        self.camera_pill.setEnabled(not self._camera_busy and not self._scanning)
+            w.setEnabled(ready and not busy)
+        self.camera_pill.setEnabled(not self._camera_busy and not busy)
+        # the ARTIQ trigger: the tick box whenever the camera is not in use;
+        # the test button only when a triggered frame could be taken now (it
+        # takes the core, so never while a run may be going: the gate says)
+        self.trigger_cb.setEnabled(not busy)
+        self.trigger_test_btn.setEnabled(ready and not busy and self._trigger_wanted()
+                                         and not self._trigger_refusal() and self._gate_open)
         # Everything that writes the SLM: never while a scan owns the pattern,
         # never while the run gate is closed.
         can_write = self._can_write_pattern()
@@ -1409,6 +1468,160 @@ class UnifiedControlGUI(QtWidgets.QMainWindow):
     def update_camera_plot(self, data):
         self.cam_img_item.setImage(data.T, autoLevels=True)
 
+    # ARTIQ trigger
+    def _trigger_wanted(self):
+        return bool(self.trigger_cb.isChecked())
+
+    def _trigger_refusal(self):
+        """Why triggered frames cannot be taken now; "" when they can."""
+        if not self._trigger_wanted():
+            return ""
+        if self._pulser_loading:
+            return "the ARTIQ trigger is still being set up"
+        if self._pulser_error:
+            return self._pulser_error
+        if self._pulser is None:
+            return "the ARTIQ trigger is not set up"
+        if not getattr(self.source, "supports_trigger", False):
+            return (getattr(self.source, "trigger_refusal", "")
+                    or "this camera source takes no triggered frames")
+        return ""
+
+    def _trigger_run_check(self):
+        """Asked by the pulser, before it restarts the monitor, whether a run
+        is going as far as liveOD says: one fresh POLL, failing closed.  Called
+        on the scan's thread."""
+        gate = self.run_gate
+        poll = getattr(gate, "poll_once", None)
+        if poll is not None:
+            try:
+                poll()
+            except Exception:
+                pass
+        snap = getattr(gate, "snapshot", None)
+        if snap is None:
+            ok, reason = getattr(gate, "check", gate)()
+            return bool(ok), str(reason)
+        s = snap()
+        if s.get("state") == "open":
+            return True, ""
+        return False, str(s.get("reason") or "liveOD's run state is unknown")
+
+    def _on_trigger_toggled(self, checked):
+        if checked and self._pulser is None and not self._pulser_loading:
+            if make_trigger_pulser is None:
+                self._pulser_error = f"ARTIQ trigger unavailable here: {_TRIGGER_ERROR}"
+            else:
+                self._pulser_loading = True
+                self._pulser_error = ""
+                self.trigger_status.setText("Setting up the ARTIQ trigger (kexp tables, "
+                                            "device db)...")
+                self.trigger_status.setVisible(True)
+                run_check = self._trigger_run_check
+                BackgroundCall(lambda: make_trigger_pulser(run_check), self._on_pulser_made, self)
+        self._apply_trigger_to_source()
+        self._render_trigger_status()
+        self._update_controls()
+
+    def _on_pulser_made(self, result, error):
+        self._pulser_loading = False
+        if error is not None:
+            self._pulser_error = f"ARTIQ trigger unavailable: {type(error).__name__}: {error}"
+            print(f"[trigger] {self._pulser_error}")
+        else:
+            self._pulser, self._pulser_error = result, ""
+            print(f"[trigger] ready: {result.describe()}")
+        if self._closing:
+            return
+        self._apply_trigger_to_source()
+        self._render_trigger_status()
+        self._update_controls()
+
+    def _apply_trigger_to_source(self):
+        """Give the source the pulser when the box is ticked and it can take
+        triggered frames; take it away otherwise (the scan then snaps)."""
+        set_trigger = getattr(self.source, "set_trigger", None)
+        if set_trigger is None:
+            return
+        want = self._pulser if (self._trigger_wanted() and not self._trigger_refusal()) else None
+        if getattr(self.source, "trigger", None) is want:
+            return
+        try:
+            set_trigger(want)
+        except Exception as e:          # during a triggered scan: it keeps its pulser
+            print(f"[trigger] {e}")
+
+    def _render_trigger_status(self):
+        if self._pulser_loading:
+            return
+        if not self._trigger_wanted():
+            text = ""
+        else:
+            why = self._trigger_refusal()
+            if why:
+                text = f"Triggered frames unavailable: {why}."
+            else:
+                text = (f"Scan frames are triggered from ARTIQ ({self._pulser.describe()}). A "
+                        f"scan holds the ARTIQ core (the monitor yields; composite ops are "
+                        f"fenced; the device state reads UNTRUSTED until it is handed back).")
+        self.trigger_status.setText(text)
+        self.trigger_status.setVisible(bool(text))
+
+    def on_test_trigger(self):
+        """Arm, one pulse, the frame it exposed, disarm -- the trigger path
+        checked without a scan.  Takes the core like a scan: never while the
+        run gate is closed."""
+        if self._scanning or self._trigger_testing:
+            return
+        if not self._gate_open:
+            self.trigger_status.setText(f"Not triggering: {self._gate_reason}")
+            self.trigger_status.setVisible(True)
+            return
+        if not self._camera_connected() or self._camera_busy:
+            self.trigger_status.setText("Connect the Andor first (andor button).")
+            self.trigger_status.setVisible(True)
+            return
+        self._apply_trigger_to_source()
+        why = self._trigger_refusal() or ("tick 'Trigger frames from ARTIQ' first"
+                                          if not self._trigger_wanted() else "")
+        if why:
+            self.trigger_status.setText(f"Not triggering: {why}.")
+            self.trigger_status.setVisible(True)
+            return
+        self._trigger_testing = True
+        self._trigger_test_video = self.source.video_running()
+        source = self.source
+        self.trigger_status.setText("Taking one triggered frame (arming, one pulse)...")
+        self.trigger_status.setVisible(True)
+        self._update_controls()
+        BackgroundCall(lambda: source.triggered_frame(), self._on_test_trigger_done, self)
+
+    def _on_test_trigger_done(self, result, error):
+        self._trigger_testing = False
+        if self._closing:
+            return
+        report = getattr(self.source, "last_trigger_report", None) or {}
+        if error is not None:
+            text = f"Triggered frame FAILED: {type(error).__name__}: {error}"
+            if report:
+                text += f" -- {trigger_summary(report)}"
+        else:
+            frame, report = result
+            if frame is not None:
+                self.cam_img_item.setImage(frame.T, autoLevels=True)
+            text = f"Triggered frame OK: {trigger_summary(report)}."
+        notes = list(report.get("pulser_notes") or ())
+        if notes:
+            text += " " + notes[-1]
+        print(f"[trigger] {text}")
+        self.trigger_status.setText(text)
+        self.trigger_status.setVisible(True)
+        if self._trigger_test_video and self._camera_connected():
+            self._trigger_test_video = False
+            self.video_btn.setChecked(True)
+            self._start_video()
+        self._update_controls()
+
     # Scan
     def start_scan(self):
         if self._scanning:
@@ -1416,9 +1629,17 @@ class UnifiedControlGUI(QtWidgets.QMainWindow):
         if not self._gate_open:
             self.scan_progress.setText(f"Not scanning: {self._gate_reason}")
             return
-        if not self._camera_connected() or self._camera_busy:
+        if not self._camera_connected() or self._camera_busy or self._trigger_testing:
             self.scan_progress.setText("Connect the Andor first (andor button).")
             return
+        # frames on ARTIQ edges when asked for and possible; never a silent
+        # fall-back to snaps when the box is ticked
+        self._apply_trigger_to_source()
+        if self._trigger_wanted():
+            why = self._trigger_refusal()
+            if why:
+                self.scan_progress.setText(f"Not scanning: {why}.")
+                return
         if self.stage_group.position == POSITION_IN:
             answer = QtWidgets.QMessageBox.question(
                 self, "APD stage is in",
@@ -1586,6 +1807,12 @@ class UnifiedControlGUI(QtWidgets.QMainWindow):
         if self._scan_start_center is not None and here != tuple(self._scan_start_center):
             parts.append(f"Pattern left at {here}; Return now puts it back at "
                          f"{tuple(self._scan_start_center)}.")
+        report = getattr(self.source, "last_trigger_report", None)
+        if report and getattr(self.source, "triggered", False):
+            parts.append(f"ARTIQ-triggered frames: {trigger_summary(report)}.")
+            notes = list(report.get("pulser_notes") or ())
+            if notes:
+                parts.append(notes[-1].rstrip(".") + ".")
         summary = " ".join(parts)
         print(f"[scan] {summary}")
         self.scan_progress.setText(summary)
@@ -1645,11 +1872,28 @@ class UnifiedControlGUI(QtWidgets.QMainWindow):
             except Exception as e:
                 print(f"[camera] stopping the spot finder's camera server failed: {e}")
 
+        if self._pulser is not None:
+            # a hold is already over (the scan was waited for); this closes the
+            # monitor client, and releases the core if a hold is somehow left
+            try:
+                self._pulser.close()
+            except Exception as e:
+                print(f"[trigger] closing the ARTIQ trigger failed: {e}")
+
         self.slm.close()
         if self._owns_gate:
             # a poll can hang for seconds on an unreachable liveOD; not the close
             self.run_gate.stop(timeout=0.5)
         event.accept()
+
+
+def make_trigger_pulser(run_check):
+    """The ARTIQ pulser on the Andor's trigger line (artiq_trigger), with the
+    window's run check.  Reads kexp's tables and the device db: called off
+    the GUI thread.  Tests replace this."""
+    if make_andor_trigger is None:
+        raise RuntimeError(f"ARTIQ trigger unavailable here: {_TRIGGER_ERROR}")
+    return make_andor_trigger(run_check=run_check)
 
 
 def make_own_andor_source():

@@ -100,7 +100,8 @@ def preempt_text(e):
             "moved": "camera moved to another server",
             "reserved": "camera taken over by another program",
             "settings_changed": "camera settings changed by another program",
-            "refused": "camera host refused the snap"}.get(reason)
+            "refused": "camera host refused the snap",
+            "core_taken": "ARTIQ core taken by another program"}.get(reason)
     if what is None:
         what = f"camera taken by run {tag}" if tag else "camera taken by a run"
     detail = str(e) or reason
@@ -218,6 +219,11 @@ class ScanWorker(QtCore.QThread):
     def run(self):
         outcome = "not started"
         try:
+            # a source that arms the camera for the whole scan (triggered
+            # frames) wants to know how many positions are coming
+            plan = getattr(self.source, "plan_scan", None)
+            if plan is not None:
+                plan(len(self.points))
             self.source.begin_scan()
             try:
                 timeout_s = frame_timeout_s(self.source)
