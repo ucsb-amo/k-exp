@@ -98,6 +98,28 @@ class ExptParams(ExptParamsWaxx):
        
         self.t_gm = 3.e-3
         self.t_gmramp = 6.e-3 #CC changed from 6.5e-3
+
+        # Diagnostic reference images (Base.__init__(diagnostic_images=True);
+        # kexp.control.cameras.diagnostic_images): the 2D-MOT-only window
+        # (push off) at the start of mot(), and where each frame sits.
+        self.t_2dmot_prephase = 150.e-3
+        # The 2D-MOT and MOT baslers (Basler a2A3840-45um, rolling shutter)
+        # expose a mid-sensor ROI ~15-40 ms AFTER the trigger edge: lead the
+        # moment of interest by that much, and keep the scene static for the
+        # ROI's row span (~16 ms).
+        # self.t_diag_2dmot_before_push = 10.e-3 # saw the push on (84547-84556), 2026-10-01
+        self.t_diag_2dmot_before_push = 60.e-3 #84556, 2026-10-01
+        self.t_diag_mot_beams_after_on = 5.e-3
+        # self.t_diag_mot_before_end = 50.e-3 # 2026-10-01; >= 100 ms from the GM trigger below
+        self.t_diag_mot_before_end = 150.e-3 #84561, 2026-10-01
+        self.t_diag_gm_beams_after_start = 0.25e-3
+        # self.t_diag_gm_before_end = 0.5e-3 # blank: the ROI exposed after GM (84546-84561)
+        # the GM frame's trigger leads GM start by this (rolling shutter)
+        self.t_diag_gm_trigger_lead = 25.e-3 #84561, 2026-10-01
+        self.t_diag_lightsheet_after_load = 50.e-3
+        self.t_diag_lightsheet_after_evap1 = 3.e-3
+        self.t_diag_tweezer_after_load = 1.e-3
+        self.t_diag_tweezer_after_evap = 1.e-3
         
         self.t_pump_to_F1 = 150.e-6
         self.t_optical_pumping = 200.e-6
@@ -157,7 +179,8 @@ class ExptParams(ExptParamsWaxx):
 
         self.t_feshbach_field_ramp_special = 20.e-3
 
-        self.t_raman_pi_pulse = 6.8222e-06 #84525, 2026-10-01
+        # self.t_raman_pi_pulse = 6.8222e-06 #84525, 2026-10-01
+        self.t_raman_pi_pulse = 6.7885e-06 #84965, 2026-10-02
          
         # DAC controlled AO amplitudes
         self.amp_d1_3d_c = 0.3

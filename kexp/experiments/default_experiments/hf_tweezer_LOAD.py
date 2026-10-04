@@ -16,7 +16,7 @@ class mag_trap(EnvExperiment, Base):
         Base.__init__(self,
                       save_data=False,
                       camera_select=cameras.andor,
-                      imaging_type=img_types.ABSORPTION)
+                      imaging_type=img_types.ABSORPTION, warmup_shots=0)
 
         # Adjust.__init__(self)
         
@@ -71,7 +71,7 @@ class mag_trap(EnvExperiment, Base):
 
         Adjust.__init__(self)
         self.adjust('t_tweezer_hold',0.,100.e-3)
-        self.p.N_repeats = 1000
+        self.p.N_repeats = 30
         self.p.t_mot_load = 1.
 
         self.finish_prepare(shuffle=True)
