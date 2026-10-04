@@ -14,7 +14,7 @@ from waxx.control.beat_lock import BeatLockImaging, PolModBeatLock
 from kexp.config.dds_id import dds_frame
 from kexp.config.ttl_id import ttl_frame
 from kexp.config.expt_params import ExptParams
-from kexp.config.camera_id import cameras, img_types, CameraParams
+from kexp.config.camera_id import cameras, img_types, CameraParams, camera_trigger_ttl
 
 class ImagingConfigurations():
     SWITCH = 0
@@ -117,24 +117,9 @@ class Cameras():
         # Always configure camera params and TTL regardless of setup_camera.
         # The experiment client needs the correct TTL assigned even when no
         # images are being taken (e.g. save_data=False / setup_camera=False).
-        match camera.key:
-            case cameras.xy_basler.key:
-                ttl = self.ttl.basler
-            case cameras.x_basler.key:
-                ttl = self.ttl.z_basler
-            case cameras.z_basler.key:
-                ttl = self.ttl.z_basler
-            case cameras.andor.key | cameras.apd.key:
-                # The APD sits behind the Andor's pickoff beamsplitter, and
-                # keeps clocking the Andor trigger line so its imaging
-                # sequence is bit-identical to an Andor run.
-                ttl = self.ttl.andor
-            case cameras.basler_2dmot.key:
-                ttl = self.ttl.basler_2dmot
-            case _:
-                raise ValueError(
-                    f"No camera TTL mapping found for camera key '{camera.key}'."
-                )
+        # The trigger line is part of the camera's entry in
+        # kexp.config.camera_id (trigger_ttl).
+        ttl = camera_trigger_ttl(self.ttl, camera)
         self.assign_camera_stuff(camera, camera_ttl=ttl, imaging_type=imaging_type)
         self.run_info.imaging_type = imaging_type
         return _img_config_bit
