@@ -16,7 +16,6 @@ class hf_bec(EnvExperiment, Base):
 
         # self.xvar('do_405_pulse',[0,1])
         self.p.do_405_pulse = 1
-        # self.xvar('do_980_pulse',[0,1])
         self.p.do_980_pulse = 0
         # self.p.amp_dds_405 = 0.06
 #   
@@ -26,7 +25,7 @@ class hf_bec(EnvExperiment, Base):
 
         # self.xvar('t_tweezer_paint_rampdown',np.linspace(0.0,10.,5)*1.e-3)
 
-        self.xvar('t_tweezer_hold', np.linspace(0.0, 100.0, 10) * 1.e-3)
+        self.xvar('t_tweezer_hold', np.linspace(0.0, 1000.0, 6) * 1.e-3)
         self.p.t_tweezer_hold = 512.e-3
 
         # self.p.v_pd_hf_tweezer_1064_rampdown3_end=3.5
@@ -38,12 +37,12 @@ class hf_bec(EnvExperiment, Base):
         self.p.v_pd_ry_405 = 2.5 # maximum value 2.6 V
         self.p.v_pd_ry_980 = 2.8
 
-        self.p.amp_dds_405 = .1
+        self.p.amp_dds_405 = .06
 
         self.p.i_hf_raman = 182.
 
         # self.xvar('beans',np.linspace(0,30,10))
-        self.p.N_repeats = 10
+        self.p.N_repeats = 3
         self.finish_prepare(shuffle=True)
 
         if self.p.do_405_pulse == 1:

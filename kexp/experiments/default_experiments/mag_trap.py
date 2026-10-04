@@ -13,15 +13,16 @@ class mag_trap(EnvExperiment, Base):
     def prepare(self):
         Base.__init__(self,
         camera_select=cameras.xy_basler,
-        save_data=True)
+        save_data=True,
+        diagnostic_images=True)
 
-        self.p.t_tof = 7.e-3
-        self.xvar('t_tof',np.linspace(5.,10.,7)*1.e-3)
+        self.p.t_tof = 10.e-3
+        # self.xvar('t_tof',np.linspace(5.,10.,7)*1.e-3)
 
         self.p.t_magtrap_hold = 0.15 
         # self.p.t_magtrap_hold = 1.
 
-        self.p.N_repeats = 2
+        self.p.N_repeats = 10
         self.p.t_mot_load = 0.5
 
         self.p.imaging_state = 2.

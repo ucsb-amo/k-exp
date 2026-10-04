@@ -95,35 +95,35 @@ class mag_trap(EnvExperiment, Base):
 
         # self.xvar('fringe_repeats',np.linspace(1.,300.,300))
 
-        self.p.frequency_tweezer_list = [75.8e6]
+        # self.p.frequency_tweezer_list = [75.8e6]
         # self.p.frequency_tweezer_list = [76.e6, 76.5e6]
         # self.p.frequency_tweezer_list = [75.8e6, 75.3e6]
         # self.p.frequency_tweezer_list = [72.5e6]
 
         # a_list = [.18,.21]
-        a_list = [0.18]
+        # a_list = [0.18]
        
         # a_list = [self.p.amp_tweezer_final,.15]
         # a_list = [.15,.21]
-        self.p.amp_tweezer_list = a_list
+        # self.p.amp_tweezer_list = a_list
 
         # self.xvar('t_tof',np.linspace(1000.,3000.,10)*1.e-6)
 
         # self.xvar('hf_imaging_detuning', np.arange(-580.,-540.,3.)*1.e6)
         # self.p.hf_imaging_detuning = -604.e6
         # self.p.hf_imaging_detuning = -609.e6 # 192.
-        self.p.hf_imaging_detuning = -617.5e6 # 193.2
+        # self.p.hf_imaging_detuning = -617.5e6 # 193.2
         # self.p.hf_imaging_detuning = -562.e6 # 182.
 
         # self.xvar('t_imaging_pulse',np.linspace(10.,500.,10)*1.e-6)
         # self.p.t_imaging_pulse = 20.e-6    
         
-        self.camera_params.exposure_time = 15.e-6
-        self.params.t_imaging_pulse = self.camera_params.exposure_time
+        # self.camera_params.exposure_time = 15.e-6
+        # self.params.t_imaging_pulse = self.camera_params.exposure_time
         # self.camera_params.em_gain = 1.
 
         # self.xvar('img_power', np.linspace(.05,2.,15))
-        self.p.amp_imaging = .3
+        self.p.amp_imaging = .2
         # self.p.amp_imaging = .1
         self.p.imaging_state = 2.
 

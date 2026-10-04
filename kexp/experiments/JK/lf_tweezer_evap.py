@@ -39,7 +39,7 @@ class tweezer_load(EnvExperiment, Base):
         # self.xvar('i_lf_tweezer_evap1_current',np.linspace(11.8,13.3,11))
 
         self.p.offset = 51.e6
-        # self.xvar('offset',np.linspace(40.e6,56.e6,4))
+        self.xvar('offset',np.linspace(-24.e6,10.e6,15))
 
         # self.xvar('t_tof',np.linspace(100.,600.,7)*1.e-6)
         self.p.t_tof = 400.e-6
@@ -56,14 +56,14 @@ class tweezer_load(EnvExperiment, Base):
         self.p.amp_imaging = 0.3
         # self.xvar('amp_imaging',np.linspace(0.1,0.5,5))
 
-        self.xvar('beans',np.linspace(1,7,7))
+        # self.xvar('beans',np.linspace(1,7,7))
         self.p.post_abs_wait = 0.
         # self.xvar()
 
         self.p.t_mot_load = 1.
-        self.p.N_repeats = 1
+        self.p.N_repeats = 3
 
-        self.finish_prepare(shuffle=False)
+        self.finish_prepare(shuffle=True)
 
     @kernel
     def scan_kernel(self):

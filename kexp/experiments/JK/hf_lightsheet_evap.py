@@ -15,7 +15,7 @@ class mag_trap(EnvExperiment, Base):
         Base.__init__(self,setup_camera=True,save_data=True,camera_select=cameras.andor,
                       imaging_type=img_types.ABSORPTION)
         # self.p.t_tof = 100.e-6
-        self.p.t_tof = 25.e-6
+        self.p.t_tof = 1625.e-6
         # self.xvar('t_tof',np.linspace(500,3500.,7)*1.e-6)
         # self.xvar('hf_imaging_detuning', [-594.e6,-494.e6])
 
@@ -37,14 +37,14 @@ class mag_trap(EnvExperiment, Base):
 
         self.p.v_pd_lightsheet_rampup_end = 7.5#8.2 for 11A, 7.5 for 10A
 
-        # self.xvar('i_hf_lightsheet_evap1_current',np.linspace(191.,194.,10))
+        self.xvar('i_hf_lightsheet_evap1_current',np.linspace(191.,194.,20))
         self.p.i_hf_lightsheet_evap1_current = 193.33
         # self.p.i_hf_lightsheet_evap1_current = 187.4
  
-        self.xvar('v_pd_hf_lightsheet_rampdown_end',np.linspace(.3,.9,7))
-        self.p.v_pd_hf_lightsheet_rampdown_end = .6
+        # self.xvar('v_pd_hf_lightsheet_rampdown_end',np.linspace(.3,.9,7))
+        self.p.v_pd_hf_lightsheet_rampdown_end = .3
 
-        # self.xvar('t_hf_lightsheet_rampdown',np.linspace(600.,1100.,24)*1.e-3)
+        self.xvar('t_hf_lightsheet_rampdown',np.linspace(50.,1500.,13)*1.e-3)
         self.p.t_hf_lightsheet_rampdown = 1.17
 
         # self.xvar('v_pd_lightsheet_rampdown2_end',np.linspace(.27,.42,7))
@@ -112,7 +112,7 @@ class mag_trap(EnvExperiment, Base):
                              i_end=self.p.i_hf_lightsheet_evap1_current)
         
         # lightsheet evap 1
-        self.lightsheet.ramp(t=self.p.t_hf_lightsheet_rampdown,
+        self.lightsheet.exponential_ramp(t=self.p.t_hf_lightsheet_rampdown,
                              v_start=self.p.v_pd_lightsheet_rampup_end,
                              v_end=self.p.v_pd_hf_lightsheet_rampdown_end)
 
@@ -123,11 +123,11 @@ class mag_trap(EnvExperiment, Base):
 
 
         # # #lightsheet evap 2
-        self.lightsheet.ramp(t=self.p.t_lightsheet_rampdown2,
+        self.lightsheet.exponential_ramp(t=self.p.t_lightsheet_rampdown2,
                              v_start=self.p.v_pd_hf_lightsheet_rampdown_end,
                              v_end=self.p.v_pd_lightsheet_rampdown2_end)
         
-        # self.ttl.pd_scope_trig.pulse(1.e-6)
+        self.ttl.pd_scope_trig.pulse(1.e-6)
         # self.ttl.line_trigger.wait_for_line_trigger()
 
         ## lightsheet evap 3

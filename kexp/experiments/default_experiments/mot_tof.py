@@ -16,13 +16,13 @@ class gm_tof(EnvExperiment, Base):
 
         # self.xvar('t_tof',np.linspace(0.03,1.2,10)*1.e-3)
 
-        self.p.t_tof = 0.05e-3
+        self.p.t_tof = 1.e-3
         # self.xvar('detune_d2_r_hmot', np.linspace(-7., -1.,8))
         # self.xvar('detune_d2_c_hmot', np.linspace(-3.4, -1.,8))
-        self.detune_d2_r_mot = -6.14
-        self.detune_d2_c_mot = -2.2
-        self.detune_d2_c_hmot = -1.7
-        self.detune_d2_r_hmot = -4.5
+        # self.p.detune_d2_r_mot = -6.14
+        # self.detune_d2_c_mot = -2.2
+        # self.detune_d2_c_hmot = -1.7
+        # self.detune_d2_r_hmot = -4.5
         # self.amp_d2_r_mot = 0.1
         # self.amp_d2_r_mot = 0.14
         # self.adjust('t_tof',min_val=20.e-6, max_val=2.e-3)
@@ -32,15 +32,15 @@ class gm_tof(EnvExperiment, Base):
         # self.adjust('v_xshim_current',min_val=0.,max_val=9.9)
         # self.adjust('v_yshim_current',min_val=0.,max_val=9.9)
         # self.adjust('v_zshim_current',min_val=0.,max_val=9.9)
-        self.v_xshim_current=2.
-        self.v_xshim_current=1.
-        self.v_xshim_current=0.45
+        # self.v_xshim_current=2.
+        # self.v_xshim_current=1.
+        # self.v_xshim_current=0.45
         # self.xvar('amp_imaging',np.linspace(.06,.5,15))
         # self.p.amp_imaging = .15
         self.p.imaging_state = 2.
         # self.p.t_tof = 20e-6
-        self.p.t_mot_load = 1.
-        self.p.N_repeats = 2
+        self.p.t_mot_load = 0.5
+        self.p.N_repeats = 100
 
 
         # self.camera_params.gain = 28.

@@ -9,20 +9,20 @@ class hf_bec(EnvExperiment, Base):
 
     def prepare(self):
         Base.__init__(self,
-                      save_data=True,
                       camera_select=cameras.andor,
                       imaging_type=img_types.ABSORPTION,
-                      warmup_shots=3)
+                      warmup_shots=5)
 
         self.p.t_mot_load = 1.0
         self.p.t_tweezer_hold = 100.e-3
 
         # self.xvar('t_tof',np.linspace(1000.,4000.,6)*1.e-6)
-        self.p.t_tof = 2.e-3
+        self.p.t_tof = 2.5e-3
+        # self.p.t_tof = 20.e-6
 
         self.data.apd = self.data.add_data_container(1)
 
-        self.p.N_repeats = 3
+        self.p.N_repeats = 100
 
         self.scanning()
         self.finish_prepare(shuffle=True)
@@ -54,7 +54,6 @@ class hf_bec(EnvExperiment, Base):
 
     @kernel
     def scan_kernel(self):
-
         self.set_imaging_detuning(frequency_detuned=self.p.frequency_detuned_hf_f1m1)
 
         self.prepare_hf_tweezers()

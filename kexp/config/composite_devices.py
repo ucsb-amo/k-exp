@@ -332,6 +332,12 @@ def _imaging_power_default(ctx):
     return getattr(camera, key, None)
 
 
+def _imaging_switch_amp_default(ctx):
+    """The switch AO's dds_id default amplitude -- what On restores."""
+    return _frame_attr(ctx, "dds", "imaging_x_switch", "_amplitude_default",
+                       _frame_attr(ctx, "dds", "imaging_x_switch", "amplitude"))
+
+
 def _imaging_info(ctx):
     beat = imaging_beat(ctx, ctx.field("detuning"))
     if beat is None:
@@ -404,10 +410,18 @@ IMAGING = CompositeDevice(
                     "selected axis's camera amp_imaging for the chosen imaging type. "
                     f"0..{V_DAC_MAX:g} V is the DAC's range: outside it set_power would "
                     "silently do something else."),
+        Arg("switch_amp", "Switch AO amp", decimals=3, step=0.01,
+            minimum=0., maximum=1.,
+            default=_imaging_switch_amp_default,
+            readback=lambda ctx: ctx.dds_amplitude("imaging_x_switch"),
+            tooltip="DDS amplitude of the switch AO (imaging_x_switch). On sets it "
+                    "back to this default (dds_id); Set sends another value. "
+                    "↺ = the dds_id default."),
     ),
     ops=(
         Op("on", "On", args=("axis", "detuning", "power"),
-           tooltip="Beat ref on, detuning + power set, PID AO on, axis shutter open, "
+           tooltip="Beat ref on, detuning + power set, PID AO on, switch AO amplitude "
+                   "back to its dds_id default, axis shutter open, "
                    f"{T_IMAGING_SHUTTER * 1e3:g} ms, switch AO on.",
            code=f"""
 {IMAGING_BEAT_CHECK}
@@ -415,6 +429,7 @@ expt.dds.beatlock_ref.on()
 expt.imaging.set_imaging_detuning({{detuning}})
 expt.imaging.set_power({{power}})
 expt.imaging.dds_pid.on()
+expt.imaging.dds_sw.set_dds(amplitude=expt.imaging.dds_sw._amplitude_default)
 {IMAGING_SHUTTERS}
 delay({T_IMAGING_SHUTTER!r})
 expt.imaging.on()
@@ -431,9 +446,15 @@ expt.ttl.imaging_shutter_xy.off()
            tooltip="imaging.set_imaging_detuning"),
         Op("set_power", "Set", args=("power",),
            code="expt.imaging.set_power({power})", tooltip="imaging.set_power"),
+        Op("set_switch_amp", "Set", args=("switch_amp",),
+           code="expt.imaging.dds_sw.set_dds(amplitude={switch_amp})",
+           tooltip="Switch AO amplitude only; RF switch and shutters untouched."),
         Op("set_axis", "Set", args=("axis",), code=IMAGING_SHUTTERS,
            tooltip="Open this axis's shutter, close the other; RF untouched."),
-        Op("rf_on", "Switch AO on (shutters unchanged)", code="expt.imaging.on()"),
+        Op("rf_on", "Switch AO on (shutters unchanged)",
+           code="expt.imaging.dds_sw.set_dds(amplitude=expt.imaging.dds_sw._amplitude_default)"
+                "\nexpt.imaging.on()",
+           tooltip="Switch AO amplitude back to its dds_id default, then RF on."),
         Op("rf_off", "Switch AO off (shutters unchanged)", code="expt.imaging.off()"),
         Op("close_shutters", "Close both shutters", code="""
 expt.ttl.imaging_shutter_x.off()
@@ -458,6 +479,7 @@ expt.ttl.imaging_shutter_xy.off()
         FieldRow(("detuning",), ("set_detuning",)),
         FieldRow(("img_type",)),
         FieldRow(("power",), ("set_power",)),
+        FieldRow(("switch_amp",), ("set_switch_amp",)),
         Info(_imaging_info),
         Menu(("rf_on", "rf_off", "close_shutters", "pid_ao_off")),
     ),
