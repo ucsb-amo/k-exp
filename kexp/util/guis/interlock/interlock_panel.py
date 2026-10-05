@@ -40,6 +40,7 @@ from PyQt6.QtWidgets import (
 
 from waxx.util.dashboard.embed_helpers import WidgetPanelBase, auto_cleanup_timers
 from waxx.util.dashboard.widgets import CollapsibleGroupBox
+from waxx.util.guis.qt_upkeep import set_style_if_changed
 from kexp.util.guis.interlock import interlock_safe_mode as _sm
 
 
@@ -335,7 +336,9 @@ class _InterlockBodyBase(WidgetPanelBase):
             text = f"{label} — {msg}"
         self._status_btn.setText(text)
         self._status_btn.setToolTip(text)  # full text; the pill truncates
-        self._status_btn.setStyleSheet(
+        # Every snapshot lands here: restyle only on a change.
+        set_style_if_changed(
+            self._status_btn,
             f"QPushButton {{ background-color: {bg}; color: {fg};"
             " font-size: 16px; font-weight: 700; padding: 8px; border-radius: 4px; }"
         )
@@ -355,7 +358,8 @@ class _InterlockBodyBase(WidgetPanelBase):
             return
         if state is True:
             self._magnets_btn.setText("Kill Magnets")
-            self._magnets_btn.setStyleSheet(
+            set_style_if_changed(
+                self._magnets_btn,
                 "QPushButton { background-color: #c46666; color: white;"
                 " font-weight: 600; padding: 4px 10px; border-radius: 3px; }"
                 "QPushButton:hover { background-color: #b85a5a; }"
@@ -363,14 +367,16 @@ class _InterlockBodyBase(WidgetPanelBase):
             )
         elif state is False:
             self._magnets_btn.setText("Enable Magnets…")
-            self._magnets_btn.setStyleSheet(
+            set_style_if_changed(
+                self._magnets_btn,
                 "QPushButton { background-color: #2e8b57; color: white;"
                 " font-weight: 600; padding: 4px 10px; border-radius: 3px; }"
                 "QPushButton:disabled { background-color: #2a4a37; color: #aaa; }"
             )
         else:
             self._magnets_btn.setText("Magnets …")
-            self._magnets_btn.setStyleSheet(
+            set_style_if_changed(
+                self._magnets_btn,
                 "QPushButton { background-color: #555; color: #ddd;"
                 " padding: 4px 10px; border-radius: 3px; }"
             )

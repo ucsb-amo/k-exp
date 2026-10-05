@@ -38,22 +38,54 @@ def _age_from_epoch(t) -> float:
         return 0.
 
 
-class KeysightTelemetry(TelemetryProvider):
-    name = "keysight"
-    interval_s = 1.0
+def _close_client(client) -> None:
+    """Release a client's resources (liveOD's holds a zmq context + IO thread)
+    before it is dropped.  Only the class's own ``close`` is used, if it has
+    one; the Keysight and interlock clients open a socket per call and have
+    none."""
+    if client is None:
+        return
+    close = getattr(type(client), "close", None)
+    if close is None:
+        return
+    try:
+        close(client)
+    except Exception:
+        pass
+
+
+class _ClientTelemetry(TelemetryProvider):
+    """Holds the one client (for its read call and ``close`` only)."""
 
     def __init__(self):
+        self._client = None
         self._read = None
+
+    def _bind(self, client, read) -> None:
+        self._client, self._read = client, read
+
+    def _drop(self) -> None:
+        """Forget the client (rediscover next time), closing it first.
+        Called on the poll thread only: ``close()`` (the hub's stop) is left a
+        no-op, since the hub may call it while a read is still in progress on
+        the poll thread and a zmq socket must not be closed under it."""
+        client, self._client, self._read = self._client, None, None
+        _close_client(client)
+
+
+class KeysightTelemetry(_ClientTelemetry):
+    name = "keysight"
+    interval_s = 1.0
 
     def poll(self) -> dict[str, Sample]:
         if self._read is None:
             from waxx.util.guis.keysight.keysight_client import KeysightClient  # noqa: PLC0415
-            self._read = KeysightClient(timeout_s=1.5,
-                                        discovery_timeout=DISCOVERY_TIMEOUT_S).get_snapshot
+            client = KeysightClient(timeout_s=1.5, discovery_timeout=DISCOVERY_TIMEOUT_S)
+            self._bind(client, client.get_snapshot)
         try:
             snapshot = self._read()
         except Exception:
-            self._read = None           # rediscover next time
+            self._drop()                # rediscover next time
             raise
         out = {}
         for supply in snapshot or []:
@@ -74,22 +106,19 @@ class KeysightTelemetry(TelemetryProvider):
         return out
 
 
-class InterlockTelemetry(TelemetryProvider):
+class InterlockTelemetry(_ClientTelemetry):
     name = "interlock"
     interval_s = 2.0
-
-    def __init__(self):
-        self._read = None
 
     def poll(self) -> dict[str, Sample]:
         if self._read is None:
             from kexp.util.guis.interlock.interlock_client import InterlockClient  # noqa: PLC0415
-            self._read = InterlockClient(discovery_timeout=DISCOVERY_TIMEOUT_S,
-                                         timeout=1.5).get_snapshot
+            client = InterlockClient(discovery_timeout=DISCOVERY_TIMEOUT_S, timeout=1.5)
+            self._bind(client, client.get_snapshot)
         try:
             snap = self._read()
         except Exception:
-            self._read = None
+            self._drop()
             raise
         if not isinstance(snap, dict) or snap.get("status") == "error":
             raise RuntimeError(f"interlock snapshot: {snap.get('message') if isinstance(snap, dict) else snap!r}")
@@ -107,22 +136,19 @@ class InterlockTelemetry(TelemetryProvider):
         return out
 
 
-class LiveODTelemetry(TelemetryProvider):
+class LiveODTelemetry(_ClientTelemetry):
     name = "live_od"
     interval_s = 2.0
-
-    def __init__(self):
-        self._read = None
 
     def poll(self) -> dict[str, Sample]:
         if self._read is None:
             from waxx.util.live_od.live_od_client import LiveODClient  # noqa: PLC0415
-            self._read = LiveODClient(timeout_ms=1500,
-                                      discovery_timeout=DISCOVERY_TIMEOUT_S).poll
+            client = LiveODClient(timeout_ms=1500, discovery_timeout=DISCOVERY_TIMEOUT_S)
+            self._bind(client, client.poll)
         try:
             reply = self._read()
         except Exception:
-            self._read = None
+            self._drop()                # closes its zmq context first
             raise
         if not isinstance(reply, dict) or not reply.get("ok", False):
             raise RuntimeError(f"liveOD POLL: {reply!r}")

@@ -9,6 +9,7 @@ import threading
 
 from waxx.util.guis.als.als_gui_client import ALSGuiClient
 from waxx.util.guis.precilaser.precilaser_gui_client import PrecilaserGuiClient
+from waxx.util.guis.qt_upkeep import delete_later, set_style_if_changed
 
 from PyQt6.QtCore import QObject, QThread, Qt, QTimer, pyqtSignal
 from PyQt6.QtGui import QFont, QIcon, QPainter, QPixmap
@@ -346,6 +347,7 @@ class ServerStatusButton(QPushButton):
         self._attr_name    = attr_name
         self._factory      = client_factory   # () -> client; may block (UDP discovery)
         self._discovering  = False
+        self._poll_thread: threading.Thread | None = None
         self._connection_state = "OFFLINE"
 
         self._poll_result.connect(self._on_poll_result)
@@ -380,7 +382,16 @@ class ServerStatusButton(QPushButton):
                 self._discovering = True
                 threading.Thread(target=self._discover_worker, daemon=True).start()
             return
-        threading.Thread(target=self._poll_worker, args=(client,), daemon=True).start()
+        self._spawn_poll(client)
+
+    def _spawn_poll(self, client):
+        """Start a poll thread unless the previous one is still running (a
+        slow server would otherwise collect one more thread every tick)."""
+        if self._poll_thread is not None and self._poll_thread.is_alive():
+            return
+        self._poll_thread = threading.Thread(target=self._poll_worker, args=(client,),
+                                             daemon=True)
+        self._poll_thread.start()
 
     def _poll_worker(self, client):
         """Runs in daemon thread: fetch snapshot and emit result."""
@@ -415,19 +426,20 @@ class ServerStatusButton(QPushButton):
         if client is not None:
             self._client = client
             # Immediately poll with the new client
-            threading.Thread(target=self._poll_worker, args=(client,), daemon=True).start()
+            self._spawn_poll(client)
         # If None, stay OFFLINE; next timer tick will retry
 
     # --- visual state ---
 
     def _apply_state(self):
         self.setText(self._label)
+        # Every 3 s poll lands here: restyle only on a change.
         if self._connection_state == "CONNECTED":
-            self.setStyleSheet(self._STYLE_CONNECTED)
+            set_style_if_changed(self, self._STYLE_CONNECTED)
         elif self._connection_state == "DISCONNECTED":
-            self.setStyleSheet(self._STYLE_DISCONNECTED)
+            set_style_if_changed(self, self._STYLE_DISCONNECTED)
         else:
-            self.setStyleSheet(self._STYLE_OFFLINE)
+            set_style_if_changed(self, self._STYLE_OFFLINE)
 
     # --- click handler ---
 
@@ -481,10 +493,10 @@ class PollDot(QWidget):
 
     def on_poll(self, success: bool):
         if success:
-            self._pill.setStyleSheet(self._PILL_GREEN)
+            set_style_if_changed(self._pill, self._PILL_GREEN)
             self._pill.setText("Poll OK")
         else:
-            self._pill.setStyleSheet(self._PILL_RED)
+            set_style_if_changed(self._pill, self._PILL_RED)
             self._pill.setText("Poll error")
 
 
@@ -493,9 +505,14 @@ class PollDot(QWidget):
 # ---------------------------------------------------------------------------
 
 class RemoteControlGUI(QMainWindow):
-    def __init__(self, controller, parent=None):
+    def __init__(self, controller, parent=None, standalone: bool = True):
+        """``standalone=False`` when embedded in another application (the
+        dashboard): the dark style and icon then apply to this window only,
+        never the whole application (an app-wide style sheet replaces the
+        host's and re-polishes every widget it has)."""
         super().__init__(parent)
         self._controller = controller
+        self._standalone = standalone
         self.setWindowTitle("K-Exp Remote Control")
         self.setMinimumSize(320, 200)
 
@@ -505,7 +522,13 @@ class RemoteControlGUI(QMainWindow):
         self._start_polling()
 
         app = QApplication.instance()
-        if app is not None:
+        if not standalone:
+            # The host re-parents the central widget into its panel (so it no
+            # longer inherits from this window): style both, for the panel
+            # and for dialogs parented to this window.
+            self.setStyleSheet(_DARK_STYLESHEET)
+            self.centralWidget().setStyleSheet(_DARK_STYLESHEET)
+        elif app is not None:
             app.setStyleSheet(_DARK_STYLESHEET)
 
         self._apply_dark_titlebar()
@@ -546,7 +569,7 @@ class RemoteControlGUI(QMainWindow):
             icon.addPixmap(pixmap)
         self.setWindowIcon(icon)
         app = QApplication.instance()
-        if app is not None:
+        if app is not None and self._standalone:
             app.setWindowIcon(icon)
 
     # --- UI construction ---
@@ -690,6 +713,7 @@ class RemoteControlGUI(QMainWindow):
     def _open_whitelist_editor(self):
         dlg = WhitelistEditor(self._controller, parent=self)
         dlg.exec()
+        delete_later(dlg)
 
     # --- Clean shutdown ---
 
