@@ -99,9 +99,11 @@ class EthernetRelay(EthernetRelayWaxx):
 		finally:
 			self.close()
 	
-	def read_relay_status(self):
+	def read_relay_status(self, retries=None, timeout=None):
+		# retries/timeout default to connect()'s; the GUI's periodic probe
+		# passes retries=0 and a short timeout so a dead relay can't hold it.
 		try:
-			self.connect()
+			self.connect(retries=retries, timeout=timeout)
 			out = [True for _ in range(N_RELAYS)]
 			for idx in range(N_RELAYS):
 				out[idx] = bool(self.__board.get_relay_status_by_index(idx + 1)[0])
