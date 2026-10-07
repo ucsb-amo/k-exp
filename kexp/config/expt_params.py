@@ -297,9 +297,9 @@ class ExptParams(ExptParamsWaxx):
         self.v_lightsheet_paint_amp_max = 3.6
 
         # self.n_lightsheet_rampup_tau_fraction = 1.5
-        self.v_pd_lightsheet = 8.1
+        self.v_pd_lightsheet = 6.9
         self.v_pd_lightsheet_rampup_start = self.v_pd_lightsheet_pd_minimum
-        self.v_pd_lightsheet_rampup_end = 8.75
+        self.v_pd_lightsheet_rampup_end = 6.8
         self.v_pd_lf_lightsheet_rampdown_end = 1.0 #4.16
         self.v_pd_hf_lightsheet_rampdown_end = 0.85 #4.16
         self.v_pd_hf_lightsheet_rampdown2_end = 0.0
@@ -319,7 +319,7 @@ class ExptParams(ExptParamsWaxx):
 
         self.v_pd_hf_tweezer_1064_ramp_end = 8.4
         self.v_pd_hf_tweezer_1064_rampdown_end = 0.16
-        self.v_pd_hf_tweezer_1064_rampdown2_end = 2.2
+        self.v_pd_hf_tweezer_1064_rampdown2_end = 4. # 2.2
         self.n_tweezer_ramp_steps = 200
 
         self.v_tweezer_paint_rampdown_end1 = -4.985
@@ -342,7 +342,7 @@ class ExptParams(ExptParamsWaxx):
 
         self.v_lf_tweezer_paint_amp_max = .5
         # self.v_hf_tweezer_paint_amp_max = -1.94 # -1.7
-        self.v_hf_tweezer_paint_amp_max = 2.0
+        self.v_hf_tweezer_paint_amp_max = 3.25 # 2.0
 
 
         self.v_paint_amp_end = -5.444444
