@@ -2,7 +2,7 @@ from artiq.experiment import *
 from artiq.experiment import delay
 from kexp import Base, Adjust
 import numpy as np
-from kexp.calibrations import high_field_imaging_detuning
+from kexp.calibrations import high_field_imaging_detuning, high_field_pid_imaging_detuning
 from kexp import Base, img_types, cameras, aprint
 
 from artiq.coredevice.shuttler import DCBias, DDS, Relay, Trigger, Config, shuttler_volt_to_mu
@@ -16,13 +16,13 @@ class mag_trap(EnvExperiment, Base):
                       save_data=True,
                       camera_select=cameras.andor,
                       imaging_type=img_types.ABSORPTION,
-                      warmup_shots=0)
+                      warmup_shots=5)
 
         self.p.t_tof = 1.e-6
         # self.xvar('t_tof',np.linspace(100.,4800.,9)*1.e-6)
         # self.xvar('beans',np.linspace(1,10.,10))
 
-        self.p.N_repeats = 25
+        self.p.N_repeats = 2
         self.p.t_mot_load = 1.
 
         self.p.i_hf_lightsheet_evap1_current = 193.15
@@ -41,15 +41,31 @@ class mag_trap(EnvExperiment, Base):
 
         self.p.v_pd_hf_lightsheet_rampdown2_end = 0.23
         # self.xvar('v_pd_hf_lightsheet_rampdown2_end',np.linspace(0.22,0.26,7))
+        # self.xvar('t_lightsheet_hold',np.linspace(0.1,1.,5))
+        self.p.t_lightsheet_hold = 0.
+        # self.xvar('t_lightsheet_hold',np.linspace(0.,0.005,20))
 
-        self.finish_prepare(shuffle=True)
+        # self.xvar('offset',np.linspace(0.e6,14.e6,12))
+        self.p.offset = 7.e6
+
+
+        self.p.i_nova_start=182.
+
+        self.p.i_nova_intermediate=192.
+
+        self.p.t_nova_ramp = 2400.e-6
+        # self.xvar('t_nova_ramp',np.linspace(200.e-6,5.e-3,10))
+        self.p.i_nova_end=195.85
+        self.xvar('i_nova_end',np.linspace(195.2,203.5,9))
+
+        self.finish_prepare(shuffle=False)
         
     @kernel
     def scan_kernel(self):
 
         # self.p.t_decay_exponential = self.p.t_hf_lightsheet_rampdown / self.p.n_decay_exponential
 
-        f0 = high_field_imaging_detuning(self.p.i_hf_lightsheet_evap1_current)
+        f0 = high_field_imaging_detuning(self.p.i_nova_end)+self.p.offset
         # aprint(f0/1.e6)
         # if self.p.use_imaging_calibration == 1.:
         self.set_imaging_detuning(f0)
@@ -77,7 +93,7 @@ class mag_trap(EnvExperiment, Base):
                              i_end=self.p.i_hf_lightsheet_evap1_current)
         
         self.set_shims(0.,0.,0.)
-        self.ttl.pd_scope_trig.pulse(1.e-6)
+        # self.ttl.pd_scope_trig.pulse(1.e-6)
         # lightsheet evap 1
         
         self.lightsheet.exponential_ramp(t=self.p.t_hf_lightsheet_rampdown,
@@ -93,14 +109,26 @@ class mag_trap(EnvExperiment, Base):
         self.lightsheet.exponential_ramp(t=self.p.t_hf_lightsheet_rampdown2,
                              v_start=self.p.v_pd_hf_lightsheet_rampdown_end,
                              v_end=self.p.v_pd_hf_lightsheet_rampdown2_end)
-
+        
+        
+        self.outer_coil.ramp_supply(t=10.e-3,
+                                     i_end=self.p.i_nova_start)
+        
+        self.outer_coil.start_pid()
+        
         delay(self.p.t_lightsheet_hold)
-        
-        self.lightsheet.off()
-        
-        delay(self.p.t_tof)
+        self.ttl.pd_scope_trig.pulse(1.e-6)
+        self.outer_coil.ramp_pid(t=50.e-3,i_end=self.p.i_nova_intermediate)
+        self.outer_coil.ramp_pid(t=self.p.t_nova_ramp,i_end=self.p.i_nova_end)
+        delay(self.p.t_lightsheet_hold)
 
         self.abs_image()
+
+        self.lightsheet.off()
+        
+        # delay(self.p.t_tof)
+
+        # delay(50.e-3)
 
         # self.lightsheet.off()
 
