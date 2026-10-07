@@ -32,6 +32,18 @@ def _default_roi_id_for(camera_key):
     return None
 
 
+def tool_windows():
+    """The toolbar's tool windows (waxx ToolWindow), for the acquisition window
+    and the remote viewer alike. Each runs as its own process."""
+    import sys
+    from waxx.util.live_od.config import ToolWindow
+    return [
+        ToolWindow("Diagnostics", [sys.executable, "-m", "kexp.util.guis.diagnostic_viewer"],
+                   "Diagnostic viewer: the MOT / GM / 2D-MOT fluorescence and beam frames of "
+                   "each shot against a saved reference (its own window)"),
+    ]
+
+
 def make_live_od_config():
     """Build the waxx LiveODConfig for the K machine."""
     from waxa.data import DataSaver
@@ -82,6 +94,7 @@ def make_live_od_config():
         camera_host_claim_on_start=CAMERA_HOST_CLAIM_ON_START,
         camera_constraints={"andor_emccd": (du897_vs,)},
         # Kept exactly as it was: the pinned taskbar button's identity.
+        tool_windows=tool_windows(),
         app_user_model_id="weldlab.kexp.gui.live_od",
         window_title="LiveOD Server",
     )

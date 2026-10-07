@@ -66,6 +66,7 @@ CLIENT_PLACEMENT: dict[str, dict] = {
     "magnetometer":   {"placement": "dock", "dock_area": "left"},
     "basler":         {"placement": "dock", "dock_area": "right"},
     "bristol":        {"placement": "dock", "dock_area": "right"},
+    "diagnostic_viewer": {"placement": "dock", "dock_area": "right"},
     "ethernet_relay": {"placement": "tab",  "dock_area": "right", "tab_group": "control"},
     "remote_control": {"placement": "tab",  "dock_area": "right", "tab_group": "control"},
     "keysight":       {"placement": "tab",  "dock_area": "right", "tab_group": "control"},

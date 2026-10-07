@@ -106,6 +106,9 @@ MAGNETOMETER_REFERENCE_CSV_PATH = _safe_join(DATA_DIR, 'magnetometer_reference.c
 # Daily field-log CSVs written by the magnetometer server (one reading per second).
 MAGNETOMETER_LOG_DIR = _safe_join(DATA_DIR, 'magnetometer_data')
 
+### Diagnostic viewer: saved reference mean counts of the diagnostic camera frames
+DIAGNOSTIC_REFERENCE_CSV_PATH = _safe_join(DATA_DIR, 'diagnostic_reference.csv')
+
 ### Interlock controller
 INTERLOCK_COM = 'COM5'
 

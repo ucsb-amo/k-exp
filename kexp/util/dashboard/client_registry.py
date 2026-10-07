@@ -122,6 +122,16 @@ CLIENT_SPECS: list[ClientSpec] = [
         default_visible=False,
     ),
     ClientSpec(
+        id="diagnostic_viewer",
+        label="Diagnostic Viewer",
+        icon="🔬",
+        body_factory=_lazy_panel("kexp.util.guis.diagnostic_viewer.diagnostic_viewer_panel",
+                                 "DiagnosticViewerPanel"),
+        warm_imports=["pyqtgraph", "numpy", "kexp.util.guis.diagnostic_viewer.window"],
+        default_dock_area="right",
+        default_visible=False,
+    ),
+    ClientSpec(
         id="interlock",
         label="Interlock (read-only view)",
         icon="🔒",
