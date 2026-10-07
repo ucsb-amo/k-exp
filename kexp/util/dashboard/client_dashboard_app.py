@@ -112,6 +112,8 @@ def main(argv: list[str] | None = None) -> int:
             ctypes.windll.shell32.SetCurrentProcessExplicitAppUserModelID(app_id)
         except Exception:
             pass
+        from waxa.taskbar import group_console
+        group_console()  # console joins the shared terminals taskbar button
 
     app = QApplication.instance() or QApplication(sys.argv)
     app.setApplicationName("kexp Client Dashboard")

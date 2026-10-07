@@ -412,6 +412,8 @@ class MagnetometerGUI(QMainWindow):
         event.accept()
 
 if __name__ == '__main__':
+    from waxa.taskbar import group_console
+    group_console()  # console joins the shared terminals taskbar button
     app = QApplication(sys.argv)
     app.setStyle('Fusion')  # Modern looking style
     

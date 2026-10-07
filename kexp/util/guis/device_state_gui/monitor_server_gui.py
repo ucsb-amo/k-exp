@@ -68,6 +68,8 @@ def main():
         return 1
 
     ctypes.windll.shell32.SetCurrentProcessExplicitAppUserModelID('weldlab.kexp.gui.monitor_server')
+    from waxa.taskbar import group_console
+    group_console()  # console joins the shared terminals taskbar button
     app = QApplication(sys.argv)
     app.setStyle('Windows')
     try:

@@ -145,6 +145,8 @@ def close_connection(stage):
     stage.close()
 
 def main():
+    from waxa.taskbar import group_console
+    group_console()  # console joins the shared terminals taskbar button
     app = QApplication(sys.argv)
     
     window = QWidget()

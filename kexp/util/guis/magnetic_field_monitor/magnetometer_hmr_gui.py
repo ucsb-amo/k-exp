@@ -32,6 +32,8 @@ def _create_magnet_icon():
 def main():
     import ctypes
     ctypes.windll.shell32.SetCurrentProcessExplicitAppUserModelID('weldlab.kexp.gui.hmr_magnetometer')
+    from waxa.taskbar import group_console
+    group_console()  # console joins the shared terminals taskbar button
     app = QtWidgets.QApplication(sys.argv)
     pg.setConfigOptions(antialias=True, background="w", foreground="k")
     icon = _create_magnet_icon()

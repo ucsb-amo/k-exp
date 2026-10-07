@@ -180,7 +180,10 @@ class ExptParams(ExptParamsWaxx):
         self.t_feshbach_field_ramp_special = 20.e-3
 
         # self.t_raman_pi_pulse = 6.8222e-06 #84525, 2026-10-01
-        self.t_raman_pi_pulse = 6.7885e-06 #84965, 2026-10-02
+        # self.t_raman_pi_pulse = 6.7885e-06 #84965, 2026-10-02
+        # self.t_raman_pi_pulse = 5.6102e-06 #85151, 2026-10-06
+        # self.t_raman_pi_pulse = 5.5257e-06 #85159, 2026-10-06
+        self.t_raman_pi_pulse = 4.9248e-06 #85248, 2026-10-07
          
         # DAC controlled AO amplitudes
         self.amp_d1_3d_c = 0.3
@@ -387,7 +390,8 @@ class ExptParams(ExptParamsWaxx):
 
         self.frequency_raman_transition_1m1_2m2 = 147.2593e6 #76037 2026-8-20
         # self.frequency_raman_transition = 147.2593e6 # 62500, 520 G 1-1 to 2-2
-        self.frequency_raman_transition = 119.4639e6 #80650
+        # self.frequency_raman_transition = 119.4639e6 #80650
+        self.frequency_raman_transition = 119.463914e6 #85247, 2026-10-07  # Ramsey 13 detunings x 5 t_ramsey, shared resonance +/- 34 Hz (+14 Hz from #80650)
         # self.frequency_raman_transition = 119.3977e6 # 176.5 A
 
         self.frequency_raman_transition_nf_1m1_20 = 460.7e6 # 1.5 G 1,-1 to 2,0

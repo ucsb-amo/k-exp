@@ -784,6 +784,8 @@ def main():
 
     import ctypes
     ctypes.windll.shell32.SetCurrentProcessExplicitAppUserModelID('weldlab.kexp.gui.ethernet_relay')
+    from waxa.taskbar import group_console
+    group_console()  # console joins the shared terminals taskbar button
     app = QApplication(sys.argv)
     
     # Set application style

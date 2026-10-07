@@ -732,6 +732,8 @@ def main():
     ctypes.windll.shell32.SetCurrentProcessExplicitAppUserModelID(
         'weldlab.kexp.gui.remote_control'
     )
+    from waxa.taskbar import group_console
+    group_console()  # console joins the shared terminals taskbar button
 
     from kexp.util.remote_control.remote_control import RemoteControl
 

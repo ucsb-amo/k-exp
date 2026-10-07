@@ -20,7 +20,18 @@ dvlist = np.linspace(1.,1.,5)
 
 from kexp.util.artiq.async_print import aprint
 
+# Type-checking-only import so the IDE can resolve self.diag.<stage>() below
+# (Pylance autocompletion / highlighting). Never executed at runtime: the
+# object itself is made by Base.__init__.
+from typing import TYPE_CHECKING
+if TYPE_CHECKING:
+    from kexp.control.cameras.diagnostic_images import DiagnosticImages
+
 class Cooling():
+    # just to get syntax highlighting; set by Base.__init__
+    if TYPE_CHECKING:
+        diag: "DiagnosticImages"
+
     def __init__(self):
         # just to get syntax highlighting
         self.dds = dds_frame()

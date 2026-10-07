@@ -278,6 +278,8 @@ def run_gui():
     atom = Potassium39()
     fzw = MOGDevice('192.168.1.94')
 
+    from waxa.taskbar import group_console
+    group_console()  # console joins the shared terminals taskbar button
     app = QtWidgets.QApplication.instance() or QtWidgets.QApplication(sys.argv)
     win = DetuningPlotter(atom, fzw)
     win.setWindowTitle("Live Detuning Plot")

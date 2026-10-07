@@ -9,6 +9,8 @@ def main() -> None:
     """Launch the remote Precilaser GUI frontend."""
     import ctypes
     ctypes.windll.shell32.SetCurrentProcessExplicitAppUserModelID('weldlab.kexp.gui.precilaser')
+    from waxa.taskbar import group_console
+    group_console()  # console joins the shared terminals taskbar button
     app = QApplication(sys.argv)
 
     gui = PrecilaserControlGUI()
