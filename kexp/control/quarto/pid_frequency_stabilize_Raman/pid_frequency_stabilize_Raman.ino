@@ -1,6 +1,14 @@
 #include "qCommand.h"
-
 qCommand qC;
+
+struct Cal 
+{
+    uint16_t cal_a;
+    double cal_b;
+    uint16_t cal_c;
+    char cal_d[16];
+};
+
 IntervalTimer DAC_Timer; 
 IntervalTimer plot;
 
@@ -10,12 +18,12 @@ double peakSeparation = 0;
 double feedback = 0;
 double er = 0, i_er = 0, d_er = 0;
 
-double Vth = 5;
+double Vth = 3.5;
 double G1 = 1;
-double P1 = 0.01;
+double P1 = -0.010000;
 double I1 = 0.0;
 double D1 = 0.0;
-double setpoint1 = 18;
+double setpoint1 = 65.0;
 double Lock = 1;
 
 unsigned long lastRisingEdgeTime = 0;
@@ -24,6 +32,9 @@ unsigned long period = 0;
 int lastState = LOW;
 
 void setup() {
+  Serial.begin(115200);
+  qC.addCommand("ping",ping);
+
   configureADC(1, 1, 0, BIPOLAR_10V, getADC1);
 
   qC.assignVariable("sep", &peakSeparation);
@@ -36,6 +47,13 @@ void setup() {
   qC.assignVariable("lock", &Lock);
 
   enableInterruptTrigger(1, BOTH_EDGES, hold1);
+}
+
+void ping(qCommand& qC, Stream& S)
+{
+  struct Cal cal2;
+  readNVMblock(&cal2, sizeof(cal2), 0xFA00);  
+  Serial.println(cal2.cal_d); 
 }
 
 void hold1() {

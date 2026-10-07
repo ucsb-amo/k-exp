@@ -262,7 +262,13 @@ def main() -> int:
                 os.getpid(), socket.gethostname())
 
     data_dir = os.environ.get("data") or os.environ.get("DATA_DIR") or ""
-    csv_path = os.path.join(data_dir, "interlock_logs", "plot_data.csv") if data_dir else ""
+    if not data_dir:
+        LOGGER.warning("Neither %%data%% nor DATA_DIR is set; interlock history "
+                       "and plot_data.csv will NOT be saved")
+    history_dir = os.path.join(data_dir, "interlock_logs") if data_dir else ""
+    # plot_data.csv: rolling last-4096-sample snapshot, rewritten every 10 min.
+    # The full record is the append-only <history_dir>/YYYY-MM-DD.csv files.
+    csv_path = os.path.join(history_dir, "plot_data.csv") if data_dir else ""
     heartbeat_path = os.path.join(data_dir, "_logs", "interlock_heartbeat.txt") if data_dir else ""
 
     cfg = InterlockConfig(
@@ -271,6 +277,7 @@ def main() -> int:
         stale_threshold_s=15.0,
         warmup_seconds=20.0,
         csv_path=csv_path or None,
+        history_dir=history_dir or None,
         heartbeat_path=heartbeat_path or None,
         email_credentials_filepath=INTERLOCK_EMAIL_CREDENTIALS_FILEPATH,
     )

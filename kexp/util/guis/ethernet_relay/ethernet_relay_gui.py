@@ -1,6 +1,7 @@
 import sys
 import time
 import logging
+import threading
 from PyQt6.QtWidgets import (QApplication, QMainWindow, QWidget, QVBoxLayout, 
                              QHBoxLayout, QPushButton, QLabel, QGroupBox, 
                              QMessageBox, QFrame, QDialog, QFormLayout,
@@ -68,13 +69,28 @@ class RelayWorker(QThread):
     finished = pyqtSignal(list)  # Signal to emit when operation is complete
     error = pyqtSignal(str)  # Signal to emit on error
     
-    def __init__(self, relay: EthernetRelay, operation, settings=None):
+    def __init__(self, relay: EthernetRelay, operation, settings=None,
+                 lock=None, probe_kwargs=None):
         super().__init__()
         self.relay = relay
         self.operation = operation
         self.settings = settings or {}
-        
+        # One relay object (one socket) is shared by every worker: the lock
+        # keeps a status read from connecting/closing in the middle of an
+        # operation. probe_kwargs bound the periodic status read only.
+        self.lock = lock
+        self.probe_kwargs = probe_kwargs or {}
+
     def run(self):
+        if self.lock is not None:
+            self.lock.acquire()
+        try:
+            self._run_operation()
+        finally:
+            if self.lock is not None:
+                self.lock.release()
+
+    def _run_operation(self):
         try:
             if self.operation == 'source_on':
                 self.relay.source_on()
@@ -98,7 +114,7 @@ class RelayWorker(QThread):
             elif self.operation == 'magnet_on':
                 self.relay.enable_magnets()
             elif self.operation == 'read_status':
-                status = self.relay.read_relay_status()
+                status = self.relay.read_relay_status(**self.probe_kwargs)
                 self.finished.emit(status)
                 return
             
@@ -112,13 +128,33 @@ class EthernetRelayGUI(QMainWindow):
     SUB_BUTTON_MIN_WIDTH = 62
     STATUS_MIN_WIDTH = 62
     SETTINGS_BUTTON_SIZE = 20
+    # The periodic status read is a best-effort probe: one connect attempt
+    # with a short socket timeout, so it always finishes well within a few
+    # ticks even when the relay is unreachable. User operations keep the
+    # relay's full connect retry policy.
+    STATUS_PROBE_KWARGS = {'retries': 0, 'timeout': 3.0}
 
-    def __init__(self):
+    def __init__(self, relay=None):
         super().__init__()
-        self.relay = EthernetRelay()
+        self.relay = EthernetRelay() if relay is None else relay
         self.source_status = False
         self.magnet_status = False
         self.operation_in_progress = False
+        # Serializes every worker's use of self.relay (one shared socket).
+        self._relay_lock = threading.Lock()
+        # Every started RelayWorker stays referenced until its thread has
+        # stopped: dropping the last reference to a running QThread aborts
+        # the process ("QThread: Destroyed while thread is still running").
+        self._workers = []
+        self.status_worker = None
+        # Bumped at every operation start; a status read begun before an
+        # operation reports the pre-operation state and is discarded.
+        self._op_generation = 0
+        # True while the source indicator shows UNKNOWN/ERROR rather than a
+        # read state: the next successful read must repaint it even when the
+        # state itself has not changed.
+        self._indicator_stale = True
+        self._status_error_logged = False
         self.artiq_restart_settings = {
             'satellite_wait_s': ARTIQ_RESTART_TIME_S,
             'main_wait_s': ARTIQ_RESTART_TIME_S,
@@ -388,10 +424,12 @@ class EthernetRelayGUI(QMainWindow):
         
     def update_status_indicator(self, is_on):
         """Update the visual status indicator"""
-        # Only update if status has changed
-        if is_on == self.source_status:
+        # Only update if status has changed (or the indicator shows
+        # UNKNOWN/ERROR instead of a state)
+        if is_on == self.source_status and not self._indicator_stale:
             return
-            
+        self._indicator_stale = False
+
         if is_on:
             self.status_indicator.setText("ON")
             self.status_indicator.setStyleSheet("""
@@ -474,59 +512,109 @@ class EthernetRelayGUI(QMainWindow):
                 }
             """)
         
+    def _start_worker(self, operation, on_finished, on_error, settings=None,
+                      probe_kwargs=None):
+        """Start a RelayWorker and keep it referenced until its thread ends."""
+        self._workers = [w for w in self._workers if w.isRunning()]
+        worker = RelayWorker(self.relay, operation, settings=settings,
+                             lock=self._relay_lock, probe_kwargs=probe_kwargs)
+        worker.op_generation = self._op_generation
+        worker.finished.connect(on_finished)
+        worker.error.connect(on_error)
+        self._workers.append(worker)
+        worker.start()
+        return worker
+
+    def _start_operation(self, operation, on_finished, settings=None):
+        """Start a user-initiated relay operation."""
+        self._op_generation += 1
+        self.worker = self._start_worker(operation, on_finished, self.on_error,
+                                         settings=settings)
+
+    def status_read_in_flight(self):
+        return self.status_worker is not None and self.status_worker.isRunning()
+
     def update_status(self):
         """Update the source and magnet status"""
         # Don't check status if an operation is in progress
         if self.operation_in_progress:
             return
-        
+        # Never more than one status read at a time: a read can outlast the
+        # 5 s tick when the relay is slow or unreachable.
+        if self.status_read_in_flight():
+            return
+
         # Use worker thread to check status
-        self.status_worker = RelayWorker(self.relay, 'read_status')
-        self.status_worker.finished.connect(self.on_status_updated)
-        self.status_worker.error.connect(self.on_error)
-        self.status_worker.start()
-        
+        self.status_worker = self._start_worker(
+            'read_status', self.on_status_updated, self.on_status_error,
+            probe_kwargs=self.STATUS_PROBE_KWARGS)
+
+    def _status_result_is_stale(self):
+        """True when the reporting status read began before an operation
+        that has since started (its state predates the operation)."""
+        worker = self.sender()
+        generation = getattr(worker, 'op_generation', self._op_generation)
+        if self.operation_in_progress:
+            return True
+        if generation != self._op_generation:
+            # Read again now the operation is over.
+            QTimer.singleShot(200, self.update_status)
+            return True
+        return False
+
     def on_status_updated(self, status):
         """Handle status update completion"""
+        if self._status_result_is_stale():
+            return
+        if self._status_error_logged:
+            logger.info("Relay status read recovered.")
+            self._status_error_logged = False
         # status is a list of 4 booleans for the 4 relays
         # Extract source and magnet status using 1-indexed relay numbers
         source_status = status[SOURCE_RELAY_IDX - 1]
         magnet_status = status[MAGNET_INHIBIT_IDX - 1]
-        
+
         self.update_status_indicator(source_status)
         self.update_magnet_status_button(magnet_status)
-        
+
+    def on_status_error(self, error_message):
+        """Handle a failed status read. Unlike on_error, this never touches
+        the operation state or the buttons (a status read does not own
+        them)."""
+        if self._status_result_is_stale():
+            return
+        self._show_error_indicator()
+        if not self._status_error_logged:
+            logger.error("Relay status read failed: %s", error_message)
+            self._status_error_logged = True
+        else:
+            logger.debug("Relay status read failed again: %s", error_message)
+
     def toggle_source(self):
         """Toggle the source on or off based on current status"""
         self.operation_in_progress = True
         self.set_buttons_enabled(False)
-        
+
         # Determine operation based on current status
         if self.source_status:
             operation = 'source_off'
         else:
             operation = 'source_on'
-            
-        self.worker = RelayWorker(self.relay, operation)
-        self.worker.finished.connect(self.on_operation_complete)
-        self.worker.error.connect(self.on_error)
-        self.worker.start()
-        
+
+        self._start_operation(operation, self.on_operation_complete)
+
     def toggle_magnet(self):
         """Toggle the magnet inhibit on or off based on current status"""
         self.operation_in_progress = True
         self.set_buttons_enabled(False)
-        
+
         # Determine operation based on current status
         if self.magnet_status:
             operation = 'magnet_off'
         else:
             operation = 'magnet_on'
-            
-        self.worker = RelayWorker(self.relay, operation)
-        self.worker.finished.connect(self.on_operation_complete)
-        self.worker.error.connect(self.on_error)
-        self.worker.start()
+
+        self._start_operation(operation, self.on_operation_complete)
         
     def restart_artiq(self):
         """Restart ARTIQ with confirmation dialog"""
@@ -543,14 +631,11 @@ class EthernetRelayGUI(QMainWindow):
             self.set_buttons_enabled(False)
             self.artiq_restart_btn.setText("Restarting ARTIQ...")
             
-            self.worker = RelayWorker(
-                self.relay,
+            self._start_operation(
                 'toggle_artiq',
+                self.on_artiq_restart_complete,
                 settings=self.artiq_restart_settings.copy()
             )
-            self.worker.finished.connect(self.on_artiq_restart_complete)
-            self.worker.error.connect(self.on_error)
-            self.worker.start()
 
     def restart_artiq_main(self):
         """Restart only the ARTIQ main crate."""
@@ -567,14 +652,11 @@ class EthernetRelayGUI(QMainWindow):
             self.set_buttons_enabled(False)
             self.artiq_main_restart_btn.setText("Restarting Main...")
 
-            self.worker = RelayWorker(
-                self.relay,
+            self._start_operation(
                 'toggle_artiq_main',
+                self.on_artiq_main_restart_complete,
                 settings=self.artiq_restart_settings.copy()
             )
-            self.worker.finished.connect(self.on_artiq_main_restart_complete)
-            self.worker.error.connect(self.on_error)
-            self.worker.start()
 
     def restart_artiq_satellites(self):
         """Restart only the ARTIQ satellite crates."""
@@ -591,14 +673,11 @@ class EthernetRelayGUI(QMainWindow):
             self.set_buttons_enabled(False)
             self.artiq_satellites_restart_btn.setText("Restarting Satellites...")
 
-            self.worker = RelayWorker(
-                self.relay,
+            self._start_operation(
                 'toggle_artiq_satellites',
+                self.on_artiq_satellites_restart_complete,
                 settings=self.artiq_restart_settings.copy()
             )
-            self.worker.finished.connect(self.on_artiq_satellites_restart_complete)
-            self.worker.error.connect(self.on_error)
-            self.worker.start()
 
     def open_artiq_settings(self):
         """Open the ARTIQ restart timing settings panel."""
@@ -651,6 +730,16 @@ class EthernetRelayGUI(QMainWindow):
         self.operation_in_progress = False
         self.set_buttons_enabled(True)
         self.artiq_restart_btn.setText("Restart ARTIQ")
+        self.artiq_main_restart_btn.setText("Main")
+        self.artiq_satellites_restart_btn.setText("Satellites")
+        self._show_error_indicator()
+
+        logger.error("Relay operation failed: %s", error_message)
+
+    def _show_error_indicator(self):
+        # The next successful read repaints the indicator even when the
+        # state it reads is unchanged.
+        self._indicator_stale = True
         self.status_indicator.setText("ERROR")
         self.status_indicator.setStyleSheet("""
             QLabel {
@@ -662,9 +751,7 @@ class EthernetRelayGUI(QMainWindow):
                 font-weight: bold;
             }
         """)
-        
-        logger.error("Relay operation failed: %s", error_message)
-        
+
     def set_buttons_enabled(self, enabled):
         """Enable or disable all buttons"""
         self.toggle_btn.setEnabled(enabled)
@@ -682,14 +769,11 @@ class EthernetRelayGUI(QMainWindow):
             self.status_timer.stop()
             
         # Wait for any running workers to complete
-        if hasattr(self, 'worker') and self.worker.isRunning():
-            self.worker.terminate()
-            self.worker.wait()
-            
-        if hasattr(self, 'status_worker') and self.status_worker.isRunning():
-            self.status_worker.terminate()
-            self.status_worker.wait()
-            
+        for worker in list(getattr(self, '_workers', [])):
+            if worker.isRunning():
+                worker.terminate()
+                worker.wait()
+
         event.accept()
 
 

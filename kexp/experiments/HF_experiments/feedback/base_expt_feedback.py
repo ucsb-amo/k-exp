@@ -44,6 +44,10 @@ class FeedbackExpt(Base, Feedback, RandomRamanPulseTimes):
 
         self.idx = 0
 
+        # the pre-shot (read, resonant pi, read) leaves the spin all down, and the
+        # model must start where the atoms are; Feedback.__init__ reads this
+        self.p.feedback_initial_sz = -1.0 if self.p.preshot_contrast else 1.0
+
         Feedback.__init__(self)
 
         self.zidx = self.p.feedback_resonance_grid_index
@@ -58,6 +62,13 @@ class FeedbackExpt(Base, Feedback, RandomRamanPulseTimes):
 
 
         self.data.feedback_data_containers(self.p)
+        # [APD read of the prepared state (all up), APD read after a resonant pi pulse
+        # (all down)] per shot when p.preshot_contrast; stays 0 otherwise
+        self.data.preshot_apd = self.data.add_data_container(2)
+        # [v_apd_all_up, v_apd_all_down, N_photons_per_shot] the posterior used this
+        # shot, and 1/0 = per-shot estimate updated / guarded (p.preshot_endpoint_gain
+        # > 0; stays 0 with the gain off); written on pre-shot shots only
+        self.data.preshot_endpoints = self.data.add_data_container(4)
         # populate first row of probabilities with pre-pulse lists
         self.data.probabilities.shot_data[0, :] = self.P0
         self.data.omega_raman_mesh.shot_data[0, :] = self.omega_guess_list
@@ -85,6 +96,12 @@ class FeedbackExpt(Base, Feedback, RandomRamanPulseTimes):
         
         self.set_imaging_detuning(frequency_detuned=self.p.frequency_detuned_hf_midpoint)
         # self.slm.write_phase_mask_kernel(phase=self.p.phase_slm_mask, verbose=False)
+        # p.slm_mask_every_shot = 1: rewrite the phase-dot mask every shot, as the
+        # phase_spot scans do. 2026-09-28 (runs 83472 / 83473): with the mask
+        # written only at init_kernel the APD up-down contrast fell from ~32 to
+        # ~14 mV within ~2 min of a run; rewritten every shot it held ~28 mV.
+        if self.p.slm_mask_every_shot:
+            self.slm.write_phase_mask_kernel(phase=self.p.phase_slm_mask, dimension=self.p.dimension_slm_mask)
         self.imaging.set_power(self.p.amp_imaging)
 
         # squeeze=False (user, 2026-09-27): the APD-state and joint calibrations
@@ -93,8 +110,38 @@ class FeedbackExpt(Base, Feedback, RandomRamanPulseTimes):
         # (83204) did not match the calibrated readout.
         # self.prepare_hf_tweezers(squeeze=True)
         self.prepare_hf_tweezers(squeeze=False)
-        self.prep_raman(frequency_transition=self.omega_raman/(2*np.pi),
-                        phase_mode=0)
+        if self.p.preshot_contrast:
+            # pre-shot contrast (user, 2026-09-28): read the prepared state (all up),
+            # resonant pi pulse (commanded length = rate pi time + turn-on offset),
+            # read again (all down). measure_integrated_v re-arms t_apd_slack after
+            # each blocking read. Then the drive moves to the initial feedback
+            # frequency; the model starts all down (p.feedback_initial_sz = -1).
+            self.prep_raman(frequency_transition=self.p.frequency_raman_transition,
+                            phase_mode=0)
+            v_preshot_up = self.imaging.measure_integrated_v(self.p.t_img_pulse)
+            self.data.preshot_apd.put_data(v_preshot_up, 0)
+            delay(self.p.t_preshot_gap)
+            self.raman.pulse(self.p.t_raman_pi_pulse + self.p.t_raman_pulse_offset)
+            delay(self.p.t_preshot_gap)
+            v_preshot_down = self.imaging.measure_integrated_v(self.p.t_img_pulse)
+            self.data.preshot_apd.put_data(v_preshot_down, 1)
+            # p.preshot_endpoint_gain > 0: this shot's endpoints from the pre-shot
+            # reads, smoothed over shots (Feedback.update_shot_endpoints); the
+            # endpoints the posterior uses are recorded every pre-shot shot
+            if self.preshot_endpoint_gain > 0.:
+                self.data.preshot_endpoints.put_data(
+                    float(self.update_shot_endpoints(v_preshot_up, v_preshot_down)), 3)
+            self.data.preshot_endpoints.put_data(self.v_apd_all_up, 0)
+            self.data.preshot_endpoints.put_data(self.v_apd_all_down, 1)
+            self.data.preshot_endpoints.put_data(self.N_photons_per_shot, 2)
+            # the blocking reads leave ~t_apd_slack of slack: re-arm before the DDS
+            # retune (83515 underflowed here without it); the spin sits at the pole
+            self.core.break_realtime()
+            self.raman.set(frequency_transition=self.omega_raman/(2*np.pi))
+            delay(self.p.t_preshot_gap)
+        else:
+            self.prep_raman(frequency_transition=self.omega_raman/(2*np.pi),
+                            phase_mode=0)
 
         t_pulse_start_mu = now_mu() + 500000
 

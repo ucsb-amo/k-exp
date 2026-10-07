@@ -83,7 +83,7 @@ class dds_frame(dds_frame_waxx):
                                     default_amp = self.p.amp_d2v_c_2dmot)
         self.raman_150_plus = self.dds_assign(2,3, ao_order = 1,
                                     default_freq = 150.e6,
-                                    default_amp = 0.324)
+                                    default_amp = 0.474)
         
         self.d2_2dh_c = self.dds_assign(3,0, ao_order = -1, transition = 'D2',
                                     default_detuning = self.p.detune_d2h_c_2dmot,

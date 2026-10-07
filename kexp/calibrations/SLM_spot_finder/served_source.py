@@ -33,16 +33,44 @@ Only a program on this PC may take the camera or give it back. Other programs
 may watch its video (a Camera Viewer can attach) but not change its settings,
 snap, or start or stop its stream: the spot finder's panel owns them.
 
+Triggered scans (``set_trigger(pulser)``, 2026-10-01).  Instead of one fresh
+internally-triggered acquisition per position (``snap``), the scan can take
+its frames the way a run does: the camera armed once for external triggers
+and one TTL edge per frame, fired from ARTIQ by a
+``waxx.control.artiq.ttl_pulser.TTLPulser`` on the Andor's trigger line
+(``artiq_trigger.make_andor_trigger``).  ``begin_scan`` takes the core
+(``pulser.acquire``: the monitor yields, see TTLPulser), locks the worker
+and arms it with a RUN profile -- trigger "ext", the panel's exposure and EM
+gain, the lab's readout settings, shutter open, ``n_frames`` = the positions
+``plan_scan`` announced plus a margin -- the same lock/arm/disarm path
+liveOD's camera host uses for a run.  Each ``snap`` pulses, then takes the
+next run frame of this hold whose camera frame counter (``hw_idx``) is the
+one expected, in order, within the timeout: a frame produced before the pulse
+is a stray (counted, never filed), a counter jump is a gap (the position gets
+no frame, the count re-synchronises; frames the camera reported lost under
+positions that got no frame are accounted for, nothing is ever back-filled).
+``end_scan`` disarms, unlocks, puts the live profile back, and releases the
+core (``pulser.release``: the monitor restarts when the machine is free).
+liveOD taking the Andor over during a triggered scan ends the hold first
+(disarm/unlock, so the relinquish can close the camera) and the scan stops
+on Preempted as it does for a snap; another program taking the core stops it
+the same way (reason "core_taken").  ``last_trigger_report`` says what
+happened.  Only this source supports it: liveOD's camera host arms the Andor
+for runs alone (StreamSource.supports_trigger is False).
+
 Callbacks (on_frame, on_stopped, on_handover, on_returned) are called on the
 source's or the server's own threads. They must be quick and must not touch
 widgets; the window re-emits them as Qt signals.
 """
 
+import collections
 import concurrent.futures
 import logging
 import socket
 import threading
 import time
+import uuid
+from dataclasses import dataclass, field
 from typing import Callable, Optional
 
 import numpy as np
@@ -50,8 +78,10 @@ import numpy as np
 from beacon.camera.backend import ApplyMismatch, ApplyRefused
 from beacon.camera.core import CameraServerCore, is_local_address, local_addresses
 from beacon.camera.reservations import DEFAULT_TTL_S
-from beacon.camera.schema import ANDOR_EMCCD, ANDOR_LIVE_EM_GAIN_CAP, build_live_profile
+from beacon.camera.schema import (ANDOR_EMCCD, ANDOR_LIVE_EM_GAIN_CAP, build_live_profile,
+                                  build_run_profile)
 from beacon.camera.worker import NotOpenError, ReservedError, SnapPreempted, WorkerStopped
+from waxx.control.artiq.ttl_pulser import CoreTaken
 
 from frame_source import Preempted, RunState
 
@@ -82,9 +112,83 @@ VIDEO_SLICE_S = 0.25
 #: an INIT_RUN, answers no POLL until the run is in progress.
 HANDOVER_HOLD_S = 3.0
 
+#: Triggered scans: frames armed beyond the positions plan_scan announced, so a
+#: stray edge costs one frame of the arm's budget and not the last position.
+TRIGGER_FRAME_MARGIN = 4
+#: ... and the budget when no plan was announced (a scan started by hand).
+TRIGGER_DEFAULT_FRAMES = 64
+TRIGGER_LOCK_REASON = "SLM spot finder: frames triggered from ARTIQ"
+TRIGGER_RUN_TAG_PREFIX = "spot_finder"
+#: One wait for the triggered frame; a preemption is noticed within this.
+TRIGGER_FRAME_SLICE_S = 0.25
+#: A run frame published this long before the pulse was asked for was exposed
+#: on an earlier edge (a stray), not on this pulse.
+TRIGGER_EARLY_TOLERANCE_S = 0.002
+#: lock / arm / disarm / unlock on the worker (an arm waits >= 0.1 s for no frame).
+TRIGGER_OP_TIMEOUT_S = 15.0
+
 
 def _resolve(value):
     return value() if callable(value) else value
+
+
+class TriggerFrameGap(RuntimeError):
+    """The camera's frame counter jumped: the frame that came cannot be
+    attributed to this pulse with certainty, so the position gets none."""
+
+
+def trigger_summary(report: dict) -> str:
+    """One line on a triggered hold: frames paired, strays, gaps, lost, ..."""
+    if not report:
+        return "no triggered frames were taken"
+    parts = [f"{report.get('paired', 0)}/{report.get('pulses', 0)} pulses gave a frame"]
+    for key, word in (("strays", "stray"), ("gaps", "counter gap"), ("lost", "lost by the camera"),
+                      ("timeouts", "timed out"), ("foreign", "foreign")):
+        n = report.get(key, 0)
+        if n:
+            parts.append(f"{n} {word}")
+    if report.get("stale_discarded_at_arm"):
+        parts.append(f"{report['stale_discarded_at_arm']} stray at the arm")
+    if report.get("preempted"):
+        parts.append(f"ended early: {report.get('preempt_detail') or report['preempted']}")
+    if report.get("errors"):
+        parts.append(f"{len(report['errors'])} error(s)")
+    return "; ".join(parts) + f" (tag {report.get('run_tag', '?')})"
+
+
+@dataclass
+class TriggerHold:
+    """One triggered acquisition: the worker locked and armed under ``token``,
+    frames tagged ``run_tag`` in acquisition ``acq_gen``; the pairing state."""
+    token: str
+    run_tag: str
+    acq_gen: int
+    settings_rev: int
+    n_frames: int
+    profile: dict
+    stale_discarded: int = 0
+    t_armed: float = 0.0
+    next_idx: int = 0                 # the hw_idx the next paired frame must have
+    frames: collections.deque = field(default_factory=collections.deque)
+    pending_timeouts: int = 0         # pulses since the last pairing that got no frame
+    n_pulses: int = 0
+    n_paired: int = 0
+    n_stray: int = 0
+    n_gap: int = 0
+    n_lost: int = 0                   # frames the counter skipped (lost in the camera)
+    n_foreign: int = 0
+    n_timeout: int = 0
+    preempted: str = ""               # why the hold ended early ("reserved", "core_taken")
+    preempt_detail: str = ""
+
+    def report(self) -> dict:
+        return {"run_tag": self.run_tag, "acq_gen": self.acq_gen,
+                "settings_rev": self.settings_rev, "n_frames_armed": self.n_frames,
+                "stale_discarded_at_arm": self.stale_discarded, "pulses": self.n_pulses,
+                "paired": self.n_paired, "strays": self.n_stray, "gaps": self.n_gap,
+                "lost": self.n_lost, "foreign": self.n_foreign, "timeouts": self.n_timeout,
+                "preempted": self.preempted, "preempt_detail": self.preempt_detail,
+                "profile": dict(self.profile)}
 
 
 def describe_holder(holder) -> str:
@@ -138,16 +242,26 @@ class ServedCore(CameraServerCore):
     ``on_lent(camera_id, holder, result)`` after a RELINQUISH that reserved a
     camera for someone new (not a renewal), once the close is done or has
     failed; ``on_returned(camera_id, holder_id)`` after a RETURN that ended a
-    reservation. Both run on the core's request threads."""
+    reservation. ``before_relinquish(camera_ids, holder)`` right before a
+    RELINQUISH is acted on (the source ends a triggered hold there, so the
+    worker is not locked when the camera is closed). All run on the core's
+    request threads."""
 
     def __init__(self, server_id, *, relinquish_timeout_s: float = RELINQUISH_CLOSE_S, **kw):
         super().__init__(server_id, **kw)
         self.relinquish_timeout_s = float(relinquish_timeout_s)
         self.on_lent: Optional[Callable] = None
         self.on_returned: Optional[Callable] = None
+        self.before_relinquish: Optional[Callable] = None
 
     def relinquish(self, camera_ids, holder, ttl_s: float = DEFAULT_TTL_S,
                    timeout_s: Optional[float] = None) -> dict:
+        hook = self.before_relinquish
+        if hook is not None:
+            try:
+                hook(list(camera_ids), holder.to_wire())
+            except Exception:
+                logger.exception("[spot finder] before_relinquish failed")
         results = super().relinquish(camera_ids, holder, ttl_s,
                                      self.relinquish_timeout_s if timeout_s is None else timeout_s)
         hook = self.on_lent
@@ -194,6 +308,7 @@ class ServedAndorSource:
     kind = "served"
     shared = False      # this window owns the camera's settings
     async_ops = True    # apply and shutter wait for the camera's worker: off the GUI thread
+    supports_trigger = True   # scans may take externally triggered frames (set_trigger)
 
     def __init__(self, backend_factory: Optional[Callable] = None, *, camera_id=None,
                  readout=None, exposure_s: float = 0.05, server_id: Optional[str] = None,
@@ -237,6 +352,14 @@ class ServedAndorSource:
         self._on_frame = None
         self._on_stopped = None
         self.video_stop_reason = ""
+
+        # Triggered scans (module docstring): the pulser, the positions the
+        # next scan announced, the hold while the camera is armed, the last
+        # hold's report.  _hold changes only under _frame_cv.
+        self._trigger = None
+        self._planned: Optional[int] = None
+        self._hold: Optional[TriggerHold] = None
+        self.last_trigger_report: Optional[dict] = None
 
     # -- identity --------------------------------------------------------------
 
@@ -301,6 +424,8 @@ class ServedAndorSource:
                                    f"{e} (is another spot finder open on this PC?)") from e
             core.on_lent = self._lent_hook
             core.on_returned = self._returned_hook
+            if hasattr(core, "before_relinquish"):
+                core.before_relinquish = self._before_relinquish_hook
             self._base_profile = self._live_base(readout)
             if self._local is None:
                 self._local = local_addresses()
@@ -334,7 +459,16 @@ class ServedAndorSource:
 
     def _frame_tap(self, frame):
         with self._frame_cv:
+            hold = self._hold
+            if hold is not None and getattr(frame, "source", "") == "run":
+                hold.frames.append(frame)
             self._frame_cv.notify_all()
+
+    def _before_relinquish_hook(self, camera_ids, holder):
+        """liveOD is about to take the Andor: a triggered hold ends first, so
+        the worker is not locked when the relinquish closes the camera."""
+        if self.camera_id in [str(c) for c in camera_ids]:
+            self._end_hold_for_takeover(holder)
 
     def _lent_hook(self, camera_id, holder, result):
         if camera_id != self.camera_id:
@@ -406,6 +540,8 @@ class ServedAndorSource:
         closed, SDK closed, device lock released). The server stays up, the
         camera listed as closed, so liveOD can still claim it. Returns the
         close report (its errors are printed)."""
+        if self._hold is not None:
+            self._disarm_trigger()
         self.stop_video()
         w = self._worker
         if w is None or not w.is_open:
@@ -608,24 +744,57 @@ class ServedAndorSource:
 
     # -- scan ----------------------------------------------------------------
 
+    def set_trigger(self, pulser):
+        """Take scan frames on ARTIQ TTL edges from ``pulser`` (a TTLPulser:
+        acquire / pulse / release), or None for internally triggered snaps
+        (the default).  Refused during a triggered scan."""
+        with self._frame_cv:
+            if self._hold is not None:
+                raise RuntimeError("the trigger cannot change during a triggered scan")
+            self._trigger = pulser
+
+    @property
+    def trigger(self):
+        return self._trigger
+
+    @property
+    def triggered(self) -> bool:
+        """Scans take externally triggered frames (a pulser is set)."""
+        return self._trigger is not None
+
+    @property
+    def trigger_refusal(self) -> str:
+        return ""
+
+    def plan_scan(self, n_points: int):
+        """How many positions the next scan takes (ScanWorker says so before
+        begin_scan): the arm's frame budget is this plus TRIGGER_FRAME_MARGIN."""
+        self._planned = max(0, int(n_points))
+
     def begin_scan(self):
         """Raises Preempted while liveOD has the camera, RuntimeError when it is
-        not connected."""
+        not connected.  With a trigger set, arms the camera (and takes the
+        ARTIQ core) for the whole scan."""
         lent = self.lent_to()
         if lent:
             raise Preempted("reserved", None,
                             f"{describe_holder(lent)} has the Andor (it took it over); not scanning")
         self._require_open()
+        if self._trigger is not None:
+            self._arm_trigger()
 
     def snap(self, timeout_s: float):
-        """One frame whose exposure starts after this call (the worker's snap:
-        a fresh acquisition, its first frame), uint16. Raises Preempted when
-        liveOD takes the camera over during the snap, TimeoutError when no
-        frame came."""
+        """One frame whose exposure starts after this call, uint16: the
+        worker's snap (a fresh acquisition, its first frame) -- or, armed for
+        triggers, one TTL pulse and the frame the camera took on it.  Raises
+        Preempted when liveOD takes the camera over (or another program the
+        core), TimeoutError when no frame came."""
         w = self._worker
         if w is None:
             raise RuntimeError("the Andor is not connected (andor button)")
         timeout_s = float(timeout_s)
+        if self._hold is not None:
+            return self._triggered_snap(timeout_s)
         try:
             f = w.call("snap", timeout_s + SNAP_MARGIN_S, timeout_s=timeout_s)
         except ReservedError as e:
@@ -641,7 +810,250 @@ class ServedAndorSource:
         return np.asanyarray(f.image, dtype=np.uint16)
 
     def end_scan(self):
-        pass
+        self._planned = None
+        if self._hold is not None:
+            self._disarm_trigger()
+
+    def triggered_frame(self, timeout_s: Optional[float] = None):
+        """One externally triggered frame -- arm, one pulse, pair, disarm --
+        as ``(frame, report)``; the window's test button.  Raises as snap()."""
+        if self._trigger is None:
+            raise RuntimeError("no ARTIQ trigger is set (set_trigger)")
+        if timeout_s is None:
+            timeout_s = 2.0 * self.frame_period() + 2.0
+        self.plan_scan(1)
+        self.begin_scan()
+        try:
+            frame = self.snap(float(timeout_s))
+        finally:
+            self.end_scan()
+        return frame, dict(self.last_trigger_report or {})
+
+    # -- triggered frames ------------------------------------------------------
+
+    def _run_profile(self) -> dict:
+        """The run profile for triggered frames: trigger "ext", the panel's
+        exposure and EM gain, the lab's readout settings, shutter open -- the
+        rules a run's camera_params go through (build_run_profile)."""
+        base = self._base_profile
+        params = {"exposure_time": float(self._exposure_s), "gain": int(self._gain),
+                  "trigger_mode": "ext", "frame_transfer": 0,
+                  "sensor_roi": tuple(base.get("sensor_roi") or (0, 512, 0, 512, 1, 1))}
+        for key in ("hs_speed", "preamp", "vs_speed", "vs_amp", "baseline_clamp"):
+            params[key] = int(base[key])
+        plan = build_run_profile(ANDOR_EMCCD, params)
+        bad = [v for v in plan.violations
+               if getattr(v, "level", "") in ("refuse", "confirm")]
+        if bad:
+            raise RuntimeError("the triggered-frame profile is refused: "
+                               + "; ".join(str(getattr(v, "reason", v)) for v in bad))
+        return dict(plan.profile)
+
+    def _arm_trigger(self):
+        """Take the ARTIQ core, lock the worker and arm it for external
+        triggers; nothing of the camera is touched if the core cannot be had."""
+        w = self._require_open()
+        pulser = self._trigger
+        planned = self._planned if self._planned is not None else TRIGGER_DEFAULT_FRAMES
+        n = max(1, int(planned) + TRIGGER_FRAME_MARGIN)
+        profile = self._run_profile()
+        token = uuid.uuid4().hex[:12]
+        run_tag = f"{TRIGGER_RUN_TAG_PREFIX}:{time.strftime('%H%M%S')}:{token[:4]}"
+        # a locked camera streams nothing: the video ends here, not mid-wait
+        self.stop_video()
+        for line in pulser.acquire():
+            print(f"[trigger] {line}")
+        try:
+            w.call("lock", TRIGGER_OP_TIMEOUT_S, token=token, reason=TRIGGER_LOCK_REASON)
+            res = w.call("arm", TRIGGER_OP_TIMEOUT_S, token=token, values=profile, n_frames=n,
+                         run_tag=run_tag)
+        except BaseException as e:
+            errors: list = []
+            self._release_lock(w, token, errors)
+            for line in pulser.release():
+                print(f"[trigger] {line}")
+            if isinstance(e, ReservedError):
+                raise Preempted("reserved", None,
+                                f"{describe_holder(e.holder)} took the Andor over while it was "
+                                f"being armed for triggers") from e
+            raise
+        hold = TriggerHold(token=token, run_tag=run_tag, acq_gen=int(res.acq_gen),
+                           settings_rev=int(w.settings_rev), n_frames=n, profile=profile,
+                           stale_discarded=int(getattr(res, "stale_discarded", 0) or 0),
+                           t_armed=time.monotonic())
+        with self._frame_cv:
+            self._hold = hold
+        print(f"[trigger] Andor armed for {n} externally triggered frame(s) (tag {run_tag}, "
+              f"acquisition {hold.acq_gen}): exposure={profile['exposure_time']:.4f} s, "
+              f"EM gain={profile['gain']}, shutter={profile.get('shutter')}"
+              + (f"; {hold.stale_discarded} stray frame discarded at the arm"
+                 if hold.stale_discarded else ""))
+
+    def _release_lock(self, w, token, errors: list):
+        """Disarm and unlock the worker if ``token`` holds it.  Returns the
+        DisarmResult, or None.  Errors are appended, never raised."""
+        if w is None or w.locked_by != token:
+            return None
+        disarm = None
+        try:
+            disarm = w.call("disarm", TRIGGER_OP_TIMEOUT_S, token=token)
+        except Exception as e:
+            errors.append(f"disarm: {type(e).__name__}: {e}")
+        try:
+            w.call("unlock", TRIGGER_OP_TIMEOUT_S, token=token)
+        except Exception as e:
+            errors.append(f"unlock: {type(e).__name__}: {e}")
+        return disarm
+
+    def _end_hold_for_takeover(self, holder):
+        """liveOD is taking the Andor (relinquish): mark the hold preempted (a
+        waiting snap raises Preempted) and free the worker, so the close goes."""
+        with self._frame_cv:
+            hold = self._hold
+            if hold is None or hold.preempted:
+                return
+            hold.preempted = "reserved"
+            hold.preempt_detail = (f"{describe_holder(holder)} took the Andor over during the "
+                                   f"triggered scan")
+            self._frame_cv.notify_all()
+        errors: list = []
+        self._release_lock(self._worker, hold.token, errors)
+        for err in errors:
+            print(f"[trigger] releasing the camera for the takeover: {err}")
+
+    def _preempted(self, hold) -> Preempted:
+        return Preempted(hold.preempted or "reserved", None,
+                         hold.preempt_detail or "the triggered scan was ended")
+
+    def _absorb_strays(self, hold):
+        """Frames that arrived since the last pairing, before this pulse: none
+        of them can be this position's; account for them and drop them."""
+        with self._frame_cv:
+            frames = list(hold.frames)
+            hold.frames.clear()
+        for f in frames:
+            self._pair(hold, f, t_fire=float("inf"))
+
+    def _pair(self, hold, f, t_fire):
+        """Match a run frame to the pulse asked for at ``t_fire``.  Returns
+        ``(verdict, image)``: "ok" (ours), "stray" (exposed before the pulse),
+        "stale" (a frame counter we are past), "foreign" (not this hold's
+        acquisition), "gap" (the counter jumped by more than the frames the
+        camera reported lost under positions that got none: the frame is not
+        filed, the count is re-synchronised)."""
+        if (getattr(f, "run_tag", None) != hold.run_tag
+                or int(getattr(f, "acq_gen", -1)) != hold.acq_gen):
+            hold.n_foreign += 1
+            return "foreign", None
+        idx = getattr(f, "hw_idx", None)
+        idx = hold.next_idx if idx is None else int(idx)      # no counter: in order
+        if idx < hold.next_idx:
+            return "stale", None
+        if idx > hold.next_idx:
+            missed = idx - hold.next_idx
+            hold.n_lost += missed
+            if missed <= hold.pending_timeouts:
+                # the camera reported those frames lost (never published) under
+                # the positions that got no frame: the count is still in step
+                hold.pending_timeouts -= missed
+                print(f"[trigger] {missed} frame(s) the camera lost belonged to positions "
+                      f"that got none; frame counter back in step at {idx}")
+            else:
+                hold.n_gap += 1
+                hold.pending_timeouts = 0
+                was = hold.next_idx
+                hold.next_idx = idx + 1
+                return "gap", (f"camera frame counter jumped {was} -> {idx} ({missed} frame(s) "
+                               f"unaccounted for): which pulse this frame belongs to is not "
+                               f"certain, so it is not filed")
+        hold.next_idx = idx + 1
+        if float(getattr(f, "t_mono", 0.0)) < t_fire - TRIGGER_EARLY_TOLERANCE_S:
+            hold.n_stray += 1
+            return "stray", None
+        hold.n_paired += 1
+        hold.pending_timeouts = 0
+        return "ok", np.asanyarray(f.image, dtype=np.uint16)
+
+    def _triggered_snap(self, timeout_s: float):
+        pulser = self._trigger
+        with self._frame_cv:
+            hold = self._hold
+        if hold is None:
+            raise RuntimeError("the Andor is not armed for triggered frames")
+        if hold.preempted:
+            raise self._preempted(hold)
+        self._absorb_strays(hold)
+        t_request = time.monotonic()      # a frame published before this is not this pulse's
+        try:
+            t_fire = pulser.pulse()
+        except CoreTaken as e:
+            with self._frame_cv:
+                hold.preempted, hold.preempt_detail = "core_taken", str(e)
+            raise Preempted("core_taken", None,
+                            f"another program took the ARTIQ core during the triggered scan "
+                            f"({e})") from e
+        hold.n_pulses += 1
+        deadline = t_fire + timeout_s
+        while True:
+            with self._frame_cv:
+                while not hold.frames and not hold.preempted:
+                    remaining = deadline - time.monotonic()
+                    if remaining <= 0:
+                        break
+                    self._frame_cv.wait(min(remaining, TRIGGER_FRAME_SLICE_S))
+                f = hold.frames.popleft() if hold.frames else None
+                preempted = hold.preempted if f is None else ""
+            if f is None:
+                if preempted:
+                    raise self._preempted(hold)
+                hold.n_timeout += 1
+                hold.pending_timeouts += 1
+                raise TimeoutError(f"no frame within {timeout_s:g} s of the trigger pulse "
+                                   f"(camera frame {hold.next_idx} expected)")
+            verdict, image = self._pair(hold, f, t_request)
+            if verdict == "ok":
+                return image
+            if verdict == "gap":
+                raise TriggerFrameGap(image)
+            # stray / stale / foreign: not this pulse's frame -- keep waiting
+
+    def _disarm_trigger(self):
+        """End the hold: disarm, unlock, the live profile back (video and
+        snaps work again), the core released; the report kept and printed."""
+        with self._frame_cv:
+            hold, self._hold = self._hold, None
+            self._frame_cv.notify_all()
+        if hold is None:
+            return
+        w, pulser = self._worker, self._trigger
+        errors: list = []
+        disarm = self._release_lock(w, hold.token, errors)
+        # the camera is idle at the run profile (external trigger): the live
+        # profile back, so video and snaps work -- unless liveOD has it now
+        if w is not None and w.is_open and w.locked_by is None and not self.lent_to():
+            try:
+                w.call("apply", OP_TIMEOUT_S, values=self._live_defaults(), purpose="live")
+            except Exception as e:
+                errors.append(f"live profile not restored: {type(e).__name__}: {e}")
+        notes = []
+        if pulser is not None:
+            try:
+                notes = list(pulser.release())
+            except Exception as e:
+                errors.append(f"trigger release: {type(e).__name__}: {e}")
+        report = hold.report()
+        report.update({
+            "delivered": None if disarm is None else int(disarm.delivered),
+            "lost_idx": [] if disarm is None else [int(i) for i in disarm.lost_idx],
+            "surplus": None if disarm is None else int(getattr(disarm, "surplus", 0) or 0),
+            "errors": errors, "pulser_notes": notes,
+            "t_held_s": round(time.monotonic() - hold.t_armed, 3)})
+        self.last_trigger_report = report
+        print(f"[trigger] {trigger_summary(report)}")
+        for line in notes:
+            print(f"[trigger] {line}")
+        for err in errors:
+            print(f"[trigger] !! {err}")
 
     # -- run state, the write gate --------------------------------------------
 
@@ -670,6 +1082,8 @@ class ServedAndorSource:
         return s["ok"], s["reason"]
 
 
-__all__ = ["ServedAndorSource", "ServedCore", "describe_holder", "handover_text",
-           "is_lent_error", "liveod_camera_id", "DEFAULT_ANDOR_CAMERA_ID", "HANDOVER_HOLD_S",
-           "RELINQUISH_CLOSE_S", "SERVER_ID_SUFFIX"]
+__all__ = ["ServedAndorSource", "ServedCore", "TriggerHold", "TriggerFrameGap",
+           "trigger_summary", "describe_holder", "handover_text", "is_lent_error",
+           "liveod_camera_id", "DEFAULT_ANDOR_CAMERA_ID", "HANDOVER_HOLD_S",
+           "RELINQUISH_CLOSE_S", "SERVER_ID_SUFFIX", "TRIGGER_FRAME_MARGIN",
+           "TRIGGER_DEFAULT_FRAMES"]

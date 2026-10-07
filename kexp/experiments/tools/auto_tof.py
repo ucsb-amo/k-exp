@@ -2,8 +2,13 @@
 back to back (the monitor server's run loop, waxx.util.device_state.run_loop).
 
 High-field tweezer BEC (prepare_hf_tweezers), 100 ms hold, tweezer off, time of
-flight, absorption image on the Andor. t_tof scanned 1-4 ms in 9 points, 5
-repeats, shuffled: 45 shots per run, after 2 warm-up shots.
+flight, absorption image on the Andor. The per-shot reference images (2D MOT,
+MOT beams, MOT and GM fluorescence, GM beams, lightsheet and tweezer evap --
+kexp.control.cameras.diagnostic_images) come from Base's diagnostic_images,
+on by default, fired inside the cooling sequence; they replaced this file's
+own free-run aux-camera grabs on 2026-10-01. The t_tof scan
+and repeats come from the loop card's settings (⚙; the monitor server passes
+them in WAXX_LOOP_SCAN); run by hand, t_tof is 2.5 ms, 15 repeats, shuffled. The saved xvars and N_repeats are what a run actually used.
 
 A copy of default_experiments/hf_tweezer_bec.py made for the loop on
 2026-09-26, and deliberately independent of it: edit this file only to change
@@ -16,6 +21,7 @@ stopped.
 import numpy as np
 from artiq.experiment import *
 from kexp import Base, img_types, cameras
+from waxx.util.device_state.loop_scan import scan_from_env, values as scan_values
 
 
 class auto_tof(EnvExperiment, Base):
@@ -25,13 +31,20 @@ class auto_tof(EnvExperiment, Base):
                       save_data=True,
                       camera_select=cameras.andor,
                       imaging_type=img_types.ABSORPTION,
-                      warmup_shots=2)
+                      warmup_shots=0)
 
         self.p.t_mot_load = 1.0
         self.p.t_tweezer_hold = 100.e-3
 
-        self.xvar('t_tof', np.linspace(1000., 4000., 9) * 1.e-6)
-        self.p.N_repeats = 5
+        # The loop hands over the scan set on its card (⚙); by hand: 2.5 ms x 15.
+        scan = scan_from_env()
+        if scan is None:
+            self.xvar('t_tof', np.array([2.5e-3]))
+            self.p.N_repeats = 15
+        else:
+            self.xvar('t_tof', scan_values(scan))
+            self.p.N_repeats = scan['repeats']
+            print(f"auto_tof: scan from the loop's settings: {scan}")
 
         self.finish_prepare(shuffle=True)
 

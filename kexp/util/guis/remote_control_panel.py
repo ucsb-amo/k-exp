@@ -12,7 +12,8 @@ class RemoteControlPanel(WidgetPanelBase):
         from kexp.util.remote_control.remote_control_gui import RemoteControlGUI  # noqa: PLC0415
 
         self._controller = RemoteControl()
-        self._gui = RemoteControlGUI(self._controller)
+        # Embedded: style this panel only, not the dashboard application.
+        self._gui = RemoteControlGUI(self._controller, standalone=False)
         embed_main_window(self, self._gui)
 
 

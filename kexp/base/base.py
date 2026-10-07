@@ -15,6 +15,7 @@ from kexp.base.cameras import resolve_run_config
 from kexp.config.camera_id import cameras
 from kexp.config.ip import PATHS, server_talk
 from kexp.config.data_vault import DataVault
+from kexp.control.cameras.diagnostic_images import DiagnosticImages
 
 from kexp.util.artiq.async_print import aprint
 
@@ -31,7 +32,8 @@ class Base(Expt, Devices, Cooling, Image, Cameras, Control, Clients):
                  save_on_underflow=False,
                  override_apd_stage=None,
                  warmup_shots=0,
-                 verbosity=None):
+                 verbosity=None,
+                 diagnostic_images=True):
 
         # camera_select picks the detector and setup_camera says whether to
         # acquire with it: liveOD frames for a camera, the pickoff stage in
@@ -74,6 +76,15 @@ class Base(Expt, Devices, Cooling, Image, Cameras, Control, Clients):
         self.run_info.save_on_underflow = int(save_on_underflow)
 
         Clients.__init__(self, suppress_live_od=suppress_live_od)
+
+        # Reference images of the cooling sequence, every shot (self.diag,
+        # kexp.control.cameras.diagnostic_images; fired from Cooling.mot, gm,
+        # prepare_hf/lf_tweezers). On by default. They go to liveOD during
+        # the run whatever save_data is: liveOD keeps the latest of each and
+        # broadcasts them, and writes them only into a run that saves. A run
+        # that suppresses liveOD has nowhere to send them.
+        self.diagnostic_images = bool(diagnostic_images) and not bool(suppress_live_od)
+        self.diag = DiagnosticImages(self, enabled=self.diagnostic_images)
 
         # OPX+ program manager (kexp.control.opx). Host-only and inert --
         # nothing talks to (or imports) qm until self.opx.use(sequence) is
@@ -317,8 +328,10 @@ class Base(Expt, Devices, Cooling, Image, Cameras, Control, Clients):
         init_scan_kernel(), because the latter arms the scopes and writes a
         magnetometer reading into the DataVault, which would leave entries not
         matched to a real shot. Nothing here triggers the camera, writes shot
-        data, or notifies liveOD.
+        data, or notifies liveOD; the diagnostic cameras are switched off
+        for the duration too.
         """
+        self.diag.active = False
         for i in range(self.p.N_warmup_shots):
             aprint("[warmup] warm-up shot", i + 1)
             self.core.break_realtime()
@@ -329,9 +342,10 @@ class Base(Expt, Devices, Cooling, Image, Cameras, Control, Clients):
 
             self.warmup_kernel()
             self.cleanup_warmup_kernel()
-            
+
             delay(self.p.t_recover)
             self.core.break_realtime()
+        self.diag.active = self.diag.enabled
 
     @kernel
     def cleanup_warmup_kernel(self):
@@ -354,8 +368,20 @@ class Base(Expt, Devices, Cooling, Image, Cameras, Control, Clients):
         underflow, overflow or trigger timeout (waxx Scanner._scan runs this,
         then re-raises): the safety part of cleanup -- raman shutter closed,
         coils stopped and discharged, 1064 beams off -- without the shot's
-        data write or liveOD notification, as after a warm-up shot."""
+        data write or liveOD notification, as after a warm-up shot.
+
+        Then the raman DDS is taken out of fast-frequency-update mode (RAM
+        on, amplitude on the external OSK pin), as cleanup_scan_kernel does
+        after a normal shot or an underflow, so no error leaves it there.
+        A failure there is printed and swallowed: the original exception is
+        the one that must reach the host."""
         self.cleanup_warmup_kernel()
+        try:
+            self.core.break_realtime()
+            self.raman.clean_up_fast_frequency_update()
+        except:
+            aprint("[scan] cleanup_abort_kernel: restoring the raman DDS from fast "
+                   "frequency update mode failed; the next run's init_kernel re-inits it.")
 
     @kernel
     def cleanup_scan_kernel(self):

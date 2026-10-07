@@ -51,7 +51,10 @@ class ExptParams(expt_params_kexp):
         # img amp 0.2, pulse time 5.0e-06 s
         # self.frequency_lightshift = 4.061e+04  # Hz, +/- 1.5e+03 Hz, imaging amp 0.2 #80654
         # run 83203 | RabiJointPosterior (apd_joint_calibration, f free, t0 127 ns), nuisances verdict PASS
-        self.frequency_lightshift = 5.011e+04  # Hz, +/- 951, at t_img_pulse 5 us, imaging amp 0.2 (mod 1/t_img, up to sign) #83203, 2026-09-27
+        # self.frequency_lightshift = 5.011e+04  # Hz, +/- 951, at t_img_pulse 5 us, imaging amp 0.2 (mod 1/t_img, up to sign) #83203, 2026-09-27
+        # self.frequency_lightshift = 3.697e+04  # Hz, +/- 3.2e+03, absorption Ramsey phase jump (reference phase pi assumed), imaging amp 0.2, t_pulse 5 us #83469, 2026-09-28
+        # self.frequency_lightshift = 2.973e+04  # Hz, +/- 7.3e+03, absorption Ramsey phase jump (reference phase pi assumed), imaging amp 0.2, t_pulse 5 us, fringe amp 51 on offset 593 #83760, 2026-09-29
+        self.frequency_lightshift = 4.225e+04  # Hz, +/- 1.8e+03, absorption Ramsey phase jump (reference phase pi assumed), imaging amp 0.2, t_pulse 5 us, fringe amp 558 on offset 1247 #84966, 2026-10-02
                 
         # calibration run 78309 (S_z endpoints from 'fit', deg-2 S_z response fit)
         self.t_img_pulse = 5e-06  # s
@@ -92,7 +95,17 @@ class ExptParams(expt_params_kexp):
         # self.v_apd_all_up = -0.15668 #83345, 2026-09-28  # overnight auto-recal (user-approved), apd_state_mapping 83345 --sz-source params --degree 1 (Rabi frequency from the joint calibration, linear)
         # self.v_apd_all_up = -0.16120 #83350, 2026-09-28  # overnight auto-recal (user-approved), apd_state_mapping 83350 --sz-source params --degree 1 (Rabi frequency from the joint calibration, linear)
         # self.v_apd_all_up = -0.16306 #83357, 2026-09-28  # overnight auto-recal (user-approved), apd_state_mapping 83357 --sz-source params --degree 1 (Rabi frequency from the joint calibration, linear)
-        self.v_apd_all_up = -0.10472 #83676, 2026-09-29  # +/- 0.0018 V, apd_state_mapping 83676 --sz-source params --degree 1, new integrator window (gate delay 0.7 / extra 1.0 / settle 4.0 us)
+        # self.v_apd_all_up = -0.14928 #83473, 2026-09-28  # procedure step 4 APD calibration, 7 pts x 5, SLM mask written every shot (user-approved), apd_state_mapping 83473 --sz-source params --degree 1 (Rabi frequency from the joint calibration, linear)
+        # self.v_apd_all_up = -0.14928 #83473, 2026-09-28  # procedure step 4 re-analysis with t_pi 6.1713e-06 (#83474), SLM mask every shot (user-approved), apd_state_mapping 83473 --sz-source params --degree 1 (Rabi frequency from the joint calibration, linear)
+        # self.v_apd_all_up = -0.14526 #83520, 2026-09-28  # contrast re-check after the SLM check + joint 83518 (user-approved write-back), retry after 83519 suspicious, apd_state_mapping 83520 --sz-source params --degree 1 (Rabi frequency from the joint calibration, linear)
+        # self.v_apd_all_up = -0.15210 #83526, 2026-09-28  # hourly recal (feedback procedure, user-approved), rabi_posterior_cli 83526 joint, midpoint pinned 0.5; n_photons rescaled by the contrast, std_n kept
+        # self.v_apd_all_up = -0.14545 #83640, 2026-09-29  # joint recal accepted after the recovery (rise rule 06:4x, user-approved write-backs), rabi_posterior_cli 83640 joint, midpoint pinned 0.5; n_photons rescaled by the contrast, std_n kept
+        # self.v_apd_all_up = -0.10472 #83676, 2026-09-29  # +/- 0.0018 V, apd_state_mapping 83676 --sz-source params --degree 1, new integrator window (gate delay 0.7 / extra 1.0 / settle 4.0 us)
+        # self.v_apd_all_up = -0.09009 #83888, 2026-09-30  # procedure step 4 after contrast recovery (contrast 44.2 +/- 2.6 mV, pre-registered rule), apd_state_mapping 83888 --sz-source params --degree 1, new integrator window
+        # self.v_apd_all_up = -0.08988 #83888, 2026-09-30  # procedure step 5 re-analysis of the step-4 run with t_pi 6.5070e-06 (#83889 joint), apd_mapping_tpi.py 6.507e-6 83888 (apd_state_mapping --sz-source params --degree 1)
+        # self.v_apd_all_up = -0.09800 #83927, 2026-09-30  # window-mode recal (pre-registered rule, user fallback cycle), apd_state_mapping 83927 --sz-source params --degree 1
+        # self.v_apd_all_up = -0.08155 #84969, 2026-10-02  # step 4 calibration (feedback procedure 2026-10-02; retry agreeing with 84968), apd_state_mapping 84969 --sz-source params --degree 1 (Rabi frequency from the joint calibration, linear)
+        self.v_apd_all_up = -0.08585 #84975, 2026-10-02  # user-requested retry of the step-4 calibration (feedback procedure 2026-10-02), apd_state_mapping 84975 --sz-source params --degree 1 (Rabi frequency from the joint calibration, linear)
         # self.v_apd_all_down = -0.20248 #83201-83202, 2026-09-27  # +/- 0.0017 V with run-to-run scatter
         # self.v_apd_all_down = -0.20441 #83217, 2026-09-27  # overnight auto-recal (user-approved), apd_state_mapping 83217
         # self.v_apd_all_down = -0.20229 #83227, 2026-09-27  # overnight auto-recal (user-approved), apd_state_mapping 83227 --degree 1 (linear fallback, user-approved: curvature resolved, midpoint outside 0.35-0.65)
@@ -109,7 +122,17 @@ class ExptParams(expt_params_kexp):
         # self.v_apd_all_down = -0.19192 #83345, 2026-09-28  # overnight auto-recal (user-approved), apd_state_mapping 83345 --sz-source params --degree 1 (Rabi frequency from the joint calibration, linear)
         # self.v_apd_all_down = -0.18652 #83350, 2026-09-28  # overnight auto-recal (user-approved), apd_state_mapping 83350 --sz-source params --degree 1 (Rabi frequency from the joint calibration, linear)
         # self.v_apd_all_down = -0.18928 #83357, 2026-09-28  # overnight auto-recal (user-approved), apd_state_mapping 83357 --sz-source params --degree 1 (Rabi frequency from the joint calibration, linear)
-        self.v_apd_all_down = -0.14504 #83676, 2026-09-29  # +/- 0.0019 V, apd_state_mapping 83676 --sz-source params --degree 1, new integrator window (gate delay 0.7 / extra 1.0 / settle 4.0 us)
+        # self.v_apd_all_down = -0.17834 #83473, 2026-09-28  # procedure step 4 APD calibration, 7 pts x 5, SLM mask written every shot (user-approved), apd_state_mapping 83473 --sz-source params --degree 1 (Rabi frequency from the joint calibration, linear)
+        # self.v_apd_all_down = -0.17831 #83473, 2026-09-28  # procedure step 4 re-analysis with t_pi 6.1713e-06 (#83474), SLM mask every shot (user-approved), apd_state_mapping 83473 --sz-source params --degree 1 (Rabi frequency from the joint calibration, linear)
+        # self.v_apd_all_down = -0.17640 #83520, 2026-09-28  # contrast re-check after the SLM check + joint 83518 (user-approved write-back), retry after 83519 suspicious, apd_state_mapping 83520 --sz-source params --degree 1 (Rabi frequency from the joint calibration, linear)
+        # self.v_apd_all_down = -0.17022 #83526, 2026-09-28  # hourly recal (feedback procedure, user-approved), rabi_posterior_cli 83526 joint, midpoint pinned 0.5; n_photons rescaled by the contrast, std_n kept
+        # self.v_apd_all_down = -0.17297 #83640, 2026-09-29  # joint recal accepted after the recovery (rise rule 06:4x, user-approved write-backs), rabi_posterior_cli 83640 joint, midpoint pinned 0.5; n_photons rescaled by the contrast, std_n kept
+        # self.v_apd_all_down = -0.14504 #83676, 2026-09-29  # +/- 0.0019 V, apd_state_mapping 83676 --sz-source params --degree 1, new integrator window (gate delay 0.7 / extra 1.0 / settle 4.0 us)
+        # self.v_apd_all_down = -0.13433 #83888, 2026-09-30  # procedure step 4 after contrast recovery (contrast 44.2 +/- 2.6 mV, pre-registered rule), apd_state_mapping 83888 --sz-source params --degree 1, new integrator window
+        # self.v_apd_all_down = -0.13362 #83888, 2026-09-30  # procedure step 5 re-analysis of the step-4 run with t_pi 6.5070e-06 (#83889 joint), apd_mapping_tpi.py 6.507e-6 83888 (apd_state_mapping --sz-source params --degree 1)
+        # self.v_apd_all_down = -0.12326 #83927, 2026-09-30  # window-mode recal (pre-registered rule, user fallback cycle), apd_state_mapping 83927 --sz-source params --degree 1
+        # self.v_apd_all_down = -0.13280 #84969, 2026-10-02  # step 4 calibration (feedback procedure 2026-10-02; retry agreeing with 84968), apd_state_mapping 84969 --sz-source params --degree 1 (Rabi frequency from the joint calibration, linear)
+        self.v_apd_all_down = -0.13315 #84975, 2026-10-02  # user-requested retry of the step-4 calibration (feedback procedure 2026-10-02), apd_state_mapping 84975 --sz-source params --degree 1 (Rabi frequency from the joint calibration, linear)
         # self.n_photons_per_shot = 851.73 #83201-83202, 2026-09-27  # scope integral, up minus down per pulse, +/- 25 (SRS gain chain from the notebook, not measured in the run)
         # self.n_photons_per_shot = 1119.22 #83217, 2026-09-27  # overnight auto-recal (user-approved), apd_state_mapping 83217
         # self.n_photons_per_shot = 910.13 #83227, 2026-09-27  # overnight auto-recal (user-approved), apd_state_mapping 83227 --degree 1 (linear fallback, user-approved: curvature resolved, midpoint outside 0.35-0.65)
@@ -126,7 +149,17 @@ class ExptParams(expt_params_kexp):
         # self.n_photons_per_shot = 638.95 #83345, 2026-09-28  # overnight auto-recal (user-approved), apd_state_mapping 83345 --sz-source params --degree 1 (Rabi frequency from the joint calibration, linear)
         # self.n_photons_per_shot = 500.75 #83350, 2026-09-28  # overnight auto-recal (user-approved), apd_state_mapping 83350 --sz-source params --degree 1 (Rabi frequency from the joint calibration, linear)
         # self.n_photons_per_shot = 448.62 #83357, 2026-09-28  # overnight auto-recal (user-approved), apd_state_mapping 83357 --sz-source params --degree 1 (Rabi frequency from the joint calibration, linear)
-        self.n_photons_per_shot = 562.39 #83676, 2026-09-29  # +/- 44, scope integral up minus down per pulse, apd_state_mapping 83676 --sz-source params --degree 1, new integrator window (gate delay 0.7 / extra 1.0 / settle 4.0 us)
+        # self.n_photons_per_shot = 527.11 #83473, 2026-09-28  # procedure step 4 APD calibration, 7 pts x 5, SLM mask written every shot (user-approved), apd_state_mapping 83473 --sz-source params --degree 1 (Rabi frequency from the joint calibration, linear)
+        # self.n_photons_per_shot = 526.79 #83473, 2026-09-28  # procedure step 4 re-analysis with t_pi 6.1713e-06 (#83474), SLM mask every shot (user-approved), apd_state_mapping 83473 --sz-source params --degree 1 (Rabi frequency from the joint calibration, linear)
+        # self.n_photons_per_shot = 600.46 #83520, 2026-09-28  # contrast re-check after the SLM check + joint 83518 (user-approved write-back), retry after 83519 suspicious, apd_state_mapping 83520 --sz-source params --degree 1 (Rabi frequency from the joint calibration, linear)
+        # self.n_photons_per_shot = 349.46 #83526, 2026-09-28  # hourly recal (feedback procedure, user-approved), rabi_posterior_cli 83526 joint, midpoint pinned 0.5; n_photons rescaled by the contrast, std_n kept
+        # self.n_photons_per_shot = 530.66 #83640, 2026-09-29  # joint recal accepted after the recovery (rise rule 06:4x, user-approved write-backs), rabi_posterior_cli 83640 joint, midpoint pinned 0.5; n_photons rescaled by the contrast, std_n kept
+        # self.n_photons_per_shot = 562.39 #83676, 2026-09-29  # +/- 44, scope integral up minus down per pulse, apd_state_mapping 83676 --sz-source params --degree 1, new integrator window (gate delay 0.7 / extra 1.0 / settle 4.0 us)
+        # self.n_photons_per_shot = 660.46 #83888, 2026-09-30  # procedure step 4 after contrast recovery (contrast 44.2 +/- 2.6 mV, pre-registered rule), apd_state_mapping 83888 --sz-source params --degree 1, new integrator window
+        # self.n_photons_per_shot = 652.25 #83888, 2026-09-30  # procedure step 5 re-analysis of the step-4 run with t_pi 6.5070e-06 (#83889 joint), apd_mapping_tpi.py 6.507e-6 83888 (apd_state_mapping --sz-source params --degree 1)
+        # self.n_photons_per_shot = 377.80 #83927, 2026-09-30  # window-mode recal (pre-registered rule, user fallback cycle), apd_state_mapping 83927 --sz-source params --degree 1
+        # self.n_photons_per_shot = 736.97 #84969, 2026-10-02  # step 4 calibration (feedback procedure 2026-10-02; retry agreeing with 84968), apd_state_mapping 84969 --sz-source params --degree 1 (Rabi frequency from the joint calibration, linear)
+        self.n_photons_per_shot = 646.37 #84975, 2026-10-02  # user-requested retry of the step-4 calibration (feedback procedure 2026-10-02), apd_state_mapping 84975 --sz-source params --degree 1 (Rabi frequency from the joint calibration, linear)
         # self.std_n_photons_per_shot = 150.36 #83201-83202, 2026-09-27  # n * sigma_V / v_range = 851.7 * 8.53 mV / 48.31 mV (within-run, up: the larger endpoint noise)
         # self.std_n_photons_per_shot = 178.11 #83217, 2026-09-27  # overnight auto-recal (user-approved), apd_state_mapping 83217
         # self.std_n_photons_per_shot = 183.07 #83227, 2026-09-27  # overnight auto-recal (user-approved), apd_state_mapping 83227 --degree 1 (linear fallback, user-approved: curvature resolved, midpoint outside 0.35-0.65)
@@ -143,7 +176,15 @@ class ExptParams(expt_params_kexp):
         # self.std_n_photons_per_shot = 137.50 #83345, 2026-09-28  # overnight auto-recal (user-approved), apd_state_mapping 83345 --sz-source params --degree 1 (Rabi frequency from the joint calibration, linear)
         # self.std_n_photons_per_shot = 166.25 #83350, 2026-09-28  # overnight auto-recal (user-approved), apd_state_mapping 83350 --sz-source params --degree 1 (Rabi frequency from the joint calibration, linear)
         # self.std_n_photons_per_shot = 155.58 #83357, 2026-09-28  # overnight auto-recal (user-approved), apd_state_mapping 83357 --sz-source params --degree 1 (Rabi frequency from the joint calibration, linear)
-        self.std_n_photons_per_shot = 161.66 #83676, 2026-09-29  # 562.4 * 11.59 mV / 40.32 mV (within-run, down), apd_state_mapping 83676 --sz-source params --degree 1, new integrator window (gate delay 0.7 / extra 1.0 / settle 4.0 us)
+        # self.std_n_photons_per_shot = 142.11 #83473, 2026-09-28  # procedure step 4 APD calibration, 7 pts x 5, SLM mask written every shot (user-approved), apd_state_mapping 83473 --sz-source params --degree 1 (Rabi frequency from the joint calibration, linear)
+        # self.std_n_photons_per_shot = 142.16 #83473, 2026-09-28  # procedure step 4 re-analysis with t_pi 6.1713e-06 (#83474), SLM mask every shot (user-approved), apd_state_mapping 83473 --sz-source params --degree 1 (Rabi frequency from the joint calibration, linear)
+        # self.std_n_photons_per_shot = 146.21 #83520, 2026-09-28  # contrast re-check after the SLM check + joint 83518 (user-approved write-back), retry after 83519 suspicious, apd_state_mapping 83520 --sz-source params --degree 1 (Rabi frequency from the joint calibration, linear)
+        # self.std_n_photons_per_shot = 161.66 #83676, 2026-09-29  # 562.4 * 11.59 mV / 40.32 mV (within-run, down), apd_state_mapping 83676 --sz-source params --degree 1, new integrator window (gate delay 0.7 / extra 1.0 / settle 4.0 us)
+        # self.std_n_photons_per_shot = 147.31 #83888, 2026-09-30  # procedure step 4 after contrast recovery (contrast 44.2 +/- 2.6 mV, pre-registered rule), apd_state_mapping 83888 --sz-source params --degree 1, new integrator window
+        # self.std_n_photons_per_shot = 147.58 #83888, 2026-09-30  # procedure step 5 re-analysis of the step-4 run with t_pi 6.5070e-06 (#83889 joint), apd_mapping_tpi.py 6.507e-6 83888 (apd_state_mapping --sz-source params --degree 1)
+        # self.std_n_photons_per_shot = 159.50 #83927, 2026-09-30  # window-mode recal (pre-registered rule, user fallback cycle), apd_state_mapping 83927 --sz-source params --degree 1
+        # self.std_n_photons_per_shot = 198.24 #84969, 2026-10-02  # step 4 calibration (feedback procedure 2026-10-02; retry agreeing with 84968), apd_state_mapping 84969 --sz-source params --degree 1 (Rabi frequency from the joint calibration, linear)
+        self.std_n_photons_per_shot = 143.13 #84975, 2026-10-02  # user-requested retry of the step-4 calibration (feedback procedure 2026-10-02), apd_state_mapping 84975 --sz-source params --degree 1 (Rabi frequency from the joint calibration, linear)
         # self.feedback_measurement_midpoint_fraction = 0.5 #83201-83202, 2026-09-27  # linear map (quadratic term not resolved)
         # self.feedback_measurement_midpoint_fraction = 0.5000 #83217, 2026-09-27  # overnight auto-recal (user-approved), apd_state_mapping 83217
         # self.feedback_measurement_midpoint_fraction = 0.5000 #83227, 2026-09-27  # overnight auto-recal (user-approved), apd_state_mapping 83227 --degree 1 (linear fallback, user-approved: curvature resolved, midpoint outside 0.35-0.65)
@@ -160,7 +201,17 @@ class ExptParams(expt_params_kexp):
         # self.feedback_measurement_midpoint_fraction = 0.5000 #83345, 2026-09-28  # overnight auto-recal (user-approved), apd_state_mapping 83345 --sz-source params --degree 1 (Rabi frequency from the joint calibration, linear)
         # self.feedback_measurement_midpoint_fraction = 0.5000 #83350, 2026-09-28  # overnight auto-recal (user-approved), apd_state_mapping 83350 --sz-source params --degree 1 (Rabi frequency from the joint calibration, linear)
         # self.feedback_measurement_midpoint_fraction = 0.5000 #83357, 2026-09-28  # overnight auto-recal (user-approved), apd_state_mapping 83357 --sz-source params --degree 1 (Rabi frequency from the joint calibration, linear)
-        self.feedback_measurement_midpoint_fraction = 0.5 #83676, 2026-09-29  # linear map (quadratic term not resolved), apd_state_mapping 83676 --sz-source params --degree 1, new integrator window (gate delay 0.7 / extra 1.0 / settle 4.0 us)
+        # self.feedback_measurement_midpoint_fraction = 0.5000 #83473, 2026-09-28  # procedure step 4 APD calibration, 7 pts x 5, SLM mask written every shot (user-approved), apd_state_mapping 83473 --sz-source params --degree 1 (Rabi frequency from the joint calibration, linear)
+        # self.feedback_measurement_midpoint_fraction = 0.5000 #83473, 2026-09-28  # procedure step 4 re-analysis with t_pi 6.1713e-06 (#83474), SLM mask every shot (user-approved), apd_state_mapping 83473 --sz-source params --degree 1 (Rabi frequency from the joint calibration, linear)
+        # self.feedback_measurement_midpoint_fraction = 0.5000 #83520, 2026-09-28  # contrast re-check after the SLM check + joint 83518 (user-approved write-back), retry after 83519 suspicious, apd_state_mapping 83520 --sz-source params --degree 1 (Rabi frequency from the joint calibration, linear)
+        # self.feedback_measurement_midpoint_fraction = 0.5000 #83526, 2026-09-28  # hourly recal (feedback procedure, user-approved), rabi_posterior_cli 83526 joint, midpoint pinned 0.5; n_photons rescaled by the contrast, std_n kept
+        # self.feedback_measurement_midpoint_fraction = 0.5000 #83640, 2026-09-29  # joint recal accepted after the recovery (rise rule 06:4x, user-approved write-backs), rabi_posterior_cli 83640 joint, midpoint pinned 0.5; n_photons rescaled by the contrast, std_n kept
+        # self.feedback_measurement_midpoint_fraction = 0.5 #83676, 2026-09-29  # linear map (quadratic term not resolved), apd_state_mapping 83676 --sz-source params --degree 1, new integrator window (gate delay 0.7 / extra 1.0 / settle 4.0 us)
+        # self.feedback_measurement_midpoint_fraction = 0.5000 #83888, 2026-09-30  # procedure step 4 after contrast recovery (contrast 44.2 +/- 2.6 mV, pre-registered rule), apd_state_mapping 83888 --sz-source params --degree 1, new integrator window
+        # self.feedback_measurement_midpoint_fraction = 0.5000 #83888, 2026-09-30  # procedure step 5 re-analysis of the step-4 run with t_pi 6.5070e-06 (#83889 joint), apd_mapping_tpi.py 6.507e-6 83888 (apd_state_mapping --sz-source params --degree 1)
+        # self.feedback_measurement_midpoint_fraction = 0.5000 #83927, 2026-09-30  # window-mode recal (pre-registered rule, user fallback cycle), apd_state_mapping 83927 --sz-source params --degree 1
+        # self.feedback_measurement_midpoint_fraction = 0.5000 #84969, 2026-10-02  # step 4 calibration (feedback procedure 2026-10-02; retry agreeing with 84968), apd_state_mapping 84969 --sz-source params --degree 1 (Rabi frequency from the joint calibration, linear)
+        self.feedback_measurement_midpoint_fraction = 0.5000 #84975, 2026-10-02  # user-requested retry of the step-4 calibration (feedback procedure 2026-10-02), apd_state_mapping 84975 --sz-source params --degree 1 (Rabi frequency from the joint calibration, linear)
 
         # run 76228 | multi-parameter grid fit result
         # self.back_action_coherence = 0.7925
@@ -172,7 +223,11 @@ class ExptParams(expt_params_kexp):
         # APD error bars, so the model does not yet describe run 78313.
         # self.back_action_coherence = 0.62
         # run 83203 | RabiJointPosterior, nuisances verdict PASS (83195 gave 0.712 +/- 0.018: 2.8 sigma apart)
-        self.back_action_coherence = 0.7746  # +/- 0.0138 #83203, 2026-09-27
+        # self.back_action_coherence = 0.7746  # +/- 0.0138 #83203, 2026-09-27
+        # run 83474 | RabiJointPosterior (f_rabi free), nuisances verdict PASS
+        # self.back_action_coherence = 0.7562  # +/- 0.0206 #83474, 2026-09-28
+        # run 83889 | RabiJointPosterior (f_rabi free), nuisances verdict PASS, new integrator window
+        self.back_action_coherence = 0.7215  # +/- 0.0282 #83889, 2026-09-30
 
         self.feedback_measurement_midpoint_remap_enabled = True
 
@@ -185,6 +240,12 @@ class ExptParams(expt_params_kexp):
         ### timing
         self.t_between_pulses_mu = int64(0)
         self.t_calculation_slack_compensation_mu = int64(0.7 * self.feedback_grid_size * 1.e3) + 15000 if self.feedback_grid_size > 10 else int64(10000)
+        # +10 us for the new integrator window (main, 2026-09-29 16:30): the APD sample now lands
+        # 5.7 us after the imaging pulse (was 1.0 us), 4.7 us out of the post-sample budget
+        # (~47 -> ~42 us vs a ~16 us posterior); +10 us restores it with ~5 us more margin
+        # against the rare ~40 us DRTIO stall (83670-83672). User: "increase slack as necessary",
+        # 2026-09-29. 29.7 us -> 39.7 us at grid 21.
+        self.t_calculation_slack_compensation_mu = self.t_calculation_slack_compensation_mu + int64(10000)
         self.t_fifo_mu = int64(18416)
         self.t_raman_set_pretrigger_mu = int64(800) & ~7 # int64(1260)
         # self.delta_t_mu = int64(2000)
@@ -212,7 +273,28 @@ class ExptParams(expt_params_kexp):
         self.pulse_list_span_Omega = 0.
         self.pulse_list_seed = 0
         self.phase_offset = 0.0
-        
+        # 1: FeedbackExpt rewrites the SLM phase-dot mask every shot (see
+        # base_expt_feedback.scan_kernel); 0: only at init_kernel (as before 2026-09-28)
+        # self.slm_mask_every_shot = 0
+        self.slm_mask_every_shot = 1 # 2026-09-30: default on for every FeedbackExpt (user: all APD experiments write the SLM mask per shot; 83472/83473 contrast 32 -> 14 mV with init-only)
+        # 1: every shot starts with APD read (all up) - resonant pi pulse - APD read
+        # (all down), stored in data.preshot_apd [up, down] (a per-run contrast), and the
+        # feedback model starts all down. FeedbackExpt.finish_prepare derives
+        # feedback_initial_sz from it (-1 with the pre-shot, +1 without); runs without
+        # the key replay as spin-up (user, 2026-09-28).
+        self.preshot_contrast = 0
+        self.t_preshot_gap = 10.e-6
+        self.feedback_initial_sz = 1.0
+        # With the pre-shot: > 0 moves the APD endpoints every shot toward the
+        # pre-shot reads, v <- v + gain*(read - v), from the calibration at the start
+        # of each run; N_photons_per_shot rescales with the contrast, std_n is kept
+        # (Feedback.update_shot_endpoints). 0 = the calibration for every shot.
+        # Offline test 2026-09-28 (sim_preshot): 1 (raw per shot) was worse than the
+        # calibration, 0.15 better when the readout drifted.
+        self.preshot_endpoint_gain = 0.
+        # a per-shot range below this x the calibration range is not taken (guard)
+        self.preshot_endpoint_min_range_fraction = 0.25
+
         self.t_tweezer_hold = 30.e-3
 
 

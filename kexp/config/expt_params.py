@@ -76,7 +76,8 @@ class ExptParams(ExptParamsWaxx):
         # SLM settings
         self.dimension_slm_mask = 40.e-6 
         # self.phase_slm_mask = 0.387097 * np.pi
-        self.phase_slm_mask = 0.57142857 * np.pi
+        # self.phase_slm_mask = 0.57142857 * np.pi
+        self.phase_slm_mask = 0.49 * np.pi #83725, 2026-09-29
         self.px_slm_grating_position_x = 994
         self.px_slm_grating_position_y = 824
         self.px_slm_phase_mask_position_x = 1021
@@ -97,6 +98,28 @@ class ExptParams(ExptParamsWaxx):
        
         self.t_gm = 3.e-3
         self.t_gmramp = 6.e-3 #CC changed from 6.5e-3
+
+        # Diagnostic reference images (Base.__init__(diagnostic_images=True);
+        # kexp.control.cameras.diagnostic_images): the 2D-MOT-only window
+        # (push off) at the start of mot(), and where each frame sits.
+        self.t_2dmot_prephase = 150.e-3
+        # The 2D-MOT and MOT baslers (Basler a2A3840-45um, rolling shutter)
+        # expose a mid-sensor ROI ~15-40 ms AFTER the trigger edge: lead the
+        # moment of interest by that much, and keep the scene static for the
+        # ROI's row span (~16 ms).
+        # self.t_diag_2dmot_before_push = 10.e-3 # saw the push on (84547-84556), 2026-10-01
+        self.t_diag_2dmot_before_push = 60.e-3 #84556, 2026-10-01
+        self.t_diag_mot_beams_after_on = 5.e-3
+        # self.t_diag_mot_before_end = 50.e-3 # 2026-10-01; >= 100 ms from the GM trigger below
+        self.t_diag_mot_before_end = 150.e-3 #84561, 2026-10-01
+        self.t_diag_gm_beams_after_start = 0.25e-3
+        # self.t_diag_gm_before_end = 0.5e-3 # blank: the ROI exposed after GM (84546-84561)
+        # the GM frame's trigger leads GM start by this (rolling shutter)
+        self.t_diag_gm_trigger_lead = 25.e-3 #84561, 2026-10-01
+        self.t_diag_lightsheet_after_load = 50.e-3
+        self.t_diag_lightsheet_after_evap1 = 3.e-3
+        self.t_diag_tweezer_after_load = 1.e-3
+        self.t_diag_tweezer_after_evap = 1.e-3
         
         self.t_pump_to_F1 = 150.e-6
         self.t_optical_pumping = 200.e-6
@@ -156,21 +179,8 @@ class ExptParams(ExptParamsWaxx):
 
         self.t_feshbach_field_ramp_special = 20.e-3
 
-        # self.t_raman_pi_pulse = 8.3588e-06 #76021, 2026-08-20
-        # self.t_raman_pi_pulse = 8.8237e-06 #76038, 2026-08-20
-        # self.t_raman_pi_pulse = 8.9806e-06 #76115, 2026-08-21
-        # self.t_raman_pi_pulse = 8.6438e-06 #76216, 2026-08-24
-        # self.t_raman_pi_pulse = 6.5333e-06 #78264, 2026-09-02
-        # self.t_raman_pi_pulse = 6.70885e-06 #78301 rabi posterior 2026-09-02
-        # self.t_raman_pi_pulse = 7.1284e-06 #80159, 2026-09-09
-        # self.t_raman_pi_pulse = 6.9144e-06 #80599, 2026-09-21
-        # self.t_raman_pi_pulse = 5.7048e-06 #80622, 2026-09-22
-        # self.t_raman_pi_pulse = 7.1210e-06 #80652, 2026-09-23
-        # self.t_raman_pi_pulse = 6.5821e-06 #83102, 2026-09-26
-        # self.t_raman_pi_pulse = 6.4393e-06 #83203, 2026-09-27 (joint fit f 79.21 +/- 0.37 kHz at t0 127 ns: 127 ns + 1/(2f); t_pi verdict WARN only for readout drift)
-        # self.t_raman_pi_pulse = 6.6308e-06 #83465, 2026-09-28
-        self.t_raman_pi_pulse = 6.6588e-06 #83679, 2026-09-29 (absorption Rabi, f 75.09 +/- 1.49 kHz, rate 1/(2f); chi2/dof 11, errors scaled)
-
+        # self.t_raman_pi_pulse = 6.8222e-06 #84525, 2026-10-01
+        self.t_raman_pi_pulse = 6.7885e-06 #84965, 2026-10-02
          
         # DAC controlled AO amplitudes
         self.amp_d1_3d_c = 0.3
@@ -287,9 +297,9 @@ class ExptParams(ExptParamsWaxx):
         self.v_lightsheet_paint_amp_max = 3.6
 
         # self.n_lightsheet_rampup_tau_fraction = 1.5
-        self.v_pd_lightsheet = 8.1
+        self.v_pd_lightsheet = 6.9
         self.v_pd_lightsheet_rampup_start = self.v_pd_lightsheet_pd_minimum
-        self.v_pd_lightsheet_rampup_end = 8.75
+        self.v_pd_lightsheet_rampup_end = 6.8
         self.v_pd_lf_lightsheet_rampdown_end = 1.0 #4.16
         self.v_pd_hf_lightsheet_rampdown_end = 0.85 #4.16
         self.v_pd_hf_lightsheet_rampdown2_end = 0.0
@@ -309,7 +319,7 @@ class ExptParams(ExptParamsWaxx):
 
         self.v_pd_hf_tweezer_1064_ramp_end = 8.4
         self.v_pd_hf_tweezer_1064_rampdown_end = 0.16
-        self.v_pd_hf_tweezer_1064_rampdown2_end = 2.2
+        self.v_pd_hf_tweezer_1064_rampdown2_end = 4. # 2.2
         self.n_tweezer_ramp_steps = 200
 
         self.v_tweezer_paint_rampdown_end1 = -4.985
@@ -332,7 +342,7 @@ class ExptParams(ExptParamsWaxx):
 
         self.v_lf_tweezer_paint_amp_max = .5
         # self.v_hf_tweezer_paint_amp_max = -1.94 # -1.7
-        self.v_hf_tweezer_paint_amp_max = 2.0
+        self.v_hf_tweezer_paint_amp_max = 3.25 # 2.0
 
 
         self.v_paint_amp_end = -5.444444

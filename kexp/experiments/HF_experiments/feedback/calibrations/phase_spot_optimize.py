@@ -17,7 +17,7 @@ class phase_spot(EnvExperiment, Base):
                       imaging_type=img_types.DISPERSIVE)
         
         # self.xvar('amp_imaging',np.linspace(0.1,1.,10))
-        self.p.amp_imaging = 0.2
+        self.p.amp_imaging = 0.3
         self.p.t_imaging_pulse = 5.e-6
 
         # f = 1.e6
@@ -27,7 +27,7 @@ class phase_spot(EnvExperiment, Base):
         # self.p.frequency_detuned_hf_midpoint = -5.0e6
 
         # self.xvar('phase_slm_mask', 0.387097 * np.pi + np.linspace(-0.2, 0.2, 5) * np.pi)
-        self.xvar('phase_slm_mask', np.linspace(0.0,1.0,15) * np.pi)
+        self.xvar('phase_slm_mask', np.linspace(0.0,2.1,31) * np.pi)
         # self.p.phase_slm_mask = 0.387097 * np.pi
 
         # self.xvar('dimension_slm_mask',np.linspace(15.e-6,250.e-6,10))

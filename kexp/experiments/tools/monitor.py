@@ -13,7 +13,10 @@ class testcrate_base(EnvExperiment, Base):
     def prepare(self):
         # setup_camera=False: the monitor acquires nothing, so the APD pickoff
         # stage stays wherever the last experiment left it.
-        Base.__init__(self, setup_camera=False, suppress_live_od=True)
+        # diagnostic_images=False: the monitor idles between runs and must
+        # not hold the diagnostic cameras in trigger mode (its ops call mot()).
+        Base.__init__(self, setup_camera=False, suppress_live_od=True,
+                      diagnostic_images=False)
         # The monitor is not a run: it must not fence composite ops (they
         # are what it serves), nor get the pre-run hazard check and stamp.
         self._is_monitor = True

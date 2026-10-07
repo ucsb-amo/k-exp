@@ -18,10 +18,10 @@ class mag_trap(EnvExperiment, Base):
                       imaging_type=img_types.ABSORPTION,
                       warmup_shots=0)
 
-        self.p.t_tof = 1.2e-3
+        self.p.t_tof = 800e-6
         # self.xvar('beans',np.linspace(1,10.,10))
 
-        self.xvar('t_tof',np.linspace(200,1100.,9)*1.e-6)
+        # self.xvar('t_tof',np.linspace(200,1100.,9)*1.e-6)
 
         # self.xvar('t_lightsheet_rampup',np.linspace(20.,400.,15)*1.e-3)
         # self.xvar('v_pd_lightsheet_rampup_end',np.linspace(4.,8.6,11))
@@ -39,7 +39,7 @@ class mag_trap(EnvExperiment, Base):
         # self.xvar('v_pd_hf_lightsheet_rampdown_end',np.linspace(.4,1.4,11))
         # self.p.v_pd_hf_lightsheet_rampdown_end = 0.82
         
-        self.p.t_hf_lightsheet_rampdown=150.e-3
+        # self.p.t_hf_lightsheet_rampdown=150.e-3
         # self.xvar('t_hf_lightsheet_rampdown',np.linspace(.2,1.5,8))
     
         # self.adjust('amp_imaging',0.3,0.6)
@@ -48,16 +48,16 @@ class mag_trap(EnvExperiment, Base):
         # self.p.n_lightsheet_evap1_decay_exponential = 1.5
         # self.xvar('n_decay_exponential', np.linspace(2.5,5.,7))
 
-        self.p.N_repeats = 5
+        self.p.N_repeats = 1
         self.p.t_mot_load = 1.
 
-        Adjust.__init__(self)
+        # Adjust.__init__(self)
 
-        self.p.use_imaging_calibration = 1
-        self.adjust('use_imaging_calibration', min_val=0.,max_val=1.,step=1.,dtype=float)
+        # self.p.use_imaging_calibration = 1
+        # self.adjust('use_imaging_calibration', min_val=0.,max_val=1.,step=1.,dtype=float)
 
-        self.p.hf_imaging_detuning = -620.e6
-        self.adjust('hf_imaging_detuning', min_val=-700.e6, max_val=-550.e6, step=1.e6, dtype=float)
+        # self.p.hf_imaging_detuning = -620.e6
+        # self.adjust('hf_imaging_detuning', min_val=-700.e6, max_val=-550.e6, step=1.e6, dtype=float)
 
         # self.adjust('n_decay_exponential', min_val=0.3, max_val=8.)
 
@@ -70,10 +70,10 @@ class mag_trap(EnvExperiment, Base):
 
         f0 = high_field_imaging_detuning(self.p.i_hf_lightsheet_evap1_current)
         # aprint(f0/1.e6)
-        if self.p.use_imaging_calibration == 1.:
-            self.set_imaging_detuning(f0)
-        else:
-            self.set_imaging_detuning(self.p.hf_imaging_detuning)
+        # if self.p.use_imaging_calibration == 1.:
+        self.set_imaging_detuning(f0)
+        # else:
+            # self.set_imaging_detuning(self.p.hf_imaging_detuning)
         # self.imaging.set_power(power_control_parameter=self.p.amp_imaging)
 
         # self.switch_d2_2d(1)
@@ -96,12 +96,13 @@ class mag_trap(EnvExperiment, Base):
                              i_end=self.p.i_hf_lightsheet_evap1_current)
         
         self.set_shims(0.,0.,0.)
-
-        # lightsheet evap 1
         self.ttl.pd_scope_trig.pulse(1.e-6)
+        # lightsheet evap 1
+        
         self.lightsheet.exponential_ramp(t=self.p.t_hf_lightsheet_rampdown,
                              v_start=self.p.v_pd_lightsheet_rampup_end,
                              v_end=self.p.v_pd_hf_lightsheet_rampdown_end)
+        self.diag.lightsheet_evap()     # diagnostic frame (no-op when off)
 
         # self.lightsheet.exponential_rampramp(t=self.p.t_hf_lightsheet_rampdown,
         #                             v_start=self.p.v_pd_lightsheet_rampup_end,
@@ -118,14 +119,18 @@ class mag_trap(EnvExperiment, Base):
         #                      v_end=self.p.v_pd_hf_lightsheet_rampdown2_end)
 
         delay(self.p.t_lightsheet_hold)
+        
         self.lightsheet.off()
-
+        
         delay(self.p.t_tof)
+
         self.abs_image()
 
         # self.lightsheet.off()
 
         self.outer_coil.off()
+
+        # delay(0.9)
 
     @kernel
     def run(self):

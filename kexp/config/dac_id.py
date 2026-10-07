@@ -21,7 +21,7 @@ class dac_frame(dac_frame_waxx):
         self.vva_lightsheet = self.assign_dac_ch(1,v=9.7)
         self.vva_d1_3d_c = self.assign_dac_ch(2,self.p.v_pd_d1_c_gm)
         self.vva_d1_3d_r = self.assign_dac_ch(3,self.p.v_pd_d1_r_gm)
-        self.supply_current_2dmot = self.assign_dac_ch(4,v=2.447)
+        self.supply_current_2dmot = self.assign_dac_ch(4,v=1.900) # 2.447 V
         self.xshim_current_control = self.assign_dac_ch(5,self.p.v_xshim_current)
         self.yshim_current_control = self.assign_dac_ch(6,self.p.v_yshim_current)
         self.zshim_current_control = self.assign_dac_ch(7,self.p.v_zshim_current)

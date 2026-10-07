@@ -140,6 +140,7 @@ class LocalAndorSource:
 
     kind = "local"
     shared = False      # this window owns the camera's settings
+    supports_trigger = False
 
     def __init__(self, camera=None, open_camera: Optional[Callable] = None,
                  dummy_cls=DummyCamera, exposure_s: float = 0.05):
@@ -247,6 +248,10 @@ class LocalAndorSource:
     def run_state(self) -> RunState:
         return RunState()
 
+    @property
+    def trigger_refusal(self) -> str:
+        return LOCAL_TRIGGER_REFUSAL
+
 
 # ----------------------------------------------------------------------
 # liveOD's Andor, through its camera host
@@ -287,7 +292,18 @@ def _preempt_what(e) -> str:
             "host_lost": "liveOD's camera host stopped answering",
             "settings_changed": "liveOD's Andor settings were changed by another program",
             "refused": "liveOD's camera host refused the spot finder",
+            "core_taken": "another program took the ARTIQ core",
             }.get(reason, "")
+
+
+#: Why a source that cannot take externally triggered frames says so (the
+#: window shows it when the ARTIQ trigger is ticked).
+STREAM_TRIGGER_REFUSAL = ("liveOD's camera host arms its Andor for runs only, so frames cannot "
+                          "be triggered from ARTIQ through liveOD; release the Andor in liveOD "
+                          "and connect it here (the andor button), or untick the ARTIQ trigger")
+LOCAL_TRIGGER_REFUSAL = ("the Andor opened straight through the SDK takes no triggered frames; "
+                         "the spot finder needs beacon's camera server logic for that "
+                         "(served_source)")
 
 
 class StreamSource:
@@ -326,6 +342,10 @@ class StreamSource:
 
     kind = "stream"
     shared = True       # liveOD owns the camera's settings: adopt them, don't impose
+    # liveOD's camera host arms its Andor for runs only (D-g: live streaming is
+    # "int"/"software"); a program cannot arm it for its own TTL edges.
+    supports_trigger = False
+    trigger_refusal = STREAM_TRIGGER_REFUSAL
 
     def __init__(self, query="andor", label="SLM spot finder", directory=None, *,
                  timeout_s: float = 2.0, op_timeout_s: float = 15.0,

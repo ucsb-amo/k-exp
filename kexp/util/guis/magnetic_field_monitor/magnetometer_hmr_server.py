@@ -9,6 +9,7 @@ from waxx.util.guis.HMR_magnetometer.hmr_magnetometer_server import Magnetometer
 from kexp.config.ip import (
     DATA_DIR,
     MAGNETOMETER_COM,
+    MAGNETOMETER_LOG_DIR,
     MAGNETOMETER_REFERENCE_CSV_PATH,
 )
 
@@ -20,6 +21,7 @@ def main():
     server = MagnetometerServer(
         serial_port=DEFAULT_SERIAL_PORT,
         reference_csv_path=DEFAULT_REFERENCE_CSV_PATH,
+        field_log_dir=MAGNETOMETER_LOG_DIR,
     )
     try:
         server.run(log_path=_LOG_PATH)

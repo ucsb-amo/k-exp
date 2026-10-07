@@ -1,6 +1,6 @@
 from artiq.experiment import *
 from artiq.experiment import delay
-from kexp import Base, img_types, cameras
+from kexp import Base, img_types, cameras, Adjust
 import numpy as np
 from kexp.calibrations.tweezer import tweezer_vpd1_to_vpd2
 from kexp.calibrations.imaging import high_field_imaging_detuning
@@ -20,7 +20,7 @@ class hf_monitored_rabi(EnvExperiment, Base):
         self.xvar('make_atoms',[1]*1000)
         
         # self.xvar('amp_imaging',np.linspace(0.1,1.,10))
-        self.p.amp_imaging = 0.5
+        self.p.amp_imaging = 0.2
 
         # self.xvar('t_tweezer_hold',np.linspace(1.e-3,1.1e-3,10))
         self.p.t_tweezer_hold = 20.e-3
@@ -33,17 +33,20 @@ class hf_monitored_rabi(EnvExperiment, Base):
         self.adjust('make_atoms',0.,1.,1)
 
         self.data.apd = self.data.add_data_container(1)
+        # Adjust.__init__(self)
         
         self.finish_prepare(shuffle=False)
 
     @kernel
     def scan_kernel(self):
+
+        self.slm.write_phase_mask_kernel(phase=0,dimension=0)
         
         self.set_imaging_detuning(frequency_detuned = self.p.frequency_detuned_hf_f1m1)
         self.imaging.set_power(self.p.amp_imaging)
 
         if self.p.make_atoms:
-            self.prepare_hf_tweezers(ramp_down_painting=True)
+            self.prepare_hf_tweezers(ramp_down_painting=False)
         else:
             delay(0.2)
         

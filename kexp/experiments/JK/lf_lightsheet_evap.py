@@ -11,8 +11,8 @@ class tweezer_load(EnvExperiment, Base):
 
     def prepare(self):
         Base.__init__(self,setup_camera=True,
-                    camera_select=cameras.andor,
-                    save_data=True, warmup_shots=3)
+                    camera_select=cameras.xy_basler,
+                    save_data=True, warmup_shots=1)
 
 
         self.p.v_pd_lf_lightsheet_rampdown_end = 0.85
@@ -26,11 +26,11 @@ class tweezer_load(EnvExperiment, Base):
 
 
         self.p.offset = 45.e6
-        # self.xvar('offset',np.linspace(35.e6,54.e6,7))
+        # self.xvar('offset',np.linspace(-75.e6,154.e6,70))
         self.p.i_lf_tweezer_load_current=14.0
 
 
-        self.p.t_tof = 96.e-6
+        self.p.t_tof = 396.e-6
         # self.xvar('t_tof',np.linspace(200,2600,7)*1.e-6)
         # self.camera_params.gain = 14.
         # self.adjust('camera_params.gain',0.,15.)
@@ -38,12 +38,12 @@ class tweezer_load(EnvExperiment, Base):
 
         self.p.post_abs_wait = 0.
 
-        self.xvar('beans',np.linspace(1,10,10))
+        # self.xvar('beans',np.linspace(1,10,10))
         self.p.t_feshbach_field_rampup = 42.e-3
         # self.xvar('t_feshbach_field_rampup',np.linspace(1.e-3,50.e-3,9))
 
         self.p.t_mot_load = 1.
-        self.p.N_repeats = 1
+        self.p.N_repeats = 3
         # self.p.imaging_state = 2.
 
         self.finish_prepare(shuffle=False)
@@ -75,7 +75,7 @@ class tweezer_load(EnvExperiment, Base):
                             i_start=0.,
                             i_end=self.p.i_lf_lightsheet_evap1_current)
         self.set_shims(0.,0.,0.) 
-
+        self.ttl.pd_scope_trig.pulse(1.e-6)  
         # # # lightsheet evap 1
         self.lightsheet.exponential_ramp(t=self.p.t_lf_lightsheet_rampdown,
                             v_start=self.p.v_pd_lightsheet_rampup_end,
@@ -86,13 +86,14 @@ class tweezer_load(EnvExperiment, Base):
         #                     i_start=self.p.i_lf_lightsheet_evap1_current,
         #                     i_end=self.p.i_lf_tweezer_load_current)
         # delay(self.p.t_lightsheet_hold)
-                
+              
         self.lightsheet.off()
 
         delay(self.p.t_tof)
-        self.ttl.pd_scope_trig.pulse(1.e-6)
+        
         self.abs_image()
         delay(self.p.post_abs_wait)
+        self.outer_coil.off()
         
 
     @kernel

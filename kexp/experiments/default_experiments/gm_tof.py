@@ -20,10 +20,10 @@ class gm_tof(EnvExperiment, Base):
         self.p.imaging_state = 2.
         self.p.t_tof = 12.e-3
         self.p.t_mot_load = .5
-        self.p.N_repeats = 3
+        self.p.N_repeats = 100
 
         # self.xvar('t_mot_load',[0.05,0.1,0.25])
-        self.xvar('t_tof',np.linspace(500.,2000.,10)*1.e-6)
+        # self.xvar('t_tof',np.linspace(500.,2000.,10)*1.e-6)
 
         # self.xvar('amp_imaging',np.linspace(0.25,1.,8))
         # self.xvar('v_xshim_current_gm',np.linspace(0.,1.,8))

@@ -174,6 +174,17 @@ class FeedbackReplayCore(Feedback):
         if hasattr(ad.data, "t_raman_pulse"):
             self._t_raman_pulse_rr_cached = self._to_repeat_step(
                 self._restore_shot_step_axis(ad.data.t_raman_pulse), "ad.data.t_raman_pulse")
+        # Per-shot APD endpoints the kernel used (pre-shot runs with
+        # p.preshot_endpoint_gain > 0: data.preshot_endpoints = [v_up, v_down,
+        # N_photons_per_shot, updated] per shot, see Feedback.update_shot_endpoints).
+        # Replay applies them shot by shot; use_shot_endpoints = False replays the
+        # same shots on the calibration instead (the paired comparison).
+        self._shot_endpoints_rr = None
+        if (hasattr(ad.data, "preshot_endpoints")
+                and float(np.ravel(getattr(ad.p, "preshot_endpoint_gain", 0.0))[0]) > 0.0):
+            self._shot_endpoints_rr = self._to_repeat_step(
+                np.asarray(ad.data.preshot_endpoints, dtype=float), "ad.data.preshot_endpoints")
+        self.use_shot_endpoints = True
         # Create independent copy of parameters so modifications don't affect shared atomdata
         self.p = copy.copy(ad.p)
         self._base_kwargs = self._build_base_feedback_kwargs(ad)
@@ -1264,9 +1275,9 @@ class FeedbackReplayCore(Feedback):
             dT_mu_s = dT_rr_mu[r]
             t_in_s = np.concatenate(([0.0], np.cumsum(dT_mu_s[:-1]))) * 1.0e-9
 
-            # True Bloch vector, starting spin-up exactly as reset_feedback_state
-            # initialises every hypothesis.
-            sx, sy, sz = 0.0, 0.0, 1.0
+            # True Bloch vector, starting where reset_feedback_state initialises
+            # every hypothesis (self.initial_sz: +1, or -1 after the pre-shot pi pulse).
+            sx, sy, sz = 0.0, 0.0, float(self.initial_sz)
 
             phase_tracker = 0.0
             omega_prev = 0.0
@@ -1277,6 +1288,9 @@ class FeedbackReplayCore(Feedback):
             for i in range(n_step):
                 omega_ctrl = (float(self.omega_raman) if closed_loop
                               else float(omega_ctrl_fixed[r, i]))
+                # generate_posterior reads self.omega_raman as this pulse's drive;
+                # in open-loop mode nothing else sets it to the scheduled value.
+                self.omega_raman = omega_ctrl
 
                 _gap_mu = tP_mu if i == 0 else int(dT_mu_s[i - 1])
                 _t_old = _gap_mu - T_pre_mu + 4 + dt_fudge_mu
@@ -1426,6 +1440,14 @@ class FeedbackReplayCore(Feedback):
 
         # Pulse-start times: pulse i starts after the gaps trailing pulses 0..i-1.
         t_in_s = np.concatenate(([0.0], np.cumsum(dT_mu_s[:-1]))) * 1.0e-9
+
+        # This shot's endpoints as the kernel had them (per-shot endpoint runs);
+        # _run_sequence puts the calibration back after the last shot.
+        if self.use_shot_endpoints and getattr(self, "_shot_endpoints_rr", None) is not None:
+            e = self._shot_endpoints_rr[r]
+            self.v_apd_all_up, self.v_apd_all_down = float(e[0]), float(e[1])
+            self.N_photons_per_shot = float(e[2])
+            self.v_range = self.v_apd_all_up - self.v_apd_all_down
 
         # Precompute photon-count-equivalent measurements once per shot to reduce
         # per-step Python call overhead in the hot replay loop.
@@ -1581,6 +1603,10 @@ class FeedbackReplayCore(Feedback):
                 return_full_state, zidx,
                 s_z_rr, P0_rr, omega_control_rr, omega_recomputed_rr, t_input_rr, t_s_z_rr, k_rr, state_rr,
             )
+
+        # per-shot endpoints (if any) back to the calibration
+        self.v_apd_all_up, self.v_apd_all_down = self.v_apd_all_up_cal, self.v_apd_all_down_cal
+        self.v_range, self.N_photons_per_shot = self.v_range_cal, self.N_photons_per_shot_cal
 
         apd_norm_rr = self._normalize_apd(
             apd_rr,

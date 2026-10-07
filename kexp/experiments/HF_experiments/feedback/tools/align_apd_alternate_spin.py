@@ -20,7 +20,7 @@ class hf_monitored_rabi(EnvExperiment, Base):
         self.p.t_imaging_pulse = 5.e-6
         # self.xvar('dummy',[0])
         
-        self.p.amp_imaging = 0.2
+        self.p.amp_imaging = 0.25
 
         self.p.t_tweezer_hold = 20.e-3
         self.p.t_mot_load = 1.0
@@ -35,11 +35,11 @@ class hf_monitored_rabi(EnvExperiment, Base):
 
         # self.p.phase_slm_mask = 0.387097 * np.pi
         # self.adjust('frequency_detuned_hf_midpoint',-568e6,-489.e6)
-        # self.adjust('phase_slm_mask',0.,2.*np.pi)
+        self.adjust('phase_slm_mask',0.,2.*np.pi)
         # self.adjust('amp_imaging',0.1,0.8)
         # self.adjust('trigger_later',0.,1.,step=1,dtype=float)
 
-        self.p.v_pd_hf_tweezer_squeeze_power = 1.5
+        self.p.v_pd_hf_tweezer_squeeze_power = 0.
         self._idx = 0
         # self.p.v_pd_lightsheet_rampdown3_end = 0.2
 
@@ -53,7 +53,7 @@ class hf_monitored_rabi(EnvExperiment, Base):
         self.set_imaging_detuning(frequency_detuned = self.p.frequency_detuned_hf_midpoint)
         self.imaging.set_power(self.p.amp_imaging)
 
-        self.prepare_hf_tweezers(ramp_down_painting=True)
+        self.prepare_hf_tweezers(ramp_down_painting=False)
 
         # self.lightsheet.ramp(210.e-3,v_end=4.)
 

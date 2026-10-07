@@ -33,6 +33,9 @@ class Cooling():
         self.params = ExptParams()
         self.raman = RamanBeamPair()
         self.p = self.params
+        # Base.__init__ sets these: diagnostic_images (bool, read in the
+        # kernels below) and self.diag (kexp.control.cameras.DiagnosticImages)
+        self.diagnostic_images = True
 
     ## meta stages
     @kernel
@@ -77,7 +80,7 @@ class Cooling():
         # delay(200.e-3)
 
         self.magtrap_and_load_lightsheet(do_magtrap_rampup=False)
-
+        
         self.outer_coil.on()
         self.outer_coil.set_voltage()
         self.outer_coil.ramp_supply(t=self.p.t_feshbach_field_rampup,
@@ -90,6 +93,7 @@ class Cooling():
         self.lightsheet.exponential_ramp(t=self.p.t_hf_lightsheet_rampdown,
                              v_start=self.p.v_pd_lightsheet_rampup_end,
                              v_end=self.p.v_pd_hf_lightsheet_rampdown_end)
+        self.diag.lightsheet_evap()     # diagnostic frame (no-op when off)
         
         self.outer_coil.ramp_supply(t=self.p.t_feshbach_field_ramp,
                             #  i_start=self.p.i_hf_lightsheet_evap1_current,
@@ -101,6 +105,7 @@ class Cooling():
                           v_end=self.p.v_pd_hf_tweezer_1064_ramp_end,
                           paint=True,keep_trap_frequency_constant=False,
                           tau=-self.p.t_hf_tweezer_1064_ramp/3)
+        self.diag.tweezer_load()        # diagnostic frame (no-op when off)
                           
         # lightsheet ramp down (to off)
         self.lightsheet.exponential_ramp(t=self.p.t_lightsheet_rampdown3,
@@ -127,11 +132,13 @@ class Cooling():
                             v_end=self.p.v_pd_hf_tweezer_1064_rampdown2_end,
                             paint=True,keep_trap_frequency_constant=True,low_power=True)
 
+        self.diag.tweezer_evap()        # diagnostic frame after the last evap ramp
+
         self.dac.supply_current_2dmot.set(v=0.)
+        self.ttl.pd_scope_trig.pulse(1.e-6)
 
         self.outer_coil.ramp_supply(t=20.e-3,
                              i_end=self.p.i_hf_raman)
-
         # delay(100.e-3)
         # self.outer_coil.ttl_blanking.off()
         # delay(100.e-3)
@@ -140,7 +147,7 @@ class Cooling():
         
         delay(30.e-3)
         
-        self.ttl.pd_scope_trig.pulse(1.e-6)
+        
         if squeeze or ramp_down_painting:
             self.ramp_down_painting()
 
@@ -211,6 +218,7 @@ class Cooling():
         self.lightsheet.ramp(t=self.p.t_lf_lightsheet_rampdown,
                              v_start=self.p.v_pd_lightsheet_rampup_end,
                              v_end=self.p.v_pd_lf_lightsheet_rampdown_end)
+        self.diag.lightsheet_evap()     # diagnostic frame (no-op when off)
         
         # feshbach field ramp to field 2
         self.outer_coil.ramp_supply(t=self.p.t_feshbach_field_ramp,
@@ -223,6 +231,7 @@ class Cooling():
                           v_end=self.p.v_pd_lf_tweezer_1064_ramp_end,
                           paint=True,keep_trap_frequency_constant=False,
                           v_awg_am_max=self.p.v_lf_tweezer_paint_amp_max)
+        self.diag.tweezer_load()        # diagnostic frame (no-op when off)
         
         # lightsheet ramp down (to off)
         self.lightsheet.ramp(t=self.p.t_lf_lightsheet_rampdown2,
@@ -253,6 +262,8 @@ class Cooling():
                           v_end=self.p.v_pd_lf_tweezer_1064_rampdown2_end,
                           paint=True,keep_trap_frequency_constant=True,
                           v_awg_am_max=self.p.v_lf_tweezer_paint_amp_max)
+
+        self.diag.tweezer_evap()        # diagnostic frame after the last evap ramp
 
         self.dac.supply_current_2dmot.set(v=0.)
 
@@ -431,6 +442,16 @@ class Cooling():
             v_xshim_current = self.params.v_xshim_current
         ### End Defaults ###
 
+        if self.diagnostic_images:
+            # 2D-MOT-only window (push off; the 2D beams are on): the 2D MOT
+            # reference frame, t_diag_2dmot_before_push before the push
+            # comes on below (the two 1 ms delays follow).
+            self.dds.push.off()
+            delay(self.p.t_2dmot_prephase - self.p.t_diag_2dmot_before_push
+                  - 2.e-3)
+            self.diag.mot_2d()
+            delay(self.p.t_diag_2dmot_before_push)
+
         delay(1.e-3)
 
         delay(1.e-3)
@@ -454,6 +475,11 @@ class Cooling():
         with parallel:
             self.switch_d2_3d(1)
             self.dds.push.on()
+        # diagnostic frames (no-ops with diagnostics off; the cursor stays):
+        # beam references after the 3D beams come on, MOT fluorescence
+        # before the load ends
+        self.diag.mot_beams()
+        self.diag.mot_fluorescence(t)
         delay(t)
 
     @kernel
@@ -630,6 +656,7 @@ class Cooling():
         self.dds.d1_3d_r.off()
         
         delay(t)
+        self.diag.gm_fluorescence()     # diagnostic frame: GM starts here (no-op when off)
 
     @kernel
     def cmot_d1_sweep(self,t,
@@ -749,6 +776,7 @@ class Cooling():
         with parallel:
             self.switch_d1_3d(1)
             self.switch_d2_3d(0)
+        self.diag.gm_beams()        # diagnostic frames just into GM (no-op when off)
         delay(t)
 
     @kernel
@@ -951,6 +979,7 @@ class Cooling():
                             paint=paint_lightsheet,
                             v_awg_am_max=v_awg_paint_amp_lightsheet,
                             keep_trap_frequency_constant=False)
+            self.diag.lightsheet_load()     # diagnostic frame (no-op when off)
         # else:
             # delay(t_lightsheet_ramp)
 

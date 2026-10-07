@@ -54,6 +54,7 @@ class ttl_frame(ttl_frame_waxx):
         self.keithley_trigger = self.assign_ttl_out(48)
         self.ry_405_shutter = self.assign_ttl_out(49)
         self.b_field_stab_SRS_blanking_input = self.assign_ttl_out(50)
+        self.mot_basler_trigger = self.assign_ttl_out(51)
         self.ry_980_sw = self.assign_ttl_out(52)
         self.phase_lock_beam_enable = self.assign_ttl_out(53)
         self.ry_phase_lock_ao_sw_ttl = self.assign_ttl_out(54)
