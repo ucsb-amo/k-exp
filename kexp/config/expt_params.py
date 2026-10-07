@@ -399,6 +399,12 @@ class ExptParams(ExptParamsWaxx):
         self.frequency_raman_transition_nf_10_21 = 462.85e6 # 1.5 G 1,-1 to 2,0
         self.frequency_raman_transition_nf_1m1_20 = 459.87e6 # 9 V X shim (v_x_shim_pol_contrast)
 
+        # raman laser frequency, read per shot from the Bristol wavemeter
+        # server into data.frequency_detuned_raman (= mean - reference)
+        self.frequency_raman_wavemeter_reference = 389.28617e12 # K-39 D1 line (Bristol GUI f0)
+        self.N_raman_wavemeter_avg = 20 # readings averaged (~0.2 s apart)
+        self.t_raman_wavemeter_max_age = 10. # readings older than this are not used
+
         # earth shim values to cancel earths field
         self.v_xcancel = 0.
         self.v_ycancel = 2.

@@ -21,3 +21,12 @@ class DataVault(DataVaultWax):
         self.frequency_wavemeter_980 = self.add_data_container(1)
         self.frequency_siglent_405 = self.add_data_container(1)
         self.frequency_siglent_980 = self.add_data_container(1)
+
+        # Raman laser frequency from the Bristol wavemeter server, read once
+        # per shot at its start (Control.read_raman_wavemeter): the mean of
+        # the last p.N_raman_wavemeter_avg readings no older than
+        # p.t_raman_wavemeter_max_age, minus p.frequency_raman_wavemeter_reference
+        # (Hz), and the sample std of those readings (Hz). Both 0. when no
+        # reading was had that shot (server down/old, no fresh readings).
+        self.frequency_detuned_raman = self.add_data_container(1)  # Hz
+        self.frequency_raman_detuning_std = self.add_data_container(1)  # Hz

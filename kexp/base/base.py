@@ -262,6 +262,7 @@ class Base(Expt, Devices, Cooling, Image, Cameras, Control, Clients):
 
         self.background_field()
         self.read_magnetometer()
+        self.read_raman_wavemeter()
         # arm the once-per-shot capture of the outer-coil current at imaging
         self._imaging_conditions_recorded = False
         

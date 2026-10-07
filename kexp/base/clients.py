@@ -4,6 +4,7 @@ from kexp.config.ip import MONITOR_STATE_FILEPATH
 from waxx.util.device_state.monitor_controller import MonitorController
 
 from waxx.util.guis.HMR_magnetometer.hmr_magnetometer_client import HMRClient, HMRDummy
+from waxx.util.guis.bristol.bristol_wavemeter_client import BristolAverageReader
 from kexp.control.misc.pdxc_apd_stage import APDStageClient
 from waxx.util.live_od.live_od_client import LiveODClient
 
@@ -30,6 +31,10 @@ class Clients():
         except RuntimeError as e:
             print(f"Failed to connect to HMR Magnetometer server: {e}")
             self.magnetometer = HMRDummy()
+
+        # Raman laser frequency per shot. Never raises: a missing server
+        # prints once and the shots record 0. (see Control.read_raman_wavemeter).
+        self.raman_wavemeter = BristolAverageReader()
 
         if not suppress_live_od:
             try:

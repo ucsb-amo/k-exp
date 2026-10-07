@@ -19,6 +19,7 @@ from kexp.control.awg_tweezer import tweezer
 from kexp.control.painted_lightsheet import lightsheet
 from waxx.control.integrator import Integrator
 from waxx.util.guis.HMR_magnetometer.hmr_magnetometer_client import HMRClient
+from waxx.util.guis.bristol.bristol_wavemeter_client import BristolAverageReader
 from waxx.control.misc.oscilloscopes import ScopeData
 from waxx.control.beat_lock import BeatLockImagingPID
 
@@ -49,6 +50,7 @@ class Control():
         self.raman = RamanBeamPair()
         self.raman_nf = RamanBeamPair()
         self.magnetometer = HMRClient()
+        self.raman_wavemeter = BristolAverageReader()
         self.integrator = Integrator()
         self.scope_data = ScopeData()
         self.imaging = BeatLockImagingPID()
@@ -149,6 +151,43 @@ class Control():
         b_magnitude = self.magnetometer.get_field_magnitude()
         self.data.b.put_data(b_magnitude)
         self.core.break_realtime()
+
+    @kernel
+    def read_raman_wavemeter(self):
+        """Record the Raman laser frequency for this shot from the Bristol
+        wavemeter server: the mean of the last p.N_raman_wavemeter_avg
+        readings (no older than p.t_raman_wavemeter_max_age) before this
+        call, i.e. the few seconds before the shot starts -- not the
+        frequency during the Raman pulses.
+
+        Stores mean - p.frequency_raman_wavemeter_reference in
+        data.frequency_detuned_raman and the sample std of the readings in
+        data.frequency_raman_detuning_std (Hz). Fewer fresh readings than
+        asked for are averaged as they are; none (server down, too old, or
+        wavemeter disconnected) stores 0. in both. Bounded: one request with
+        a 0.5 s deadline, skipped for 30 s after a failure (see
+        waxx BristolAverageReader).
+        """
+        self.core.wait_until_mu(now_mu())
+        f = self._read_raman_wavemeter()
+        self.data.frequency_detuned_raman.put_data(f[0])
+        self.data.frequency_raman_detuning_std.put_data(f[1])
+        self.core.break_realtime()
+
+    def _read_raman_wavemeter(self) -> TList(TFloat):
+        """Host side of read_raman_wavemeter: [detuning, std] in Hz, or
+        [0., 0.] when no reading was had."""
+        try:
+            reply = self.raman_wavemeter.get_average(
+                int(self.p.N_raman_wavemeter_avg),
+                float(self.p.t_raman_wavemeter_max_age))
+            if reply is None or not reply.get("ok") or reply.get("n_used", 0) < 1:
+                return [0., 0.]
+            detuning = float(reply["mean_hz"]) - float(self.p.frequency_raman_wavemeter_reference)
+            return [detuning, float(reply["std_hz"])]
+        except Exception as e:
+            print(f"[raman wavemeter] read failed, recording 0.: {e!r}")
+            return [0., 0.]
 
     @kernel
     def prep_raman(self,

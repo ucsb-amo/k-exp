@@ -8,7 +8,7 @@ ARTIQ code that is otherwise only compiled when the monitor starts on kong.
 
 Isolation: the monitor's server client is a stub (no messages to the monitor
 server), the device-state file is generated into pytest's temp dir by the
-monitor's own reconcile, the stage and magnetometer clients are stubs and the
+monitor's own reconcile, the stage, magnetometer and Bristol clients are stubs and the
 wavemeter frame falls back to the lab's DummyWavemeterController.
 
 Each compile takes ~5 s.  Skipped when %db% / %code% are not set.
@@ -48,6 +48,8 @@ def _build(monkeypatch, tmp_path, extra_devices=()):
     monkeypatch.setattr(kclients, "APDStageClient",
                         lambda *a, **k: SimpleNamespace(set_apd_stage=lambda *a, **k: None))
     monkeypatch.setattr(kclients, "HMRClient", kclients.HMRDummy)
+    monkeypatch.setattr(kclients, "BristolAverageReader",
+                        lambda *a, **k: SimpleNamespace(get_average=lambda *a, **k: None))
 
     class _NoWavemeter(wavemeter_id.WavemeterController):
         def __init__(self, *a, **k):
