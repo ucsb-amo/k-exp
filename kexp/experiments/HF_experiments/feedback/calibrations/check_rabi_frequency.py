@@ -12,7 +12,7 @@ class hf_raman(EnvExperiment, Base):
         Base.__init__(self,setup_camera=True,
                       camera_select=cameras.andor,
                       imaging_type=img_types.ABSORPTION,
-                      warmup_shots=5)
+                      warmup_shots=3)
         
         self.xvar('t_raman_pulse', np.linspace(0.,60.,50)*1.e-6)
         self.p.t_raman_pulse = 0.
