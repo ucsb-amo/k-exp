@@ -103,6 +103,8 @@ def main() -> int:
         ctypes.windll.shell32.SetCurrentProcessExplicitAppUserModelID("weldlab.kexp.gui.interlock")
     except Exception:
         pass
+    from waxa.taskbar import group_console
+    group_console()  # console joins the shared terminals taskbar button
     app = QApplication.instance() or QApplication(sys.argv)
     win = _InterlockStandaloneWindow()
     win.show()

@@ -6,6 +6,8 @@ def main():
     """Launch the remote ALS GUI frontend."""
     import ctypes
     ctypes.windll.shell32.SetCurrentProcessExplicitAppUserModelID('weldlab.kexp.gui.als_control')
+    from waxa.taskbar import group_console
+    group_console()  # console joins the shared terminals taskbar button
     app = QApplication(sys.argv)
 
     gui = ALSControlGUI()

@@ -825,6 +825,8 @@ def main():
         ctypes.windll.shell32.SetCurrentProcessExplicitAppUserModelID("kexp.diagnostic_viewer")
     except Exception:
         pass
+    from waxa.taskbar import group_console
+    group_console()  # console joins the shared terminals taskbar button
     app = QApplication(sys.argv)
     try:
         theme.apply_dark_theme(app)
