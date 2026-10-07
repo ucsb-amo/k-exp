@@ -13,12 +13,12 @@ class tweezer_load(EnvExperiment, Base):
         Base.__init__(self,setup_camera=True,
                       camera_select=cameras.andor,
                       save_data=True,
-                      imaging_type=img_types.ABSORPTION)
+                      imaging_type=img_types.ABSORPTION, warmup_shots=2)
         
-        # self.xvar('t_tof',np.linspace(100.,2000.,10)*1.e-6)
+        self.xvar('t_tof',np.linspace(100.,3000.,10)*1.e-6)
         self.p.t_tof = 1.5e-3
         
-        self.xvar('beans',np.linspace(1,10,10))
+        # self.xvar('beans',np.linspace(1,10,10))
 
 
         self.p.amp_imaging = .1
@@ -37,7 +37,7 @@ class tweezer_load(EnvExperiment, Base):
 
         self.prepare_hf_tweezers()
 
-        self.lightsheet.ramp()
+        # self.lightsheet.ramp()
 
         delay(self.p.t_tweezer_hold)
 

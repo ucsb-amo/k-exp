@@ -11,18 +11,18 @@ class hf_bec(EnvExperiment, Base):
         Base.__init__(self,
                       camera_select=cameras.andor,
                       imaging_type=img_types.ABSORPTION,
-                      warmup_shots=5)
+                      warmup_shots=2)
 
         self.p.t_mot_load = 1.0
         self.p.t_tweezer_hold = 100.e-3
 
-        # self.xvar('t_tof',np.linspace(1000.,4000.,6)*1.e-6)
-        self.p.t_tof = 3.e-3
+        self.xvar('t_tof',np.linspace(1000.,4000.,10)*1.e-6)
+        self.p.t_tof = 4.e-3
         # self.p.t_tof = 20.e-6
 
         self.data.apd = self.data.add_data_container(1)
 
-        self.p.N_repeats = 15
+        self.p.N_repeats = 1
         # self.xvar('beans',np.linspace(1,1000,1000))
 
         self.scanning()
@@ -32,12 +32,12 @@ class hf_bec(EnvExperiment, Base):
     def scanning(self):
 
         # self.p.v_hf_tweezer_paint_amp_max = 2.
-        self.p.v_pd_hf_tweezer_1064_rampdown2_end = 4.
+        # self.p.v_pd_hf_tweezer_1064_rampdown2_end = 4.
 
-        # self.xvar('v_pd_hf_tweezer_1064_rampdown2_end',np.linspace(2.0,5.0,7))
+        # self.xvar('v_pd_hf_tweezer_1064_rampdown2_end',np.linspace(4.0,8.,4))
 
         # self.xvar('v_hf_tweezer_paint_amp_max',np.linspace(0.,4.9,7))
-        self.p.v_hf_tweezer_paint_amp_max = 3.25
+        # self.p.v_hf_tweezer_paint_amp_max = 3.25
 
 
         # self.xvar('t_tof',np.linspace(100.e-6,3000.e-6,9))
@@ -48,7 +48,7 @@ class hf_bec(EnvExperiment, Base):
         # self.p.i_hf_lightsheet_evap1_current = 194.3
         # self.p.t_hf_lightsheet_rampdown = 1.3
 
-        # self.xvar('amp_imaging',np.linspace(0.05,0.15,5))
+        # self.xvar('v_pd_hf_tweezer_1064_rampdown_end',np.linspace(0.16,0.5,5))
 
         # self.xvar('do_compression',[0,1])
         # self.p.do_compression = 0
