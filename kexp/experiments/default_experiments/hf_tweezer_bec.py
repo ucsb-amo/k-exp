@@ -17,25 +17,27 @@ class hf_bec(EnvExperiment, Base):
         self.p.t_tweezer_hold = 100.e-3
 
         # self.xvar('t_tof',np.linspace(1000.,4000.,6)*1.e-6)
-        self.p.t_tof = 2.5e-3
+        self.p.t_tof = 3.e-3
         # self.p.t_tof = 20.e-6
 
         self.data.apd = self.data.add_data_container(1)
 
-        self.p.N_repeats = 100
+        self.p.N_repeats = 15
+        # self.xvar('beans',np.linspace(1,1000,1000))
 
         self.scanning()
         self.finish_prepare(shuffle=True)
 
+
     def scanning(self):
 
         # self.p.v_hf_tweezer_paint_amp_max = 2.
-        # self.p.v_pd_hf_tweezer_1064_rampdown2_end = 2.2
+        self.p.v_pd_hf_tweezer_1064_rampdown2_end = 4.
 
-        # self.xvar('v_pd_hf_tweezer_1064_rampdown2_end',np.linspace(2.2,5.,9))
+        # self.xvar('v_pd_hf_tweezer_1064_rampdown2_end',np.linspace(2.0,5.0,7))
 
-        # self.xvar('v_hf_tweezer_paint_amp_max',np.linspace(2.,3.0,4))
-        # self.p.v_hf_tweezer_paint_amp_max = 2.5
+        # self.xvar('v_hf_tweezer_paint_amp_max',np.linspace(0.,4.9,7))
+        self.p.v_hf_tweezer_paint_amp_max = 3.25
 
 
         # self.xvar('t_tof',np.linspace(100.e-6,3000.e-6,9))

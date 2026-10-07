@@ -18,7 +18,7 @@ class mag_trap(EnvExperiment, Base):
                       imaging_type=img_types.ABSORPTION,
                       warmup_shots=0)
 
-        self.p.t_tof = 100e-6
+        self.p.t_tof = 800e-6
         # self.xvar('beans',np.linspace(1,10.,10))
 
         # self.xvar('t_tof',np.linspace(200,1100.,9)*1.e-6)
@@ -48,7 +48,7 @@ class mag_trap(EnvExperiment, Base):
         # self.p.n_lightsheet_evap1_decay_exponential = 1.5
         # self.xvar('n_decay_exponential', np.linspace(2.5,5.,7))
 
-        self.p.N_repeats = 100
+        self.p.N_repeats = 1
         self.p.t_mot_load = 1.
 
         # Adjust.__init__(self)
@@ -129,6 +129,8 @@ class mag_trap(EnvExperiment, Base):
         # self.lightsheet.off()
 
         self.outer_coil.off()
+
+        # delay(0.9)
 
     @kernel
     def run(self):
