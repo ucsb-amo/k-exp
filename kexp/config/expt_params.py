@@ -183,7 +183,12 @@ class ExptParams(ExptParamsWaxx):
         # self.t_raman_pi_pulse = 6.7885e-06 #84965, 2026-10-02
         # self.t_raman_pi_pulse = 5.6102e-06 #85151, 2026-10-06
         # self.t_raman_pi_pulse = 5.5257e-06 #85159, 2026-10-06
-        self.t_raman_pi_pulse = 4.9248e-06 #85248, 2026-10-07
+        # self.t_raman_pi_pulse = 4.9248e-06 #85248, 2026-10-07
+        # self.t_raman_pi_pulse = 3.8081e-06 #85284, 2026-10-07
+        # self.t_raman_pi_pulse = 3.8588e-06 #85314, 2026-10-07
+        # self.t_raman_pi_pulse = 3.7870e-06 #85342, 2026-10-07
+        # self.t_raman_pi_pulse = 3.7892e-06 #85409, 2026-10-07
+        self.t_raman_pi_pulse = 3.8805e-06 #85470, 2026-10-08
          
         # DAC controlled AO amplitudes
         self.amp_d1_3d_c = 0.3
@@ -391,7 +396,11 @@ class ExptParams(ExptParamsWaxx):
         self.frequency_raman_transition_1m1_2m2 = 147.2593e6 #76037 2026-8-20
         # self.frequency_raman_transition = 147.2593e6 # 62500, 520 G 1-1 to 2-2
         # self.frequency_raman_transition = 119.4639e6 #80650
-        self.frequency_raman_transition = 119.463914e6 #85247, 2026-10-07  # Ramsey 13 detunings x 5 t_ramsey, shared resonance +/- 34 Hz (+14 Hz from #80650)
+        # self.frequency_raman_transition = 119.463914e6 #85247, 2026-10-07  # Ramsey 13 detunings x 5 t_ramsey, shared resonance +/- 34 Hz (+14 Hz from #80650)
+        # self.frequency_raman_transition = 119.463741e6 #85285, 2026-10-07  # Ramsey 13 x 5 after Raman lock change, shared resonance +/- 25 Hz (-173 Hz from #85247)
+        # self.frequency_raman_transition = 119.463653e6 #85343, 2026-10-07  # Ramsey 13 x 5 after the Raman frequency-stabilization session, shared resonance +/- 32 Hz (-88 Hz from #85285)
+        # self.frequency_raman_transition = 119.463592e6 #85410, 2026-10-07  # Ramsey 13 x 5, evening recalibration, shared resonance +/- 33 Hz (-62 Hz from #85343)
+        self.frequency_raman_transition = 119.463631e6 #85471, 2026-10-08  # Ramsey 13 x 5, morning recalibration, shared resonance +/- 23 Hz (+39 Hz from #85410)
         # self.frequency_raman_transition = 119.3977e6 # 176.5 A
 
         self.frequency_raman_transition_nf_1m1_20 = 460.7e6 # 1.5 G 1,-1 to 2,0
