@@ -232,6 +232,7 @@ kexp/experiments/JK/hf_tweezer_nova.py
 kexp/experiments/JK/lf_lightsheet_evap.py
 kexp/experiments/JK/lf_tweezer_evap.py
 kexp/experiments/JK/lf_tweezer_evap_dep.py
+kexp/experiments/JK/lf_tweezer_evap_t_check.py
 kexp/experiments/JK/lightsheet_bec.py
 kexp/experiments/JK/mot_tof.py
 kexp/experiments/JK/pidTestExpt_tbc1.py
@@ -319,6 +320,7 @@ kexp/experiments/JP/test/dds_phase_waxx_tracking.py
 kexp/experiments/JP/test/integrator_apd_statistics.py
 kexp/experiments/JP/test/integrator_example.py
 kexp/experiments/JP/test/integrator_test.py
+kexp/experiments/JP/test/integrator_timing_check.py
 kexp/experiments/JP/test/integrator_zero_procedure.py
 kexp/experiments/JP/test/pulse_test.py
 kexp/experiments/JP/test/raman_fast_test.py
