@@ -16,8 +16,10 @@ More than 20 places shell out to `ar`: ExptBuilder notebooks, the M-LOOP interfa
 and tweezer-balance builders, notebooks, and the agents' `run_lock.py`. After the flip each
 call is `kq run` and goes through the queue:
 
-- **Owner and priority.** The job is a person's, at priority 10, unless the caller's
-  environment has `WAXX_OWNER=agent` (then owner agent, priority 0). `--priority N` overrides.
+- **Owner and place in the queue.** The job is a person's unless the caller's environment
+  has `WAXX_OWNER=agent`. A person's job is placed ahead of every queued agent job; an
+  agent's job goes to the end. The queue then runs in that order (`kq list` shows it), and
+  `kq move` changes it. `--priority` is only a placement hint within the owner's block.
 - **Paths are checked on kong.** The file must exist on kong and lie under the server's roots
   as seen on kong: `%code%` and `C:\lab\skynet_log` by default (`WAXX_RUN_QUEUE_ROOTS`
   overrides). A builder that writes its file to `%TEMP%` is refused with exit 6. A builder on
@@ -42,7 +44,7 @@ call is `kq run` and goes through the queue:
   run going. To stop it, use `kq cancel <id>`, which sends liveOD's Abort.
 - **Working folder.** The job runs in the file's folder on kong (or `--cwd`), not in the
   caller's working folder.
-- **Launcher tag.** The experiment sees `WAXX_LAUNCHER=kq` and `WAXX_QUEUE_JOB=<id>` and
+- **Launcher tag.** The experiment sees `WAXX_LAUNCHER=kq` and `WAXX_QUEUE_JOB=<id>:<token>` and
   leaves restarting the monitor to the server.
 - **run_lock.py.** The agents' `run_lock.py run -- %kpy% & ar <file>` would become a queue
   client: it would hold its lock while the job waits, the run would carry the queue's
