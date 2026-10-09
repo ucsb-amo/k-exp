@@ -13,27 +13,57 @@ machine's models subtract the turn-on (``t_raman_pulse_offset``) themselves, so
 for reference, never written.
 
 The uncertainty is the fit's: ``pi/omega * sigma_omega/omega`` with
-``sigma_omega`` from the covariance (scaled by sqrt(chi2/dof) when that is
-above 1, as fit_rabi does). When the fit gives no finite uncertainty, ``unc`` is
-None (and the result is flagged); none is made up.
+``sigma_omega`` from the covariance. fit_rabi scales the covariance by chi2/dof
+ALWAYS in the "unweighted" mode used here (the noise is estimated from the
+residuals), and in its weighted modes only when chi2/dof > 1. When the fit
+gives no finite uncertainty, ``unc`` is None (and the result is flagged); none
+is made up.
 
 Shots with a non-finite pulse length or signal are left out of the fit and
 counted in ``excluded``; nothing else is left out.
 
-Weighting: ``noise="unweighted"`` by default -- every shot is fitted and the
-noise is taken from the residuals (covariance scaled by chi2/dof). Chosen by the
-coverage of the reported uncertainty on synthetic flops with a known pi time
-(300 seeds per case, 41 pulse lengths, 2026-10-09; pull = (fit - truth) / unc,
-an honest error bar has pull std 1, 68 % within 1 sigma, 95 % within 2):
+Weighting: this analysis passes ``noise="unweighted"`` by default -- every shot
+is fitted and the noise is taken from the residuals. waxa's ``fit_rabi`` itself
+is NOT changed: its own default stays ``noise="auto"`` ("sem" when there are
+repeats), for every other caller. The choice here is by the coverage of the
+reported uncertainty on synthetic flops with a known pi time (an honest error
+bar has pull std ~1, ~68 % of pulls within 1 sigma, ~95 % within 2). The study
+is ``coverage_study_rabi_pi_time.py`` in this package (seeds and cases in it;
+``python -m kexp.analysis.calibrations.coverage_study_rabi_pi_time``); its
+output, 2026-10-09, 300 seeds per row:
 
-- fit_rabi's own default ("auto" = "sem" when there are repeats) UNDER-states
-  the error: pull std 1.29 (3 repeats, Gaussian noise), 1.18 (10 repeats),
-  1.19-1.44 (multiplicative noise), 52-62 % within 1 sigma.
-- "pooled": calibrated in most cases (pull std 0.96-1.10), but one catastrophic
-  fit (pull std 7140, rms 5.6 %) with 10 % multiplicative noise and 5 repeats;
-  fails outright without repeats.
-- "unweighted": calibrated in every case tried (pull std 0.94-1.06, 93-97 %
-  within 2 sigma), with and without repeats; bias <= 0.07 %.
+    case                     noise         n fail pull std  robust  |p|<1  |p|<2  bias %  rms %
+    -------------------------------------------------------------------------------------------
+    additive 30, 3 repeats   auto        300    0     1.29    1.34   0.55   0.90  -0.090  0.546
+    additive 30, 3 repeats   pooled      300    0     0.97    0.93   0.69   0.96  -0.055  0.435
+    additive 30, 3 repeats   unweighted  300    0     0.98    0.97   0.68   0.96  -0.056  0.431
+    additive 30, 1 repeat    auto        300    0     1.02    1.01   0.68   0.93  -0.063  0.770
+    additive 30, 1 repeat    pooled        0  300      nan     nan    nan    nan    +nan    nan
+    additive 30, 1 repeat    unweighted  300    0     1.02    1.01   0.68   0.93  -0.063  0.770
+    additive 30, 10 repeats  auto        300    0     1.06    0.97   0.69   0.94  -0.006  0.256
+    additive 30, 10 repeats  pooled      300    0     0.94    1.01   0.74   0.96  -0.015  0.236
+    additive 30, 10 repeats  unweighted  300    0     0.97    1.00   0.72   0.96  -0.015  0.236
+    mult 0.10, 3 repeats     auto        300    0     1.42    1.39   0.51   0.84  -0.031  0.938
+    mult 0.10, 3 repeats     pooled      300    0     0.99    1.02   0.68   0.96  +0.055  0.707
+    mult 0.10, 3 repeats     unweighted  300    0     0.97    0.96   0.71   0.96  -0.012  0.763
+    mult 0.10, 5 repeats     auto        300    0     1.20    1.15   0.60   0.92  -0.058  0.597
+    mult 0.10, 5 repeats     pooled      300    0     0.88    0.87   0.73   0.99  -0.046  0.475
+    mult 0.10, 5 repeats     unweighted  300    0     0.87    0.87   0.72   0.98  -0.050  0.526
+    mult 0.25, 3 repeats     auto        300    0     1.41    1.45   0.49   0.83  -0.204  1.888
+    mult 0.25, 3 repeats     pooled      300    0     0.94    0.93   0.72   0.96  -0.132  1.368
+    mult 0.25, 3 repeats     unweighted  300    0     0.91    0.93   0.72   0.97  -0.160  1.605
+    mult 0.25, 5 repeats     auto        300    0     1.28    1.34   0.56   0.87  -0.055  1.337
+    mult 0.25, 5 repeats     pooled      300    0     1.04    1.17   0.65   0.96  -0.019  1.167
+    mult 0.25, 5 repeats     unweighted  300    0     0.97    0.88   0.73   0.96  -0.045  1.343
+
+Read: "auto" under-states the error whenever there are repeats (pull std
+1.20-1.42, 49-60 % within 1 sigma). "pooled" and "unweighted" are both
+calibrated in every case here (pull std 0.87-1.04); "pooled" fails outright
+without repeats. "unweighted" is the default because it works with and without
+repeats. Bias is small against the scatter (|bias| <= 0.16 %, rms 0.24-1.6 %).
+(An earlier, unrecorded scratch run with other seeds also showed one
+catastrophic "pooled" fit at 10 % multiplicative noise with 5 repeats; this
+recorded run does not reproduce it, so it is not counted as evidence here.)
 
 Options: ``signal`` (an attribute path on ``ad``, default ``"atom_number"``),
 ``xvar`` (name or index of the pulse-length xvar; default: the only one),
@@ -44,6 +74,7 @@ Options: ``signal`` (an attribute path on ``ad``, default ``"atom_number"``),
 from __future__ import annotations
 
 import math
+import os
 
 import numpy as np
 
@@ -145,6 +176,15 @@ def calibrate(ad, key, *, signal="atom_number", xvar=None, model="auto", noise="
                      analysis="rabi_pi_time")
 
 
+def _needs_images(opts):
+    """The default signal (atom_number) comes from the camera images; a
+    DataVault signal ("data.<key>", e.g. data.apd) does not."""
+    return not str(opts.get("signal", "atom_number")).startswith("data.")
+
+
+calibrate.needs_images = _needs_images
+
+
 def _figure(fit, value, unc, key, ad, path):
     """Data, fit and residuals (waxa plot_rabi) with the written value marked;
     saved with the Agg canvas (no pyplot window, safe off the main thread)."""
@@ -162,16 +202,24 @@ def _figure(fit, value, unc, key, ad, path):
     try:                                           # the x unit plot_rabi chose
         from waxa.plotting.units import detect_unit
         allt = np.concatenate([d.tu for d in fit.datasets])
-        _, mult, _ = detect_unit(xvarnames=[fit.xvarname], xvar_values=allt, params_obj=fit.params)
+        unit, mult, _ = detect_unit(xvarnames=[fit.xvarname], xvar_values=allt,
+                                    params_obj=fit.params)
     except Exception:
-        mult = 1e6
+        unit, mult = "us", 1e6
     ax.axvline(value * mult, color="C4", lw=1.6)
-    u = f" +/- {unc * 1e6:.4f}" if unc is not None else " (no uncertainty)"
-    ax.plot([], [], "-", color="C4", label=f"{key} = pi/Omega = {value * 1e6:.4f}{u} us")
+    u = f" +/- {unc * mult:.4g}" if unc is not None else " (no uncertainty)"
+    ax.plot([], [], "-", color="C4", label=f"{key} = pi/Omega = {value * mult:.6g}{u} {unit}")
     ax.legend(fontsize=8)
     rid = ", ".join(map(str, fit.run_ids)) or "?"
     ax.set_title(f"run {rid} | {key}: rate pi time 1/(2 f_Rabi) | f_Rabi = "
                  f"{fit.f_rabi / 1e3:.3f} +/- {fit.f_rabi_err / 1e3:.3f} kHz", fontsize=9)
     fig.tight_layout()
-    fig.savefig(str(path), dpi=120)
-    return str(path)
+    path = str(path)
+    tmp = f"{path}.{os.getpid()}.tmp.png"           # never a half-written figure at path
+    try:
+        fig.savefig(tmp, dpi=120)
+        os.replace(tmp, path)
+    finally:
+        if os.path.exists(tmp):
+            os.remove(tmp)
+    return path
