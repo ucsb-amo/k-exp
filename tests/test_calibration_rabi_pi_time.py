@@ -250,6 +250,7 @@ def test_figure_is_written_whole_and_images_only_when_needed(tmp_path):
     fig = tmp_path / "f.png"
     r = calibrate(fake_ad(t, y), "t_raman_pi_pulse", figure_path=str(fig))
     assert r.figure_path == str(fig) and fig.exists()
-    assert sorted(x.name for x in tmp_path.iterdir()) == ["f.png"]      # no temp file left
+    assert sorted(x.name for x in tmp_path.iterdir()) == [".tmp", "f.png"]
+    assert list((tmp_path / ".tmp").iterdir()) == []                     # no temp file left
     assert needs_images(calibrate, {}) is True                           # atom_number
     assert needs_images(calibrate, {"signal": "data.apd"}) is False

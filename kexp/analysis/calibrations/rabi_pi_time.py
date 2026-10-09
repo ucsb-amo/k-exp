@@ -214,8 +214,9 @@ def _figure(fit, value, unc, key, ad, path):
     ax.set_title(f"run {rid} | {key}: rate pi time 1/(2 f_Rabi) | f_Rabi = "
                  f"{fit.f_rabi / 1e3:.3f} +/- {fit.f_rabi_err / 1e3:.3f} kHz", fontsize=9)
     fig.tight_layout()
+    from waxx.calibration.analysis import figure_tmp_path
     path = str(path)
-    tmp = f"{path}.{os.getpid()}.tmp.png"           # never a half-written figure at path
+    tmp = str(figure_tmp_path(path))       # <dir>/.tmp/...: never a half-written figure at path
     try:
         fig.savefig(tmp, dpi=120)
         os.replace(tmp, path)
