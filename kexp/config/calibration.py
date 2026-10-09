@@ -18,8 +18,11 @@ or per call: ``kcal --config kexp.config.calibration:CALIBRATION_CONFIG show ...
 - analyses: ``kexp.analysis.calibrations.<name>.calibrate``.
 - params: ``kexp.config.expt_params.ExptParams`` when a ledger record names no
   class (a run records the class it used, e.g. a project's subclass).
-- runs load read-only: ``atomdata(run_id, roi_id='auto', lite=False)`` with
-  kexp's server_talk.
+- runs load read-only, never lite, with kexp's server_talk: ``atomdata(run_id,
+  roi_id='auto', lite=False)`` when an analysis needs the images, else with
+  ``ignore_images=True``. A full load still reads every DataVault container,
+  diagnostic stream frames included (waxa has no option to leave them out of
+  a full load); the load runs under ``load_budget_s`` (60 s).
 """
 
 import os
@@ -36,10 +39,15 @@ def _ledger_dir():
     return os.path.join(data_root, "calibrations")
 
 
-def _load_run(run_id):
+def _load_run(run_id, needs_images=False):
+    """Read-only, never lite (a lite load can write a lite copy beside the
+    data). Without images (no analysis of the run asked for them) the camera
+    frames, OD and ROI are skipped; with them, the ROI is found headless
+    (roi_id='auto', never a dialog)."""
     from waxa import atomdata
     from kexp.config.ip import server_talk
-    return atomdata(int(run_id), roi_id="auto", lite=False, server_talk=server_talk)
+    return atomdata(int(run_id), roi_id="auto" if needs_images else None, lite=False,
+                    ignore_images=not needs_images, server_talk=server_talk)
 
 
 CALIBRATION_CONFIG = CalibrationConfig(
