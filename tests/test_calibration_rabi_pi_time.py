@@ -86,6 +86,11 @@ def test_other_signal_by_attribute_path():
 
 
 def test_the_k_config(monkeypatch):
+    """The K config and its registry. Importing kexp.analysis.calibrations runs
+    kexp/analysis/__init__ (feedback, rabi_posterior), which imports the
+    kexp.base MIXIN modules (class definitions; kexp.config.ip reads the device
+    db file). Nothing is constructed: no Base, no device, no client, no
+    connection. That import is what an experiment process already has."""
     from kexp.config import calibration as kcal_cfg
     cfg = kcal_cfg.CALIBRATION_CONFIG
     assert callable(cfg.ledger_dir)                         # resolved lazily, not here
@@ -105,34 +110,64 @@ def test_the_k_config(monkeypatch):
         cfg.get_ledger_dir()
 
 
-def test_the_real_params_line_is_a_valid_target_read_only():
-    """find + dry run on kexp's own ExptParams: reads the file, writes nothing."""
+def test_a_copy_of_the_real_params_file_takes_a_write_back(tmp_path, monkeypatch):
+    """kexp's real ExptParams source, COPIED to tmp_path and imported from there
+    under another name: find, dry run and a real apply + revert on the copy.
+    The worktree's own kexp/config/expt_params.py is only read (to copy it)."""
+    import importlib
+    import sys
     from pathlib import Path
+    import kexp
     from waxx.calibration import writeback
     from waxx.calibration.record import CalResult
-    from kexp.config.expt_params import ExptParams
-    t = writeback.find_assignment("t_raman_pi_pulse", ExptParams)
-    assert Path(t.file).name == "expt_params.py" and t.method == "__init__"
-    raw = Path(t.file).read_bytes()
-    r = CalResult(key="t_raman_pi_pulse", value=3.91234e-06, unc=1.3e-08, run_id=1,
-                  fit={"ok": True})
-    rep = writeback.apply("t_raman_pi_pulse", r, ExptParams, dry_run=True, date="2026-10-09")
-    assert rep.ok and not rep.written, rep.reason
-    assert rep.new_line.strip() == "self.t_raman_pi_pulse = 3.9123e-06 #1, 2026-10-09"
-    assert Path(t.file).read_bytes() == raw
+    real = Path(kexp.__file__).parent / "config" / "expt_params.py"
+    real_raw = real.read_bytes()
+    copy = tmp_path / "kexp_params_copy_for_test.py"
+    copy.write_bytes(real_raw)
+    monkeypatch.syspath_prepend(str(tmp_path))
+    importlib.invalidate_caches()
+    mod = importlib.import_module("kexp_params_copy_for_test")
+    try:
+        P = mod.ExptParams
+        t = writeback.find_assignment("t_raman_pi_pulse", P)
+        assert Path(t.file) == copy and t.method == "__init__"
+        r = CalResult(key="t_raman_pi_pulse", value=3.91234e-06, unc=1.3e-08, run_id=1,
+                      fit={"ok": True})
+        rep = writeback.apply("t_raman_pi_pulse", r, P, dry_run=True, date="2026-10-09")
+        assert rep.ok and not rep.written, rep.reason
+        assert rep.new_line.strip() == "self.t_raman_pi_pulse = 3.9123e-06 #1, 2026-10-09"
+        assert copy.read_bytes() == real_raw
+        rep = writeback.apply("t_raman_pi_pulse", r, P, date="2026-10-09")
+        assert rep.ok and rep.written, rep.reason
+        assert mod.ExptParams().t_raman_pi_pulse == 3.9123e-06
+        rep = writeback.revert("t_raman_pi_pulse", mod.ExptParams, date="2026-10-09")
+        assert rep.ok, rep.reason
+        assert mod.ExptParams().t_raman_pi_pulse == writeback.current_value(
+            "t_raman_pi_pulse", mod.ExptParams)
+    finally:
+        sys.modules.pop("kexp_params_copy_for_test", None)
+    assert real.read_bytes() == real_raw                     # the real file never changed
 
 
 def test_base_hands_the_config_and_restarts_the_recorder():
-    """Base.__init__ is not run here (it builds devices); its source is checked
-    for the two calls instead, and the recorder works on kexp's ExptParams."""
-    import inspect
-    from kexp.base.base import Base
-    src = inspect.getsource(Base.__init__)
-    assert "self.calibration_config = CALIBRATION_CONFIG" in src
-    assert src.rstrip().endswith("self.start_param_override_recording()")
+    """Base.__init__ is neither run nor imported here (it builds devices and
+    clients): its source is read from the file and checked for the two calls.
+    The recorder is then exercised on kexp's ExptParams."""
+    import ast
+    from pathlib import Path
+    import kexp
+    src = (Path(kexp.__file__).parent / "base" / "base.py").read_text(encoding="utf-8")
+    tree = ast.parse(src)
+    base = next(n for n in tree.body if isinstance(n, ast.ClassDef) and n.name == "Base")
+    init = next(n for n in base.body if isinstance(n, ast.FunctionDef) and n.name == "__init__")
+    body = ast.get_source_segment(src, init)
+    assert "self.calibration_config = CALIBRATION_CONFIG" in body
+    last = init.body[-1]
+    assert ast.get_source_segment(src, last) == "self.start_param_override_recording()"
     from waxx.base.expt import Expt
     from kexp.config.expt_params import ExptParams
     p = ExptParams()
+    p.compute_derived()                          # as Base's prepare_devices does
     e = SimpleNamespace(params=p, _param_overrides=None)
     Expt.start_param_override_recording(e)
     p.t_tof = 1.e-3
@@ -176,7 +211,8 @@ def test_end_of_run_emit_with_the_real_analysis(tmp_path, monkeypatch, capsys):
     e.params = pmod.Params()
     e.calibration_config = CalibrationConfig(
         ledger_dir=tmp_path / "ledger", policy="kexp.calibrations.writeback_policy",
-        registry_modules=("kexp.analysis.calibrations",), loader=lambda rid: ad)
+        registry_modules=("kexp.analysis.calibrations",),
+        loader=lambda rid, needs_images=False: ad)
     e._cal_declarations, e.calibration_results = [], []
     e.run_info = SimpleNamespace(save_data=1, run_id=85600, filepath=str(run_file))
     e.live_od_client = SimpleNamespace(last_end_run_reply={})
@@ -205,3 +241,15 @@ def test_noise_option_passes_through():
     t, y = flop(seed=5)
     r = calibrate(fake_ad(t, y), "t_raman_pi_pulse", noise="pooled")
     assert r.fit["ok"] and r.fit["noise"] == "pooled"
+
+
+def test_figure_is_written_whole_and_images_only_when_needed(tmp_path):
+    from kexp.analysis.calibrations.rabi_pi_time import calibrate
+    from waxx.calibration.analysis import needs_images
+    t, y = flop(seed=6)
+    fig = tmp_path / "f.png"
+    r = calibrate(fake_ad(t, y), "t_raman_pi_pulse", figure_path=str(fig))
+    assert r.figure_path == str(fig) and fig.exists()
+    assert sorted(x.name for x in tmp_path.iterdir()) == ["f.png"]      # no temp file left
+    assert needs_images(calibrate, {}) is True                           # atom_number
+    assert needs_images(calibrate, {"signal": "data.apd"}) is False
