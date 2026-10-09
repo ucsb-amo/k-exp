@@ -12,6 +12,7 @@ from waxx.util import console
 
 from kexp.base import Devices, Cooling, Image, Cameras, Control, Clients
 from kexp.base.cameras import resolve_run_config
+from kexp.config.calibration import CALIBRATION_CONFIG
 from kexp.config.camera_id import cameras
 from kexp.config.ip import PATHS, server_talk
 from kexp.config.data_vault import DataVault
@@ -56,6 +57,8 @@ class Base(Expt, Devices, Cooling, Image, Cameras, Control, Clients):
             self.params = expt_params
 
         self.p = self.params
+        # self.calibrates(...) / emit_calibration (waxx.calibration)
+        self.calibration_config = CALIBRATION_CONFIG
         if data_vault == None:
             self.data = DataVault(self)
         else:
@@ -102,6 +105,10 @@ class Base(Expt, Devices, Cooling, Image, Cameras, Control, Clients):
         else:
             console.info(f"[warmup] {self.params.N_warmup_shots} warm-up "
                          "shot(s) before the first real shot.")
+
+        # Last: from here to finish_prepare, params the experiment assigns
+        # are its overrides (self._param_overrides); everything above is Base's.
+        self.start_param_override_recording()
 
     def finish_prepare(self,N_repeats=[],shuffle=True):
         """
