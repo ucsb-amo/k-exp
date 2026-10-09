@@ -20,10 +20,25 @@ None (and the result is flagged); none is made up.
 Shots with a non-finite pulse length or signal are left out of the fit and
 counted in ``excluded``; nothing else is left out.
 
+Weighting: ``noise="unweighted"`` by default -- every shot is fitted and the
+noise is taken from the residuals (covariance scaled by chi2/dof). Chosen by the
+coverage of the reported uncertainty on synthetic flops with a known pi time
+(300 seeds per case, 41 pulse lengths, 2026-10-09; pull = (fit - truth) / unc,
+an honest error bar has pull std 1, 68 % within 1 sigma, 95 % within 2):
+
+- fit_rabi's own default ("auto" = "sem" when there are repeats) UNDER-states
+  the error: pull std 1.29 (3 repeats, Gaussian noise), 1.18 (10 repeats),
+  1.19-1.44 (multiplicative noise), 52-62 % within 1 sigma.
+- "pooled": calibrated in most cases (pull std 0.96-1.10), but one catastrophic
+  fit (pull std 7140, rms 5.6 %) with 10 % multiplicative noise and 5 repeats;
+  fails outright without repeats.
+- "unweighted": calibrated in every case tried (pull std 0.94-1.06, 93-97 %
+  within 2 sigma), with and without repeats; bias <= 0.07 %.
+
 Options: ``signal`` (an attribute path on ``ad``, default ``"atom_number"``),
 ``xvar`` (name or index of the pulse-length xvar; default: the only one),
-``model`` / ``noise`` (passed to fit_rabi; defaults "auto"), ``figure_path``
-(set by the framework).
+``model`` (fit_rabi's, default "auto": decay envelope by AICc) and ``noise``
+(passed to fit_rabi), ``figure_path`` (set by the framework).
 """
 
 from __future__ import annotations
@@ -69,7 +84,7 @@ def _fail(key, reason, n_used=0, excluded=None, rid=0):
                      fit={"ok": False, "reason": reason}, analysis="rabi_pi_time")
 
 
-def calibrate(ad, key, *, signal="atom_number", xvar=None, model="auto", noise="auto",
+def calibrate(ad, key, *, signal="atom_number", xvar=None, model="auto", noise="unweighted",
               figure_path=None, **opts):
     """CalResult for ``key`` (a pi-time param, seconds) from the Rabi flop in ``ad``."""
     from waxa.analysis.rabi import fit_rabi

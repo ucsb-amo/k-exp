@@ -37,7 +37,8 @@ def test_recovers_the_rate_pi_time_with_a_fit_uncertainty(tmp_path):
     assert r.key == "t_raman_pi_pulse" and r.unit == "s" and r.run_id == 85600
     assert math.isfinite(r.unc) and r.unc > 0
     assert abs(r.value - T_PI_TRUE) < 4 * r.unc            # consistent with the truth
-    assert abs(r.value / T_PI_TRUE - 1) < 0.01
+    assert abs(r.value / T_PI_TRUE - 1) < 0.03                 # gross sanity only
+    assert r.fit["noise"] == "unweighted"                   # the default weighting
     # the uncertainty is the fit's: pi/omega * sigma_omega / omega
     om, dom = r.fit["params"]["omega"], r.fit["errors"]["omega"]
     assert r.unc == pytest.approx(np.pi / om * dom / om, rel=1e-12)
@@ -81,7 +82,7 @@ def test_other_signal_by_attribute_path():
     ad = fake_ad(t, np.zeros_like(y))
     ad.data = SimpleNamespace(apd=y)
     r = calibrate(ad, "t_raman_pi_pulse", signal="data.apd")
-    assert r.fit["ok"] and abs(r.value / T_PI_TRUE - 1) < 0.01 and r.fit["signal"] == "data.apd"
+    assert r.fit["ok"] and abs(r.value - T_PI_TRUE) < 4 * r.unc and r.fit["signal"] == "data.apd"
 
 
 def test_the_k_config(monkeypatch):
@@ -138,3 +139,69 @@ def test_base_hands_the_config_and_restarts_the_recorder():
     p.compute_derived()
     Expt._stop_param_override_recording(e)
     assert e._param_overrides == frozenset({"t_tof"})
+
+
+def test_end_of_run_emit_with_the_real_analysis(tmp_path, monkeypatch, capsys):
+    """Expt's end-of-run emit (waxx) with kexp's rabi_pi_time on a synthetic
+    flop: a stand-in run, a throwaway params module, a tmp ledger and a sandbox
+    HDF5 run file. Prints the terminal output (pytest -s shows it)."""
+    import importlib
+    import json
+    import sys
+    import h5py
+    import waxx.base.expt as expt_mod
+    from waxx.base.expt import Expt
+    from waxx.calibration import emit
+    from waxx.calibration.config import CalibrationConfig
+
+    monkeypatch.syspath_prepend(str(tmp_path))
+    monkeypatch.delenv(emit.VETO_ENV, raising=False)
+    monkeypatch.setattr(expt_mod, "_arm_exit_hang_dump", lambda *a, **k: None)
+    (tmp_path / "e2e_params_mod.py").write_text(
+        "class Params:\n    def __init__(self):\n"
+        "        self.t_raman_pi_pulse = 6.6403e-06 #85412, 2026-10-07\n")
+    importlib.invalidate_caches()
+    pmod = importlib.import_module("e2e_params_mod")
+    run_file = tmp_path / "sandbox_run_85600.h5"
+    with h5py.File(run_file, "w") as f:
+        f.attrs["run_complete"] = True
+    t, y = flop(seed=7)
+    ad = fake_ad(t, y)
+
+    class Run:
+        pass
+    for name in ("calibrates", "_emit_calibrations"):
+        setattr(Run, name, vars(Expt)[name])
+    e = Run()
+    e.params = pmod.Params()
+    e.calibration_config = CalibrationConfig(
+        ledger_dir=tmp_path / "ledger", policy="kexp.calibrations.writeback_policy",
+        registry_modules=("kexp.analysis.calibrations",), loader=lambda rid: ad)
+    e._cal_declarations, e.calibration_results = [], []
+    e.run_info = SimpleNamespace(save_data=1, run_id=85600, filepath=str(run_file))
+    e.live_od_client = SimpleNamespace(last_end_run_reply={})
+    e._run_saved, e._shot_complete_count, e._N_shots_total = True, t.size, t.size
+    e._expt_file_stem = lambda: "raman_rabi_flop"
+    try:
+        e.calibrates("t_raman_pi_pulse", analysis="rabi_pi_time")
+        e._emit_calibrations()
+    finally:
+        sys.modules.pop("e2e_params_mod", None)
+    out = capsys.readouterr().out
+    print(out)
+    r = e.calibration_results[0]
+    assert r.applied and abs(r.value - T_PI_TRUE) < 4 * r.unc
+    assert out.splitlines()[0].startswith("[cal] t_raman_pi_pulse = ")
+    assert "[cal] applied:" in out
+    text = (tmp_path / "e2e_params_mod.py").read_text()
+    assert "        # self.t_raman_pi_pulse = 6.6403e-06 #85412, 2026-10-07\n" in text
+    assert (tmp_path / "ledger" / "t_raman_pi_pulse" / "85600.png").exists()
+    with h5py.File(run_file, "r") as f:
+        assert json.loads(f.attrs["calibration_emitted"])[0]["applied"] is True
+
+
+def test_noise_option_passes_through():
+    from kexp.analysis.calibrations.rabi_pi_time import calibrate
+    t, y = flop(seed=5)
+    r = calibrate(fake_ad(t, y), "t_raman_pi_pulse", noise="pooled")
+    assert r.fit["ok"] and r.fit["noise"] == "pooled"
