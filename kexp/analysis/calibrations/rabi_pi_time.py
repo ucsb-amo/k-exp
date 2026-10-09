@@ -56,11 +56,15 @@ output, 2026-10-09, 300 seeds per row:
     mult 0.25, 5 repeats     pooled      300    0     1.04    1.17   0.65   0.96  -0.019  1.167
     mult 0.25, 5 repeats     unweighted  300    0     0.97    0.88   0.73   0.96  -0.045  1.343
 
-Read: "auto" under-states the error whenever there are repeats (pull std
-1.20-1.42, 49-60 % within 1 sigma). "pooled" and "unweighted" are both
-calibrated in every case here (pull std 0.87-1.04); "pooled" fails outright
-without repeats. "unweighted" is the default because it works with and without
-repeats. Bias is small against the scatter (|bias| <= 0.16 %, rms 0.24-1.6 %).
+Read: "auto" under-states the error in 5 of the 6 cases with repeats (pull std
+1.20-1.42, 49-60 % within 1 sigma); it is calibrated for 10 repeats of additive
+noise (1.06), and without repeats it is the unweighted fit. "pooled" and
+"unweighted" are calibrated in every case here (pull std 0.87-1.04; the 0.87-0.88
+of 10 % multiplicative noise with 5 repeats is slightly conservative); "pooled"
+fails outright without repeats. "unweighted" is the default because it works
+with and without repeats. Bias is small against the scatter: for "pooled" and
+"unweighted" |bias| <= 0.16 % with rms 0.24-1.6 %; "auto" reaches -0.204 %
+(rms up to 1.9 %).
 (An earlier, unrecorded scratch run with other seeds also showed one
 catastrophic "pooled" fit at 10 % multiplicative noise with 5 repeats; this
 recorded run does not reproduce it, so it is not counted as evidence here.)

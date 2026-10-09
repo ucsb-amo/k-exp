@@ -1,7 +1,7 @@
 """Coverage of rabi_pi_time's uncertainty on synthetic flops with a known pi time.
 
 Run: ``python -m kexp.analysis.calibrations.coverage_study_rabi_pi_time`` (about
-2-4 minutes). Deterministic: seed s of case c is numpy default_rng(1000*c + s).
+17 minutes on kong: 21 x 300 fits, three decay models each). Deterministic: seed s of case c is numpy default_rng(1000*c + s).
 
 For each case and each ``noise`` mode of waxa's fit_rabi it fits N_SEEDS
 synthetic pulse-length scans through ``rabi_pi_time.calibrate`` and reports the
@@ -17,7 +17,11 @@ stable floor, like run 83092 (floor 24, frac 0.43 there).
 Not a model of every real data set; a check that the error bars the analysis
 writes are calibrated where the truth is known.
 
-Imports nothing from the lab beyond waxx / waxa / this package; writes nothing.
+Writes nothing and contacts nothing. It does import more of the lab than it
+uses: importing this package runs kexp/analysis/__init__ (feedback,
+rabi_posterior), which imports the kexp.base mixin modules, and those import
+kexp.config.ip, which reads the device db file (and builds kexp's server_talk).
+No device, client or connection is made.
 """
 
 import numpy as np
