@@ -140,14 +140,25 @@ def load_run(run_id, with_scope=True, scope_windows=None, part=None, mode=0):
         if names != [XVAR]:
             raise ValueError(f"run {run_id}: expected the sub-scan's xvar {XVAR!r}, got {names}")
         t, apd, ts, ok = cal_points(view, mode)
+        # left out = points of this readout mode (or of unknown mode: a failed / never-taken point
+        # has no recorded mode) that are not usable; the other mode's points are not counted
+        m_all = getattr(view.data, "cal_readout_mode", None)
+        if m_all is not None:
+            m_all = np.asarray(m_all, float).ravel()[:ok.size]
+            this_mode = np.isclose(m_all, float(mode)) | ~np.isfinite(m_all)
+        else:
+            this_mode = np.ones(ok.size, bool)
+        st_all = getattr(view.data, "status", None)
+        taken = (np.asarray(st_all).ravel()[:ok.size] != 0) if st_all is not None else np.ones(ok.size, bool)
+        n_left_out = int(np.sum(~ok & this_mode & taken))
         if t.size == 0:
             raise ValueError(f"run {run_id}: no usable sub-scan point in readout mode {mode} "
-                             f"({int((~ok).sum())} left out)")
+                             f"({n_left_out} left out)")
         info = dict(run_id=rid, datetime=_decode(getattr(ad.run_info, "run_datetime_str", "")),
                     experiment=_expt_class(ad), timestamps=ts if np.all(np.isfinite(ts)) else None,
                     params={k: _scalar(getattr(ad.p, k)) for k in CONSISTENCY_PARAMS if hasattr(ad.p, k)},
                     data_complete=getattr(ad, "data_complete", None), part=part, readout_mode=int(mode),
-                    n_points_left_out=int((~ok).sum()), scope_missing=True)
+                    n_points_left_out=n_left_out, scope_missing=True)
         return dict(t=t, apd=apd, info=info), ad.params, None
     names = [str(n) for n in ad.xvarnames]
     if names != [XVAR]:
@@ -240,9 +251,13 @@ class ApdStateMapping:
         """Lines for expt_params_feedback.py, lab convention: old value commented out, new
         value tagged '#runs, date'.  For review; never written anywhere by this module."""
         date = date or self.date or datetime.date.today().isoformat()
-        tag = f"#{_run_label(self.run_ids)}, {date}"
+        part = self.runs[0].get("part")
+        src = (f", in-run sub-scan --part {part} --mode {self.runs[0].get('readout_mode')}"
+               if part else "")
+        tag = f"#{_run_label(self.run_ids)}, {date}" + (f"  # in-run sub-scan, mode {self.runs[0].get('readout_mode')}"
+                                                        if part else "")
         lines = [f"# APD readout calibration, runs {_run_label(self.run_ids)} ({self.runs[0]['experiment']}), "
-                 f"python -m kexp.analysis.apd_state_mapping"]
+                 f"python -m kexp.analysis.apd_state_mapping{src}"]
         if "n_photons_per_pulse" not in self.cal.proposal:
             lines.append("# n_photons_per_shot kept: no valid scope photon number for these runs; only "
                          "std_n_photons_per_shot / n_photons_per_shot enters the likelihood")
@@ -307,6 +322,12 @@ def apd_state_mapping(run_ids, *, skip_first_pulse=False, pulses=None, sz_source
     run_ids = [int(r) for r in run_ids]
     if part is not None:
         with_scope = False
+        # the sub-scan has two pulse lengths only: a joint Rabi fit (sz_source "fit", >= 5 lengths)
+        # cannot run, and only the linear map is defined
+        if sz_source != "params" or degree not in (1, "1"):
+            print(f"[apd_state_mapping] --part {part}: using --sz-source params --degree 1 "
+                  f"(was {sz_source} / {degree}: the sub-scan has two pulse lengths)")
+        sz_source, degree = "params", 1
     T, A, R, TS, infos, scopes, params0 = [], [], [], [], [], [], None
     for rid in run_ids:
         if part is None:
@@ -357,6 +378,12 @@ def apd_state_mapping(run_ids, *, skip_first_pulse=False, pulses=None, sz_source
     context = (f"amp_imaging {p0.get('amp_imaging')}, t_pci_pulse {p0.get('t_pci_pulse', np.nan)*1e6:.2f} us, "
                f"phase_slm_mask {p0.get('phase_slm_mask', np.nan)/np.pi:.3f} pi, "
                f"t_raman_pi_pulse {p0.get('t_raman_pi_pulse', np.nan)*1e6:.4f} us")
+    if part is not None:
+        context += f" | IN-RUN sub-scan (--part {part}), readout mode {int(mode)}"
+        n_up, n_down = int(np.sum(t <= 1e-12)), int(np.sum(t > 1e-12))
+        if min(n_up, n_down) < 3:
+            raise ValueError(f"--part {part} --mode {int(mode)}: too few usable sub-scan points for a "
+                             f"calibration ({n_up} up, {n_down} down over runs {run_ids}; need >= 3 of each)")
     cal = calibrate_readout(t, apd, run=run, run_ids=tuple(i["run_id"] for i in infos), timestamps=ts,
                             t_pi=p0.get("t_raman_pi_pulse"), t_offset=p0.get("t_raman_pulse_offset", 0.0) or 0.0,
                             sz_source=sz_source, pulses_used=used, degree=degree, scope=scope,

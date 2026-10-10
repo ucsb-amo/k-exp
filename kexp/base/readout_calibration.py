@@ -160,7 +160,9 @@ class ReadoutCalibrationRecord:
         sel = (status == 1) & np.all(np.isfinite(apd), axis=1) & np.isclose(mode, m)
         n_up, n_down = int(np.sum(sel & self._is_up(t))), int(np.sum(sel & ~self._is_up(t)))
         base = {"mode": float(m), "slots": np.flatnonzero(sel).tolist(), "n_up": n_up, "n_down": n_down,
-                "n_left_out": int(np.sum(~sel & (status != 0))), "t_eval": time.time()}
+                # points of THIS mode that were taken but are not usable (failed / non-finite);
+                # the other mode's points are not "left out" of this window
+                "n_left_out": int(np.sum(~sel & (status != 0) & np.isclose(mode, m))), "t_eval": time.time()}
         if min(n_up, n_down) < self.min_pairs:
             return dict(base, status="too_few_points", min_pairs=self.min_pairs)
         s = self.start["values"]
@@ -199,16 +201,17 @@ class ReadoutCalibrationRecord:
         if n_new and est["std_n_new"] and not (R["std_over_n_range"][0] <= est["std_n_new"] / n_new
                                                 <= R["std_over_n_range"][1]):
             checks.append(f"std/n {est['std_n_new'] / n_new:.3f} outside {R['std_over_n_range']}")
+        # two groups is SUSPICIOUS in the drivers (fb_driver.calibrate / cal_lib), not a sanity failure
+        susp = []
         groups = {}
         per_shot = np.mean(apd[sel], axis=1)
         for name, mask in (("up", self._is_up(t[sel])), ("down", ~self._is_up(t[sel]))):
             flag, detail = endpoint_groups(per_shot[mask], c)
             groups[name] = dict(detail, flag=bool(flag))
             if flag:
-                checks.append(f"{name} shots split into two groups ({detail['n_beyond']} beyond "
-                              f"{detail['limit'] * 1e3:.1f} mV)")
+                susp.append(f"{name} shots split into two groups ({detail['n_beyond']} beyond "
+                            f"{detail['limit'] * 1e3:.1f} mV)")
         # suspicious against the constants in force (the run-start values)
-        susp = []
         if c0:
             f = R["sigma_factor"]
             du = (est["v_up"] - s["v_apd_all_up"]) * 1e3
