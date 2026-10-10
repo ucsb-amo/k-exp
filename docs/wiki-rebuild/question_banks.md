@@ -5,7 +5,7 @@ Acceptance: a fresh agent reading only the wiki answers every question correctly
 ## Newcomer bank (20)
 N1. I sat down at kong after a power cut. What do I start, in what order, and how do I know each piece is up? (Expect: Server Dashboard on kong; LiveOD Server window says "Mother is watching..."; monitor server LED / Start on the Device Control panel; data drive B: mapped; env vars.)
 N2. What is the difference between a run and a shot, and what is a scan? (shot = one execution of the sequence for one set of xvar values; run = set of shots with one run ID; scan = changing a parameter between shots.)
-N3. Where do I type `ar mot_tof.py`, and what is `ar`? (kpy terminal, from `kexp/experiments/default_experiments`; `ar` = ARTIQ's artiq_run via the shortcut in `kexp/_bat/shortcuts`; `art` = timed run.)
+N3. Where do I type `ar mot_tof.py`, and what is `ar`? **[STALE 2026-10-10: a run queue went live 2026-10-09 and `ar` now means `kq run`; see HANDOFF §9b and re-derive the expected answer from the code once pushed]** (kpy terminal, from `kexp/experiments/default_experiments`; `ar` = ARTIQ's artiq_run via the shortcut in `kexp/_bat/shortcuts`; `art` = timed run.)
 N4. How do I take a standard MOT time-of-flight run, and where does its data end up? (`ar mot_tof.py`; `B:\_K\PotassiumData\YYYY-MM-DD\<runid>_...hdf5`; liveOD saves the images.)
 N5. What does `self.p.t_tof = 0.05e-3` mean, and what units do parameters use? (`self.p` is ExptParams; SI seconds; 50 µs.)
 N6. How do I scan a parameter over several values, and how many shots will the run take? (`self.xvar('t_tof', np.linspace(...))`; shots = product of xvar lengths × N_repeats; absorption = 3 images per shot; printed as "Scan: ... -> N shots (M images)".)

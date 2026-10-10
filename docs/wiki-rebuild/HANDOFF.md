@@ -175,3 +175,44 @@ Read both consolidated reports in full before Phase 2, like the others.
 - Footer on every page: `Last verified against code: <date> · k-exp <sha> · wax <sha>`.
 - Evidence labels: confirmed / inferred / needs a human. Only the first two reach the wiki.
 - Commit messages: no model identifiers; end with the attribution lines the harness gives.
+
+## 9. Post-handoff notices (2026-10-10)
+
+### 9a. The code has moved since the research was done
+The reports describe k-exp `c8faf77` and wax `acc4621` (both 2026-09-27). On 2026-10-10 `origin/main` is
+k-exp `534d4b02` (+63 commits; most-touched: kexp/experiments (77 files); kexp/util (46 files); kexp/config (10 files); kexp/base (7 files); kexp/control (6 files); kexp/calibrations (6 files); kexp/analysis (4 files); kexp/_bat (3 files);) and wax `09f4221` (+85 commits, incl. the
+`jep/calibration-writeback` merge: calibration emit, ledger and parameter write-back; most-touched:
+waxx-src/waxx/util/live_od (22 files); waxx-src/waxx/util/guis (17 files); waxx-src/waxx/util/dashboard (12 files); waxx-src/waxx/control/slm (7 files); waxx-src/waxx/util/device_state (6 files); waxx-src/waxx/control/cameras (6 files); waxx-src/waxx/util/supervise.py (1 files); waxx-src/waxx/util/profiling (1 files);). Before Phase 2, run `git log --stat c8faf77..origin/main` in k-exp and
+`acc4621..origin/main` in wax and re-check every report section that cites a touched file. The
+calibration write-back merge in wax touches area 12 (calibrations) and probably 04 (parameters).
+
+### 9b. Run queue briefing (reported by a manager session on kong; NOT yet verifiable from GitHub)
+A coordinating Claude session on kong ("code-14") reported on 2026-10-10 that a **run queue** went live
+on 2026-10-09 (wax `f7c8b31`, k-exp `01827174`, `code` repo `b3a5443`). As of this notice neither SHA is
+on any branch of `ucsb-amo/k-exp` or `ucsb-amo/wax` on GitHub, and no fetched branch holds the files it
+names, so treat every line below as **reported, unverified** until those commits are pushed. Its stated
+sources of truth: `k-exp/kexp/_bat/shortcuts/README.md` (line 3 said to be stale and being fixed) and
+`.claude/skills/run-experiment/SKILL.md` §4. Reported facts:
+- The monitor server hosts a run queue; the Server Dashboard has a "Queue | State | Monitor" panel.
+- `ar x.py` now means `kq run x.py`: the run is queued as a person's job unless `WAXX_OWNER=agent`.
+  `ar_direct` / `artiq_run --device-db %db%` run directly, outside the queue. The agents' `run_lock.py`
+  rewrites a leading `ar` to the full `artiq_run.exe` path so agent runs stay direct.
+- `kq` commands: run, submit, list, show, tail, cancel, pause/resume, hold/release, insert/move/edit,
+  status. Exit codes 0 / N / 1 / 2 / 3 / 4 / 6 / 130. Person jobs go ahead of agent jobs. An agent's
+  TOF-loop start must send owner=agent.
+- The file that runs is kong's copy, hashed at submit and at launch; paths must be under `%code%` or
+  `C:\lab\skynet_log`; no stdin. `kq cancel` = liveOD Abort, which discards a running job's file. A
+  person's liveOD Reset creates a person hold.
+
+**What this makes stale in this folder** (fix in Phase 2/3 once the code is on GitHub):
+- `question_banks.md` N3 ("`ar` = ARTIQ's artiq_run via the shortcut") and the expected answers of N4,
+  N10 (abort now also via `kq cancel`), N18/E-items that mention `ar mot_observe.py`.
+- `drafts/glossary_groups_1_4.md`, group 2, the `ar`, `art` entry; add `kq`, run queue, job, owner,
+  hold, direct run.
+- `phase0_recon.md` code map line for `_bat/shortcuts` (ar.lnk, art.bat) and the footgun list.
+- `reports/01_startup_pcs.md` (launchers, cheat sheet), `03_lifecycle.md` ("from `ar file.py` to the
+  saved file"), `CONSOLIDATED_B.md` area 13 (how operators run experiments), `CONSOLIDATED_A.md` area 07
+  (the Server Dashboard panels; abort/reset semantics); any "ar = artiq_run alias" sentence anywhere.
+- `drafts/ia_plan_provisional.md`: "Running-a-Standard-Experiment" and the operator cheat sheet need a
+  queue section; Troubleshooting needs the `kq` exit codes; the Monitor pages need the queue panel.
+- The old wiki pages Starting-up-the-experiment and Quick-Start say `ar`/artiq_run with no queue.

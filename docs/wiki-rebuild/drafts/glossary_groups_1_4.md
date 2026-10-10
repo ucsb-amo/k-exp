@@ -85,7 +85,7 @@ Every other snippet on this wiki is made of these same pieces.
 
 **`.bat` script, shortcut (`.lnk`)** — A `.bat` file is a Windows command script; the ones in `kexp/_bat/` start our programs. A `.lnk` is a Start-menu shortcut to one. *Ours:* `live_od.bat`, the "LiveOD Server" shortcut.
 
-**`ar`, `art`** — `ar` runs an experiment file with ARTIQ (`artiq_run`) using our device database; `art` does the same and prints a startup timeline. Both live in `kexp/_bat/shortcuts`.
+**`ar`, `art`** — *(STALE 2026-10-10: since 2026-10-09 `ar` reportedly means `kq run`, which queues the run on the monitor server's run queue; `ar_direct` is the old direct run. See HANDOFF §9b; verify against `kexp/_bat/shortcuts/README.md` once pushed.)* `ar` ran an experiment file with ARTIQ (`artiq_run`) using our device database; `art` does the same and prints a startup timeline. Both live in `kexp/_bat/shortcuts`.
 
 **F12 (go to definition)** — In VS Code, with the cursor on a name, jumps to where it is defined. The fastest way to see which parameters a cooling stage reads.
 
