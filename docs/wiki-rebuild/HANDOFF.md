@@ -216,3 +216,37 @@ sources of truth: `k-exp/kexp/_bat/shortcuts/README.md` (line 3 said to be stale
 - `drafts/ia_plan_provisional.md`: "Running-a-Standard-Experiment" and the operator cheat sheet need a
   queue section; Troubleshooting needs the `kq` exit codes; the Monitor pages need the queue panel.
 - The old wiki pages Starting-up-the-experiment and Quick-Start say `ar`/artiq_run with no queue.
+
+### 9c. The live wiki has moved since the recon (verified against `k-exp.wiki` on 2026-10-10)
+`phase0_recon.md` inventories the wiki at `a109f57` (36 pages). `origin/master` is now `f9931a7` with five
+more commits, written by other Claude sessions working on the machine:
+
+| Date | Commit | What |
+|---|---|---|
+| 2026-10-04 | dcc5a5d | Bring the non-OPX pages up to date from `jep/opx-integration` |
+| 2026-10-06 | fb39c23 | Data loading, liveOD, diagnostic images: the 2026-10-06 changes |
+| 2026-10-07 | d8f9422 | Starting up: dashboard panels dock or pop out; GUI terminals share one taskbar button |
+| 2026-10-07 | 5197bec | DataVault: containers every run has; per-shot Raman laser frequency from the Bristol wavemeter |
+| 2026-10-09 | f9931a7 | Run queue (kq) and calibration write-back: two new pages, links, the 2026-10-09 changes |
+
+**New pages (39 pages now):** `Run-queue-(kq)-and-the-monitor-server` (547 lines),
+`Calibration-write-back-(waxx.calibration)` (380 lines), `Diagnostic-images-and-auxiliary-camera-streams`
+(133 lines). **Changed:** LiveOD (+125 lines), Monitor (+53), DataVault (+42), SLM-spot-finder (+33),
+Starting-up (+27), Saving-and-loading-data, Unit-conventions, Repositories, Home, `_Sidebar`.
+
+Consequences for the next editor:
+1. `bootstrap_resume.sh` clones the wiki fresh, so you get these pages; re-run the page inventory and
+   staleness ranking of `phase0_recon.md` for the three new pages and the ten changed ones. The
+   old-wiki audits in the reports (`wiki_audit` sections, `CONSOLIDATED_B.md` area 15) describe the
+   pages as of `a109f57`; the changed pages need their audit redone, and the Starting-up and LiveOD
+   audits in particular are partly superseded.
+2. The run-queue page on the wiki is the nearest readable source for the queue until the k-exp/wax
+   commits reach GitHub (as of this notice they still have not; §9b). Treat it as another Claude
+   session's write-up: audit it against the code when the code arrives, like any other page.
+3. Fold the three new pages into the structure plan: the run queue belongs on the "Run the machine
+   today" path and in the operator cheat sheet; calibration write-back belongs with Calibrations
+   (area 12) and Parameters (area 04); diagnostic images with Cameras and imaging. Each needs a
+   redirect stub if renamed.
+4. Peer sessions are actively editing the live wiki. Before Phase 6, diff `docs/wiki/` against the
+   wiki's `master` of that day and merge their later edits; the sync script's `--delete` would
+   otherwise discard them.
