@@ -77,6 +77,7 @@ def test_the_header_follows_the_supervisor_and_asks_before_stop_and_restart(wire
     header._restart_btn.click()
     assert sup.calls == ["start"]                           # both declined
     assert "killed at once" in answers[0] and "does not start the monitor" in answers[1]
+    assert "Monitor panel's Monitor tab" in answers[1]
     answer[0] = box.StandardButton.Yes
     header._stop_btn.click()
     header._restart_btn.click()

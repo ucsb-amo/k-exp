@@ -79,7 +79,8 @@ _MONITOR_SERVER_CONFIRM = {
                 "Restart the monitor server process?\n\n"
                 "It is killed at once, together with the monitor experiment it runs: an op "
                 "or ramp playing out is cut off where it is. The new server does not start "
-                "the monitor: start it from the Device Control status row."),
+                "the monitor: start it from the Device Control status row or the Monitor "
+                "panel's Monitor tab."),
 }
 
 # Lab-specific wiring: tell the generic waxx framework where kexp keeps its
