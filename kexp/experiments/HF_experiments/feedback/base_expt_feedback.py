@@ -103,12 +103,15 @@ class FeedbackExpt(Base, Feedback, RandomRamanPulseTimes):
         if int(p.cal_apply) != 0:
             raise NotImplementedError("cal_apply != 0: the in-run apply path is not built "
                                       "(phase 1 records and evaluates only)")
-        if float(np.ravel(p.preshot_endpoint_gain)[0]) > 0.:
-            raise ValueError("cal_enabled with preshot_endpoint_gain > 0: the two readout "
-                             "paths are mutually exclusive")
-        if bool(p.feedback_apd_map_enabled):
-            raise ValueError("cal_enabled with feedback_apd_map_enabled: the calibration reads "
-                             "raw volts, the map would not describe them")
+        # only with the sub-scan on: with cal_enabled = 0 a run that uses the
+        # preshot gain or the APD map is prepared exactly as before
+        if int(getattr(p, "cal_enabled", 1)):
+            if float(np.ravel(p.preshot_endpoint_gain)[0]) > 0.:
+                raise ValueError("cal_enabled with preshot_endpoint_gain > 0: the two readout "
+                                 "paths are mutually exclusive")
+            if bool(p.feedback_apd_map_enabled):
+                raise ValueError("cal_enabled with feedback_apd_map_enabled: the calibration "
+                                 "reads raw volts, the map would not describe them")
         modes = [float(m) for m in np.atleast_1d(p.cal_readout_modes)]
         if not modes or any(m not in (0., 1.) for m in modes):
             raise ValueError(f"cal_readout_modes must be a list of 0 / 1, got {modes}")
