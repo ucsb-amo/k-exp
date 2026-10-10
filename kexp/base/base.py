@@ -379,6 +379,40 @@ class Base(Expt, Devices, Cooling, Image, Cameras, Control, Clients):
             aprint("[scan] cleanup_abort_kernel: restoring the raman DDS from fast "
                    "frequency update mode failed; the next run's init_kernel re-inits it.")
 
+    # ---- interleaved sub-scan points (waxx Scanner / Expt.add_sub_scan) ----
+
+    @kernel
+    def init_calibration_kernel(self):
+        """Before a sub-scan point: the per-shot reset a warm-up shot gets
+        (pre_scan) -- devices and tweezers reset, the diagnostic cameras off
+        so no frame is triggered for a shot liveOD does not count. No scope
+        arming, no magnetometer read, no DataVault write."""
+        self.diag.active = False
+        self.core.break_realtime()
+        self.reset_devices()
+        self.core.break_realtime()
+        self.reset_tweezers(False)
+        self.core.break_realtime()
+
+    @kernel
+    def cleanup_calibration_kernel(self):
+        """After a sub-scan point (also after one that ended on an RTIO
+        error): the TTL input drain every data shot gets
+        (cleanup_scan_kernel_wax -- a point's prep_raman waits on the line
+        trigger, and a stale edge would let the next shot's wait return at
+        once), the safety cleanup with the raman DDS taken out of
+        fast-frequency-update mode (cleanup_abort_kernel, failure swallowed),
+        the imaging and raman RF off as cleanup_scan_kernel leaves them, and
+        the diagnostic cameras back on."""
+        self.core.break_realtime()
+        self.ttl.clear_input_events()
+        self.cleanup_abort_kernel()
+        self.core.break_realtime()
+        self.imaging.off()
+        self.raman.off()
+        self.core.break_realtime()
+        self.diag.active = self.diag.enabled
+
     @kernel
     def cleanup_scan_kernel(self):
 

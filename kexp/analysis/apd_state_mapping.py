@@ -97,12 +97,58 @@ def _run_label(ids):
 
 
 # ------------------------------------------------------------------ loading
-def load_run(run_id, with_scope=True, scope_windows=None):
-    """One run, read-only: (dict of per-shot arrays, params, ScopePulses or None)."""
+def cal_points(view, mode=0):
+    """The usable points of a run's interleaved readout sub-scan (``ad.cal``,
+    waxx SubScan) in one readout mode: (t_pulse, apd, timestamps, mask).
+    A point counts when it was taken (``status == 1``), its reads are finite
+    and its ``cal_readout_mode`` is ``mode`` (every point when the sub-scan
+    recorded no mode)."""
+    t = np.asarray(view.xvars[0], float).ravel()
+    apd = np.asarray(view.data.apd, float)
+    if apd.ndim == 1:
+        apd = apd[:, None]
+    n = t.size
+    ok = np.ones(n, bool)
+    status = getattr(view.data, "status", None)
+    if status is not None:
+        ok &= np.asarray(status).ravel()[:n] == 1
+    ok &= np.all(np.isfinite(apd), axis=1)
+    m = getattr(view.data, "cal_readout_mode", None)
+    if m is not None and mode is not None:
+        ok &= np.isclose(np.asarray(m, float).ravel()[:n], float(mode))
+    ts = np.asarray(getattr(view, "timestamp_shot_end", np.array([])), float).ravel()
+    ts = ts if ts.size == n else np.full(n, np.nan)
+    return t[ok], apd[ok], ts[ok], ok
+
+
+def load_run(run_id, with_scope=True, scope_windows=None, part=None, mode=0):
+    """One run, read-only: (dict of per-shot arrays, params, ScopePulses or None).
+    ``part='cal'``: the run's interleaved readout sub-scan instead of its main
+    scan (one readout ``mode``, no scope)."""
     from waxa import atomdata
     from waxa.analysis.readout import integrate_scope_pulses
 
-    ad = atomdata(int(run_id), roi_id="auto", lite=False)
+    ad = atomdata(int(run_id), roi_id="auto", lite=False, ignore_images=bool(part))
+    rid = int(np.ravel(ad.run_info.run_id)[0])
+    if part is not None:
+        if part != "cal":
+            raise ValueError(f"part must be None or 'cal', got {part!r}")
+        view = ad.cal
+        if view is None:
+            raise ValueError(f"run {run_id}: no interleaved readout sub-scan (ad.cal) in this run")
+        names = [str(n) for n in view.xvarnames]
+        if names != [XVAR]:
+            raise ValueError(f"run {run_id}: expected the sub-scan's xvar {XVAR!r}, got {names}")
+        t, apd, ts, ok = cal_points(view, mode)
+        if t.size == 0:
+            raise ValueError(f"run {run_id}: no usable sub-scan point in readout mode {mode} "
+                             f"({int((~ok).sum())} left out)")
+        info = dict(run_id=rid, datetime=_decode(getattr(ad.run_info, "run_datetime_str", "")),
+                    experiment=_expt_class(ad), timestamps=ts if np.all(np.isfinite(ts)) else None,
+                    params={k: _scalar(getattr(ad.p, k)) for k in CONSISTENCY_PARAMS if hasattr(ad.p, k)},
+                    data_complete=getattr(ad, "data_complete", None), part=part, readout_mode=int(mode),
+                    n_points_left_out=int((~ok).sum()), scope_missing=True)
+        return dict(t=t, apd=apd, info=info), ad.params, None
     names = [str(n) for n in ad.xvarnames]
     if names != [XVAR]:
         raise ValueError(f"run {run_id}: expected the single xvar {XVAR!r}, got {names}")
@@ -113,7 +159,6 @@ def load_run(run_id, with_scope=True, scope_windows=None):
     if apd.shape[0] != t.size:
         raise ValueError(f"run {run_id}: data.apd has {apd.shape[0]} shots, the xvar {t.size}")
     ts = np.asarray(getattr(ad, "timestamp_shot_end", np.array([])), float).ravel()
-    rid = int(np.ravel(ad.run_info.run_id)[0])
     info = dict(run_id=rid, datetime=_decode(getattr(ad.run_info, "run_datetime_str", "")),
                 experiment=_expt_class(ad), timestamps=ts if ts.size == t.size else None,
                 params={k: _scalar(getattr(ad.p, k)) for k in CONSISTENCY_PARAMS if hasattr(ad.p, k)},
@@ -252,14 +297,22 @@ def current_feedback_params():
 
 
 def apd_state_mapping(run_ids, *, skip_first_pulse=False, pulses=None, sz_source="fit", degree="auto",
-                      with_scope=True, scope_windows=None, n_boot=2000, seed=0, date=None) -> ApdStateMapping:
-    """Load the runs (read-only) and calibrate the APD readout; see the module docstring."""
+                      with_scope=True, scope_windows=None, n_boot=2000, seed=0, date=None,
+                      part=None, mode=0) -> ApdStateMapping:
+    """Load the runs (read-only) and calibrate the APD readout; see the module docstring.
+    ``part='cal'``: each run's interleaved readout sub-scan (``ad.cal``) in readout
+    ``mode`` (0 the data shot's readout, 1 the calibration run's), scope off."""
     from waxa.analysis.readout import calibrate_readout, ScopePulses
 
     run_ids = [int(r) for r in run_ids]
+    if part is not None:
+        with_scope = False
     T, A, R, TS, infos, scopes, params0 = [], [], [], [], [], [], None
     for rid in run_ids:
-        d, prm, sc = load_run(rid, with_scope=with_scope, scope_windows=scope_windows)
+        if part is None:
+            d, prm, sc = load_run(rid, with_scope=with_scope, scope_windows=scope_windows)
+        else:
+            d, prm, sc = load_run(rid, with_scope=False, scope_windows=scope_windows, part=part, mode=mode)
         params0 = params0 if params0 is not None else prm
         T.append(d["t"]); A.append(d["apd"]); R.append(np.full(d["t"].size, d["info"]["run_id"]))
         TS.append(d["info"]["timestamps"]); infos.append(d["info"]); scopes.append(sc)
@@ -348,6 +401,12 @@ def build_parser():
     ap.add_argument("--bootstrap", type=int, default=2000, help="bootstrap resamples for the noise intervals")
     ap.add_argument("--date", default=None, help="date for the params tag (default today)")
     ap.add_argument("--show", action="store_true", help="show the figures")
+    ap.add_argument("--part", default=None, choices=["cal"],
+                    help="calibrate from each run's interleaved readout sub-scan (ad.cal, a feedback run "
+                         "with cal_enabled) instead of its main scan; scope off")
+    ap.add_argument("--mode", type=int, default=0,
+                    help="with --part cal: the readout mode of the points to use (0 the data shot's "
+                         "readout, 1 the calibration run's)")
     return ap
 
 
@@ -361,11 +420,13 @@ def main(argv=None):
     deg = args.degree if args.degree == "auto" else int(args.degree)
     m = apd_state_mapping(args.runs, skip_first_pulse=args.skip_first_pulse, pulses=args.pulses,
                           sz_source=args.sz_source, degree=deg, with_scope=not args.no_scope,
-                          n_boot=args.bootstrap, date=args.date)
+                          n_boot=args.bootstrap, date=args.date, part=args.part, mode=args.mode)
     print(m.report())
     if not m.cal.ok:
         return 1
     stem = f"apd_state_mapping_{_run_label(m.run_ids).replace(',', '_')}"
+    if args.part:
+        stem += f"_{args.part}{args.mode}"
     figs = [("pulses", m.cal.plot_pulses()[0]), ("summary", m.cal.plot_summary()[0])]
     if out:
         os.makedirs(out, exist_ok=True)

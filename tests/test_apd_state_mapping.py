@@ -90,3 +90,20 @@ def test_out_dir_allow_list(tmp_path, monkeypatch):
     for bad in (str(tmp_path / "elsewhere"), str(root / ".." / "elsewhere"), "..\\escape"):
         with pytest.raises(SystemExit):
             asm._check_out_dir(bad)
+
+
+def test_cal_points_select_the_usable_points_of_one_readout_mode():
+    """--part cal: the run's interleaved sub-scan (ad.cal), one readout mode,
+    taken points with finite reads only."""
+    t = np.tile([0.0, T_PI + 127e-9], 4)
+    apd = np.arange(8.0 * P).reshape(8, P)
+    apd[5] = np.nan
+    view = SimpleNamespace(xvars=[t], timestamp_shot_end=100.0 + np.arange(8.0),
+                           data=SimpleNamespace(apd=apd, status=np.array([1, 1, 1, 1, 1, 1, 2, 1]),
+                                                cal_readout_mode=np.array([0, 0, 1, 1, 0, 0, 1, 1.])))
+    t0, a0, ts0, ok0 = asm.cal_points(view, 0)
+    assert ok0.tolist() == [True, True, False, False, True, False, False, False]
+    assert np.allclose(t0, [0, T_PI + 127e-9, 0]) and a0.shape == (3, P) and ts0.tolist() == [100, 101, 104]
+    t1, a1, _, ok1 = asm.cal_points(view, 1)
+    assert ok1.tolist() == [False, False, True, True, False, False, False, True]
+    assert asm.cal_points(view, None)[3].sum() == 6

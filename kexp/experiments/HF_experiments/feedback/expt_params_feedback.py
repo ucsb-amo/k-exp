@@ -389,4 +389,32 @@ class ExptParams(expt_params_kexp):
 
         self.t_tweezer_hold = 30.e-3
 
+        ### interleaved readout calibration (an interleaved sub-scan, waxx
+        ### Expt.add_sub_scan; FeedbackExpt.calibration_kernel). 2026-10-09.
+        # 1: every cal_every_n_shots data shots (and before the first) the run
+        # takes one pair of readout points -- the prepared state (t_raman_pulse
+        # 0, all up) and after a resonant pi (all down) -- recorded raw in the
+        # run's file (ad.cal). 0: no sub-scan, the run is as before.
+        self.cal_enabled = 0
+        self.cal_every_n_shots = 20
+        # reads per point, taken at the data shot's read spacing (mode 0) or
+        # the calibration run's (mode 1, cal_t_between_reads_mu)
+        self.cal_n_reads = 5
+        # readout modes cycled event by event: 0 = the data shot's readout
+        # (FeedbackExpt.calibration_read: measurement()'s integrator timeline,
+        # fast frequency update set up), 1 = the calibration run's readout
+        # (apd_voltage_vs_state_2: warmup_imaging, integrated_imaging_pulse at
+        # cal_t_between_reads_mu). Both, so the two readouts are compared
+        # inside one run; [0.] for the data readout only.
+        self.cal_readout_modes = np.array([0., 1.])
+        self.cal_t_between_reads_mu = int64(25000)
+        # 1: the pair's order (up, down) is reversed on every other event
+        self.cal_alternate = 1
+        # 0 in phase 1: the points are recorded and evaluated on the host only;
+        # the kernel's readout constants never change during the run. Any
+        # other value is refused (not built).
+        self.cal_apply = 0
+        # the sub-scan's point parameters (set per point by the scan loop)
+        self.cal_readout_mode = 0.
+
 

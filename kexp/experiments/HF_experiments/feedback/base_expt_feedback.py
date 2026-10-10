@@ -72,8 +72,66 @@ class FeedbackExpt(Base, Feedback, RandomRamanPulseTimes):
         # populate first row of probabilities with pre-pulse lists
         self.data.probabilities.shot_data[0, :] = self.P0
         self.data.omega_raman_mesh.shot_data[0, :] = self.omega_guess_list
-        
+
+        # the interleaved readout calibration (p.cal_enabled): a sub-scan of
+        # up / down readout points between the data shots, recorded raw and
+        # evaluated on the host (ReadoutCalibrationRecord); phase 1 never
+        # changes the kernel's constants
+        # The sub-scan object always exists (calibration_kernel names
+        # self.cal, and the compiler type-checks it whether or not a point is
+        # ever taken); with cal_enabled = 0 it is turned off before the run
+        # is prepared: no points, no containers in the file, no record.
+        self.readout_cal = None
+        self._declare_readout_calibration()
+        if not int(self.p.cal_enabled):
+            self.cal.disable("cal_enabled = 0", quiet=True)
+            self.readout_cal = None
+
         super().finish_prepare(shuffle=shuffle)
+
+    # the parameters calibration_kernel reads; the sub-scan is refused if the
+    # main scan scans one of them (the points would mix settings)
+    CAL_READS_PARAMS = ("amp_imaging", "t_img_pulse", "frequency_detuned_hf_midpoint",
+                        "phase_slm_mask", "dimension_slm_mask", "slm_mask_every_shot",
+                        "t_raman_pi_pulse", "t_raman_pulse_offset", "frequency_raman_transition",
+                        "fraction_power_raman", "t_preshot_gap", "t_tweezer_hold",
+                        "t_between_pulses_mu", "cal_t_between_reads_mu", "cal_n_reads")
+
+    def _declare_readout_calibration(self):
+        from kexp.base.readout_calibration import ReadoutCalibrationRecord
+        p = self.p
+        if int(p.cal_apply) != 0:
+            raise NotImplementedError("cal_apply != 0: the in-run apply path is not built "
+                                      "(phase 1 records and evaluates only)")
+        if float(np.ravel(p.preshot_endpoint_gain)[0]) > 0.:
+            raise ValueError("cal_enabled with preshot_endpoint_gain > 0: the two readout "
+                             "paths are mutually exclusive")
+        if bool(p.feedback_apd_map_enabled):
+            raise ValueError("cal_enabled with feedback_apd_map_enabled: the calibration reads "
+                             "raw volts, the map would not describe them")
+        modes = [float(m) for m in np.atleast_1d(p.cal_readout_modes)]
+        if not modes or any(m not in (0., 1.) for m in modes):
+            raise ValueError(f"cal_readout_modes must be a list of 0 / 1, got {modes}")
+        t_down = float(p.t_raman_pi_pulse + p.t_raman_pulse_offset)
+        self.cal = self.add_sub_scan("cal", every_n_shots=int(p.cal_every_n_shots), at_start=True,
+                                     alternate=bool(int(p.cal_alternate)),
+                                     reads_params=self.CAL_READS_PARAMS,
+                                     require_push=bool(getattr(self, "_cal_require_push", True)))
+        # one event = one pair (up, down); the readout mode cycles event by
+        # event (a 2-D sub-scan xvar), and the pair order reverses every other
+        # cycle, so each mode sees both orders
+        self.cal.xvar("t_raman_pulse", np.array([0., t_down]))
+        self.cal.xvar("cal_readout_mode", np.array([[m, m] for m in modes]))
+        self.cal.data.apd = self.cal.add_data_container(int(p.cal_n_reads))
+        self.readout_cal = ReadoutCalibrationRecord(self, self.cal)
+
+    def on_sub_scan_point(self, sub, i, ok):
+        if self.readout_cal is not None:
+            self.readout_cal.on_point(i, ok)
+
+    def on_sub_scan_finish(self, sub):
+        if self.readout_cal is not None:
+            self.readout_cal.finish_run()
 
     @kernel
     def scan_kernel(self):
@@ -276,7 +334,77 @@ class FeedbackExpt(Base, Feedback, RandomRamanPulseTimes):
         self.data.apd.shot_data[i] = self.integrator.sample()
         v = self.convert_measurement(self.data.apd.shot_data[i])
         return v
-    
+
+    # ---- the interleaved readout calibration (p.cal_enabled) --------------
+
+    @kernel
+    def calibration_read(self, i) -> TFloat:
+        """One readout pulse the way this class's data shots read it:
+        measurement()'s integrator timeline, in fast-frequency-update mode,
+        without writing the main scan's apd container. A class with its own
+        read path (the fast-path session copies) overrides this."""
+        T_CONV_MU = 80
+        self.integrator.begin_integrate(reset=False)
+        self.imaging.pulse(self.p.t_img_pulse)
+        self.integrator.stop_and_settle()
+        t0 = now_mu()
+        self.raman.stage_ffua()
+        at_mu(t0 + T_CONV_MU)
+        self.integrator.clear(t=0)
+        at_mu(t0)
+        return self.integrator.sample()
+
+    @kernel
+    def calibration_kernel(self):
+        """One point of the readout sub-scan: the data shot's preparation,
+        then a raman pulse of p.t_raman_pulse (0 for the prepared state, the
+        pi time for all down) and p.cal_n_reads APD reads -- the data shot's
+        readout (calibration_read, p.cal_readout_mode 0) or the calibration
+        run's (warmup_imaging + integrated_imaging_pulse at
+        cal_t_between_reads_mu, mode 1). Ends with the sub-scan's data sync.
+
+        Triggers no camera and no scope: liveOD and the camera streams count
+        frames per shot, so one extra trigger would shift every later slot
+        (no abs_image, no diag frames -- Base.init_calibration_kernel turned
+        them off -- no pd_scope_trig3). The main scan's containers are never
+        written here."""
+        self.integrator.init()
+        self.set_imaging_detuning(frequency_detuned=self.p.frequency_detuned_hf_midpoint)
+        if self.p.slm_mask_every_shot:
+            self.slm.write_phase_mask_kernel(phase=self.p.phase_slm_mask, dimension=self.p.dimension_slm_mask)
+        self.imaging.set_power(self.p.amp_imaging)
+        self.prepare_hf_tweezers(squeeze=False)
+        cal_style = self.p.cal_readout_mode > 0.5
+        if cal_style:
+            self.warmup_imaging()
+        self.prep_raman(frequency_transition=self.p.frequency_raman_transition, phase_mode=0)
+        # the data shot's pulse 0 starts 500 us after prep_raman (scan_kernel)
+        t_start_mu = now_mu() + 500000
+        at_mu(t_start_mu)
+        self.raman.pulse(self.p.t_raman_pulse)
+        delay(self.p.t_preshot_gap)
+        if cal_style:
+            t = now_mu()
+            for i in range(self.p.cal_n_reads):
+                at_mu(t)
+                self.imaging.integrated_imaging_pulse(self.cal.data.apd, self.p.t_img_pulse, i)
+                t = t + self.p.cal_t_between_reads_mu
+        else:
+            self.raman.set_up_fast_frequency_update(aggressive_mode=1)
+            t = now_mu() + 20000
+            for i in range(self.p.cal_n_reads):
+                at_mu(t)
+                self.cal.data.apd.put_data(self.calibration_read(i), i)
+                t = t + self.p.t_between_pulses_mu
+            self.core.break_realtime()
+            self.raman.clean_up_fast_frequency_update()
+        self.core.break_realtime()
+        self.ttl.raman_shutter.off()
+        delay(self.p.t_tweezer_hold)
+        self.tweezer.off()
+        self.core.wait_until_mu(now_mu())
+        self.cal.put_shot_data()
+
     @kernel
     def per_scan_kernel_end(self):
         '''runs per scan kernel after everything else'''
