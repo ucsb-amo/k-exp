@@ -1,17 +1,19 @@
 # Shortcuts
 
-`ar.lnk` runs `artiq_run --device-db %db%` directly (target
-`%code%\.venv\Scripts\artiq_run.exe --device-db %db%`). `artiq_run --device-db %db% <file>.py`
-is and stays the direct path, outside the queue.
+**Since 2026-10-09 20:54, `ar.lnk` is the run queue's submit client** (target
+`%code%\.venv\Scripts\kq.exe run`): `ar <file>.py` queues the file on the monitor server, waits for
+the slot, streams the run's output and exits with the run's exit code. The old shortcut lives on as
+**`ar_direct.lnk`** (`%code%\.venv\Scripts\artiq_run.exe --device-db %db%`); `ar_direct <file>.py`
+and `artiq_run --device-db %db% <file>.py` are the direct path, outside the queue.
 
 The run queue's command line is `kq` (`kq --help`). After `uv sync` has installed waxx's
 console script it is `%code%\.venv\Scripts\kq.exe`. `kq run <file>.py` submits to the
 monitor server's queue and prints the run's output as `artiq_run` would.
 
-**Flipping `ar` to the queue**, once the monitor server runs it: point `ar.lnk` (or a new
-`.lnk` named `ar`) at `%code%\.venv\Scripts\kq.exe run`. Do not use an `ar.bat`. After a
-Ctrl-C, cmd asks "Terminate batch job (Y/N)?" and loses kq's exit code, which callers
-read.
+**The flip** (done 2026-10-09 20:54:47): `ar.lnk` points at `%code%\.venv\Scripts\kq.exe run`;
+the previous `ar.lnk` was renamed `ar_direct.lnk`. It is a `.lnk`, not an `ar.bat`, because after
+a Ctrl-C cmd asks "Terminate batch job (Y/N)?" and loses kq's exit code, which callers read. To
+undo: rename `ar.lnk` away and copy `ar_direct.lnk` to `ar.lnk`.
 
 `kq.bat` and `ar_queue.bat` (= `kq run`) are conveniences for a terminal, with that same
 caveat: after a Ctrl-C, cmd's batch prompt can swallow the exit code. When `kq.exe` and
@@ -72,16 +74,10 @@ call is `kq run` and goes through the queue:
   caller's working folder.
 - **Launcher tag.** The experiment sees `WAXX_LAUNCHER=kq` and `WAXX_QUEUE_JOB=<id>:<token>`,
   and leaves restarting the monitor to the server.
-- **run_lock.py.** After the flip, the agents' `run_lock.py run -- %kpy% & ar <file>` would
-  become a queue client. It would hold its lock while the job waits, the run would carry the
-  queue's launcher tag instead of `run_lock`, and its Ctrl-C would end only kq.
-  - A replacement is staged (not installed) in
-    `C:\lab\skynet_log\outputs\wt\kq\skill_scripts\run_lock.py`, with the installed version
-    it is based on in `orig\`.
-  - It rewrites a command word `ar`, in any case, at the start or after `&` / `&&`, to
-    `"%code%\.venv\Scripts\artiq_run.exe" --device-db "%db%"`. That is `ar.lnk`'s own
-    target; a bare `artiq_run` would need the venv on PATH.
-  - Other shapes are not rewritten: `call ar`, `|| ar`, `(ar ...)`, `"ar"`, `ar.bat`, and
-    `ar` elsewhere. For those it prints a warning, and they would go through the queue.
-  - It is copied over `.claude/skills/run-experiment/scripts/run_lock.py` at the flip, not
-    before.
+- **run_lock.py** (the agents' launcher, `.claude/skills/run-experiment/scripts/run_lock.py`)
+  stays a direct launcher: since the flip it rewrites a command word `ar`, in any case, at the
+  start or after `&` / `&&`, to `"%code%\.venv\Scripts\artiq_run.exe" --device-db "%db%"` (the
+  old `ar.lnk` target; a bare `artiq_run` would need the venv on PATH) and prints a note. Other
+  shapes are not rewritten and go through the queue: `call ar`, `|| ar`, `(ar ...)`, `"ar"`,
+  `ar.bat`, and `ar` elsewhere; for those it prints a warning. Its CLI, output lines and exit
+  codes are unchanged.
