@@ -1,7 +1,10 @@
 ﻿"""Monitor & device-state panels.
 
-* :class:`MonitorPanel`        - server-side panel embedding ``MonitorServerGUI``
-  (the small status widget run on the experiment PC).
+* :class:`MonitorPanel`        - the Server Dashboard's monitor panel: the run
+  queue, the monitor state and the monitor experiment's status button, from
+  the headless monitor server over the network
+  (``waxx.util.guis.monitor_panel.MonitorServerPanel``; no server in this
+  process).
 * :class:`MonitorClientPanel`  - client-side panel embedding ``DeviceStateGUI``
   (the wide device-control window the lab actually interacts with).
 
@@ -60,31 +63,29 @@ def _composite_kwargs(dds, dac) -> dict:
 
 
 class MonitorPanel(WidgetPanelBase):
-    """Server-side monitor status panel (small)."""
+    """The Server Dashboard's monitor panel (registry id ``monitor``): the
+    headless monitor server's run queue, state and monitor-experiment button,
+    over the network (waxx ``MonitorServerPanel``).  It used to embed a
+    whole ``MonitorServerGUI`` -- a second monitor server in the dashboard's
+    own process; nothing used that, and the dashboard runs the server
+    headless.  ``panel_factory`` builds the body (tests pass one over a fake
+    client)."""
 
-    def __init__(self, parent=None):
+    def __init__(self, parent=None, panel_factory=None):
         super().__init__(parent)
         from PyQt6.QtWidgets import QVBoxLayout  # noqa: PLC0415
-        import os  # noqa: PLC0415
-        from waxx.util.device_state.run_loop import loop_specs  # noqa: PLC0415
-        from waxx.util.guis.monitor_server_gui import MonitorServerGUI  # noqa: PLC0415
-        from kexp.config.ip import (MONITOR_EXPT_PATH, MONITOR_STATE_FILEPATH, LOG_DIR,  # noqa: PLC0415
-                                    RESET_STATE_EXPT_PATH, RUN_LOOP_EXPTS)
-        from kexp.util.guis.device_state_gui.monitor_server_headless import (  # noqa: PLC0415
-            monitor_connections, monitor_slm_reinit, monitor_state_generator)
-
-        self._gui = MonitorServerGUI(monitor_expt_path=MONITOR_EXPT_PATH,
-                                     config_file_path=MONITOR_STATE_FILEPATH,
-                                     journal_dir=(os.path.join(LOG_DIR, "ops_journal")
-                                                  if LOG_DIR else None),
-                                     reset_expt_path=RESET_STATE_EXPT_PATH,
-                                     run_loops=loop_specs(RUN_LOOP_EXPTS),
-                                     connections=monitor_connections(),
-                                     slm_reinit=monitor_slm_reinit(),
-                                     state_generator=monitor_state_generator())
+        if panel_factory is None:
+            from waxx.util.guis.monitor_panel import MonitorServerPanel  # noqa: PLC0415
+            panel_factory = MonitorServerPanel
+        self._panel = panel_factory()
         layout = QVBoxLayout(self)
         layout.setContentsMargins(0, 0, 0, 0)
-        layout.addWidget(self._gui)
+        layout.addWidget(self._panel)
+
+    def cleanup(self) -> None:
+        """The dashboard's teardown: the panel's poll, listener and worker."""
+        self._panel.cleanup()
+        super().cleanup()
 
 
 class MonitorClientPanel(WidgetPanelBase):

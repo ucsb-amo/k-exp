@@ -58,9 +58,10 @@ EXTRA_CLIENT_IDS_ON_SERVER_DASHBOARD: list[str] = [
     "ethernet_relay",
 ]
 
-# Extra client panels whose header carries the LED and Start / Stop / Restart
-# of a hidden-panel server, as a server panel's header does: the monitor
-# server has no panel of its own, and Device Control is where it is used.
+# Extra client panels whose header also carries the LED and Start / Stop /
+# Restart of a server, as that server's own panel header does: Device Control
+# is where the monitor server is used (its own "monitor" panel shows the run
+# queue and the monitor state).
 SERVER_CONTROLS_ON_CLIENT_PANEL: dict[str, str] = {
     "device_control": "monitor",
 }
@@ -264,11 +265,9 @@ def main(argv: list[str] | None = None) -> int:
             continue
 
         sup = _make_supervisor(spec)
-        sup.state_changed.connect(panel.header().set_state)
-        panel.header().start_clicked.connect(
-            lambda _c=False, s=sup: s.reset_and_start() if s.state.name in ("CRASHED", "FAILED") else s.start())
-        panel.header().stop_clicked.connect(lambda _c=False, s=sup: s.stop())
-        panel.header().restart_clicked.connect(lambda _c=False, s=sup: s.restart())
+        # LED + Start / Stop / Restart; Stop and Restart of the monitor server
+        # ask first (confirm_server_action), on its own panel as on Device Control
+        wire_server_controls(panel, sup, spec.id)
 
         if spec.client_factory is not None:
             links.append(ServerLink(spec.id, spec.client_factory, header=panel.header(), supervisor=sup))
