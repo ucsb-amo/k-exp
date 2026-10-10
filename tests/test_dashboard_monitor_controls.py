@@ -77,7 +77,48 @@ def test_the_header_follows_the_supervisor_and_asks_before_stop_and_restart(wire
     header._restart_btn.click()
     assert sup.calls == ["start"]                           # both declined
     assert "killed at once" in answers[0] and "does not start the monitor" in answers[1]
+    assert "Monitor panel's Monitor tab" in answers[1]
     answer[0] = box.StandardButton.Yes
     header._stop_btn.click()
     header._restart_btn.click()
     assert sup.calls == ["start", "stop", "restart"]
+
+
+# --- the monitor server's own panel (run queue + state, over the network) ------------------
+
+def test_the_monitor_entry_has_a_panel_and_keeps_its_id():
+    from kexp.util.dashboard.server_registry import SERVER_SPECS
+    spec = next(s for s in SERVER_SPECS if s.id == "monitor")    # QSettings dock keys
+    assert not spec.hidden_panel and spec.body_factory is not None
+    assert spec.server_cmd and spec.server_cmd[-1].endswith("monitor_server_headless")
+
+
+def test_monitor_panel_hosts_the_network_panel_and_cleans_it_up(qapp):
+    from waxx.util.guis import monitor_panel as wmp
+    from kexp.util.guis.device_state_gui.monitor_panel import MonitorPanel
+
+    made = []
+
+    class Client:
+        def request(self, obj, timeout=5.0, attempts=2):
+            return {"status": "ok", "jobs": [], "next": [], "run_queue": {"state": "idle"}}
+
+        def get_status(self):
+            return None
+
+        def send_message(self, text, timeout=5.0, attempts=2):
+            return None
+
+    def factory(discovery_timeout):
+        made.append(Client())
+        return made[-1]
+
+    panel = MonitorPanel(panel_factory=lambda: wmp.MonitorServerPanel(
+        link=wmp.MonitorLink(factory), listener_factory=None, synchronous=True))
+    inner = panel._panel
+    assert [inner.tabs.tabText(i) for i in range(inner.tabs.count())] == \
+        ["Queue", "State", "Monitor"]
+    assert made == []                                    # no discovery until a request
+    panel.cleanup()
+    assert not inner.timer.isActive()
+    panel.deleteLater()

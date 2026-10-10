@@ -31,8 +31,12 @@ Default server-dashboard picture::
     |           |                                    +----------------+
     |           |                                    | Running servers|
     +-----------+----------------------+-------------+----------------+
-    | Device Control                   | Log                          |
+    | bottom: Monitor | Log            | Device Control               |
     +----------------------------------+------------------------------+
+
+(Monitor -- the monitor server's run queue and state -- and Log share one tab
+stack; the stack sits where its first panel, Monitor, is declared: before
+Device Control.)
 """
 
 from __future__ import annotations
@@ -54,8 +58,9 @@ SERVER_PLACEMENT: dict[str, dict] = {
     "remote_control":   {"placement": "tab",  "dock_area": "right", "tab_group": "control"},
     "ethernet_relay":   {"placement": "tab",  "dock_area": "right", "tab_group": "control"},
     "_running_servers": {"placement": "dock", "dock_area": "right"},
+    "monitor":          {"placement": "tab",  "dock_area": "bottom", "tab_group": "bottom"},
     "device_control":   {"placement": "dock", "dock_area": "bottom"},
-    "_log":             {"placement": "dock", "dock_area": "bottom"},
+    "_log":             {"placement": "tab",  "dock_area": "bottom", "tab_group": "bottom"},
 }
 
 # Client panel defaults.  Keys are client ids (client_registry.py).
