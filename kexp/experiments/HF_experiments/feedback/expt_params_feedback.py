@@ -321,6 +321,17 @@ class ExptParams(expt_params_kexp):
         # run 83889 | RabiJointPosterior (f_rabi free), nuisances verdict PASS, new integrator window
         self.back_action_coherence = 0.7215  # +/- 0.0282 #83889, 2026-09-30
 
+        # State-dependent read model (2026-10-11, EXPLORATORY; kexp.base.feedback.READ_TWIST_SIGN):
+        # the read's z twist per unit s_z (rad) and the coherence slope per unit s_z, both at the
+        # read. 0 = off = the constant model above, bit for bit. theta11 (86179-86181, post hoc):
+        # dphi = -1.432 + 0.869 s_z rad, R = 0.738 + 0.193 s_z -- not applied until the simulation
+        # check says it helps and the user says go.
+        self.read_twist_per_sz = 0.0
+        self.back_action_coherence_slope = 0.0
+        # the read's constant z angle (rad), the kernel's alpha_z_lightshift, set on its own
+        # (theta11: 1.432); NaN = from frequency_lightshift (omega_ls * t_img_pulse), as before
+        self.read_alpha_lightshift = float("nan")
+
         self.feedback_measurement_midpoint_remap_enabled = True
 
         # run 66415

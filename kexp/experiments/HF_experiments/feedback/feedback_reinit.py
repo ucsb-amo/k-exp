@@ -140,6 +140,9 @@ class feedback_reinit(EnvExperiment, FeedbackExpt):
         (sin_wt, cos_wt) = self.sincos_lut_interp(phi)
         (sin_wt_step, cos_wt_step) = self.sincos_lut_interp(-domega * t)
         alpha_z_lightshift = self.omega_z_lightshift * dt_z
+        if self.read_alpha_lightshift_on:
+            # the read's constant z angle set on its own (theta11: 1.432 rad); off: w_ls t_img
+            alpha_z_lightshift = self.read_alpha_lightshift
         alpha_z = dt_eff * delta_omega0 - alpha_z_lightshift
         (sin_z, cos_z) = self.sincos_lut_interp(alpha_z)
         alpha_z_step = dt_eff * domega
@@ -182,8 +185,29 @@ class feedback_reinit(EnvExperiment, FeedbackExpt):
             hz += (cos_H + one_minus_cos * uzuz) * sz
             nx = cos_z * hx + sin_z * hy
             ny = -sin_z * hx + cos_z * hy
-            state_x[j] = nx * self.back_action_coherence
-            state_y[j] = ny * self.back_action_coherence
+            # State-dependent read (2026-10-11; READ_TWIST_SIGN in kexp.base.feedback).
+            # Off (the defaults): exactly the constant model -- the same multiply
+            # by back_action_coherence. On: a twist d = read_twist * hz added to
+            # the z rotation (second order, not renormalised: sin d ~ d,
+            # cos d ~ 1 - d^2/2 -- model M1-p2, no worse than exact trig in the
+            # simulation check), and the coherence
+            # c0 + slope * hz (clipped to [0, 1]); hz is this point's z at the read.
+            if self.read_twist_on:
+                d_twist = self.read_twist * hz
+                cos_d = 1.0 - d_twist * d_twist * 0.5
+                nx_twisted = cos_d * nx + d_twist * ny
+                ny = -d_twist * nx + cos_d * ny
+                nx = nx_twisted
+            coherence = self.back_action_coherence
+            if self.read_coherence_slope_on:
+                coherence = coherence + self.read_coherence_slope * hz
+                if coherence < 0.0:
+                    coherence = 0.0
+                elif coherence > 1.0:
+                    coherence = 1.0
+
+            state_x[j] = nx * coherence
+            state_y[j] = ny * coherence
             state_z[j] = hz
             self.p1_scratch[j] = self.expected_photon_fraction(hz)
             next_sin_wt = sin_wt * cos_wt_step + cos_wt * sin_wt_step

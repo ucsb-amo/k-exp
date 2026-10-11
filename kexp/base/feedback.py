@@ -6,6 +6,16 @@ from kexp.util.artiq.async_print import aprint
 
 dv = -1.
 
+#: State-dependent read model (2026-10-11; theta11 86179-86181: the read's z rotation and
+#: coherence depend on s_z at the read -- dphi = a + b s_z, R = R0 + R1 s_z; EXPLORATORY, post hoc).
+#: The kernel adds a twist d = READ_TWIST_SIGN * p.read_twist_per_sz * hz to its z-rotation angle
+#: alpha_z = dt_eff*(omega - omega_raman) - omega_z_lightshift*t_img (hz: the hypothesis' z AFTER the
+#: pulse, at the read), i.e. the same sense as the light-shift term. With theta11's dphi = a + b s_z
+#: and a in the light-shift term's sense (mr0), and hz == s_z (hz = +1: p1 = 1, the bright 'up'
+#: level), read_twist_per_sz = b with this sign = +1. If mr0 finds hz = -s_z, or dphi in the
+#: opposite sense, flip this ONE constant (every copy of the kernel reads it through Feedback).
+READ_TWIST_SIGN = 1.0
+
 class _FeedbackParamStore:
     """Attribute bag used when Feedback is instantiated outside Base."""
 
@@ -33,6 +43,14 @@ class Feedback:
         "two_pi",
         "pi_half",
         "inv_two_pi",
+        # the state-dependent read model: constants for the run, so with the
+        # defaults (off) the compiler can drop the branches from the loop
+        "read_twist",
+        "read_twist_on",
+        "read_coherence_slope",
+        "read_coherence_slope_on",
+        "read_alpha_lightshift",
+        "read_alpha_lightshift_on",
     }
 
     def __init__(self, lut_size=4096, expt_params=None):
@@ -235,6 +253,9 @@ class Feedback:
         (sin_wt_step, cos_wt_step) = self.sincos_lut_interp(-domega * t)
 
         alpha_z_lightshift = self.omega_z_lightshift * dt_z
+        if self.read_alpha_lightshift_on:
+            # the read's constant z angle set on its own (theta11: 1.432 rad); off: w_ls t_img
+            alpha_z_lightshift = self.read_alpha_lightshift
         alpha_z = dt_eff * delta_omega0 - alpha_z_lightshift # dt actual pulse time
         (sin_z, cos_z) = self.sincos_lut_interp(alpha_z)
         alpha_z_step = dt_eff * domega # dt actual pulse time
@@ -295,8 +316,29 @@ class Feedback:
             nx = cos_z * hx + sin_z * hy
             ny = -sin_z * hx + cos_z * hy
 
-            state_x[j] = nx * self.back_action_coherence
-            state_y[j] = ny * self.back_action_coherence
+            # State-dependent read (2026-10-11; READ_TWIST_SIGN in kexp.base.feedback).
+            # Off (the defaults): exactly the constant model -- the same multiply
+            # by back_action_coherence. On: a twist d = read_twist * hz added to
+            # the z rotation (second order, not renormalised: sin d ~ d,
+            # cos d ~ 1 - d^2/2 -- model M1-p2, no worse than exact trig in the
+            # simulation check), and the coherence
+            # c0 + slope * hz (clipped to [0, 1]); hz is this point's z at the read.
+            if self.read_twist_on:
+                d_twist = self.read_twist * hz
+                cos_d = 1.0 - d_twist * d_twist * 0.5
+                nx_twisted = cos_d * nx + d_twist * ny
+                ny = -d_twist * nx + cos_d * ny
+                nx = nx_twisted
+            coherence = self.back_action_coherence
+            if self.read_coherence_slope_on:
+                coherence = coherence + self.read_coherence_slope * hz
+                if coherence < 0.0:
+                    coherence = 0.0
+                elif coherence > 1.0:
+                    coherence = 1.0
+
+            state_x[j] = nx * coherence
+            state_y[j] = ny * coherence
             state_z[j] = hz
 
             p1 = self.expected_photon_fraction(hz)
@@ -511,6 +553,20 @@ class Feedback:
         self.omega_z_lightshift = 2.0 * np.pi * self.frequency_z_lightshift
         self.p.back_action_coherence = float(self.p.back_action_coherence)
         self.back_action_coherence = self.p.back_action_coherence
+        # state-dependent read (READ_TWIST_SIGN above); 0 = off: the loop is the
+        # constant model, bit for bit (params absent in older runs read as 0)
+        self.p.read_twist_per_sz = float(getattr(self.p, "read_twist_per_sz", 0.0))
+        self.p.back_action_coherence_slope = float(getattr(self.p, "back_action_coherence_slope", 0.0))
+        self.read_twist = READ_TWIST_SIGN * self.p.read_twist_per_sz
+        self.read_twist_on = self.read_twist != 0.0
+        self.read_coherence_slope = self.p.back_action_coherence_slope
+        self.read_coherence_slope_on = self.read_coherence_slope != 0.0
+        # the read's constant z angle (rad, the kernel's alpha_z_lightshift) set on its
+        # own, independent of frequency_lightshift; NaN / absent = omega_z_lightshift * t_img
+        a_ls = float(getattr(self.p, "read_alpha_lightshift", float("nan")))
+        self.p.read_alpha_lightshift = a_ls
+        self.read_alpha_lightshift_on = bool(np.isfinite(a_ls))
+        self.read_alpha_lightshift = a_ls if self.read_alpha_lightshift_on else 0.0
 
 
     @portable
@@ -1451,4 +1507,8 @@ def _feedback_kwargs_from_atomdata(ad):
         "feedback_apd_map_a": p.feedback_apd_map_a,
         "feedback_apd_map_b": p.feedback_apd_map_b,
         "feedback_apd_map_verbose": p.feedback_apd_map_verbose,
+        # the state-dependent read model (absent before 2026-10-11: 0 = off)
+        "read_twist_per_sz": float(getattr(p, "read_twist_per_sz", 0.0)),
+        "back_action_coherence_slope": float(getattr(p, "back_action_coherence_slope", 0.0)),
+        "read_alpha_lightshift": float(getattr(p, "read_alpha_lightshift", float("nan"))),
     }

@@ -135,6 +135,9 @@ class FeedbackReplayCore(Feedback):
         "frequency_raman_transition": "frequency_resonance",
         "frequency_lightshift": "frequency_z_lightshift",
         "back_action_coherence": "back_action_coherence",
+        "read_twist_per_sz": "read_twist_per_sz",
+        "back_action_coherence_slope": "back_action_coherence_slope",
+        "read_alpha_lightshift": "read_alpha_lightshift",
         "feedback_fractional_grid_center_offset": "fractional_grid_center_offset",
         "feedback_fractional_initial_offset": "fractional_initial_offset",
         "feedback_guess_span_Omega": "guess_span_Omega",
@@ -322,6 +325,16 @@ class FeedbackReplayCore(Feedback):
 
         if kwargs.get("back_action_coherence") is not None:
             p.back_action_coherence = float(kwargs["back_action_coherence"])
+
+        # the state-dependent read model (kexp.base.feedback.READ_TWIST_SIGN)
+        if kwargs.get("read_twist_per_sz") is not None:
+            p.read_twist_per_sz = float(kwargs["read_twist_per_sz"])
+
+        if kwargs.get("back_action_coherence_slope") is not None:
+            p.back_action_coherence_slope = float(kwargs["back_action_coherence_slope"])
+
+        if kwargs.get("read_alpha_lightshift") is not None:
+            p.read_alpha_lightshift = float(kwargs["read_alpha_lightshift"])
 
         if kwargs.get("fractional_grid_center_offset") is not None:
             p.feedback_fractional_grid_center_offset = float(kwargs["fractional_grid_center_offset"])
@@ -1341,9 +1354,18 @@ class FeedbackReplayCore(Feedback):
                 # z rotation from the imaging light shift, then measurement
                 # back-action on the transverse components only.
                 alpha_z = dt_eff * (omega_true - omega_ctrl) - self.omega_z_lightshift * t_img
+                if self.read_alpha_lightshift_on:
+                    alpha_z = dt_eff * (omega_true - omega_ctrl) - self.read_alpha_lightshift
+                # the state-dependent read (as the kernel; here the truth, so the
+                # twist's sin / cos are exact, not the kernel's polynomials)
+                if self.read_twist_on:
+                    alpha_z = alpha_z + self.read_twist * hz
+                coherence = self.back_action_coherence
+                if self.read_coherence_slope_on:
+                    coherence = float(np.clip(coherence + self.read_coherence_slope * hz, 0.0, 1.0))
                 cos_z, sin_z = np.cos(alpha_z), np.sin(alpha_z)
-                sx = (cos_z * hx + sin_z * hy) * self.back_action_coherence
-                sy = (-sin_z * hx + cos_z * hy) * self.back_action_coherence
+                sx = (cos_z * hx + sin_z * hy) * coherence
+                sy = (-sin_z * hx + cos_z * hy) * coherence
                 sz = hz
 
                 apd_rr[r, i] = v_apd
