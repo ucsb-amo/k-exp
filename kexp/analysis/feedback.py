@@ -441,6 +441,10 @@ class FeedbackReplayCore(Feedback):
             if omega_guess.ndim == 1 and omega_guess.size > 0:
                 kwargs["feedback_grid_size"] = int(omega_guess.size)
 
+        # The per-shot read model (p.feedback_read_model scanned: a per-shot A/B of two
+        # read models), kept raw like the offset below; -1 = not interleaved.
+        self._read_model_source = getattr(p, "feedback_read_model", -1.0)
+
         # Keep the raw value for per-repeat replay support when scanned in xvar.
         self._fractional_initial_offset_source = getattr(
             p,
@@ -465,6 +469,25 @@ class FeedbackReplayCore(Feedback):
         if not np.isfinite(arr[0]):
             raise ValueError(f"{name} must contain finite values.")
         return float(arr[0])
+
+    def _resolve_read_model_r(self, n_repeat: int) -> np.ndarray:
+        """The read model of each shot (row): the run's p.feedback_read_model when
+        it holds one value per shot, else the run's xvar of that name (1-D scans);
+        a single value applies to every shot (-1: not interleaved)."""
+        values = np.asarray(getattr(self, "_read_model_source", -1.0), dtype=float).ravel()
+        if values.size == 1:
+            return np.full((n_repeat,), float(values[0]), dtype=float)
+        if values.size == int(n_repeat):
+            return values.astype(float)
+        ad = getattr(self, "ad", None)
+        names = list(getattr(ad, "xvarnames", []) or [])
+        if "feedback_read_model" in names and len(names) == 1:
+            xv = np.asarray(ad.xvars[0], dtype=float).ravel()
+            if xv.size == int(n_repeat):
+                return xv
+        raise ValueError(
+            f"feedback_read_model has {values.size} values for {n_repeat} shots; the replay "
+            f"handles it as the run's only xvar (or one value per shot)")
 
     def _resolve_fractional_initial_offset_r(
         self,
@@ -1276,10 +1299,14 @@ class FeedbackReplayCore(Feedback):
         omega_control_rr = np.zeros((n_repeat, n_step), dtype=float)
         s_z_true_rr = np.zeros((n_repeat, n_step), dtype=float)
 
+        read_model_r = (self._resolve_read_model_r(n_repeat) if self.read_model_per_shot
+                        else None)
         for r in range(n_repeat):
             grid_r, _ = self._grid_for_offset(float(fractional_initial_offset_r[r]))
             self.omega_guess_list = grid_r
             self.omega_sq_list = grid_r * grid_r
+            if read_model_r is not None:
+                self.select_read_model(float(read_model_r[r]))
             self.reset_feedback_state()
 
             t_pulse_s = np.asarray(t_raman_pulse_rr[r], dtype=float)
@@ -1438,6 +1465,9 @@ class FeedbackReplayCore(Feedback):
         self.omega_guess_list = grid_r
         self.omega_sq_list = grid_r * grid_r
 
+        # this shot's read model, as the kernel's initialize_feedback selects it
+        if self.read_model_per_shot:
+            self.select_read_model(float(self._resolve_read_model_r(int(apd_rr.shape[0]))[r]))
         self.reset_feedback_state()
 
         phase_tracker = 0.0

@@ -16,6 +16,12 @@ dv = -1.
 #: opposite sense, flip this ONE constant (every copy of the kernel reads it through Feedback).
 READ_TWIST_SIGN = 1.0
 
+#: What select_read_model sets at the start of each shot when two read models are
+#: interleaved per shot (p.feedback_read_model scanned); not kernel invariants then.
+READ_MODEL_ATTRS = ("read_twist", "read_twist_on", "read_coherence_slope",
+                    "read_coherence_slope_on", "read_alpha_lightshift",
+                    "read_alpha_lightshift_on", "back_action_coherence")
+
 class _FeedbackParamStore:
     """Attribute bag used when Feedback is instantiated outside Base."""
 
@@ -43,14 +49,17 @@ class Feedback:
         "two_pi",
         "pi_half",
         "inv_two_pi",
-        # the state-dependent read model: constants for the run, so with the
-        # defaults (off) the compiler can drop the branches from the loop
-        "read_twist",
-        "read_twist_on",
-        "read_coherence_slope",
-        "read_coherence_slope_on",
-        "read_alpha_lightshift",
-        "read_alpha_lightshift_on",
+        # The state-dependent read model's live values (read_twist, read_twist_on,
+        # read_coherence_slope(_on), read_alpha_lightshift(_on): READ_MODEL_ATTRS)
+        # are NOT invariants: select_read_model writes them per shot in a per-shot
+        # A/B, and ARTIQ refuses any write to an invariant in compiled code. Off,
+        # they cost two attribute loads and two branch tests per grid point.
+        # The two read models of a per-shot A/B (constants for the run):
+        "read_model_per_shot",
+        "rm0_alpha_lightshift", "rm0_alpha_lightshift_on", "rm0_twist", "rm0_twist_on",
+        "rm0_coherence_slope", "rm0_coherence_slope_on", "rm0_coherence",
+        "rm1_alpha_lightshift", "rm1_alpha_lightshift_on", "rm1_twist", "rm1_twist_on",
+        "rm1_coherence_slope", "rm1_coherence_slope_on", "rm1_coherence",
     }
 
     def __init__(self, lut_size=4096, expt_params=None):
@@ -470,6 +479,8 @@ class Feedback:
     def initialize_feedback(self):
         """Warm up posterior runtime once, then reset state/P0 arrays."""
 
+        # this shot's read model (per-shot A/B; nothing unless feedback_read_model is scanned)
+        self.select_read_model(self.p.feedback_read_model)
         self.omega_raman = self.reset_initial_omega_from_params()
 
         self.p.t_between_pulses_mu = self.compute_t_between_pulses_mu(
@@ -567,6 +578,66 @@ class Feedback:
         self.p.read_alpha_lightshift = a_ls
         self.read_alpha_lightshift_on = bool(np.isfinite(a_ls))
         self.read_alpha_lightshift = a_ls if self.read_alpha_lightshift_on else 0.0
+        self._initialize_read_models()
+
+    def _initialize_read_models(self):
+        """Per-shot A/B of two read models (pre-registered A/B, 2026-10-11):
+        p.feedback_read_model scanned over {0, 1} selects, at the start of each
+        shot (select_read_model, from initialize_feedback), model 0 = the fixed
+        values above (read_alpha_lightshift, read_twist_per_sz,
+        back_action_coherence_slope, back_action_coherence) or model 1 = the
+        p.read_model1_* set. Not scanned (-1, the default): every shot uses the
+        fixed values, and nothing changes per shot."""
+        p = self.p
+        if not hasattr(p, "feedback_read_model"):
+            p.feedback_read_model = -1.0      # (the kernel reads it every shot)
+        rm = np.ravel(np.asarray(getattr(p, "feedback_read_model", -1.0), dtype=float))
+        # In an experiment, Feedback.__init__ runs in finish_prepare: a scanned
+        # feedback_read_model is then only in the scan's xvars (p still holds the
+        # default); the replay's p holds the run's per-shot values.
+        for xv in getattr(self, "scan_xvars", None) or []:
+            if getattr(xv, "key", None) == "feedback_read_model":
+                rm = np.concatenate([rm, np.ravel(np.asarray(xv.values, dtype=float))])
+        self.read_model_per_shot = bool(rm.size and np.all(np.isfinite(rm)) and np.any(rm >= 0.0))
+        # model 0: what the fixed params set
+        self.rm0_alpha_lightshift_on = self.read_alpha_lightshift_on
+        self.rm0_alpha_lightshift = self.read_alpha_lightshift
+        self.rm0_twist_on = self.read_twist_on
+        self.rm0_twist = self.read_twist
+        self.rm0_coherence_slope_on = self.read_coherence_slope_on
+        self.rm0_coherence_slope = self.read_coherence_slope
+        self.rm0_coherence = self.back_action_coherence
+        # model 1: the read_model1_* set (defaults: theta11's M1-p2)
+        a1 = float(getattr(p, "read_model1_alpha_lightshift", float("nan")))
+        self.rm1_alpha_lightshift_on = bool(np.isfinite(a1))
+        self.rm1_alpha_lightshift = a1 if self.rm1_alpha_lightshift_on else 0.0
+        self.rm1_twist = READ_TWIST_SIGN * float(getattr(p, "read_model1_twist_per_sz", 0.0))
+        self.rm1_twist_on = self.rm1_twist != 0.0
+        self.rm1_coherence_slope = float(getattr(p, "read_model1_coherence_slope", 0.0))
+        self.rm1_coherence_slope_on = self.rm1_coherence_slope != 0.0
+        self.rm1_coherence = float(getattr(p, "read_model1_coherence", self.back_action_coherence))
+
+    @portable
+    def select_read_model(self, model):
+        """At the start of a shot: model >= 0.5 -> read model 1, else model 0.
+        Does nothing unless p.feedback_read_model is scanned."""
+        if self.read_model_per_shot:
+            if model >= 0.5:
+                self.read_alpha_lightshift_on = self.rm1_alpha_lightshift_on
+                self.read_alpha_lightshift = self.rm1_alpha_lightshift
+                self.read_twist_on = self.rm1_twist_on
+                self.read_twist = self.rm1_twist
+                self.read_coherence_slope_on = self.rm1_coherence_slope_on
+                self.read_coherence_slope = self.rm1_coherence_slope
+                self.back_action_coherence = self.rm1_coherence
+            else:
+                self.read_alpha_lightshift_on = self.rm0_alpha_lightshift_on
+                self.read_alpha_lightshift = self.rm0_alpha_lightshift
+                self.read_twist_on = self.rm0_twist_on
+                self.read_twist = self.rm0_twist
+                self.read_coherence_slope_on = self.rm0_coherence_slope_on
+                self.read_coherence_slope = self.rm0_coherence_slope
+                self.back_action_coherence = self.rm0_coherence
 
 
     @portable

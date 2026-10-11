@@ -251,7 +251,56 @@ def test_params_absent_read_as_off():
     del p.back_action_coherence_slope
     fb = Feedback(expt_params=p)
     assert fb.read_twist == 0.0 and not fb.read_twist_on and not fb.read_coherence_slope_on
-    assert "read_twist_on" in Feedback.kernel_invariants
+    assert "read_twist_on" not in Feedback.kernel_invariants        # (written per shot in an A/B)
+
+
+# -- per-shot A/B of two read models (p.feedback_read_model scanned) ---------------------------
+
+M1 = dict(read_alpha_lightshift=1.432, read_twist_per_sz=0.869, back_action_coherence=0.739)
+
+
+def test_per_shot_model_1_is_bit_for_bit_the_fixed_m1_params():
+    ab = Feedback(expt_params=copy.deepcopy(_params(feedback_read_model=np.array([0.0, 1.0]))))
+    m1 = Feedback(expt_params=copy.deepcopy(_params(**M1)))
+    m0 = Feedback(expt_params=copy.deepcopy(_params()))
+    assert ab.read_model_per_shot and not m1.read_model_per_shot and not m0.read_model_per_shot
+    # written per shot: never kernel invariants (ARTIQ refuses writes to them)
+    assert not (set(fbmod.READ_MODEL_ATTRS) & set(Feedback.kernel_invariants))
+    assert {"read_model_per_shot", "rm1_twist", "rm0_coherence"} <= set(Feedback.kernel_invariants)
+    dt = ab.t_raman_pulse_current
+    for model, ref in ((1.0, m1), (0.0, m0), (1.0, m1)):
+        ab.select_read_model(model)
+        _scramble(ref)
+        _copy_state(ab, ref)
+        r_ab, r_ref = _run(ab, _steps(), dt), _run(ref, _steps(), dt)
+        for name in ("state_x", "state_y", "state_z", "P0"):
+            assert _same(getattr(ab, name), getattr(ref, name)), (model, name)
+        assert _same(np.array(r_ab), np.array(r_ref))
+
+
+def test_not_scanned_select_does_nothing():
+    fb = Feedback(expt_params=copy.deepcopy(_params(**M1)))
+    before = {a: getattr(fb, a) for a in fbmod.READ_MODEL_ATTRS}
+    fb.select_read_model(0.0)
+    fb.select_read_model(1.0)
+    assert {a: getattr(fb, a) for a in fbmod.READ_MODEL_ATTRS} == before
+    assert fb.p.feedback_read_model == -1.0
+
+
+def test_replay_resolves_the_read_model_per_shot():
+    from types import SimpleNamespace
+    from kexp.analysis.feedback import FeedbackReplayCore
+    res = FeedbackReplayCore._resolve_read_model_r
+    one = SimpleNamespace(_read_model_source=-1.0, ad=None)
+    assert np.array_equal(res(one, 4), [-1.0] * 4)
+    per_shot = SimpleNamespace(_read_model_source=np.array([1., 0., 0., 1.]), ad=None)
+    assert np.array_equal(res(per_shot, 4), [1., 0., 0., 1.])
+    from_xvar = SimpleNamespace(_read_model_source=np.array([0., 1.]),
+                                ad=SimpleNamespace(xvarnames=["feedback_read_model"],
+                                                   xvars=[np.array([1., 1., 0., 0., 1., 0.])]))
+    assert np.array_equal(res(from_xvar, 6), [1., 1., 0., 0., 1., 0.])
+    with pytest.raises(ValueError):
+        res(SimpleNamespace(_read_model_source=np.array([0., 1., 2.]), ad=None), 4)
 
 
 # -- the replay's wiring ------------------------------------------------------------------------

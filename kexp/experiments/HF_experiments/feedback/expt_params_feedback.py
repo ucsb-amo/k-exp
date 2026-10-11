@@ -331,6 +331,16 @@ class ExptParams(expt_params_kexp):
         # the read's constant z angle (rad), the kernel's alpha_z_lightshift, set on its own
         # (theta11: 1.432); NaN = from frequency_lightshift (omega_ls * t_img_pulse), as before
         self.read_alpha_lightshift = float("nan")
+        # Per-shot A/B of two read models (pre-registered A/B, 2026-10-11): scan it,
+        # self.xvar('feedback_read_model', np.array([0., 1.])); each shot then uses model 0 =
+        # the three values above, or model 1 = the read_model1_* set below. -1 = not
+        # interleaved: every shot uses the values above.
+        self.feedback_read_model = -1.0
+        # read model 1 (theta11's M1-p2); used only on shots with feedback_read_model = 1
+        self.read_model1_alpha_lightshift = 1.432
+        self.read_model1_twist_per_sz = 0.869
+        self.read_model1_coherence = 0.739
+        self.read_model1_coherence_slope = 0.0
 
         self.feedback_measurement_midpoint_remap_enabled = True
 
