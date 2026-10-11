@@ -471,23 +471,21 @@ class FeedbackReplayCore(Feedback):
         return float(arr[0])
 
     def _resolve_read_model_r(self, n_repeat: int) -> np.ndarray:
-        """The read model of each shot (row): the run's p.feedback_read_model when
-        it holds one value per shot, else the run's xvar of that name (1-D scans);
-        a single value applies to every shot (-1: not interleaved)."""
+        """The read model of each shot (row): from the run's xvars when it was
+        scanned (any number of xvars, in the replay's row order), else the run's
+        p.feedback_read_model -- one value for every shot (-1: not interleaved),
+        or one value per shot. Anything else raises."""
+        per_shot = self._xvar_per_shot("feedback_read_model", n_repeat)
+        if per_shot is not None:
+            return per_shot
         values = np.asarray(getattr(self, "_read_model_source", -1.0), dtype=float).ravel()
         if values.size == 1:
             return np.full((n_repeat,), float(values[0]), dtype=float)
         if values.size == int(n_repeat):
             return values.astype(float)
-        ad = getattr(self, "ad", None)
-        names = list(getattr(ad, "xvarnames", []) or [])
-        if "feedback_read_model" in names and len(names) == 1:
-            xv = np.asarray(ad.xvars[0], dtype=float).ravel()
-            if xv.size == int(n_repeat):
-                return xv
         raise ValueError(
-            f"feedback_read_model has {values.size} values for {n_repeat} shots; the replay "
-            f"handles it as the run's only xvar (or one value per shot)")
+            f"feedback_read_model has {values.size} values for {n_repeat} shots and is not one "
+            f"of the run's xvars: which shot used which model is unknown")
 
     def _resolve_fractional_initial_offset_r(
         self,
@@ -521,6 +519,14 @@ class FeedbackReplayCore(Feedback):
             and np.isclose(values[0], raw[0])
         ):
             values = raw
+        # A run with several xvars (e.g. offset x read model): the raw value is not
+        # one per shot, and the scalar above would replay every shot on shot 0's
+        # grid. While self.p still holds the collapsed first element (no override),
+        # take each shot's offset from the run's xvars, in the replay's row order.
+        if values.size == 1 and raw.size > 0 and np.isclose(values[0], raw[0]):
+            per_shot = self._xvar_per_shot("feedback_fractional_initial_offset", n_repeat)
+            if per_shot is not None and per_shot.size > 1:
+                values = per_shot
         if not np.all(np.isfinite(values)):
             raise ValueError("feedback_fractional_initial_offset must be finite.")
 
@@ -604,7 +610,28 @@ class FeedbackReplayCore(Feedback):
             return x.reshape(1, -1)
         if x.ndim == 2:
             return x
+        if x.ndim > 2:
+            # a run with several xvars: (*xvardims, step) -> one row per shot, in
+            # C order -- the order _xvar_per_shot gives each xvar's values in
+            return x.reshape(-1, x.shape[-1])
         raise ValueError(f"{name} must be 1D or 2D (repeat, step), got shape {x.shape}.")
+
+    def _xvar_per_shot(self, key: str, n_repeat: int) -> Optional[np.ndarray]:
+        """The value of xvar ``key`` for every shot row, in the replay's row order
+        (the run's xvars, C order: the last xvar fastest, as _to_repeat_step
+        flattens the data); None when ``key`` is not one of the run's xvars.
+        Raises when the shot count does not match."""
+        ad = getattr(self, "ad", None)
+        names = list(getattr(ad, "xvarnames", None) or [])
+        if key not in names:
+            return None
+        axes = [np.asarray(x, dtype=float).ravel() for x in ad.xvars]
+        values = np.meshgrid(*axes, indexing="ij")[names.index(key)].ravel()
+        if values.size != int(n_repeat):
+            raise ValueError(
+                f"xvar {key}: {values.size} per-shot values from the run's xvars "
+                f"({[len(a) for a in axes]}) but {n_repeat} shots in the data")
+        return values
 
     def _resolve_trace_indices(
         self,

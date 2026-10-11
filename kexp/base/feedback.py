@@ -616,6 +616,44 @@ class Feedback:
         self.rm1_coherence_slope = float(getattr(p, "read_model1_coherence_slope", 0.0))
         self.rm1_coherence_slope_on = self.rm1_coherence_slope != 0.0
         self.rm1_coherence = float(getattr(p, "read_model1_coherence", self.back_action_coherence))
+        self._check_read_model_hooks()
+
+    #: Text every posterior method in use must contain to implement the read model.
+    READ_MODEL_TOKENS = ("self.read_twist", "self.read_alpha_lightshift", "self.read_coherence_slope")
+
+    def _check_read_model_hooks(self):
+        """With any read model on (fixed params, or a per-shot A/B), refuse a class
+        whose posterior methods do not implement it -- e.g. a session copy of the
+        fast path made before the read model (2026-10-09 sensing chain), or the
+        timing bench's own OverlapPosterior: there model 1 would silently run as
+        model 0. Checked from each method's source text; a method whose source
+        cannot be read is refused too."""
+        on = (self.read_twist_on or self.read_coherence_slope_on or self.read_alpha_lightshift_on
+              or self.read_model_per_shot)
+        if not on:
+            return
+        import inspect
+        for name in ("generate_posterior", "propagate_hypotheses"):
+            fn = getattr(type(self), name, None)
+            if fn is None:
+                continue
+            fn = getattr(fn, "__func__", fn)
+            try:
+                src = inspect.getsource(fn)
+                where = inspect.getsourcefile(fn)
+            except (OSError, TypeError) as exc:
+                raise RuntimeError(
+                    f"read model on, but the source of {type(self).__name__}.{name} cannot be read "
+                    f"to check that it implements it ({exc})") from exc
+            missing = [t for t in self.READ_MODEL_TOKENS if t not in src]
+            if missing:
+                raise RuntimeError(
+                    f"read model on (read_twist_per_sz / read_alpha_lightshift / "
+                    f"back_action_coherence_slope / feedback_read_model), but "
+                    f"{type(self).__name__}.{name} in {where} does not implement it (no "
+                    f"{', '.join(missing)}): an older or session copy of the posterior. It would "
+                    f"run without the read model, silently. Use the repo's class, or port the "
+                    f"read model into this copy.")
 
     @portable
     def select_read_model(self, model):

@@ -291,16 +291,82 @@ def test_replay_resolves_the_read_model_per_shot():
     from types import SimpleNamespace
     from kexp.analysis.feedback import FeedbackReplayCore
     res = FeedbackReplayCore._resolve_read_model_r
-    one = SimpleNamespace(_read_model_source=-1.0, ad=None)
-    assert np.array_equal(res(one, 4), [-1.0] * 4)
-    per_shot = SimpleNamespace(_read_model_source=np.array([1., 0., 0., 1.]), ad=None)
-    assert np.array_equal(res(per_shot, 4), [1., 0., 0., 1.])
-    from_xvar = SimpleNamespace(_read_model_source=np.array([0., 1.]),
-                                ad=SimpleNamespace(xvarnames=["feedback_read_model"],
-                                                   xvars=[np.array([1., 1., 0., 0., 1., 0.])]))
+
+    def fake(source, ad=None):
+        f = SimpleNamespace(_read_model_source=source, ad=ad)
+        f._xvar_per_shot = lambda key, n: FeedbackReplayCore._xvar_per_shot(f, key, n)
+        return f
+    assert np.array_equal(res(fake(-1.0), 4), [-1.0] * 4)
+    assert np.array_equal(res(fake(np.array([1., 0., 0., 1.])), 4), [1., 0., 0., 1.])
+    from_xvar = fake(np.array([0., 1.]),
+                     SimpleNamespace(xvarnames=["feedback_read_model"],
+                                     xvars=[np.array([1., 1., 0., 0., 1., 0.])]))
     assert np.array_equal(res(from_xvar, 6), [1., 1., 0., 0., 1., 0.])
     with pytest.raises(ValueError):
-        res(SimpleNamespace(_read_model_source=np.array([0., 1., 2.]), ad=None), 4)
+        res(fake(np.array([0., 1., 2.])), 4)
+
+
+# -- guard: a posterior without the read model is refused when it is on ----------------------
+
+class _OldOverlap:
+    """A session copy of the fast path made before the read model: its
+    propagate_hypotheses has no twist (as the 10-09 sensing chain's copy)."""
+
+    def propagate_hypotheses(self, t, phase_raman_pulse_start=0.):
+        nx, ny, coherence = 0.0, 0.0, self.back_action_coherence
+        return nx * coherence, ny * coherence
+
+
+def test_a_posterior_without_the_read_model_is_refused_when_it_is_on():
+    class OldFast(_OldOverlap, Feedback):
+        pass
+    for params in (TWIST_SLOPE, dict(read_alpha_lightshift=1.432),
+                   dict(feedback_read_model=np.array([0.0, 1.0]))):
+        with pytest.raises(RuntimeError, match="does not implement it"):
+            OldFast(expt_params=copy.deepcopy(_params(**params)))
+    OldFast(expt_params=copy.deepcopy(_params()))               # off: as before, no check
+
+
+def test_the_repo_posteriors_pass_the_guard():
+    from kexp.experiments.HF_experiments.feedback.feedback_reinit import feedback_reinit
+    Both = _overlap_class()
+    Both(expt_params=copy.deepcopy(_params(**ON)))                  # fast path: no raise
+    Feedback(expt_params=copy.deepcopy(_params(**ON)))
+    src_ok = all(t in __import__("inspect").getsource(feedback_reinit.propagate_hypotheses)
+                 for t in Feedback.READ_MODEL_TOKENS)
+    assert src_ok
+
+
+# -- the replay with several xvars ----------------------------------------------------------------
+
+def _two_xvar_replay(offset_value=0.0, override=False):
+    from types import SimpleNamespace
+    from kexp.analysis.feedback import FeedbackReplayCore
+    ad = SimpleNamespace(xvarnames=["feedback_fractional_initial_offset", "feedback_read_model"],
+                         xvars=[np.array([0., 1., 2.]), np.array([0., 1.])])
+    fake = SimpleNamespace(ad=ad, _read_model_source=np.array([0., 1.]),
+                           _fractional_initial_offset_source=np.array([0., 1., 2.]),
+                           p=SimpleNamespace(feedback_fractional_initial_offset=offset_value))
+    fake._xvar_per_shot = lambda key, n: FeedbackReplayCore._xvar_per_shot(fake, key, n)
+    return FeedbackReplayCore, fake
+
+
+def test_two_xvar_run_gives_every_shot_its_own_offset_and_model():
+    core, fake = _two_xvar_replay()
+    assert np.array_equal(core._resolve_read_model_r(fake, 6), [0., 1., 0., 1., 0., 1.])
+    assert np.array_equal(core._resolve_fractional_initial_offset_r(fake, 6),
+                          [0., 0., 1., 1., 2., 2.])
+    # the data rows come in the same order: (3, 2, step) -> 6 rows, last xvar fastest
+    apd = np.arange(3 * 2 * 4, dtype=float).reshape(3, 2, 4)
+    rows = core._to_repeat_step(fake, apd, "apd")
+    assert rows.shape == (6, 4) and np.array_equal(rows[3], apd[1, 1])
+    with pytest.raises(ValueError, match="per-shot values"):
+        core._resolve_read_model_r(fake, 5)                       # counts that do not match
+
+
+def test_a_deliberate_offset_override_still_wins_in_a_two_xvar_run():
+    core, fake = _two_xvar_replay(offset_value=0.7)
+    assert np.array_equal(core._resolve_fractional_initial_offset_r(fake, 6), [0.7] * 6)
 
 
 # -- the replay's wiring ------------------------------------------------------------------------
