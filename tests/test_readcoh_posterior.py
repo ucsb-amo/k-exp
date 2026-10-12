@@ -419,3 +419,15 @@ def test_replay_reads_the_params_and_takes_overrides():
          "read_alpha_lightshift": 1.432})
     assert target.read_twist_per_sz == 0.869 and target.back_action_coherence_slope == 0.193
     assert target.read_alpha_lightshift == 1.432
+
+
+def test_two_xvar_run_with_xvarnames_as_an_ndarray():
+    """atomdata gives xvarnames as an ndarray; 'ndarray or []' raised for two or more xvars
+    (mr0, 2026-10-12: 2-xvar runs did not load in the replay)."""
+    core, fake = _two_xvar_replay()
+    fake.ad.xvarnames = np.array(fake.ad.xvarnames)
+    assert np.array_equal(core._resolve_read_model_r(fake, 6), [0., 1., 0., 1., 0., 1.])
+    assert np.array_equal(core._resolve_fractional_initial_offset_r(fake, 6), [0., 0., 1., 1., 2., 2.])
+    fake.ad.xvarnames = np.array(["feedback_fractional_initial_offset"])
+    fake.ad.xvars = [np.array([0., 1., 2.])]
+    assert core._xvar_per_shot(fake, "feedback_read_model", 3) is None

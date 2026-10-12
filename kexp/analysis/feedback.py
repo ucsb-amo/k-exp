@@ -622,7 +622,9 @@ class FeedbackReplayCore(Feedback):
         flattens the data); None when ``key`` is not one of the run's xvars.
         Raises when the shot count does not match."""
         ad = getattr(self, "ad", None)
-        names = list(getattr(ad, "xvarnames", None) or [])
+        # ad.xvarnames is an ndarray: 'or []' on it raises for two or more xvars
+        xn = getattr(ad, "xvarnames", None)
+        names = [] if xn is None else [str(n) for n in np.atleast_1d(xn).tolist()]
         if key not in names:
             return None
         axes = [np.asarray(x, dtype=float).ravel() for x in ad.xvars]
