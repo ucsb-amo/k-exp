@@ -60,7 +60,12 @@ class ExptParams(expt_params_kexp):
         # self.frequency_lightshift = 3.338e+04  # Hz, +/- 1.6e+03, absorption Ramsey phase jump (reference phase pi assumed), imaging amp 0.2, t_pulse 5 us, fringe amp 711 on offset 1838, after Raman lock change #85333, 2026-10-07
         # self.frequency_lightshift = 3.682e+04  # Hz, +/- 1.0e+03, absorption Ramsey phase jump (reference phase pi assumed), imaging amp 0.2, t_pulse 5 us, fringe amp 504 on offset 1404, after the Raman frequency session #85344, 2026-10-07
         # self.frequency_lightshift = 4.291e+04  # Hz, +/- 2.2e+03, absorption Ramsey phase jump (reference phase pi assumed), imaging amp 0.2, t_pulse 5 us, fringe amp 359 on offset 1045, evening recalibration #85411, 2026-10-07
-        self.frequency_lightshift = 3.145e+04  # Hz, +/- 1.3e+03, absorption Ramsey phase jump (reference phase pi assumed), imaging amp 0.2, t_pulse 5 us, fringe amp 765 on offset 1827, morning recalibration #85472, 2026-10-08
+        # self.frequency_lightshift = 3.145e+04  # Hz, +/- 1.3e+03, absorption Ramsey phase jump (reference phase pi assumed), imaging amp 0.2, t_pulse 5 us, fringe amp 765 on offset 1827, morning recalibration #85472, 2026-10-08
+        # self.frequency_lightshift = 3.872e+04  # Hz, +/- 2.0e+03, absorption Ramsey phase jump (reference phase pi assumed), imaging amp 0.2, t_pulse 5 us, fringe amp 681 on offset 1554, user re-check #85488, 2026-10-08
+        # self.frequency_lightshift = 3.777e+04  # Hz, +/- 1.1e+03, absorption Ramsey phase jump (reference phase pi assumed), imaging amp 0.2, t_pulse 5 us, fringe amp 703 on offset 1738, night recal #85508, 2026-10-08
+        # self.frequency_lightshift = 3.205e+04  # Hz, +/- 8.8e+02, absorption Ramsey phase jump (reference phase pi assumed), imaging amp 0.2, t_pulse 5 us, sensing-day recal #85549, 2026-10-09
+        # self.frequency_lightshift = 3.920e+04  # Hz, +/- 9.7e+02, absorption Ramsey phase jump (reference phase pi assumed), imaging amp 0.2, t_pulse 5 us, recal at new Raman lock 41.440 GHz #86168, 2026-10-10
+        self.frequency_lightshift = 3.681e+04  # Hz, +/- 1.7e+03, absorption Ramsey phase jump (reference phase pi assumed), imaging amp 0.2, t_pulse 5 us, recal at new Raman lock 41.440 GHz #86242, 2026-10-11
                 
         # calibration run 78309 (S_z endpoints from 'fit', deg-2 S_z response fit)
         self.t_img_pulse = 5e-06  # s
@@ -128,7 +133,15 @@ class ExptParams(expt_params_kexp):
         # self.v_apd_all_up = -0.07298 #85460, 2026-10-08  # hourly recal (feedback procedure, user-approved), apd_state_mapping 85460 --sz-source params --degree 1 (Rabi frequency from the joint calibration, linear)
         # self.v_apd_all_up = -0.07256 #85466, 2026-10-08  # hourly recal (feedback procedure, user-approved), apd_state_mapping 85466 --sz-source params --degree 1 (Rabi frequency from the joint calibration, linear)
         # self.v_apd_all_up = -0.07092 #85475, 2026-10-08  # morning recal chain 2026-10-08; retry of 85474 agrees within the suspicious limits, apd_state_mapping 85475 --sz-source params --degree 1 (Rabi frequency from the joint calibration, linear)
-        self.v_apd_all_up = -0.07684 #85482, 2026-10-08  # hourly recal (feedback procedure, user-approved), apd_state_mapping 85482 --sz-source params --degree 1 (Rabi frequency from the joint calibration, linear)
+        # self.v_apd_all_up = -0.07684 #85482, 2026-10-08  # hourly recal (feedback procedure, user-approved), apd_state_mapping 85482 --sz-source params --degree 1 (Rabi frequency from the joint calibration, linear)
+        # self.v_apd_all_up = -0.07552 #85490, 2026-10-08  # hourly recal (feedback procedure, user-approved), apd_state_mapping 85490 --sz-source params --degree 1 (Rabi frequency from the joint calibration, linear)
+        # self.v_apd_all_up = -0.08976 #85513, 2026-10-08  # contrast-tracking recal (user 2026-10-06, resume rule), apd_state_mapping 85513 --sz-source params --degree 1 (up/down x 10, linear)
+        # self.v_apd_all_up = -0.07484 #85520, 2026-10-08  # hourly recal (feedback procedure, user-approved), apd_state_mapping 85520 --sz-source params --degree 1 (Rabi frequency from the joint calibration, linear)
+        # self.v_apd_all_up = -0.07240 #85536, 2026-10-09  # replication recal 2026-10-09 (far_detuned_tooth, pre-approved by the coordinator/user), apd_state_mapping 85536 --sz-source params --degree 1 (Rabi frequency from the joint calibration, linear)
+        # self.v_apd_all_up = -0.07608 #85550, 2026-10-09  # sensing-day APD recal (procedure), apd_state_mapping 85550 --sz-source params --degree 1 (Rabi frequency from the joint calibration, linear)
+        # self.v_apd_all_up = -0.07702 #85560, 2026-10-09  # sensing-day APD recal (procedure), apd_state_mapping 85560 --sz-source params --degree 1 (Rabi frequency from the joint calibration, linear)
+        # self.v_apd_all_up = -0.10422 #86244, 2026-10-11  # recal at new Raman lock 41.440 GHz (procedure), apd_state_mapping 86244 --sz-source params --degree 1 (Rabi frequency from the joint calibration, linear)
+        self.v_apd_all_up = -0.10008 #86491, 2026-10-11  # recal at new Raman lock 41.440 GHz (procedure), apd_state_mapping 86491 --sz-source params --degree 1 (Rabi frequency from the joint calibration, linear)
         # self.v_apd_all_down = -0.20248 #83201-83202, 2026-09-27  # +/- 0.0017 V with run-to-run scatter
         # self.v_apd_all_down = -0.20441 #83217, 2026-09-27  # overnight auto-recal (user-approved), apd_state_mapping 83217
         # self.v_apd_all_down = -0.20229 #83227, 2026-09-27  # overnight auto-recal (user-approved), apd_state_mapping 83227 --degree 1 (linear fallback, user-approved: curvature resolved, midpoint outside 0.35-0.65)
@@ -172,7 +185,15 @@ class ExptParams(expt_params_kexp):
         # self.v_apd_all_down = -0.13699 #85460, 2026-10-08  # hourly recal (feedback procedure, user-approved), apd_state_mapping 85460 --sz-source params --degree 1 (Rabi frequency from the joint calibration, linear)
         # self.v_apd_all_down = -0.13186 #85466, 2026-10-08  # hourly recal (feedback procedure, user-approved), apd_state_mapping 85466 --sz-source params --degree 1 (Rabi frequency from the joint calibration, linear)
         # self.v_apd_all_down = -0.13854 #85475, 2026-10-08  # morning recal chain 2026-10-08; retry of 85474 agrees within the suspicious limits, apd_state_mapping 85475 --sz-source params --degree 1 (Rabi frequency from the joint calibration, linear)
-        self.v_apd_all_down = -0.13250 #85482, 2026-10-08  # hourly recal (feedback procedure, user-approved), apd_state_mapping 85482 --sz-source params --degree 1 (Rabi frequency from the joint calibration, linear)
+        # self.v_apd_all_down = -0.13250 #85482, 2026-10-08  # hourly recal (feedback procedure, user-approved), apd_state_mapping 85482 --sz-source params --degree 1 (Rabi frequency from the joint calibration, linear)
+        # self.v_apd_all_down = -0.13311 #85490, 2026-10-08  # hourly recal (feedback procedure, user-approved), apd_state_mapping 85490 --sz-source params --degree 1 (Rabi frequency from the joint calibration, linear)
+        # self.v_apd_all_down = -0.16472 #85513, 2026-10-08  # contrast-tracking recal (user 2026-10-06, resume rule), apd_state_mapping 85513 --sz-source params --degree 1 (up/down x 10, linear)
+        # self.v_apd_all_down = -0.15547 #85520, 2026-10-08  # hourly recal (feedback procedure, user-approved), apd_state_mapping 85520 --sz-source params --degree 1 (Rabi frequency from the joint calibration, linear)
+        # self.v_apd_all_down = -0.16391 #85536, 2026-10-09  # replication recal 2026-10-09 (far_detuned_tooth, pre-approved by the coordinator/user), apd_state_mapping 85536 --sz-source params --degree 1 (Rabi frequency from the joint calibration, linear)
+        # self.v_apd_all_down = -0.15807 #85550, 2026-10-09  # sensing-day APD recal (procedure), apd_state_mapping 85550 --sz-source params --degree 1 (Rabi frequency from the joint calibration, linear)
+        # self.v_apd_all_down = -0.15643 #85560, 2026-10-09  # sensing-day APD recal (procedure), apd_state_mapping 85560 --sz-source params --degree 1 (Rabi frequency from the joint calibration, linear)
+        # self.v_apd_all_down = -0.14113 #86244, 2026-10-11  # recal at new Raman lock 41.440 GHz (procedure), apd_state_mapping 86244 --sz-source params --degree 1 (Rabi frequency from the joint calibration, linear)
+        self.v_apd_all_down = -0.13935 #86491, 2026-10-11  # recal at new Raman lock 41.440 GHz (procedure), apd_state_mapping 86491 --sz-source params --degree 1 (Rabi frequency from the joint calibration, linear)
         # self.n_photons_per_shot = 851.73 #83201-83202, 2026-09-27  # scope integral, up minus down per pulse, +/- 25 (SRS gain chain from the notebook, not measured in the run)
         # self.n_photons_per_shot = 1119.22 #83217, 2026-09-27  # overnight auto-recal (user-approved), apd_state_mapping 83217
         # self.n_photons_per_shot = 910.13 #83227, 2026-09-27  # overnight auto-recal (user-approved), apd_state_mapping 83227 --degree 1 (linear fallback, user-approved: curvature resolved, midpoint outside 0.35-0.65)
@@ -216,7 +237,15 @@ class ExptParams(expt_params_kexp):
         # self.n_photons_per_shot = 900.68 #85460, 2026-10-08  # hourly recal (feedback procedure, user-approved), apd_state_mapping 85460 --sz-source params --degree 1 (Rabi frequency from the joint calibration, linear)
         # self.n_photons_per_shot = 878.54 #85466, 2026-10-08  # hourly recal (feedback procedure, user-approved), apd_state_mapping 85466 --sz-source params --degree 1 (Rabi frequency from the joint calibration, linear)
         # self.n_photons_per_shot = 957.34 #85475, 2026-10-08  # morning recal chain 2026-10-08; retry of 85474 agrees within the suspicious limits, apd_state_mapping 85475 --sz-source params --degree 1 (Rabi frequency from the joint calibration, linear)
-        self.n_photons_per_shot = 819.86 #85482, 2026-10-08  # hourly recal (feedback procedure, user-approved), apd_state_mapping 85482 --sz-source params --degree 1 (Rabi frequency from the joint calibration, linear)
+        # self.n_photons_per_shot = 819.86 #85482, 2026-10-08  # hourly recal (feedback procedure, user-approved), apd_state_mapping 85482 --sz-source params --degree 1 (Rabi frequency from the joint calibration, linear)
+        # self.n_photons_per_shot = 832.36 #85490, 2026-10-08  # hourly recal (feedback procedure, user-approved), apd_state_mapping 85490 --sz-source params --degree 1 (Rabi frequency from the joint calibration, linear)
+        # self.n_photons_per_shot = 1083.39 #85513, 2026-10-08  # contrast-tracking recal (user 2026-10-06, resume rule), apd_state_mapping 85513 --sz-source params --degree 1 (up/down x 10, linear)
+        # self.n_photons_per_shot = 1171.45 #85520, 2026-10-08  # hourly recal (feedback procedure, user-approved), apd_state_mapping 85520 --sz-source params --degree 1 (Rabi frequency from the joint calibration, linear)
+        # self.n_photons_per_shot = 1279.79 #85536, 2026-10-09  # replication recal 2026-10-09 (far_detuned_tooth, pre-approved by the coordinator/user), apd_state_mapping 85536 --sz-source params --degree 1 (Rabi frequency from the joint calibration, linear)
+        # self.n_photons_per_shot = 1171.28 #85550, 2026-10-09  # sensing-day APD recal (procedure), apd_state_mapping 85550 --sz-source params --degree 1 (Rabi frequency from the joint calibration, linear)
+        # self.n_photons_per_shot = 1133.37 #85560, 2026-10-09  # sensing-day APD recal (procedure), apd_state_mapping 85560 --sz-source params --degree 1 (Rabi frequency from the joint calibration, linear)
+        # self.n_photons_per_shot = 520.72 #86244, 2026-10-11  # recal at new Raman lock 41.440 GHz (procedure), apd_state_mapping 86244 --sz-source params --degree 1 (Rabi frequency from the joint calibration, linear)
+        self.n_photons_per_shot = 584.01 #86491, 2026-10-11  # recal at new Raman lock 41.440 GHz (procedure), apd_state_mapping 86491 --sz-source params --degree 1 (Rabi frequency from the joint calibration, linear)
         # self.std_n_photons_per_shot = 150.36 #83201-83202, 2026-09-27  # n * sigma_V / v_range = 851.7 * 8.53 mV / 48.31 mV (within-run, up: the larger endpoint noise)
         # self.std_n_photons_per_shot = 178.11 #83217, 2026-09-27  # overnight auto-recal (user-approved), apd_state_mapping 83217
         # self.std_n_photons_per_shot = 183.07 #83227, 2026-09-27  # overnight auto-recal (user-approved), apd_state_mapping 83227 --degree 1 (linear fallback, user-approved: curvature resolved, midpoint outside 0.35-0.65)
@@ -259,7 +288,15 @@ class ExptParams(expt_params_kexp):
         # self.std_n_photons_per_shot = 169.78 #85460, 2026-10-08  # hourly recal (feedback procedure, user-approved), apd_state_mapping 85460 --sz-source params --degree 1 (Rabi frequency from the joint calibration, linear)
         # self.std_n_photons_per_shot = 169.15 #85466, 2026-10-08  # hourly recal (feedback procedure, user-approved), apd_state_mapping 85466 --sz-source params --degree 1 (Rabi frequency from the joint calibration, linear)
         # self.std_n_photons_per_shot = 151.65 #85475, 2026-10-08  # morning recal chain 2026-10-08; retry of 85474 agrees within the suspicious limits, apd_state_mapping 85475 --sz-source params --degree 1 (Rabi frequency from the joint calibration, linear)
-        self.std_n_photons_per_shot = 150.28 #85482, 2026-10-08  # hourly recal (feedback procedure, user-approved), apd_state_mapping 85482 --sz-source params --degree 1 (Rabi frequency from the joint calibration, linear)
+        # self.std_n_photons_per_shot = 150.28 #85482, 2026-10-08  # hourly recal (feedback procedure, user-approved), apd_state_mapping 85482 --sz-source params --degree 1 (Rabi frequency from the joint calibration, linear)
+        # self.std_n_photons_per_shot = 145.93 #85490, 2026-10-08  # hourly recal (feedback procedure, user-approved), apd_state_mapping 85490 --sz-source params --degree 1 (Rabi frequency from the joint calibration, linear)
+        # self.std_n_photons_per_shot = 155.95 #85513, 2026-10-08  # contrast-tracking recal (user 2026-10-06, resume rule), apd_state_mapping 85513 --sz-source params --degree 1 (up/down x 10, linear)
+        # self.std_n_photons_per_shot = 159.58 #85520, 2026-10-08  # hourly recal (feedback procedure, user-approved), apd_state_mapping 85520 --sz-source params --degree 1 (Rabi frequency from the joint calibration, linear)
+        # self.std_n_photons_per_shot = 167.05 #85536, 2026-10-09  # replication recal 2026-10-09 (far_detuned_tooth, pre-approved by the coordinator/user), apd_state_mapping 85536 --sz-source params --degree 1 (Rabi frequency from the joint calibration, linear)
+        # self.std_n_photons_per_shot = 162.77 #85550, 2026-10-09  # sensing-day APD recal (procedure), apd_state_mapping 85550 --sz-source params --degree 1 (Rabi frequency from the joint calibration, linear)
+        # self.std_n_photons_per_shot = 165.63 #85560, 2026-10-09  # sensing-day APD recal (procedure), apd_state_mapping 85560 --sz-source params --degree 1 (Rabi frequency from the joint calibration, linear)
+        # self.std_n_photons_per_shot = 146.52 #86244, 2026-10-11  # recal at new Raman lock 41.440 GHz (procedure), apd_state_mapping 86244 --sz-source params --degree 1 (Rabi frequency from the joint calibration, linear)
+        self.std_n_photons_per_shot = 208.55 #86491, 2026-10-11  # recal at new Raman lock 41.440 GHz (procedure), apd_state_mapping 86491 --sz-source params --degree 1 (Rabi frequency from the joint calibration, linear)
         # self.feedback_measurement_midpoint_fraction = 0.5 #83201-83202, 2026-09-27  # linear map (quadratic term not resolved)
         # self.feedback_measurement_midpoint_fraction = 0.5000 #83217, 2026-09-27  # overnight auto-recal (user-approved), apd_state_mapping 83217
         # self.feedback_measurement_midpoint_fraction = 0.5000 #83227, 2026-09-27  # overnight auto-recal (user-approved), apd_state_mapping 83227 --degree 1 (linear fallback, user-approved: curvature resolved, midpoint outside 0.35-0.65)
@@ -303,7 +340,15 @@ class ExptParams(expt_params_kexp):
         # self.feedback_measurement_midpoint_fraction = 0.5000 #85460, 2026-10-08  # hourly recal (feedback procedure, user-approved), apd_state_mapping 85460 --sz-source params --degree 1 (Rabi frequency from the joint calibration, linear)
         # self.feedback_measurement_midpoint_fraction = 0.5000 #85466, 2026-10-08  # hourly recal (feedback procedure, user-approved), apd_state_mapping 85466 --sz-source params --degree 1 (Rabi frequency from the joint calibration, linear)
         # self.feedback_measurement_midpoint_fraction = 0.5000 #85475, 2026-10-08  # morning recal chain 2026-10-08; retry of 85474 agrees within the suspicious limits, apd_state_mapping 85475 --sz-source params --degree 1 (Rabi frequency from the joint calibration, linear)
-        self.feedback_measurement_midpoint_fraction = 0.5000 #85482, 2026-10-08  # hourly recal (feedback procedure, user-approved), apd_state_mapping 85482 --sz-source params --degree 1 (Rabi frequency from the joint calibration, linear)
+        # self.feedback_measurement_midpoint_fraction = 0.5000 #85482, 2026-10-08  # hourly recal (feedback procedure, user-approved), apd_state_mapping 85482 --sz-source params --degree 1 (Rabi frequency from the joint calibration, linear)
+        # self.feedback_measurement_midpoint_fraction = 0.5000 #85490, 2026-10-08  # hourly recal (feedback procedure, user-approved), apd_state_mapping 85490 --sz-source params --degree 1 (Rabi frequency from the joint calibration, linear)
+        # self.feedback_measurement_midpoint_fraction = 0.5000 #85513, 2026-10-08  # contrast-tracking recal (user 2026-10-06, resume rule), apd_state_mapping 85513 --sz-source params --degree 1 (up/down x 10, linear)
+        # self.feedback_measurement_midpoint_fraction = 0.5000 #85520, 2026-10-08  # hourly recal (feedback procedure, user-approved), apd_state_mapping 85520 --sz-source params --degree 1 (Rabi frequency from the joint calibration, linear)
+        # self.feedback_measurement_midpoint_fraction = 0.5000 #85536, 2026-10-09  # replication recal 2026-10-09 (far_detuned_tooth, pre-approved by the coordinator/user), apd_state_mapping 85536 --sz-source params --degree 1 (Rabi frequency from the joint calibration, linear)
+        # self.feedback_measurement_midpoint_fraction = 0.5000 #85550, 2026-10-09  # sensing-day APD recal (procedure), apd_state_mapping 85550 --sz-source params --degree 1 (Rabi frequency from the joint calibration, linear)
+        # self.feedback_measurement_midpoint_fraction = 0.5000 #85560, 2026-10-09  # sensing-day APD recal (procedure), apd_state_mapping 85560 --sz-source params --degree 1 (Rabi frequency from the joint calibration, linear)
+        # self.feedback_measurement_midpoint_fraction = 0.5000 #86244, 2026-10-11  # recal at new Raman lock 41.440 GHz (procedure), apd_state_mapping 86244 --sz-source params --degree 1 (Rabi frequency from the joint calibration, linear)
+        self.feedback_measurement_midpoint_fraction = 0.5000 #86491, 2026-10-11  # recal at new Raman lock 41.440 GHz (procedure), apd_state_mapping 86491 --sz-source params --degree 1 (Rabi frequency from the joint calibration, linear)
 
         # run 76228 | multi-parameter grid fit result
         # self.back_action_coherence = 0.7925
