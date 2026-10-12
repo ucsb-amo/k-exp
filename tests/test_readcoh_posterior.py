@@ -2,12 +2,16 @@
 p.read_twist_per_sz (a z twist d = READ_TWIST_SIGN * kappa * hz at the read) and
 p.back_action_coherence_slope (coherence c0 + slope * hz).
 
-* off (the defaults) the kernel is bit for bit the one on k-exp main (loaded from git);
+* off the kernel is bit for bit the one on k-exp main (loaded from git);
 * the fast path's propagate + weigh and feedback_reinit's propagate equal generate_posterior
   bit for bit with the model ON;
 * on, each grid point's transverse state is the constant model's, rotated by the polynomial
   twist and scaled by the state-dependent coherence (an independent reference);
-* the replay reads the two params from a run's params (0 when absent) and takes overrides.
+* the replay reads the two params from a run's params (0 when absent) and takes overrides;
+* the shipped defaults are M1-p2 (adopted 2026-10-11 after the A/B, 86509-86520).
+
+Every test sets the read model explicitly (_params starts from OFF, not from the shipped
+defaults), so the tests mean the same whatever expt_params_feedback.py ships.
 
 Host only (the kernels are @portable); no hardware, no device db."""
 import copy
@@ -24,11 +28,22 @@ from kexp.base.feedback import Feedback
 HERE = os.path.dirname(os.path.abspath(__file__))
 
 
-def _params(**kw):
+# the read model OFF: the constant model of 2026-09-30, the kernel on k-exp main
+OFF = dict(read_twist_per_sz=0.0, read_alpha_lightshift=float("nan"),
+           back_action_coherence=0.7215, back_action_coherence_slope=0.0)
+
+
+def _shipped_params():
     from kexp.experiments.HF_experiments.feedback.expt_params_feedback import ExptParams
-    p = ExptParams()
+    return ExptParams()
+
+
+def _params(**kw):
+    """ExptParams with the read model OFF (set explicitly, not taken from the shipped
+    defaults), then kw on top."""
+    p = _shipped_params()
     p.feedback_grid_size = 21
-    for k, v in kw.items():
+    for k, v in {**OFF, **kw}.items():
         setattr(p, k, v)
     return p
 
@@ -257,10 +272,24 @@ def test_params_absent_read_as_off():
 # -- per-shot A/B of two read models (p.feedback_read_model scanned) ---------------------------
 
 M1 = dict(read_alpha_lightshift=1.432, read_twist_per_sz=0.869, back_action_coherence=0.739)
+M1_AS_MODEL1 = dict(read_model1_alpha_lightshift=1.432, read_model1_twist_per_sz=0.869,
+                    read_model1_coherence=0.739, read_model1_coherence_slope=0.0)
+
+
+def test_shipped_defaults_are_m1():
+    """Adopted 2026-10-11 (#86509-86520, the pre-registered A/B); catches an accidental revert."""
+    p = _shipped_params()
+    assert p.read_alpha_lightshift == 1.432
+    assert p.read_twist_per_sz == 0.869
+    assert p.back_action_coherence == 0.739
+    assert p.back_action_coherence_slope == 0.0
+    fb = Feedback(expt_params=copy.deepcopy(p))
+    assert fb.read_twist_on and fb.read_alpha_lightshift_on and not fb.read_coherence_slope_on
 
 
 def test_per_shot_model_1_is_bit_for_bit_the_fixed_m1_params():
-    ab = Feedback(expt_params=copy.deepcopy(_params(feedback_read_model=np.array([0.0, 1.0]))))
+    ab = Feedback(expt_params=copy.deepcopy(_params(feedback_read_model=np.array([0.0, 1.0]),
+                                                    **M1_AS_MODEL1)))
     m1 = Feedback(expt_params=copy.deepcopy(_params(**M1)))
     m0 = Feedback(expt_params=copy.deepcopy(_params()))
     assert ab.read_model_per_shot and not m1.read_model_per_shot and not m0.read_model_per_shot
@@ -321,10 +350,10 @@ def test_a_posterior_without_the_read_model_is_refused_when_it_is_on():
     class OldFast(_OldOverlap, Feedback):
         pass
     for params in (TWIST_SLOPE, dict(read_alpha_lightshift=1.432),
-                   dict(feedback_read_model=np.array([0.0, 1.0]))):
+                   dict(feedback_read_model=np.array([0.0, 1.0]), **M1_AS_MODEL1)):
         with pytest.raises(RuntimeError, match="does not implement it"):
             OldFast(expt_params=copy.deepcopy(_params(**params)))
-    OldFast(expt_params=copy.deepcopy(_params()))               # off: as before, no check
+    OldFast(expt_params=copy.deepcopy(_params()))               # off (explicit): no check
 
 
 def test_the_repo_posteriors_pass_the_guard():

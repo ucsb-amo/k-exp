@@ -319,18 +319,21 @@ class ExptParams(expt_params_kexp):
         # run 83474 | RabiJointPosterior (f_rabi free), nuisances verdict PASS
         # self.back_action_coherence = 0.7562  # +/- 0.0206 #83474, 2026-09-28
         # run 83889 | RabiJointPosterior (f_rabi free), nuisances verdict PASS, new integrator window
-        self.back_action_coherence = 0.7215  # +/- 0.0282 #83889, 2026-09-30
+        # self.back_action_coherence = 0.7215  # +/- 0.0282 #83889, 2026-09-30
+        self.back_action_coherence = 0.739 #86509-86520, 2026-10-11  # M1-p2 read model (theta11 86179-86181), adopted by the pre-registered A/B (VERDICT_AB.md, D -0.083 +/- 0.024)
 
         # State-dependent read model (2026-10-11, EXPLORATORY; kexp.base.feedback.READ_TWIST_SIGN):
         # the read's z twist per unit s_z (rad) and the coherence slope per unit s_z, both at the
         # read. 0 = off = the constant model above, bit for bit. theta11 (86179-86181, post hoc):
         # dphi = -1.432 + 0.869 s_z rad, R = 0.738 + 0.193 s_z -- not applied until the simulation
         # check says it helps and the user says go.
-        self.read_twist_per_sz = 0.0
+        # self.read_twist_per_sz = 0.0
+        self.read_twist_per_sz = 0.869 #86509-86520, 2026-10-11  # M1-p2 twist (theta11 86179-86181), adopted by the pre-registered A/B (VERDICT_AB.md)
         self.back_action_coherence_slope = 0.0
         # the read's constant z angle (rad), the kernel's alpha_z_lightshift, set on its own
         # (theta11: 1.432); NaN = from frequency_lightshift (omega_ls * t_img_pulse), as before
-        self.read_alpha_lightshift = float("nan")
+        # self.read_alpha_lightshift = float("nan")
+        self.read_alpha_lightshift = 1.432 #86509-86520, 2026-10-11  # M1-p2 constant read angle (theta11 86179-86181), adopted by the pre-registered A/B (VERDICT_AB.md)
         # Per-shot A/B of two read models (pre-registered A/B, 2026-10-11): scan it,
         # self.xvar('feedback_read_model', np.array([0., 1.])); each shot then uses model 0 =
         # the three values above, or model 1 = the read_model1_* set below. -1 = not

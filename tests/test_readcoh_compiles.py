@@ -3,8 +3,9 @@
 The standard path (FeedbackExpt: generate_posterior in the loop) and the fast path
 (FeedbackExptFast: propagate_hypotheses / weigh_hypotheses) each compile their run() with
 read_twist_per_sz, back_action_coherence_slope and read_alpha_lightshift set, and the
-standard path once with them off. Compile only, against the real device db: no core-device
-connection (as artiq_compile), every network client stubbed (the sub-scan compile test's
+standard path once with them off (every read-model param set explicitly in the source,
+never taken from the shipped defaults, which are M1-p2 since 2026-10-11). Compile only,
+against the real device db: no core-device connection (as artiq_compile), every network client stubbed (the sub-scan compile test's
 stubs). Skipped without %db% / %code%. ~10 s per compile."""
 import os
 
@@ -31,6 +32,7 @@ class ReadcohCompile(EnvExperiment, BASECLASS):
         self.p.read_twist_per_sz = TWIST
         self.p.back_action_coherence_slope = SLOPE
         self.p.read_alpha_lightshift = ALS
+        self.p.back_action_coherence = COH
         self.xvar('feedback_fractional_initial_offset', np.array([0., 1., 2.]))
         self.finish_prepare(shuffle=False)
 
@@ -47,10 +49,11 @@ PATHS = {
 }
 
 
-def _build(monkeypatch, tmp_path, path, twist, slope, als, cal_enabled=0):
+def _build(monkeypatch, tmp_path, path, twist, slope, als, coh, cal_enabled=0):
     module, base = PATHS[path]
     src = (EXPT.replace("MODULE", module).replace("BASECLASS", base)
-           .replace("TWIST", repr(twist)).replace("SLOPE", repr(slope)).replace("ALS", als))
+           .replace("TWIST", repr(twist)).replace("SLOPE", repr(slope)).replace("ALS", als)
+           .replace("COH", repr(coh)))
     orig = subscan.EXPT
     monkeypatch.setattr(subscan, "EXPT", src)      # subscan._build fills CAL_ENABLED
     try:
@@ -62,7 +65,7 @@ def _build(monkeypatch, tmp_path, path, twist, slope, als, cal_enabled=0):
 @pytest.mark.parametrize("path,cal_enabled", [("standard", 0), ("fast", 0), ("standard", 1)])
 def test_compiles_with_the_read_model_on(monkeypatch, tmp_path, path, cal_enabled):
     """(cal_enabled 1: the in-run readout calibration's sub-scan in the same kernel)"""
-    cls, exp, device_mgr = _build(monkeypatch, tmp_path, path, 0.869, 0.193, "1.432",
+    cls, exp, device_mgr = _build(monkeypatch, tmp_path, path, 0.869, 0.193, "1.432", 0.739,
                                   cal_enabled=cal_enabled)
     try:
         assert exp.read_twist_on and exp.read_coherence_slope_on and exp.read_alpha_lightshift_on
@@ -79,8 +82,13 @@ def test_compiles_with_two_read_models_interleaved_per_shot(monkeypatch, tmp_pat
     module, base = PATHS[path]
     src = (EXPT.replace("MODULE", module).replace("BASECLASS", base)
            .replace("TWIST", "0.0").replace("SLOPE", "0.0").replace("ALS", 'float("nan")')
+           .replace("COH", "0.7215")
            .replace("self.xvar('feedback_fractional_initial_offset', np.array([0., 1., 2.]))",
-                    "self.xvar('feedback_read_model', np.array([0., 1., 1., 0.]))"))
+                    "self.p.read_model1_alpha_lightshift = 1.432\n"
+                    "        self.p.read_model1_twist_per_sz = 0.869\n"
+                    "        self.p.read_model1_coherence = 0.739\n"
+                    "        self.p.read_model1_coherence_slope = 0.0\n"
+                    "        self.xvar('feedback_read_model', np.array([0., 1., 1., 0.]))"))
     orig = subscan.EXPT
     monkeypatch.setattr(subscan, "EXPT", src)
     try:
@@ -89,13 +97,14 @@ def test_compiles_with_two_read_models_interleaved_per_shot(monkeypatch, tmp_pat
         monkeypatch.setattr(subscan, "EXPT", orig)
     try:
         assert exp.read_model_per_shot and exp.rm1_twist == 0.869 and exp.rm1_alpha_lightshift == 1.432
+        assert exp.rm1_coherence == 0.739 and not exp.rm0_twist_on and exp.rm0_coherence == 0.7215
         subscan._compile(cls, exp)
     finally:
         device_mgr.close_devices()
 
 
 def test_compiles_with_the_read_model_off(monkeypatch, tmp_path):
-    cls, exp, device_mgr = _build(monkeypatch, tmp_path, "standard", 0.0, 0.0, 'float("nan")')
+    cls, exp, device_mgr = _build(monkeypatch, tmp_path, "standard", 0.0, 0.0, 'float("nan")', 0.7215)
     try:
         assert not (exp.read_twist_on or exp.read_coherence_slope_on or exp.read_alpha_lightshift_on)
         subscan._compile(cls, exp)
