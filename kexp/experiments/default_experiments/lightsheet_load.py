@@ -13,12 +13,12 @@ class mag_trap(EnvExperiment, Base):
 
     def prepare(self):
         Base.__init__(self,
-                    save_data=True,
-                    camera_select=cameras.andor,
-                    imaging_type=img_types.ABSORPTION, warmup_shots=0)
+                    save_data=False,
+                    camera_select=cameras.xy_basler,
+                    imaging_type=img_types.ABSORPTION, warmup_shots=2)
 
-        self.p.t_tof = 150.e-6
-        # self.xvar('t_tof',np.linspace(200,700.,9)*1.e-6)
+        self.p.t_tof = 300.e-6
+        # self.xvar('t_tof',np.linspace(200,900.,9)*1.e-6)
         # self.xvar('t_tof',np.linspace(20.,300.,7)*1.e-6)
         # self.xvar('beans',np.linspace(1,10.,10))
 
@@ -88,7 +88,6 @@ class mag_trap(EnvExperiment, Base):
         delay(self.p.t_tof)
         self.flash_repump()
         self.abs_image()
-        delay(1.45)
 
     @kernel
     def run(self):

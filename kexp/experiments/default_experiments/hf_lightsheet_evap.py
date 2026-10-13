@@ -14,14 +14,14 @@ class mag_trap(EnvExperiment, Base):
     def prepare(self):
         Base.__init__(self,
                       save_data=True,
-                      camera_select=cameras.andor,
+                      camera_select=cameras.xy_basler,
                       imaging_type=img_types.ABSORPTION,
-                      warmup_shots=0)
+                      warmup_shots=2)
 
         self.p.t_tof = 800e-6
         # self.xvar('beans',np.linspace(1,10.,10))
 
-        # self.xvar('t_tof',np.linspace(200,1100.,9)*1.e-6)
+        self.xvar('t_tof',np.linspace(200,1100.,9)*1.e-6)
 
         # self.xvar('t_lightsheet_rampup',np.linspace(20.,400.,15)*1.e-3)
         # self.xvar('v_pd_lightsheet_rampup_end',np.linspace(4.,8.6,11))

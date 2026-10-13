@@ -20,7 +20,7 @@ class gm_tof(EnvExperiment, Base):
         self.p.imaging_state = 2.
         self.p.t_tof = 12.e-3
         self.p.t_mot_load = .5
-        self.p.N_repeats = 100
+        self.p.N_repeats = 1
 
         # self.xvar('t_mot_load',[0.05,0.1,0.25])
         # self.xvar('t_tof',np.linspace(500.,2000.,10)*1.e-6)

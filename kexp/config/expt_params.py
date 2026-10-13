@@ -275,7 +275,7 @@ class ExptParams(ExptParamsWaxx):
 
         self.v_xshim_current_gm = 0.429
         self.v_yshim_current_gm = 2.86
-        self.v_zshim_current_gm = 0.8
+        self.v_zshim_current_gm = 0.86
 
         self.detune_d1_c_gm = 7.5 # 7.37F
         # self.pfrac_d1_c_gm = .736 # there is an ND on this photodiode -- much higher power/volt than the repump
