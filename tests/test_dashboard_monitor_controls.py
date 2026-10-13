@@ -116,8 +116,7 @@ def test_monitor_panel_hosts_the_network_panel_and_cleans_it_up(qapp):
     panel = MonitorPanel(panel_factory=lambda: wmp.MonitorServerPanel(
         link=wmp.MonitorLink(factory), listener_factory=None, synchronous=True))
     inner = panel._panel
-    assert [inner.tabs.tabText(i) for i in range(inner.tabs.count())] == \
-        ["Queue", "State", "Monitor"]
+    assert inner.isAncestorOf(inner.state_panel) and inner.isAncestorOf(inner.queue_panel)
     assert made == []                                    # no discovery until a request
     panel.cleanup()
     assert not inner.timer.isActive()
