@@ -13,6 +13,7 @@ import sys
 from PyQt6.QtWidgets import QApplication
 
 from waxx.util.guis.monitor_server_gui import MonitorServerGUI
+from waxx.util.guis.run_queue_panel import panel_settings
 from waxx.util.dashboard import logging_setup
 
 from waxx.util.device_state.run_loop import loop_specs
@@ -81,7 +82,8 @@ def main():
                                run_loops=loop_specs(RUN_LOOP_EXPTS),
                                connections=monitor_connections(),
                                slm_reinit=monitor_slm_reinit(),
-                               state_generator=monitor_state_generator())
+                               state_generator=monitor_state_generator(),
+                               queue_settings=panel_settings())
     except Exception:
         log.exception("Monitor server GUI failed to start")
         return 1
