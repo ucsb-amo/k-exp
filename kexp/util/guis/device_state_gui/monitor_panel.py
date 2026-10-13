@@ -76,7 +76,9 @@ class MonitorPanel(WidgetPanelBase):
         from PyQt6.QtWidgets import QVBoxLayout  # noqa: PLC0415
         if panel_factory is None:
             from waxx.util.guis.monitor_panel import MonitorServerPanel  # noqa: PLC0415
-            panel_factory = MonitorServerPanel
+            from waxx.util.guis.run_queue_panel import panel_settings  # noqa: PLC0415
+            # the queue table's columns and filter are remembered on this PC
+            panel_factory = lambda: MonitorServerPanel(settings=panel_settings())  # noqa: E731
         self._panel = panel_factory()
         layout = QVBoxLayout(self)
         layout.setContentsMargins(0, 0, 0, 0)
