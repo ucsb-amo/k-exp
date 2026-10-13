@@ -37,7 +37,7 @@ from waxx.control.cameras.camera_stream_client import (
     InactiveCameraStream, TriggeredCameraStreamClient)
 
 from kexp.config.camera_id import diagnostic_cameras
-from kexp.control.cameras.camera_stream import camera_stream
+from kexp.control.cameras.camera_stream import camera_streams
 
 # camera entry key -> frame keys
 DIAGNOSTIC_FRAMES = {e.camera.key: list(e.frames) for e in diagnostic_cameras.entries()}
@@ -50,18 +50,21 @@ class DiagnosticImages:
         self.active = self.enabled      # kernel switch: Base.pre_scan clears it for the warm-up shots
         self.p = expt.params
         d = diagnostic_cameras
-        self.streams = {}
-        for entry in d.entries():
-            if self.enabled:
-                cs = camera_stream(expt, entry.camera, list(entry.frames),
-                                   mode='triggered', on_error='dummy',
-                                   exposure_time=entry.exposure_time, gain=entry.gain,
-                                   roi=entry.roi,
-                                   frame_settings=entry.frame_settings or None,
-                                   no_roi_downsample=d.no_roi_downsample)
-            else:
-                cs = InactiveCameraStream(expt, list(entry.frames), reason="diagnostics off")
-            self.streams[entry.key] = cs
+        entries = list(d.entries())
+        if self.enabled:
+            # all cameras set up at once (camera_streams), registered in entry order
+            built = camera_streams(expt, [
+                dict(camera=entry.camera, key=list(entry.frames),
+                     mode='triggered', on_error='dummy',
+                     exposure_time=entry.exposure_time, gain=entry.gain,
+                     roi=entry.roi,
+                     frame_settings=entry.frame_settings or None,
+                     no_roi_downsample=d.no_roi_downsample)
+                for entry in entries])
+        else:
+            built = [InactiveCameraStream(expt, list(entry.frames), reason="diagnostics off")
+                     for entry in entries]
+        self.streams = {entry.key: cs for entry, cs in zip(entries, built)}
         if self.enabled:
             up = [k for k, cs in self.streams.items()
                   if isinstance(cs, TriggeredCameraStreamClient)]
