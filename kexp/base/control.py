@@ -34,6 +34,9 @@ dvlist = np.linspace(1.,1.,5)
 T_OPX_HANDBACK_TIMEOUT = 2.
 T_OPX_TRIGGER_PULSE = 1.e-6
 
+# Failed magnetometer reads in a row before a run stops reading it.
+MAGNETOMETER_MAX_FAILS = 4
+
 class Control():
     def __init__(self):
         # just to get syntax highlighting, placeholders
@@ -148,9 +151,29 @@ class Control():
     @kernel
     def read_magnetometer(self):
         self.core.wait_until_mu(now_mu())
-        b_magnitude = self.magnetometer.get_field_magnitude()
+        b_magnitude = self._read_magnetometer()
         self.data.b.put_data(b_magnitude)
         self.core.break_realtime()
+
+    def _read_magnetometer(self) -> TFloat:
+        """Host side of read_magnetometer: |B| in G, or 0. (= not read).
+
+        After MAGNETOMETER_MAX_FAILS failed reads in a row (the client gave
+        up after all its attempts), the rest of this run skips the read and
+        records 0., so a dead server stops costing seconds per shot.
+        """
+        if self._magnetometer_skipped:
+            return 0.
+        b = float(self.magnetometer.get_field_magnitude())
+        if getattr(self.magnetometer, 'last_read_failed', False):
+            self._magnetometer_fails += 1
+            if self._magnetometer_fails >= MAGNETOMETER_MAX_FAILS:
+                self._magnetometer_skipped = True
+                print(f"[magnetometer] {self._magnetometer_fails} failed reads in a row: "
+                      "skipping the read for the rest of this run; data.b records 0. (not read).")
+        else:
+            self._magnetometer_fails = 0
+        return b
 
     @kernel
     def read_raman_wavemeter(self):

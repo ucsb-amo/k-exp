@@ -31,6 +31,10 @@ class Clients():
         except RuntimeError as e:
             print(f"Failed to connect to HMR Magnetometer server: {e}")
             self.magnetometer = HMRDummy()
+        # Consecutive failed reads this run; at MAGNETOMETER_MAX_FAILS the
+        # rest of the run skips the read (see Control._read_magnetometer).
+        self._magnetometer_fails = 0
+        self._magnetometer_skipped = False
 
         # Raman laser frequency per shot. Never raises: a missing server
         # prints once and the shots record 0. (see Control.read_raman_wavemeter).
