@@ -18,6 +18,8 @@ a trigger line are made siblings. A camera on liveOD's bar is leased from
 liveOD.
 """
 
+import logging
+
 from beacon.camera.directory import query_string
 from waxx.control.cameras.camera_stream_client import (
     CameraStreamClient, DummyCameraStreamClient, TriggeredCameraStreamClient,
@@ -28,6 +30,19 @@ from kexp.config.camera_id import cameras, camera_trigger_ttl, CameraParams
 
 MODES = ('free_run', 'triggered')
 ON_ERROR = ('raise', 'dummy')
+
+
+def _drop_claimed_by(record):
+    # A camera listed by both the beacon server and liveOD is routine in an
+    # experiment (the run camera, a lent Basler); a stream on the wrong server
+    # fails loudly on its own.
+    return "is claimed by" not in record.getMessage()
+
+
+def _quiet_directory_in_experiment():
+    log = logging.getLogger("beacon.camera.directory")
+    if _drop_claimed_by not in log.filters:
+        log.addFilter(_drop_claimed_by)
 
 
 def camera_stream(expt, camera, key, *, mode='free_run', exposure_time=None,
@@ -43,6 +58,7 @@ def camera_stream(expt, camera, key, *, mode='free_run', exposure_time=None,
         raise ValueError(f"camera_stream mode {mode!r} is not one of {MODES}")
     if on_error not in ON_ERROR:
         raise ValueError(f"camera_stream on_error {on_error!r} is not one of {ON_ERROR}")
+    _quiet_directory_in_experiment()
     triggered = mode == 'triggered'
     name = key if isinstance(key, str) else key[0]
     serial = query_string(camera)
