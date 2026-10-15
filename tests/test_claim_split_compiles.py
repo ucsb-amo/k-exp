@@ -221,7 +221,38 @@ def no_outbound_sockets(monkeypatch):
     monkeypatch.setattr(socket, "create_connection", create_connection)
 
 
-def _build(monkeypatch, tmp_path, warm, liveod_kw=None):
+FEEDBACK_EXPT = '''
+from artiq.experiment import *
+from kexp.experiments.HF_experiments.feedback.base_expt_feedback import FeedbackExpt
+import numpy as np
+
+class FeedbackClaimCompile(EnvExperiment, FeedbackExpt):
+    def prepare(self):
+        FeedbackExpt.__init__(self, save_data=False)
+        self.p.cal_enabled = 1
+        self.p.cal_every_n_shots = 2
+        self.p.N_pulses = 3
+        self.p.N_repeats = 1
+        self.xvar('feedback_fractional_initial_offset', np.array([0., 1., 2.]))
+        self.finish_prepare(shuffle=False)
+
+    @kernel
+    def run(self):
+        self.init_kernel()
+        self.scan()
+'''
+
+
+class _StubScope:
+    """Stands in for the Siglent driver."""
+    def __init__(self, *a, **k):
+        pass
+
+    def __getattr__(self, name):
+        return lambda *a, **k: None
+
+
+def _build(monkeypatch, tmp_path, warm, liveod_kw=None, source=None):
     from waxx.base import monitor as wmon
     from waxx.base.expt import Expt
     from waxx.control.cameras import camera_stream_client as csc
@@ -292,8 +323,11 @@ def _build(monkeypatch, tmp_path, warm, liveod_kw=None):
     from artiq.language.environment import ProcessArgumentManager
     from artiq.tools import file_import, get_experiment
 
+    import waxx.control.misc.oscilloscopes as osc
+    monkeypatch.setattr(osc, "SiglentSDS2000X_Base", _StubScope)
+
     path = tmp_path / f"claim_split_compile_{'warm' if warm else 'cold'}.py"
-    path.write_text(EXPT)
+    path.write_text(source or EXPT)
     device_mgr = DeviceManager(DeviceDB(os.environ["db"]))
     module = file_import(str(path), prefix="compile_test_")
     cls = get_experiment(module)
@@ -474,5 +508,25 @@ def test_the_audit_catches_a_claim_that_sets_a_kernel_value(monkeypatch, tmp_pat
         after = _kernel_view(embedding_map)
         changed = sorted(k[1] for k in before if after.get(k) != before[k])
         assert changed == ["_verbosity"]
+    finally:
+        _cleanup(b)
+
+
+def test_warm_feedback_run_with_its_sub_scan_and_the_claim_changes_no_kernel_value(
+        monkeypatch, tmp_path, no_outbound_sockets):
+    """The feedback family (sub-scan on, the heaviest kernel): the same audit."""
+    b = _build(monkeypatch, tmp_path, warm=True, source=FEEDBACK_EXPT)
+    try:
+        assert _claim_events(b.events) == []
+        assert b.exp._subscan is not None and b.exp._subscan_enabled
+        embedding_map = _compile(b)[0]
+        before = _kernel_view(embedding_map)
+        b.queue_gate.ensure_go()
+        b.queue_gate.run_claim()
+        assert ("liveod_start", "res-1", ("reserve",), None) in b.events
+        assert b.exp._subscan.enabled                  # this liveOD takes PUT_DATA
+        after = _kernel_view(embedding_map)
+        changed = sorted(k for k in before if after.get(k) != before[k])
+        assert changed == [], f"the claim changed kernel-embedded attributes: {changed}"
     finally:
         _cleanup(b)
