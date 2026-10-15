@@ -64,13 +64,10 @@ class DiagnosticImages:
         else:
             built = [InactiveCameraStream(expt, list(entry.frames), reason="diagnostics off")
                      for entry in entries]
+        # Built without a connection (what the kernel sees is fixed here);
+        # the run's claim connects them (Base.claim_hardware) and calls
+        # report_connected().
         self.streams = {entry.key: cs for entry, cs in zip(entries, built)}
-        if self.enabled:
-            up = [k for k, cs in self.streams.items()
-                  if isinstance(cs, TriggeredCameraStreamClient)]
-            down = [k for k in self.streams if k not in up]
-            print("[diag cams] connected: " + (", ".join(up) or "none")
-                  + (f" | NOT connected: {', '.join(down)}" if down else ""))
         self.cam_2dmot = self.streams['mot_2d']
         self.cam_xy = self.streams['xy']
         self.cam_z = self.streams['z']
@@ -168,6 +165,17 @@ class DiagnosticImages:
             delay(self.p.t_diag_tweezer_after_evap)
             self.cam_x.trigger(self.j_tweezer_evap_x)
             delay(-self.p.t_diag_tweezer_after_evap)
+
+    def report_connected(self):
+        """One line after the claim connected the streams: which cameras
+        take frames this run. Host-only; nothing with diagnostics off."""
+        if not self.enabled:
+            return
+        up = [k for k, cs in self.streams.items()
+              if isinstance(cs, TriggeredCameraStreamClient) and cs.live]
+        down = [k for k in self.streams if k not in up]
+        print("[diag cams] connected: " + (", ".join(up) or "none")
+              + (f" | NOT connected: {', '.join(down)}" if down else ""))
 
     def finish(self):
         """Drain and close every stream (end_wax does this itself)."""
