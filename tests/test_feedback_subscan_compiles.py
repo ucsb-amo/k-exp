@@ -121,8 +121,11 @@ def test_the_sub_scan_is_declared_and_the_run_compiles(monkeypatch, tmp_path):
         assert sub.xvarnames == ["t_raman_pulse"] and sub.point_keys == ["t_raman_pulse", "cal_readout_mode"]
         assert sub.n_points_per_event == 2 and sub.n_cycle == 2 and sub.event_starts == [0, 2]
         assert "cal_apd" in exp.data.keys and "cal_status" in exp.data.keys
-        # without liveOD the sub-scan is disabled loudly, the run proceeds; the kernel still compiles
-        assert not exp._subscan_enabled and "cal_scan_disabled" in exp._extra_file_texts
+        # without liveOD the sub-scan is disabled loudly, the run proceeds; the kernel still compiles.
+        # The kernel's switch was fixed before the claim (queue phase 2: the claim never sets a
+        # kernel-read attribute); the disable after the liveOD start is honoured by _subscan_due.
+        assert exp._subscan_enabled and not sub.enabled and exp._subscan_due() is False
+        assert "cal_scan_disabled" in exp._extra_file_texts
         assert exp.readout_cal is not None and exp.readout_cal.start["values"]["v_apd_all_up"] == exp.p.v_apd_all_up
         _compile(cls, exp)
     finally:
