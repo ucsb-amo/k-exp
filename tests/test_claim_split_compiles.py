@@ -180,12 +180,22 @@ class _FakeLiveOD:
 
 
 class _RecordingMonitorClient:
+    """The monitor server as the experiment's MonitorClient sees it.  Like
+    the real server (M0 trust fix), the announcement (run_pending) makes the
+    device state untrusted; get_state reports the trust as it is now."""
+
     def __init__(self, events):
         self.events = events
+        self.trust = {"trusted": True, "reason": "the previous run's end state"}
 
     def announce_run(self, **kw):
         self.events.append(("announce", kw.get("run_id")))
+        self.trust = {"trusted": False, "reason": f"run {kw.get('run_id')} announced"}
         return {"status": "ok"}
+
+    def get_state(self):
+        return {"status": "ok", "version": 1, "config": {}, "trust": dict(self.trust),
+                "composite_state": {}}
 
     def __getattr__(self, name):
         return lambda *a, **k: None
@@ -403,7 +413,12 @@ def _assert_claim_order(events):
         assert first[a] < first[c], names
     start = first.get("liveod_init", first.get("liveod_start"))
     last_cam = max(i for i, n in enumerate(names) if n == "cam_connect")
-    assert last_cam < start < first["announce"] < first["stamp"], names
+    # the stamp before the announcement (which makes the state untrusted)
+    assert last_cam < start < first["stamp"] < first["announce"], names
+
+
+def _stamped_trust(exp):
+    return json.loads(exp._extra_file_texts["device_state_at_start"])["trust"]
 
 
 def test_cold_claims_once_at_finish_prepare_and_compiles(monkeypatch, tmp_path,
@@ -428,6 +443,9 @@ def test_cold_claims_once_at_finish_prepare_and_compiles(monkeypatch, tmp_path,
                 assert shapes[s.keys[0]]["shape"][1:] == s._frame_shape != (1,)
         assert b.exp.run_info.run_id == 4242
         assert "slm_at_start" in b.exp._extra_file_texts
+        # the stamp records the trust from before this run's own announcement
+        assert _stamped_trust(b.exp) == {"trusted": True,
+                                         "reason": "the previous run's end state"}
         assert b.state.exists()                              # cold: reconcile ran
         _compile(b)
         b.exp.claim()                                        # idempotent
@@ -470,6 +488,7 @@ def test_warm_claims_nothing_before_go_and_the_claim_changes_no_kernel_value(
         assert b.exp.run_info.run_datetime_str == "2026-10-14_18-30-05"
         assert b.exp.run_info.run_date_str == "2026-10-14"
         assert all(s.live for s in b.exp.diag.streams.values() if hasattr(s, "connect"))
+        assert _stamped_trust(b.exp)["trusted"] is True     # from before its announcement
 
         after = _kernel_view(embedding_map)
         changed = sorted(k for k in before if after.get(k) != before[k])

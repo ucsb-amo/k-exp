@@ -122,7 +122,7 @@ class Base(Expt, Devices, Cooling, Image, Cameras, Control, Clients):
         """
 
         # (a cold run claims inside: stage, SLM, wavemeter, cameras, liveOD
-        # start, announce, device-state stamp -- see claim_hardware and
+        # start, device-state stamp, announce -- see claim_hardware and
         # claim_after_start; a warm-launched one after its compile)
         self.finish_prepare_wax(N_repeats=N_repeats,shuffle=shuffle)
 
@@ -148,8 +148,10 @@ class Base(Expt, Devices, Cooling, Image, Cameras, Control, Clients):
         self.diag.report_connected()
 
     def claim_after_start(self):
-        """The run's claim, last step (after the liveOD start and the monitor
-        announcement): what the hardware was said to be at as this run starts
+        """The run's claim, after the liveOD start and BEFORE the monitor
+        announcement (which marks the state untrusted -- after it, the stamp
+        would record this run's own announcement as the trust it starts
+        from): what the hardware was said to be at as this run starts
         (hazards printed loudly, the whole report saved with the run's
         data). The monitor experiment is not a run."""
         if hasattr(self, 'monitor') and not getattr(self, '_is_monitor', False):

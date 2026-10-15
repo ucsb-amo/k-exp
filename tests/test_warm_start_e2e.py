@@ -595,7 +595,8 @@ def assert_claim_order(events):
             assert first[a] < first[b], n
     start = first.get("START_RUN", first.get("INIT_RUN"))
     last_cam = max(i for i, k in enumerate(n) if k == "cam_connect")
-    assert last_cam < start < first["announce"] < first["stamp"], n
+    # the stamp before the announcement (which makes the state untrusted)
+    assert last_cam < start < first["stamp"] < first["announce"], n
 
 
 # ------------------------------------------------------------------ fixtures
