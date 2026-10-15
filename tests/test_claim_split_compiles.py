@@ -243,6 +243,14 @@ class FeedbackClaimCompile(EnvExperiment, FeedbackExpt):
 '''
 
 
+class _GoAtOnce:
+    """The run queue as queue_gate sees it: GO at the first ask after
+    "warming" (reset_count unknown).  Never the real monitor server."""
+
+    def request(self, obj, timeout=None, attempts=None):
+        return {"status": "ok", "go": obj.get("stage") != "warming", "reset_count": None}
+
+
 class _StubScope:
     """Stands in for the Siglent driver."""
     def __init__(self, *a, **k):
@@ -313,6 +321,7 @@ def _build(monkeypatch, tmp_path, warm, liveod_kw=None, source=None):
     monkeypatch.setattr(Expt, "claim", claim)
 
     queue_gate._reset_for_tests()
+    queue_gate.set_transport(_GoAtOnce())          # the run queue, never the real one
     if warm:
         monkeypatch.setenv("WAXX_QUEUE_WARM", "warm-token-test")
     else:
