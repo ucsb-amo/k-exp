@@ -5,7 +5,7 @@ core_addr = "192.168.1.75"
 device_db = {
     "core": {
         "type": "local",
-        "module": "artiq.coredevice.core",
+        "module": "waxx.util.artiq.core",
         "class": "Core",
         "arguments": {
             "host": core_addr,
