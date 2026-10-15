@@ -95,9 +95,17 @@ class Base(Expt, Devices, Cooling, Image, Cameras, Control, Clients):
         self.diag = DiagnosticImages(self, enabled=self.diagnostic_images)
 
         # Resolved above: in when acquiring with the APD, out when a camera
-        # grabs frames, None (stage left alone) when acquiring nothing. The
-        # stage moves in the claim (claim_hardware), not here.
+        # grabs frames, None (stage left alone) when acquiring nothing.
         self._apd_stage = apd_stage
+        from waxx.util.device_state import queue_gate
+        if not queue_gate.is_warm():
+            # A cold process (direct artiq_run, ar_direct, run_lock, a cold
+            # queue launch) moves the stage here, as it always did: an
+            # experiment that never calls finish_prepare (a stage or camera
+            # tool) still gets it. The claim's stage step then finds it there
+            # ("already <state>"). A warm-launched process must touch no
+            # hardware before the queue's GO: its claim moves it.
+            self.pdxc.set_apd_stage(apd_stage)
 
         # Warm-up dry run. The first shot of a run is typically ~25% low in
         # atom number (measured 2026-09-08, runs 78510-78570): a seconds-scale
@@ -136,8 +144,9 @@ class Base(Expt, Devices, Cooling, Image, Cameras, Control, Clients):
     def claim_hardware(self):
         """The run's claim, machine part (waxx Expt.claim; before the liveOD
         start, so raising here stops the run before it has a run id). In
-        order: the APD pickoff stage to the position Base.__init__ resolved,
-        a due SLM reinit, the wavemeter connection (exclusive), the camera
+        order: the APD pickoff stage to the position Base.__init__ resolved
+        (a cold process already moved it in Base.__init__: "already
+        <state>", no move), a due SLM reinit, the wavemeter connection (exclusive), the camera
         streams' connections and their containers' real shapes. Sets no
         attribute a kernel reads: a warm-launched run claims after its
         compile."""

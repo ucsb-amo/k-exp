@@ -428,9 +428,12 @@ def test_cold_claims_once_at_finish_prepare_and_compiles(monkeypatch, tmp_path,
         ev = b.events
         assert [e for e in ev if e[0] == "claim"] == [("claim",)]
         i_claim = ev.index(("claim",))
-        assert _claim_events(ev[:i_claim]) == []           # nothing claim-ish before it
+        # a cold process moves the stage in Base.__init__ (as main did);
+        # nothing else claim-ish happens before the claim
+        assert _claim_events(ev[:i_claim]) == [("pdxc", True)]
         _assert_claim_order(ev)
-        assert ("pdxc", True) in ev                         # the APD path: stage in
+        # the claim's stage step asks again (the server answers "already in")
+        assert [e for e in ev[i_claim:] if e[0] == "pdxc"] == [("pdxc", True)]
         assert ("liveod_reserve",) not in ev and not any(e[0] == "liveod_start" for e in ev)
         n_streams = sum(1 for e in ev if e[0] == "cam_connect")
         assert n_streams == len([s for s in b.exp.diag.streams.values()
@@ -495,6 +498,44 @@ def test_warm_claims_nothing_before_go_and_the_claim_changes_no_kernel_value(
         assert changed == [], f"the claim changed kernel-embedded attributes: {changed}"
 
         _compile(b)                                          # still compiles after it
+    finally:
+        _cleanup(b)
+
+
+NO_FINISH_PREPARE_EXPT = '''
+from artiq.experiment import *
+from kexp import Base, cameras
+
+class StageToolNoFinishPrepare(EnvExperiment, Base):
+    """Like tools/stage_dev/scan_stages_translation.py: Base, the Andor with
+    setup_camera=True, and no finish_prepare (no claim, no liveOD run)."""
+    def prepare(self):
+        Base.__init__(self, setup_camera=True, camera_select=cameras.andor,
+                      save_data=False, diagnostic_images=False)
+
+    def run(self):
+        pass
+'''
+
+
+def test_cold_base_without_finish_prepare_still_moves_the_stage(monkeypatch, tmp_path,
+                                                               no_outbound_sockets):
+    """S6: on main, Base.__init__ moved the stage; experiments that never
+    call finish_prepare (stage and camera tools) relied on it. A cold
+    process still does."""
+    b = _build(monkeypatch, tmp_path, warm=False, source=NO_FINISH_PREPARE_EXPT)
+    try:
+        assert ("pdxc", False) in b.events                  # Andor frames: stage out
+        assert not any(e[0] == "claim" for e in b.events)
+    finally:
+        _cleanup(b)
+
+
+def test_warm_base_moves_no_stage_before_the_claim(monkeypatch, tmp_path,
+                                                   no_outbound_sockets):
+    b = _build(monkeypatch, tmp_path, warm=True, source=NO_FINISH_PREPARE_EXPT)
+    try:
+        assert not any(e[0] == "pdxc" for e in b.events)    # deferred to the claim
     finally:
         _cleanup(b)
 
