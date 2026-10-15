@@ -40,9 +40,14 @@ class LazyWavemeter():
         return self._impl
 
     def __getattr__(self, name):
-        # only for attributes not found the normal way
-        if name.startswith("_"):
+        # only for attributes not found the normal way; never connects for a
+        # probe (the ARTIQ compiler's, hasattr) or before the queue's GO
+        if name.startswith("_") or name in ("kernel_invariants", "artiq_embedded"):
             raise AttributeError(name)
+        from waxx.util.device_state import queue_gate
+        if not queue_gate.go_passed():
+            raise AttributeError(f"wavemeter {self.key or self.ch}.{name}: the wavemeter "
+                                 f"is connected at the run's claim, after the queue's GO")
         return getattr(self.client, name)
 
 
