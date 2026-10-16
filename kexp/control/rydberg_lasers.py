@@ -69,7 +69,7 @@ class RydbergBeamBase():
         self.ttl_pid_clear.pulse(10.e-6)
 
     @kernel
-    def sweep_to(self, frequency_end=dv, frequency_step=1.e6, reset=False):
+    def sweep_to(self, frequency_end=dv, frequency_step=5.e5, reset=False):
         self.siglent.sweep(frequency_end, frequency_step, reset)
 
     @kernel
