@@ -139,6 +139,7 @@ def main(argv: list[str] | None = None) -> int:
         app_id=app_id,
     )
     win.attach_log_panel(log_panel)
+    win.set_auto_layout_hints(host_config.load_auto_layout_hints())
     if win.width() < 400:
         win.resize(1400, 900)
     win.show()
