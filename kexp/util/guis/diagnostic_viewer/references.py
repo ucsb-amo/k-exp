@@ -137,6 +137,11 @@ class ReferenceStore:
                     vals = {f: _num(row.get(f"{key}__{f}")) for f in FIELDS}
                     vals["n"] = int(vals["n"]) if math.isfinite(vals["n"]) else 0
                     ref["keys"][key] = vals
+                # columns of frames no longer configured: kept as they are, so
+                # a rewrite of the file never drops them
+                ref["extra"] = {c: v for c, v in row.items()
+                                if c and c not in HEAD and v not in (None, "")
+                                and c.split("__", 1)[0] not in FRAME_KEYS}
                 refs.append(ref)
         refs.sort(key=lambda r: r["timestamp_s"], reverse=True)
         return refs
@@ -160,6 +165,8 @@ class ReferenceStore:
         folder = os.path.dirname(os.path.abspath(self.path))
         os.makedirs(folder, exist_ok=True)
         fields = list(HEAD) + [f"{k}__{f}" for k in FRAME_KEYS for f in FIELDS]
+        for ref in refs:
+            fields += [c for c in ref.get("extra", {}) if c not in fields]
         fd, tmp = tempfile.mkstemp(prefix=".diagnostic_reference_", suffix=".csv", dir=folder)
         try:
             with os.fdopen(fd, "w", newline="", encoding="utf-8") as f:
@@ -167,6 +174,7 @@ class ReferenceStore:
                 w.writeheader()
                 for ref in sorted(refs, key=lambda r: r["timestamp_s"]):
                     row = {h: ref.get(h, "") for h in HEAD}
+                    row.update(ref.get("extra", {}))
                     for key in FRAME_KEYS:
                         kr = ref["keys"].get(key, {})
                         for fld in FIELDS:

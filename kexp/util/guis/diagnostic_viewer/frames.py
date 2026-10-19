@@ -22,21 +22,26 @@ from waxa.data.camera_frames import META_FIELDS
 
 @dataclass(frozen=True)
 class FrameSpec:
-    key: str        # DataVault key (kexp.config.camera_id.diagnostic_cameras)
+    key: str        # DataVault key (a DiagnosticImage in kexp.config.camera_id)
     label: str
     camera: str
     image: bool     # shown as an image (else: counts only)
 
 
-FRAMES = (
-    FrameSpec("img_mot", "MOT fluorescence", "MOT basler", True),
-    FrameSpec("img_gm", "GM fluorescence", "MOT basler", True),
-    FrameSpec("img_2dmot", "2D MOT fluorescence", "2D-MOT basler", True),
-    FrameSpec("img_mot_beams_xy", "MOT beams", "xy basler", False),
-    FrameSpec("img_gm_beams_xy", "GM beams", "xy basler", False),
-    FrameSpec("img_mot_beams_z", "MOT beams", "z basler", False),
-    FrameSpec("img_gm_beams_z", "GM beams", "z basler", False),
-)
+def _frames_from_config(entries):
+    """The frames the viewer shows: every DiagnosticImage with ``show`` set,
+    images first, then counts rows, each in config order."""
+    frames = [FrameSpec(img.key, img.label, cam.label, img.show == "image")
+              for cam in entries for img in cam.images if img.show]
+    return tuple(sorted(frames, key=lambda f: not f.image))
+
+
+def _diagnostic_entries():
+    from kexp.config.camera_id import diagnostic_cameras  # noqa: PLC0415
+    return diagnostic_cameras.entries()
+
+
+FRAMES = _frames_from_config(_diagnostic_entries())
 FRAME_KEYS = tuple(f.key for f in FRAMES)
 SPEC = {f.key: f for f in FRAMES}
 
@@ -46,16 +51,8 @@ _I_GAIN = META_FIELDS.index("gain")
 
 
 def configured_keys():
-    """The frame keys kexp's diagnostic_cameras takes per shot, or None when
-    the config cannot be imported here (then nothing is marked unconfigured)."""
-    try:
-        from kexp.config.camera_id import diagnostic_cameras  # noqa: PLC0415
-    except Exception:
-        return None
-    keys = set()
-    for entry in diagnostic_cameras.entries():
-        keys.update(entry.frames)
-    return keys
+    """The frame keys kexp's diagnostic_cameras takes per shot."""
+    return {key for entry in _diagnostic_entries() for key in entry.frames}
 
 
 def saturation_level(dtype):

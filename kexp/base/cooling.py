@@ -454,14 +454,12 @@ class Cooling():
         ### End Defaults ###
 
         if self.diagnostic_images:
-            # 2D-MOT-only window (push off; the 2D beams are on): the 2D MOT
-            # reference frame, t_diag_2dmot_before_push before the push
-            # comes on below (the two 1 ms delays follow).
+            # 2D-MOT-only window (push off; the 2D beams are on) for the 2D
+            # MOT diagnostic frames, which lead the push coming on below (the
+            # two 1 ms delays follow).
             self.dds.push.off()
-            delay(self.p.t_2dmot_prephase - self.p.t_diag_2dmot_before_push
-                  - 2.e-3)
-            self.diag.mot_2d()
-            delay(self.p.t_diag_2dmot_before_push)
+            delay(self.p.t_2dmot_prephase - 2.e-3)
+            self.diag.mot_push_on(self.p.t_2dmot_prephase - 2.e-3)
 
         delay(1.e-3)
 
@@ -486,12 +484,10 @@ class Cooling():
         with parallel:
             self.switch_d2_3d(1)
             self.dds.push.on()
-        # diagnostic frames (no-ops with diagnostics off; the cursor stays):
-        # beam references after the 3D beams come on, MOT fluorescence
-        # before the load ends
-        self.diag.mot_beams()
-        self.diag.mot_fluorescence(t)
+        # diagnostic frames (no-ops with diagnostics off; the cursor stays)
+        self.diag.mot_beams_on(t)
         delay(t)
+        self.diag.mot_load_end(t)
 
     @kernel
     def mot_reload(self,t,
@@ -667,7 +663,7 @@ class Cooling():
         self.dds.d1_3d_r.off()
         
         delay(t)
-        self.diag.gm_fluorescence()     # diagnostic frame: GM starts here (no-op when off)
+        self.diag.cmot_end()        # diagnostic frames: GM starts here (no-op when off)
 
     @kernel
     def cmot_d1_sweep(self,t,
@@ -787,7 +783,7 @@ class Cooling():
         with parallel:
             self.switch_d1_3d(1)
             self.switch_d2_3d(0)
-        self.diag.gm_beams()        # diagnostic frames just into GM (no-op when off)
+        self.diag.gm_beams_on(t)    # diagnostic frames (no-op when off)
         delay(t)
 
     @kernel

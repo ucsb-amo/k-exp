@@ -1,3 +1,4 @@
+import json
 import numpy as np
 import os
 
@@ -114,6 +115,9 @@ class Base(Expt, Devices, Cooling, Image, Cameras, Control, Clients):
         """
         To be called at the end of prepare.
         """
+
+        # where each diagnostic frame is taken, as this run takes it
+        self._extra_file_texts["diagnostic_images"] = json.dumps(self.diag.record())
 
         self.finish_prepare_wax(N_repeats=N_repeats,shuffle=shuffle)
 
