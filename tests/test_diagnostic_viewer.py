@@ -180,7 +180,7 @@ def test_window_fed_fake_replies(qapp):
         t = w.table
         # folded by default, the trend open; the header still says how things are
         assert not w.values_section.expanded() and w.trend_section.expanded()
-        assert w.values_section.summary.text().startswith("2/7 frames this run")
+        assert w.values_section.summary.text().startswith(f"2/{len(FRAME_KEYS)} frames this run")
         assert "1 with saturated pixels" in w.values_section.summary.text()
         # every row starts on the total: 600 px x 14 DN
         assert all(c.currentText() == "total" for c in w.stat_combos.values())

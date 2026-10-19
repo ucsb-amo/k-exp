@@ -14,7 +14,7 @@ class mag_trap(EnvExperiment, Base):
 
     def prepare(self):
         Base.__init__(self,
-                      save_data=False,
+                      save_data=True,
                       camera_select=cameras.andor,
                       imaging_type=img_types.ABSORPTION, warmup_shots=0,
                       diagnostic_images=True)
@@ -51,7 +51,7 @@ class mag_trap(EnvExperiment, Base):
 
         # self.xvar('ramp_down_lightsheet',[0,1])
         self.p.ramp_down_lightsheet = 1
-        self.adjust('ramp_down_lightsheet',0,1,1,dtype=int)
+        # self.adjust('ramp_down_lightsheet',0,1,1,dtype=int)
 
         self.p.v_pd_hf_tweezer_1064_ramp_end = 9.0
 
@@ -79,7 +79,7 @@ class mag_trap(EnvExperiment, Base):
 
         Adjust.__init__(self)
         # self.adjust('t_tweezer_hold',0.,100.e-3)
-        self.p.N_repeats = 1000
+        self.p.N_repeats = 100
         self.p.t_mot_load = 1.
 
         self.finish_prepare(shuffle=True)
@@ -127,8 +127,8 @@ class mag_trap(EnvExperiment, Base):
                             v_end=self.p.v_pd_hf_tweezer_1064_ramp_end,
                             paint=True,keep_trap_frequency_constant=False,
                             tau=-self.p.t_hf_tweezer_1064_ramp/3)
-        self.diag.tweezer_load()
-                          
+        self.diag.tweezer_load()    # x basler + tweezer pickoff frames
+
         # lightsheet ramp down (to off)
         self.ttl.pd_scope_trig.pulse(1.e-6)
 

@@ -45,8 +45,11 @@ def _config(*entries):
 
 def test_the_config_carried_over_unchanged():
     """Frames, per-frame settings and camera settings as on main before the
-    move to DiagnosticImage (k-exp bc551317); offsets as the t_diag_* params."""
-    d = diagnostic_cameras
+    move to DiagnosticImage (k-exp bc551317); offsets as the t_diag_* params.
+    Cameras added since are checked by tests of their own."""
+    d = SimpleNamespace(entries=lambda: [e for e in diagnostic_cameras.entries()
+                                         if e.key != "tweezer_pickoff"],
+                        mot=diagnostic_cameras.mot)
     assert [(e.key, e.camera.key) for e in d.entries()] == [
         ("mot_2d", "basler_2dmot"), ("xy", "xy_basler"), ("z", "z_basler"),
         ("mot", "mot_basler"), ("x", "x_basler")]
@@ -79,6 +82,18 @@ def test_the_config_carried_over_unchanged():
         "img_tweezer_evap_x": ("tweezer_evap", 1.e-3)}   # t_diag_tweezer_after_evap
     assert d.mot.frame_index("img_gm") == 1 and d.mot.frame_index("img_2dmot") == -1
 
+
+def test_tweezer_pickoff_entry():
+    """The tweezer pickoff camera (2026-10-19): one frame at tweezer_load,
+    on the 2D-MOT basler's trigger line, Line2."""
+    e = diagnostic_cameras.tweezer_pickoff
+    assert e.camera.key == "tweezer_pickoff_basler" and e.camera.serial_no == "40427782"
+    assert e.camera.trigger_ttl == cameras.basler_2dmot.trigger_ttl == "basler_2dmot"
+    assert e.camera.trigger_source == "Line2"
+    assert (e.exposure_time, e.gain, e.roi) == (2.e-6, 0., None)
+    assert [(i.key, i.at, i.t, i.show) for i in e.images] == [
+        ("img_tweezer_pickoff", "tweezer_load", 1.e-3, "image")]
+    assert e.frame_settings == {}
 
 def test_image_spec_checks_and_repr():
     with pytest.raises(ValueError, match="identifier"):

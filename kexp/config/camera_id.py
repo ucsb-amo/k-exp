@@ -1,7 +1,8 @@
-from artiq.experiment import kernel, delay
-
 from waxx.control.cameras.camera_param_classes import CameraParams, BaslerParams, AndorParams, APDParams, img_types
 from waxx.config.camera_id import camera_frame as camera_frame_waxx
+from waxx.control.cameras.diagnostic_frame import (DiagnosticImage, DiagnosticCamera,
+                                                  camera_trigger_ttl,
+                                                  diagnostic_frame as diagnostic_frame_waxx)
 
 from kexp.config.ttl_id import ttl_frame
 
@@ -93,147 +94,21 @@ class camera_frame(camera_frame_waxx):
                                        trigger_source='Line2',
                                        trigger_ttl=_ttl.mot_basler_trigger)
 
+        # Tweezer beam pickoff, for the beam position each shot ("image plain
+        # camera" in the Camera Viewer). Trigger wired to the 2D-MOT basler's
+        # line (user, 2026-10-19): a pulse on ttl.basler_2dmot exposes both,
+        # and their streams are siblings. Input on Line2 (user, 2026-10-19).
+        # Resolution/magnification not set.
+        self.tweezer_pickoff_basler = BaslerParams(serial_number='40427782',
+                                                   trigger_source='Line2',
+                                                   trigger_ttl=_ttl.basler_2dmot)
+
         self.cleanup()
 
 cameras = camera_frame()
 
 
-def camera_trigger_ttl(ttl, camera):
-    """The TTL object on the experiment's ttl frame `ttl` wired to `camera`'s
-    trigger input: the frame's attribute named by the entry's `trigger_ttl`,
-    or, failing that, its TTL on channel `trigger_ttl_ch`. The entry's own
-    `_trigger_ttl` object is never returned -- it belongs to this module's
-    unbound frame, not to the experiment's devices. Raises ValueError for an
-    entry with no trigger, or one the frame does not have."""
-    name = getattr(camera, 'trigger_ttl', '')
-    ch = int(getattr(camera, 'trigger_ttl_ch', -1))
-    if not name and ch < 0:
-        raise ValueError(
-            f"No camera TTL mapping found for camera key '{camera.key}' "
-            f"(set trigger_ttl on its entry in kexp.config.camera_id).")
-    if name and hasattr(ttl, name):
-        return getattr(ttl, name)
-    if ch >= 0:
-        for t in getattr(ttl, 'ttl_list', ()):
-            if getattr(t, 'ch', None) == ch:
-                return t
-    raise ValueError(
-        f"Camera '{camera.key}' names trigger_ttl '{name}' (ch {ch}), which "
-        f"is not a TTL in kexp.config.ttl_id.")
-
-
-_SHOW = ('image', 'counts', None)
-
-
-class DiagnosticImage:
-    """One frame a diagnostic camera takes every shot.
-
-    ``key``    DataVault key the frame is saved under (+ ``<key>_meta``).
-    ``at``     the hook that fires it: a hook method of kexp.control.cameras
-               .diagnostic_images.DiagnosticImages (``mot_beams_on``,
-               ``tweezer_evap``, ...), called by the sequence at that moment.
-    ``t``      offset from the hook, s (negative: before it).
-    ``exposure_time`` (s), ``gain`` (dB): this frame's own settings (None:
-               the camera's).
-    ``label``, ``show``: for the diagnostic viewer -- 'image' (shown as an
-               image), 'counts' (a table row) or None (not shown).
-
-    Bound to its camera for a run (DiagnosticImages), it knows its frame
-    index ``j`` and fires with ``trigger()``. Tag value changes with a run
-    id, like a calibration."""
-
-    def __init__(self, key, at, t=0., exposure_time=None, gain=None,
-                 label=None, show='counts'):
-        if not str(key).isidentifier():
-            raise ValueError(f"DiagnosticImage key {key!r} is not an identifier")
-        if show not in _SHOW:
-            raise ValueError(f"DiagnosticImage {key!r}: show={show!r}, not one of {_SHOW}")
-        self.key = str(key)
-        self.at = str(at)
-        self.t = float(t)
-        self.exposure_time = None if exposure_time is None else float(exposure_time)
-        self.gain = None if gain is None else float(gain)
-        self.label = label or self.key.removeprefix('img_').replace('_', ' ')
-        self.show = show
-        # set when DiagnosticImages binds a run's copy
-        self.j = -1
-        self.camera = None
-
-    def settings(self):
-        """This frame's own exposure / gain ({} when it has none)."""
-        return {k: v for k, v in (('exposure_time', self.exposure_time),
-                                  ('gain', self.gain)) if v is not None}
-
-    def __repr__(self):
-        args = [repr(self.key), f"at={self.at!r}", f"t={self.t!r}"]
-        args += [f"{k}={v!r}" for k, v in self.settings().items()]
-        if self.label != DiagnosticImage(self.key, self.at).label:
-            args.append(f"label={self.label!r}")
-        if self.show != 'counts':
-            args.append(f"show={self.show!r}")
-        return f"DiagnosticImage({', '.join(args)})"
-
-    @kernel
-    def trigger(self, t_stage=0.):
-        """This frame, ``t`` from the cursor; the cursor stays. With
-        ``t_stage`` > 0 -- the length of the stage the hook starts (frames
-        after it) or ends (frames before it) -- a frame outside it is
-        skipped."""
-        if t_stage <= 0. or (self.t <= t_stage and -self.t <= t_stage):
-            self.camera.trigger(self.j, self.t)
-
-
-class DiagnosticCamera:
-    """One camera of the per-shot diagnostics: its ``cameras`` entry (which
-    must name its ``trigger_ttl``), the DiagnosticImages it takes per shot --
-    listed in the order the sequence reaches them; frame index = position --
-    and the exposure_time (s), gain (dB) and viewer ROI ``[x1, y1, x2, y2]``
-    it runs at (None = the camera's saved beacon-server defaults). ``label``
-    names it in the diagnostic viewer. The camera viewer's Save button copies
-    a line in this form (right-click)."""
-
-    def __init__(self, camera, images=(), exposure_time=None, gain=None, roi=None,
-                 label=None):
-        self.camera = camera
-        self.images = list(images)
-        self.exposure_time = exposure_time
-        self.gain = gain
-        self.roi = [int(v) for v in roi] if roi else None
-        self.label = label or str(getattr(camera, 'key', '')).replace('_', ' ')
-        keys = self.frames
-        dup = sorted({k for k in keys if keys.count(k) > 1})
-        if dup:
-            raise ValueError(f"DiagnosticCamera {self.label!r}: frames {dup} listed twice")
-        self.key = ""       # attribute name, written by diagnostic_frame
-        # set when DiagnosticImages binds a run's copy
-        self.stream = None
-        self.diag = None
-
-    @property
-    def frames(self):
-        """The frame keys, in frame-index order."""
-        return [img.key for img in self.images]
-
-    @property
-    def frame_settings(self):
-        """{frame key: its own exposure / gain} for the frames that have them."""
-        return {img.key: img.settings() for img in self.images if img.settings()}
-
-    def frame_index(self, key):
-        """The index of frame ``key`` on this camera, -1 if it takes none."""
-        return self.frames.index(key) if key in self.frames else -1
-
-    @kernel
-    def trigger(self, j, t):
-        """Frame ``j``, ``t`` (s) after the cursor; the cursor stays. Nothing
-        while diagnostics are inactive (off, or a warm-up shot)."""
-        if self.diag.active:
-            delay(t)
-            self.stream.trigger(j)
-            delay(-t)
-
-
-class diagnostic_frame:
+class diagnostic_frame(diagnostic_frame_waxx):
     """The cameras every data-saving run takes reference frames with
     (Base(diagnostic_images=True); fired by kexp.control.cameras
     .diagnostic_images). Each DiagnosticImage says where in the sequence it
@@ -245,6 +120,9 @@ class diagnostic_frame:
     sequence: a hook in DiagnosticImages and its call in the sequence."""
 
     def __init__(self):
+
+        self.setup()
+
         # values settled 2026-10-01 (runs 84546-84574). Offsets were ExptParams
         # t_diag_* until 2026-10-19; their history moved here with them.
         # The 2D-MOT and MOT baslers (Basler a2A3840-45um, rolling shutter)
@@ -297,15 +175,19 @@ class diagnostic_frame:
                                           DiagnosticImage('img_tweezer_evap_x', at='tweezer_evap', t=1.e-3,
                                                           label='tweezer evap', show=None)])
 
+        # tweezer beam position from the pickoff; shares the 2D-MOT basler's trigger line
+        # (2026-10-19). ROI: the camera's saved default.
+        self.tweezer_pickoff = DiagnosticCamera(cameras.tweezer_pickoff_basler, label='tweezer pickoff',
+                                                exposure_time=2.e-6, gain=0.,
+                                                roi=[1799, 909, 2787, 1804],
+                                                images=[DiagnosticImage('img_tweezer_pickoff', at='tweezer_load',
+                                                                        t=2.e-6, label='tweezer pickoff',
+                                                                        show='image')])
+
         # a camera with no saved viewer ROI stores its frames block-averaged this much
         self.no_roi_downsample = 4
 
-        for name, entry in vars(self).items():
-            if isinstance(entry, DiagnosticCamera):
-                entry.key = name
-
-    def entries(self):
-        return [v for v in vars(self).values() if isinstance(v, DiagnosticCamera)]
+        self.cleanup()
 
 
 diagnostic_cameras = diagnostic_frame()
