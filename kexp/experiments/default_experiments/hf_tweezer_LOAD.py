@@ -127,7 +127,8 @@ class mag_trap(EnvExperiment, Base):
                             v_end=self.p.v_pd_hf_tweezer_1064_ramp_end,
                             paint=True,keep_trap_frequency_constant=False,
                             tau=-self.p.t_hf_tweezer_1064_ramp/3)
-        self.diag.tweezer_load()    # x basler + tweezer pickoff frames
+        self.diag.img_tweezer_load_x.trigger()      # diagnostic frames (no-op when off)
+        self.diag.img_tweezer_pickoff.trigger()
 
         # lightsheet ramp down (to off)
         self.ttl.pd_scope_trig.pulse(1.e-6)

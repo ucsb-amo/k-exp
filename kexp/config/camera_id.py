@@ -109,15 +109,20 @@ cameras = camera_frame()
 
 
 class diagnostic_frame(diagnostic_frame_waxx):
-    """The cameras every data-saving run takes reference frames with
-    (Base(diagnostic_images=True); fired by kexp.control.cameras
-    .diagnostic_images). Each DiagnosticImage says where in the sequence it
-    is taken (``at`` a hook, ``t`` from it). Entries are built in order;
-    cameras on one trigger line (mot, x) become siblings.
+    """The reference frames every data-saving run takes (Base(diagnostic_images=True)),
+    as ``self.diag``: cameras, and the images they take every shot.
 
-    New frame: a DiagnosticImage in its camera's list. New camera: an entry
-    here (and ``trigger_ttl`` on its ``cameras`` entry). New moment in the
-    sequence: a hook in DiagnosticImages and its call in the sequence."""
+    camera  a ``cameras`` entry (which names its ``trigger_ttl``) and the exposure_time (s),
+            gain (dB) and viewer ROI it runs at (None = the camera's saved defaults)
+    image   one frame per shot, saved under its attribute name. The sequence takes it with
+            ``self.diag.<image>.trigger()``: ``t`` (s) from the cursor, negative = before it.
+            Optional: ``t_stage`` (s or an ExptParams name) -- the length of the stage it sits
+            in, an image with |t| longer is not taken; its own exposure_time / gain; ``label``
+            and ``show`` ('image' | 'counts' | None) for the diagnostic viewer.
+
+    A camera's frame index is the order its images are assigned here: assign them in the
+    order the sequence takes them. New image: one line here and its trigger() call in the
+    sequence. New camera: its line and its images. Tag value changes with a run id."""
 
     def __init__(self):
 
@@ -130,65 +135,58 @@ class diagnostic_frame(diagnostic_frame_waxx):
         # moment of interest by that much, and keep the scene static for the
         # ROI's row span (~16 ms). Edges on one trigger line >~50 ms apart.
 
-        # img_2dmot: t = -10 ms saw the push on (84547-84556), 2026-10-01 -> -60 ms #84556, 2026-10-01
-        self.mot_2d = DiagnosticCamera(cameras.basler_2dmot, label='2D-MOT basler',
-                                       exposure_time=3.5e-3, gain=20., roi=[1685, 741, 1959, 1022],
-                                       images=[DiagnosticImage('img_2dmot', at='mot_push_on', t=-60.e-3,
-                                                               label='2D MOT fluorescence', show='image')])
+        # 2D MOT: mot(), the 2D-MOT-only window before the push comes on
+        self.mot_2d = self.camera(cameras.basler_2dmot, label='2D-MOT basler',
+                                  exposure_time=3.5e-3, gain=20., roi=[1685, 741, 1959, 1022])
+        # t = -10 ms saw the push on (84547-84556), 2026-10-01 -> -60 ms #84556, 2026-10-01
+        self.img_2dmot = self.image(self.mot_2d, t=-60.e-3, label='2D MOT fluorescence', show='image')
 
-        # 19 us / 0 dB is the minimum; the MOT-beam frame still saturates at its bright edge,
-        # the GM-beam frame peaked at 29 DN there (84858-84867) -> its own gain
-        self.xy = DiagnosticCamera(cameras.xy_basler, label='xy basler',
-                                   exposure_time=19.e-6, gain=0., roi=[382, 398, 943, 755],
-                                   images=[DiagnosticImage('img_mot_beams_xy', at='mot_beams_on', t=5.e-3,
-                                                           label='MOT beams'),
-                                           DiagnosticImage('img_gm_beams_xy', at='gm_beams_on', t=0.25e-3,
-                                                           gain=18., label='GM beams')])
+        # 19 us / 0 dB is the minimum; the MOT-beam frame still saturates at its bright edge
+        self.xy = self.camera(cameras.xy_basler, label='xy basler',
+                              exposure_time=19.e-6, gain=0., roi=[382, 398, 943, 755])
+        # mot(): after the 3D beams come on
+        self.img_mot_beams_xy = self.image(self.xy, t=5.e-3, label='MOT beams')
+        # gm(): after the D1 beams come on; 29 DN at 0 dB (84858-84867) -> its own gain
+        self.img_gm_beams_xy = self.image(self.xy, t=0.25e-3, gain=18., label='GM beams')
 
         # lightsheet frames dropped: this camera does not see the lightsheet (blank up to 20 ms / 20 dB;
-        # they were at lightsheet_load t = 50 ms and lightsheet_evap t = 3 ms, 2 ms / 20 dB)
-        self.z = DiagnosticCamera(cameras.z_basler, label='z basler',
-                                  exposure_time=19.e-6, gain=0., roi=[660, 300, 1260, 900],
-                                  images=[DiagnosticImage('img_mot_beams_z', at='mot_beams_on', t=5.e-3,
-                                                          label='MOT beams'),
-                                          DiagnosticImage('img_gm_beams_z', at='gm_beams_on', t=0.25e-3,
-                                                          label='GM beams')])
+        # they were 50 ms after the lightsheet ramp-up and 3 ms after evap 1, 2 ms / 20 dB)
+        self.z = self.camera(cameras.z_basler, label='z basler',
+                             exposure_time=19.e-6, gain=0., roi=[660, 300, 1260, 900])
+        self.img_mot_beams_z = self.image(self.z, t=5.e-3, label='MOT beams')
+        self.img_gm_beams_z = self.image(self.z, t=0.25e-3, label='GM beams')
 
-        # img_mot: t = -50 ms (2026-10-01) -> -150 ms #84561, 2026-10-01 (>= 100 ms from the GM edge)
-        # img_gm: 0.5 ms before GM end was blank, the ROI exposed after GM (84546-84561) -> triggered
-        #   25 ms before GM starts #84561, 2026-10-01: a rolling exposure across CMOT end, GM and the
-        #   ramp start; blank at the MOT settings (max 1 DN, 84858-84867): the whole GM at full gain
-        self.mot = DiagnosticCamera(cameras.mot_basler, label='MOT basler',
-                                    exposure_time=300.e-6, gain=3., roi=[1668, 1049, 2373, 1767],
-                                    images=[DiagnosticImage('img_mot', at='mot_load_end', t=-150.e-3,
-                                                            label='MOT fluorescence', show='image'),
-                                            DiagnosticImage('img_gm', at='cmot_end', t=-25.e-3,
-                                                            exposure_time=3.e-3, gain=30.,
-                                                            label='GM fluorescence', show='image')])
+        self.mot = self.camera(cameras.mot_basler, label='MOT basler',
+                               exposure_time=300.e-6, gain=3., roi=[1668, 1049, 2373, 1767])
+        # mot(): before the load ends. t = -50 ms (2026-10-01) -> -150 ms #84561, 2026-10-01
+        # (>= 100 ms from the GM edge); not taken for a load shorter than that
+        self.img_mot = self.image(self.mot, t=-150.e-3, t_stage='t_mot_load',
+                                  label='MOT fluorescence', show='image')
+        # end of cmot_d1(), where GM starts: 0.5 ms before GM end was blank, the ROI exposed after
+        # GM (84546-84561) -> triggered 25 ms before GM starts #84561, 2026-10-01: a rolling
+        # exposure across CMOT end, GM and the ramp start; blank at the MOT settings (max 1 DN,
+        # 84858-84867): the whole GM at full gain
+        self.img_gm = self.image(self.mot, t=-25.e-3, exposure_time=3.e-3, gain=30.,
+                                 label='GM fluorescence', show='image')
 
         # shares the MOT basler's trigger line
-        self.x = DiagnosticCamera(cameras.x_basler, label='x basler',
-                                  exposure_time=300.e-6, gain=30., roi=[1511, 141, 1729, 788],
-                                  images=[DiagnosticImage('img_tweezer_load_x', at='tweezer_load', t=1.e-3,
-                                                          exposure_time=50.e-6, gain=5.,
-                                                          label='tweezer load', show=None),
-                                          DiagnosticImage('img_tweezer_evap_x', at='tweezer_evap', t=1.e-3,
-                                                          label='tweezer evap', show=None)])
+        self.x = self.camera(cameras.x_basler, label='x basler',
+                             exposure_time=300.e-6, gain=30., roi=[1511, 141, 1729, 788])
+        # end of the tweezer ramp-up
+        self.img_tweezer_load_x = self.image(self.x, t=1.e-3, exposure_time=50.e-6, gain=5.,
+                                             label='tweezer load', show=None)
+        # end of the last tweezer evap
+        self.img_tweezer_evap_x = self.image(self.x, t=1.e-3, label='tweezer evap', show=None)
 
-        # tweezer beam position from the pickoff; shares the 2D-MOT basler's trigger line
-        # (2026-10-19). ROI: the camera's saved default.
-        self.tweezer_pickoff = DiagnosticCamera(cameras.tweezer_pickoff_basler, label='tweezer pickoff',
-                                                exposure_time=2.e-6, gain=0.,
-                                                roi=[1799, 909, 2787, 1804],
-                                                images=[DiagnosticImage('img_tweezer_pickoff', at='tweezer_load',
-                                                                        t=2.e-6, label='tweezer pickoff',
-                                                                        show='image')])
-
-        # a camera with no saved viewer ROI stores its frames block-averaged this much
-        self.no_roi_downsample = 4
+        # tweezer beam position from the pickoff; shares the 2D-MOT basler's trigger line (2026-10-19)
+        self.tweezer_pickoff = self.camera(cameras.tweezer_pickoff_basler, label='tweezer pickoff',
+                                           exposure_time=2.e-6, gain=0., roi=[1799, 909, 2787, 1804])
+        # end of the tweezer ramp-up. t = 2 us as found 2026-10-19 (was 1 ms); the same number
+        # as the exposure -- to confirm it is meant as the offset
+        self.img_tweezer_pickoff = self.image(self.tweezer_pickoff, t=2.e-6,
+                                              label='tweezer pickoff', show='image')
 
         self.cleanup()
 
 
 diagnostic_cameras = diagnostic_frame()
-
