@@ -27,8 +27,8 @@ def test_a_diagnostic_camera_gets_its_lines():
     assert text == (
         "self.z = self.camera(cameras.z_basler, exposure_time=1.9e-05, gain=0.0, "
         "roi=[660, 300, 1260, 900], label='z basler')\n"
-        "self.img_mot_beams_z = self.image(self.z, t=0.005, label='MOT beams')\n"
-        "self.img_gm_beams_z = self.image(self.z, t=0.00025, label='GM beams')")
+        "self.img_mot_beams_z = self.image(self.z, t_offset=0.005, label='MOT beams')\n"
+        "self.img_gm_beams_z = self.image(self.z, t_offset=0.00025, label='GM beams')")
     f = _paste(text)
     assert f.z.frames == diagnostic_cameras.z.frames and f.z.label == "z basler"
 
@@ -41,8 +41,8 @@ def test_settings_stage_and_rounding_are_kept():
         "roi=[1668, 1049, 2373, 1767], label='MOT basler')")
     f = _paste(text)
     assert f.mot.frame_settings == diagnostic_cameras.mot.frame_settings
-    assert [(i.key, i.t, i.t_stage, i.show) for i in f.mot.images] == \
-        [(i.key, i.t, i.t_stage, i.show) for i in diagnostic_cameras.mot.images]
+    assert [(i.key, i.t_offset, i.t_stage, i.show) for i in f.mot.images] == \
+        [(i.key, i.t_offset, i.t_stage, i.show) for i in diagnostic_cameras.mot.images]
 
 
 def test_a_known_camera_without_an_entry_and_an_unknown_serial(monkeypatch):
@@ -50,7 +50,7 @@ def test_a_known_camera_without_an_entry_and_an_unknown_serial(monkeypatch):
         monkeypatch.delattr(diagnostic_cameras, name)
     text = diagnostic_assignment_line(_info("40416468", roi=[1, 2, 3, 4]))
     assert text == ("self.z_basler = self.camera(cameras.z_basler, roi=[1, 2, 3, 4])"
-                    "  # then: self.img_<name> = self.image(self.z_basler, t=<s>)")
+                    "  # then: self.img_<name> = self.image(self.z_basler, t_offset=<s>)")
     unknown = diagnostic_assignment_line(_info("12345", name="new cam", gain=2.0))
     assert unknown.startswith("self.new_cam = self.camera('12345', gain=2.0)  # serial 12345 has no")
-    assert "self.image(self.new_cam, t=<s>)" in unknown
+    assert "self.image(self.new_cam, t_offset=<s>)" in unknown

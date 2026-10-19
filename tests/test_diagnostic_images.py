@@ -9,6 +9,7 @@ experiment against the real device db and run ARTIQ's compiler only (no
 core-device connection); they are skipped when %db% / %code% are not set and
 take ~10 s each.
 """
+import importlib
 import json
 import os
 import sys
@@ -28,7 +29,7 @@ DI_MODULE = "kexp.control.cameras.diagnostic_images"
 def _no_streams(monkeypatch):
     def refuse(*a, **k):
         raise AssertionError("test opened camera streams")
-    monkeypatch.setattr(sys.modules[DI_MODULE], "camera_streams", refuse)
+    monkeypatch.setattr(importlib.import_module(DI_MODULE), "camera_streams", refuse)
 
 
 def _expt():
@@ -73,7 +74,7 @@ def test_the_config_carried_over_unchanged():
         "mot": (300.e-6, 3., [1668, 1049, 2373, 1767]),
         "x": (300.e-6, 30., [1511, 141, 1729, 788]),
         "tweezer_pickoff": (2.e-6, 0., [1799, 909, 2787, 1804])}
-    assert {k: (img.t, img.t_stage) for k, img in d.images().items()} == {
+    assert {k: (img.t_offset, img.t_stage) for k, img in d.images().items()} == {
         "img_2dmot": (-60.e-3, None),             # t_diag_2dmot_before_push
         "img_mot_beams_xy": (5.e-3, None),        # t_diag_mot_beams_after_on
         "img_gm_beams_xy": (0.25e-3, None),       # t_diag_gm_beams_after_start
@@ -83,7 +84,7 @@ def test_the_config_carried_over_unchanged():
         "img_gm": (-25.e-3, None),                # t_diag_gm_trigger_lead
         "img_tweezer_load_x": (1.e-3, None),      # t_diag_tweezer_after_load
         "img_tweezer_evap_x": (1.e-3, None),      # t_diag_tweezer_after_evap
-        "img_tweezer_pickoff": (2.e-6, None)}     # as found 2026-10-19
+        "img_tweezer_pickoff": (1.e-3, None)}     # user, 2026-10-19
     assert {k: img.show for k, img in d.images().items()} == {
         "img_2dmot": "image", "img_mot_beams_xy": "counts", "img_gm_beams_xy": "counts",
         "img_mot_beams_z": "counts", "img_gm_beams_z": "counts", "img_mot": "image",
@@ -115,7 +116,7 @@ def test_names_labels_and_refusals():
 
     def ok(f):
         f.cam = f.camera(cameras.z_basler)
-        f.img_a_b = f.image(f.cam, t=1.e-3)
+        f.img_a_b = f.image(f.cam, t_offset=1.e-3)
     f = Frame(ok)
     assert f.img_a_b.label == "a b" and f.cam.label == "z basler" and f.cam.frames == ["img_a_b"]
 
@@ -219,17 +220,17 @@ def test_t_stage_from_the_run_params_and_scan(capsys):
 
 def test_the_record():
     diag = _bound()
-    diag.img_mot.t = -0.1           # an experiment's own offset, set in prepare
+    diag.img_mot.t_offset = -0.1           # an experiment's own offset, set in prepare
     diag.resolve_stages(SimpleNamespace(t_mot_load=0.5))
     rec = json.loads(json.dumps(diag.record()))
     assert rec["enabled"] is False
     assert rec["images"]["img_mot"] == {"camera": "mot", "camera_id": "mot_basler", "frame": 0,
-                                        "t": -0.1, "t_stage": "t_mot_load", "t_stage_s": 0.5,
+                                        "t_offset": -0.1, "t_stage": "t_mot_load", "t_stage_s": 0.5,
                                         "taken": False}
     assert rec["images"]["img_gm"] == {"camera": "mot", "camera_id": "mot_basler", "frame": 1,
-                                       "t": -25.e-3, "t_stage": None, "t_stage_s": None,
+                                       "t_offset": -25.e-3, "t_stage": None, "t_stage_s": None,
                                        "taken": False, "exposure_time": 3.e-3, "gain": 30.}
-    assert diagnostic_cameras.img_mot.t == -150.e-3
+    assert diagnostic_cameras.img_mot.t_offset == -150.e-3
 
 
 # ---- compile ---------------------------------------------------------------
@@ -315,7 +316,7 @@ def _build(monkeypatch, tmp_path, mixed=False):
     import kexp.config.wavemeter_id as wavemeter_id
 
     if mixed:
-        monkeypatch.setattr(sys.modules[DI_MODULE], "camera_streams", _mixed_streams)
+        monkeypatch.setattr(importlib.import_module(DI_MODULE), "camera_streams", _mixed_streams)
     else:
         _no_streams(monkeypatch)
     state = str(tmp_path / "device_state.json")

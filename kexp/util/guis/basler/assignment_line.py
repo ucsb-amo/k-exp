@@ -5,8 +5,8 @@ current ROI, exposure and gain, then its images as they are configured (none
 yet for a camera without an entry).
 
     self.z = self.camera(cameras.z_basler, exposure_time=1.9e-05, gain=0.0, roi=[660, 300, 1260, 900], label='z basler')
-    self.img_mot_beams_z = self.image(self.z, t=0.005, label='MOT beams')
-    self.img_gm_beams_z = self.image(self.z, t=0.00025, label='GM beams')
+    self.img_mot_beams_z = self.image(self.z, t_offset=0.005, label='MOT beams')
+    self.img_gm_beams_z = self.image(self.z, t_offset=0.00025, label='GM beams')
 
 ``install()`` registers it with the viewer; the dashboards and
 ``camera_viewer_app`` call it at start-up.
@@ -32,7 +32,7 @@ def diagnostic_assignment_line(info: dict) -> str:
     notes = []
     if not cam_key:
         notes.append(f"serial {serial} has no kexp.config.camera_id entry yet")
-    notes.append(f"then: self.img_<name> = self.image(self.{name}, t=<s>)")
+    notes.append(f"then: self.img_<name> = self.image(self.{name}, t_offset=<s>)")
     return line + "  # " + "; ".join(notes)
 
 

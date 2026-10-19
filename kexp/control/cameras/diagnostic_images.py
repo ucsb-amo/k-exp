@@ -8,7 +8,7 @@ trigger TTL and frame index. The sequence takes an image where it belongs::
 
     self.diag.img_tweezer_load_x.trigger()
 
-``t`` from the cursor, which stays where it was. Nothing is taken with
+``t_offset`` from the cursor, which stays where it was. Nothing is taken with
 diagnostics off, during the warm-up shots (``Base.pre_scan`` clears
 ``active`` around them: no frame is triggered, fetched or stored for a shot
 that saves nothing), for a camera that could not be used this run, or for an
