@@ -176,7 +176,7 @@ class diagnostic_frame:
         # shares the MOT basler's trigger line
         self.x = DiagnosticCamera(cameras.x_basler, frames=['img_tweezer_load_x', 'img_tweezer_evap_x'],
                                   exposure_time=300.e-6, gain=30., roi=[1511, 141, 1729, 788],
-                                  frame_settings={'img_tweezer_load_x': dict(exposure_time=1000.e-6, gain=10.)})
+                                  frame_settings={'img_tweezer_load_x': dict(exposure_time=50.e-6, gain=5.)})
 
         # a camera with no saved viewer ROI stores its frames block-averaged this much
         self.no_roi_downsample = 4
