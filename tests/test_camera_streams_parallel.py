@@ -299,3 +299,21 @@ def test_same_camera_twice_in_one_call_is_refused(rig):
     with pytest.raises(ValueError, match="asked for twice"):
         cs_mod.camera_streams(fe, [spec, other])
     assert rig.streams == {} and fe.camera_streams == []
+
+
+def test_pixel_format_comes_from_the_spec_else_the_camera_entry(monkeypatch, rig):
+    seen = {}
+
+    def record(expt, serial, key, **kw):
+        seen[serial] = kw.get("pixel_format")
+        raise RuntimeError("recorded (test)")
+
+    monkeypatch.setattr(cs_mod, "TriggeredCameraStreamClient", record)
+    entries = diagnostic_cameras.entries()
+    first, second = entries[0], entries[1]
+    monkeypatch.setattr(second.camera, "pixel_format", "Mono12", raising=False)
+    specs = _specs()
+    specs[0]["pixel_format"] = "Mono12p"
+    cs_mod.camera_streams(FakeExpt(), specs[:2])
+    assert seen[str(first.camera.serial_no)] == "Mono12p"       # the spec's
+    assert seen[str(second.camera.serial_no)] == "Mono12"       # the entry's

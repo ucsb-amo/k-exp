@@ -26,14 +26,24 @@ class FrameSpec:
     label: str
     camera: str
     image: bool     # shown as an image (else: counts only)
+    pixel_format: str = "Mono8"     # as configured (the DiagnosticCamera's, else its entry's)
 
 
 def _frames_from_config(entries):
     """The frames the viewer shows: every DiagnosticImage with ``show`` set,
     images first, then counts rows, each in config order."""
-    frames = [FrameSpec(img.key, img.label, cam.label, img.show == "image")
+    frames = [FrameSpec(img.key, img.label, cam.label, img.show == "image",
+                        _configured_pixel_format(cam))
               for cam in entries for img in cam.images if img.show]
     return tuple(sorted(frames, key=lambda f: not f.image))
+
+
+def _configured_pixel_format(cam):
+    """The pixel format a diagnostic camera streams at: its own, else its
+    camera entry's, else Mono8 (what kexp.control.cameras.camera_stream sets)."""
+    pf = getattr(cam, "pixel_format", None) or getattr(getattr(cam, "camera", None),
+                                                       "pixel_format", None)
+    return str(pf or "Mono8")
 
 
 def _diagnostic_entries():
@@ -55,10 +65,27 @@ def configured_keys():
     return {key for entry in _diagnostic_entries() for key in entry.frames}
 
 
-def saturation_level(dtype):
-    """The count a saturated pixel reads, or None when the dtype does not say
-    (a uint16 frame may be 10, 12 or 16 bit: not checked)."""
-    return 255 if np.dtype(dtype) == np.uint8 else None
+#: Full-scale count of a uint16 frame by the pixel format its camera runs at.
+_UINT16_FULL_SCALE = {"Mono12": 4095, "Mono12p": 4095}
+
+
+def saturation_level(dtype, pixel_format=None):
+    """The count a saturated pixel reads, or None when it is not known: 255
+    for a uint8 frame; 4095 for a uint16 frame whose camera is configured
+    Mono12 / Mono12p; otherwise (another uint16 camera, e.g. 16 bit) None --
+    not checked."""
+    dtype = np.dtype(dtype)
+    if dtype == np.uint8:
+        return 255
+    if dtype == np.uint16:
+        return _UINT16_FULL_SCALE.get(str(pixel_format))
+    return None
+
+
+def frame_bits(dtype):
+    """Bits per stored pixel (8 for uint8, 16 for uint16): frames of different
+    depth are never compared (a Mono12 count is ~16x a Mono8 one)."""
+    return int(np.dtype(dtype).itemsize * 8)
 
 
 @dataclass
@@ -74,11 +101,13 @@ class FrameStats:
     exposure: float          # s, as the frame was taken (NaN = not recorded)
     gain: float              # dB
     seq: float
+    bits: int = 8            # bits per stored pixel (frame_bits)
 
 
-def frame_stats(img, meta, run_id, index, t):
+def frame_stats(img, meta, run_id, index, t, pixel_format=None):
     """FrameStats for one pushed frame, or None when it is not a frame: a
-    placeholder (one byte per shot), or a cleared slot (``seq`` NaN)."""
+    placeholder (one byte per shot), or a cleared slot (``seq`` NaN).
+    ``pixel_format``: the camera's configured one (saturation_level)."""
     a = np.asarray(img)
     if a.ndim < 2 or a.size <= 1:
         return None
@@ -89,13 +118,13 @@ def frame_stats(img, meta, run_id, index, t):
             seq, exposure, gain = float(m[_I_SEQ]), float(m[_I_EXPOSURE]), float(m[_I_GAIN])
         if not math.isfinite(seq):
             return None
-    sat = saturation_level(a.dtype)
+    sat = saturation_level(a.dtype, pixel_format)
     return FrameStats(
         run_id=int(run_id), index=tuple(int(i) for i in (index or ())), t=float(t),
         mean=float(a.mean(dtype=np.float64)), total=float(a.sum(dtype=np.float64)),
         max=float(a.max()), n_pixels=int(a.size),
         n_saturated=None if sat is None else int(np.count_nonzero(a >= sat)),
-        exposure=exposure, gain=gain, seq=seq)
+        exposure=exposure, gain=gain, seq=seq, bits=frame_bits(a.dtype))
 
 
 STATS = ("total", "mean")       # what a row shows; the first is the default
@@ -175,16 +204,17 @@ def run_summary(history: FrameHistory, key, run_id, stat="mean"):
         return None
     last = entries[-1]
     same = [e for e in entries if same_settings(e.exposure, e.gain, last.exposure, last.gain)
-            and e.n_pixels == last.n_pixels]
+            and e.n_pixels == last.n_pixels and e.bits == last.bits]
     if not same:            # settings not recorded: report them all, unlabelled
         same = entries
     mean, sem, n = mean_sem(stat_value(e, stat) for e in same)
     sat = [e.n_saturated for e in same]
     return {"mean": mean, "sem": sem, "n": n, "n_other_settings": len(entries) - len(same),
             "exposure": last.exposure, "gain": last.gain, "n_pixels": last.n_pixels,
+            "bits": last.bits,
             "n_shots_saturated": None if any(s is None for s in sat)
             else sum(1 for s in sat if s > 0)}
 
 
-__all__ = ["FrameSpec", "FRAMES", "FRAME_KEYS", "SPEC", "configured_keys", "saturation_level",
+__all__ = ["FrameSpec", "FRAMES", "FRAME_KEYS", "SPEC", "configured_keys", "saturation_level", "frame_bits",
            "FrameStats", "frame_stats", "STATS", "stat_value", "same_settings", "mean_sem", "FrameHistory", "run_summary"]

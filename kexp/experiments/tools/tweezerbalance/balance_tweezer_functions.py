@@ -39,7 +39,10 @@ class TweezerBalancer():
     
     def basler_connect(self):
         #connect to xBasler
-        self.cam = BaslerUSB(TriggerMode='Off',ExposureTime=0.000020,BaslerSerialNumber="40320384")
+        # Mono8: uint8 frames, saturated at 255 (check_if_saturated)
+        self.cam = BaslerUSB(TriggerMode='Off',ExposureTime=0.000020,BaslerSerialNumber="40320384",
+                             PixelFormat='Mono8')
+        self.FULL_SCALE = 255
         self.queue_img = Queue()
 
     #connect to awg
@@ -187,16 +190,18 @@ class TweezerBalancer():
         for roi in tweezer_rois:
             for i in range(roi[1][0], roi[1][1]):
                 for j in range(roi[0][0], roi[0][1]):
-                    if image[i][j] == 255.:
+                    if image[i][j] >= getattr(self, 'FULL_SCALE', 255):
                         saturated_pixels = saturated_pixels + 1
         return (saturated_pixels > 1)
 
 
     def sum_pixels(self, image, roi):
+        # As Python ints: summed in the frame's own uint8 (numpy 2 keeps a
+        # Python int + np.uint8 in uint8), the total wrapped at 256.
         total_count = 0
         for i in range(roi[1][0], roi[1][1]):
             for j in range(roi[0][0], roi[0][1]):
-                total_count += image[i][j]
+                total_count += int(image[i][j])
         return total_count
 
     #then find total pixel count in each, and then decrease to specified value (right now the mean of all of them)

@@ -67,8 +67,9 @@ def camera_stream(expt, camera, key, *, mode='free_run', exposure_time=None,
     frames under ``key`` (triggered mode: a list, one key per frame).
     ``exposure_time`` (s) / ``gain`` (dB) override the camera's saved
     defaults; ``trigger_source`` overrides the entry's input line (for
-    finding out where a trigger is wired); other keywords go to the client
-    (``frame_settings``, ``no_roi_downsample``, ...)."""
+    finding out where a trigger is wired); ``pixel_format`` overrides the
+    entry's (Mono8 for a camera with no entry); other keywords go to the
+    client (``frame_settings``, ``no_roi_downsample``, ...)."""
     spec = dict(camera=camera, key=key, mode=mode, exposure_time=exposure_time,
                 gain=gain, t_snap_lead=t_snap_lead, on_error=on_error,
                 trigger_source=trigger_source, **kw)
@@ -144,6 +145,7 @@ def _plan(expt, spec, taken):
     gain = spec.pop('gain', None)
     t_snap_lead = spec.pop('t_snap_lead', 0.12)
     trigger_source = spec.pop('trigger_source', None)
+    pixel_format = spec.pop('pixel_format', None)
     kw = spec
     if mode not in MODES:
         raise ValueError(f"camera_stream mode {mode!r} is not one of {MODES}")
@@ -168,6 +170,12 @@ def _plan(expt, spec, taken):
         raise ValueError(f"camera_stream '{name}': {serial} is asked for twice "
                          f"in one camera_streams call")
     live_od_client = getattr(expt, 'live_od_client', None)
+    if pixel_format is None:
+        # the camera entry's (kexp.config.camera_id), as its runs use; Mono8
+        # for a camera with no entry -- never the camera as it stands
+        entry = camera if isinstance(camera, CameraParams) else _entry_by_serial(serial)
+        pixel_format = str(getattr(entry, 'pixel_format', None) or 'Mono8')
+    kw['pixel_format'] = pixel_format
 
     try:
         if not triggered:

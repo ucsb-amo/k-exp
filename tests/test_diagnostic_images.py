@@ -284,18 +284,49 @@ def test_the_record():
     roi = [1668, 1049, 2373, 1767]
     assert rec["images"]["img_mot"] == {"camera": "mot_basler", "camera_id": "mot_basler",
                                         "frame": 0, "t_offset": -0.1, "t_stage": "t_mot_load",
-                                        "t_stage_s": 0.5, "taken": False, "exposure_time": 300.e-6,
+                                        "t_stage_s": 0.5, "taken": False,
+                                        "pixel_format": None,   # no stream: diagnostics off
+                                        "exposure_time": 300.e-6,
                                         "gain": 3., "roi": roi, "from_camera_entry": [],
                                         "max_exposure_time": None,
                                         # diagnostics off: no delay is used
                                         "exposure_delay": None, "exposure_delay_source": None}
     assert rec["images"]["img_gm"] == {"camera": "mot_basler", "camera_id": "mot_basler",
                                        "frame": 1, "t_offset": -25.e-3, "t_stage": None,
-                                       "t_stage_s": None, "taken": False, "exposure_time": 3.e-3,
+                                       "t_stage_s": None, "taken": False, "pixel_format": None,
+                                       "exposure_time": 3.e-3,
                                        "gain": 30., "roi": roi, "from_camera_entry": [],
                                        "max_exposure_time": None,
                                        "exposure_delay": None, "exposure_delay_source": None}
     assert diagnostic_cameras.img_mot.t_offset == -150.e-3
+
+
+def test_a_camera_pixel_format_reaches_its_stream_spec_and_line():
+    from waxx.control.cameras.diagnostic_frame import diagnostic_frame
+    from kexp.config.camera_id import cameras
+
+    class F(diagnostic_frame):
+        def __init__(self):
+            self.setup()
+            self.mot = self.camera(cameras.mot_basler, pixel_format="Mono12p")
+            self.img_a = self.image(self.mot, t_offset=-1e-3)
+            self.cleanup()
+
+    f = F()
+    assert "pixel_format='Mono12p'" in f.mot.assignment()
+    seen = []
+
+    def make_streams(expt, specs):
+        seen.extend(specs)
+        from waxx.control.cameras.camera_stream_client import InactiveCameraStream
+        return [InactiveCameraStream(expt, s["key"], reason="test") for s in specs]
+
+    expt = SimpleNamespace(core=None, params=None, data=None, camera_streams=[])
+    try:
+        f.bind(expt, True, make_streams, lambda cam: SimpleNamespace(ch=0))
+    except Exception:
+        pass        # the inactive placeholder needs a real DataVault; the spec is what is checked
+    assert seen and seen[0]["pixel_format"] == "Mono12p"
 
 
 # ---- compile ---------------------------------------------------------------
