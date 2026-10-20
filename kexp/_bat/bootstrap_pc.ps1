@@ -60,7 +60,26 @@ if (-not (Get-Command git -ErrorAction SilentlyContinue)) {
 Say "Git: $(git --version)"
 
 # 2. The code folder: %code% if this PC has one, otherwise ask (the suggestion is your own folder).
-if (-not $CodeDir) { $CodeDir = [Environment]::GetEnvironmentVariable('code', 'Machine') }
+# %code% is machine-wide, so on a PC first set up under another account it can name that
+# account's folder, which this one cannot use: then ask instead.
+if (-not $CodeDir) {
+    $CodeDir = [Environment]::GetEnvironmentVariable('code', 'Machine')
+    if ($CodeDir) {
+        $full = [IO.Path]::GetFullPath($CodeDir).TrimEnd('\') + '\'
+        $mine = $HOME.TrimEnd('\') + '\'
+        $profiles = (Split-Path -Parent $HOME).TrimEnd('\') + '\'
+        $problem = $null
+        if ($full.StartsWith($profiles, 'OrdinalIgnoreCase') -and -not $full.StartsWith($mine, 'OrdinalIgnoreCase')) {
+            $problem = "another account's folder"
+        } else {
+            try { $null = Test-Path -LiteralPath $CodeDir -ErrorAction Stop } catch { $problem = 'a folder this account cannot read' }
+        }
+        if ($problem) {
+            Say "%code% is $CodeDir, $problem; choose a folder for this account (%code% itself is left as it is)." Yellow
+            $CodeDir = $null
+        }
+    }
+}
 if (-not $CodeDir) {
     $default = Join-Path $HOME 'code'
     if ($Yes) { $CodeDir = $default }
