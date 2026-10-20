@@ -18,7 +18,7 @@ a trigger line are made siblings. A camera on liveOD's bar is leased from
 liveOD.
 
 ``camera_streams(expt, specs)`` sets several cameras up at once, in
-parallel (DiagnosticImages uses it).
+parallel (the diagnostic frame's bind uses it).
 """
 
 import logging
