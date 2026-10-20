@@ -317,16 +317,23 @@ def test_a_camera_pixel_format_reaches_its_stream_spec_and_line():
     seen = []
 
     def make_streams(expt, specs):
+        # a triggered stream as the factory would hand it back (no camera)
+        from waxx.control.cameras.camera_stream_client import TriggeredCameraStreamClient
         seen.extend(specs)
-        from waxx.control.cameras.camera_stream_client import InactiveCameraStream
-        return [InactiveCameraStream(expt, s["key"], reason="test") for s in specs]
+        out = []
+        for spec in specs:
+            st = object.__new__(TriggeredCameraStreamClient)
+            st.ttl = SimpleNamespace(ch=0)
+            st.exposure_delay, st.t_trigger = 17e-6, 2e-6
+            st._pixel_format = spec["pixel_format"]
+            out.append(st)
+        return out
 
-    expt = SimpleNamespace(core=None, params=None, data=None, camera_streams=[])
-    try:
-        f.bind(expt, True, make_streams, lambda cam: SimpleNamespace(ch=0))
-    except Exception:
-        pass        # the inactive placeholder needs a real DataVault; the spec is what is checked
+    expt = SimpleNamespace(core=None, params=None, camera_streams=[])
+    f.bind(expt, True, make_streams, lambda cam: SimpleNamespace(ch=0))
     assert seen and seen[0]["pixel_format"] == "Mono12p"
+    rec = f.record()["images"]["img_a"]
+    assert rec["pixel_format"] == "Mono12p" and rec["taken"] is True
 
 
 # ---- compile ---------------------------------------------------------------
