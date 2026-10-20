@@ -16,7 +16,7 @@ double v_max_ao_efficiency = 4.;
 bool integrator_go1 = true;
 bool pid_enable2 = false;
 
-struct Cal 
+struct Cal
 {
     uint16_t cal_a;
     double cal_b;
@@ -56,8 +56,8 @@ void clear_integrator(qCommand& qC, Stream& S) {
 void ping(qCommand& qC, Stream& S)
 {
   struct Cal cal2;
-  readNVMblock(&cal2, sizeof(cal2), 0xFA00);  
-  Serial.println(cal2.cal_d); 
+  readNVMblock(&cal2, sizeof(cal2), 0xFA00);
+  Serial.println(cal2.cal_d);
 }
 
 void hold1() {
@@ -79,12 +79,22 @@ void hold2() {
   }
 }
 
+//Read ADC1 (PD 1), output it at DAC3, calculate PID, output PID at DAC1
 void getMeas1() {
   double newadc1 = readADC1_from_ISR();
+
+  // monitoring output: PD 1 voltage as read in
+  writeDAC(3, handle_monitor_overflow(newadc1));
+
   double prop1 = (newadc1-SETPOINT1) * P1;
   if (integrator_go1) {
-    integral1 += (newadc1-SETPOINT1) * I1;}
+    integral1 += (newadc1-SETPOINT1) * I1;
+    integral1 = handle_overflow(integral1);
+  }
   double newdac1 = prop1 + integral1;
+
+  ///Bit overflow check conditions
+  newdac1 = handle_overflow(newdac1);
   writeDAC(1,newdac1);
 }
 
@@ -92,21 +102,53 @@ void getSet1(){
   SETPOINT1 = readADC2_from_ISR();
 }
 
+//Read ADC3 (PD 2), output it at DAC4, calculate PID, output PID at DAC2
 void getMeas2() {
   double newadc2 = readADC3_from_ISR();
   double newdac2 = 0.;
+
+  // monitoring output: PD 2 voltage as read in
+  writeDAC(4, handle_monitor_overflow(newadc2));
+
   if (pid_enable2) {
     double prop2 = (newadc2-SETPOINT2) * P2;
     integral2 += (newadc2-SETPOINT2) * I2;
+    integral2 = handle_overflow(integral2);
     newdac2 = prop2 + integral2;}
   else {
     newdac2 = v_max_ao_efficiency;
   }
+
+  ///Bit overflow check conditions
+  newdac2 = handle_overflow(newdac2);
   writeDAC(2,newdac2);
 }
 
 void getSet2(){
   SETPOINT2 = readADC4_from_ISR();
+}
+
+// Keep a control output in the AO driver's 0-10 V range (and below the DAC rail, so it cannot wrap)
+double handle_overflow(double num) {
+  if (num > 10) {
+    num = 9.99;
+  } else if (num < 0) {
+    num = 0.;
+  } else {
+  }
+  return num;
+}
+
+// Monitor outputs pass the reading through unchanged (negative included); only a reading at the
+// +/-10 V rail is pulled in to +/-9.99 V so it cannot wrap on the DAC
+double handle_monitor_overflow(double num) {
+  if (num > 9.99) {
+    num = 9.99;
+  } else if (num < -9.99) {
+    num = -9.99;
+  } else {
+  }
+  return num;
 }
 
 void loop() {
