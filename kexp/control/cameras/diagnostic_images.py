@@ -12,7 +12,7 @@ trigger TTL and frame index. The sequence takes an image where it belongs::
 diagnostics off, during the warm-up shots (``Base.pre_scan`` clears
 ``active`` around them: no frame is triggered, fetched or stored for a shot
 that saves nothing), for a camera that could not be used this run, or for an
-image whose ``|t|`` is longer than its ``t_stage``.
+image whose ``|t_offset|`` is longer than its ``t_stage``.
 
 Each frame is saved under its key with a ``<key>_meta`` record per shot
 (waxa.data.camera_frames) and a ``camera_stream_<key>`` provenance record;

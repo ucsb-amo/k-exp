@@ -117,7 +117,7 @@ class diagnostic_frame(diagnostic_frame_waxx):
     image   one frame per shot, saved under its attribute name. The sequence takes it with
             ``self.diag.<image>.trigger()``: ``t_offset`` (s) from the cursor, negative = before it.
             Optional: ``t_stage`` (s or an ExptParams name) -- the length of the stage it sits
-            in, an image with |t| longer is not taken; its own exposure_time / gain; ``label``
+            in, an image with |t_offset| longer is not taken; its own exposure_time / gain; ``label``
             and ``show`` ('image' | 'counts' | None) for the diagnostic viewer.
 
     A camera's frame index is the order its images are assigned here: assign them in the
