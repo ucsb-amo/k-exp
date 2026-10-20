@@ -1,6 +1,6 @@
 from artiq.experiment import *
 from artiq.experiment import delay
-from kexp import Base, cameras, aprint, Adjust
+from kexp import Base, img_types, cameras, aprint, Adjust
 import numpy as np
 from kexp.calibrations import high_field_imaging_detuning
 
@@ -13,16 +13,16 @@ class mag_trap(EnvExperiment, Base):
     def prepare(self):
         Base.__init__(self,
         camera_select=cameras.xy_basler,
-        save_data=True,
+        save_data=True,imaging_type=img_types.ABSORPTION,
         diagnostic_images=True)
 
         self.p.t_tof = 10.e-3
-        # self.xvar('t_tof',np.linspace(5.,10.,7)*1.e-3)
+        self.xvar('t_tof',np.linspace(5.,10.,7)*1.e-3)
 
         self.p.t_magtrap_hold = 0.15 
         # self.p.t_magtrap_hold = 1.
 
-        self.p.N_repeats = 10
+        self.p.N_repeats = 1
         self.p.t_mot_load = 0.5
 
         self.p.imaging_state = 2.

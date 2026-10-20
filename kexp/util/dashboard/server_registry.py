@@ -97,18 +97,21 @@ SERVER_SPECS: list[ServerSpec] = [
         id="monitor",
         label="Monitor",
         icon="👁",
-        # Headless and panel-less: this server's LED and Start / Stop /
-        # Restart are on the Device Control panel's header (server dashboard
-        # only; server_dashboard_app.SERVER_CONTROLS_ON_CLIENT_PANEL), and the
-        # monitor experiment's state and Start are in that panel's status
-        # row.  The supervisor is also listed in Running Servers and the
-        # Servers menu.
-        body_factory=None,
+        # Headless server; its panel (kexp MonitorPanel = waxx
+        # MonitorServerPanel) talks to it over the network: the run queue,
+        # the monitor state and the monitor experiment's status button.  The
+        # header's LED and Start / Stop / Restart drive this supervisor (Stop
+        # / Restart ask first), as the Device Control panel's header does too
+        # (server_dashboard_app.SERVER_CONTROLS_ON_CLIENT_PANEL).  Keep the
+        # id "monitor": QSettings dock keys depend on it.
+        body_factory=_lazy_panel("kexp.util.guis.device_state_gui.monitor_panel", "MonitorPanel"),
         server_cmd=[_PY, "-m", "kexp.util.guis.device_state_gui.monitor_server_headless"],
         cwd=_REPO,
         graceful_stop_timeout_s=3.0,
         default_dock_area="bottom",
-        hidden_panel=True,
+        default_placement="tab",
+        tab_group="bottom",
+        hidden_panel=False,
     ),
     ServerSpec(
         id="magnetometer",

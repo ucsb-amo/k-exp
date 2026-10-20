@@ -74,6 +74,8 @@ def _build(monkeypatch, tmp_path, with_monitor=True):
     monkeypatch.setattr(kclients, "APDStageClient",
                         lambda *a, **k: SimpleNamespace(set_apd_stage=lambda *a, **k: None))
     monkeypatch.setattr(kclients, "HMRClient", kclients.HMRDummy)
+    monkeypatch.setattr(kclients, "BristolAverageReader",
+                        lambda *a, **k: SimpleNamespace(get_average=lambda *a, **k: None))
     # finish_prepare asks the real SLM server whether a reinit is due (and
     # would ask it for one): never from a test.
     from waxx.control.slm.slm import SLM

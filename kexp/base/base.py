@@ -1,3 +1,4 @@
+import json
 import numpy as np
 import os
 
@@ -12,10 +13,11 @@ from waxx.util import console
 
 from kexp.base import Devices, Cooling, Image, Cameras, Control, Clients
 from kexp.base.cameras import resolve_run_config
+from kexp.config.calibration import CALIBRATION_CONFIG
 from kexp.config.camera_id import cameras
 from kexp.config.ip import PATHS, server_talk
 from kexp.config.data_vault import DataVault
-from kexp.control.cameras.diagnostic_images import DiagnosticImages
+from kexp.control.cameras.diagnostic_images import diagnostic_images as make_diagnostic_images
 
 from kexp.util.artiq.async_print import aprint
 
@@ -56,6 +58,8 @@ class Base(Expt, Devices, Cooling, Image, Cameras, Control, Clients):
             self.params = expt_params
 
         self.p = self.params
+        # self.calibrates(...) / emit_calibration (waxx.calibration)
+        self.calibration_config = CALIBRATION_CONFIG
         if data_vault == None:
             self.data = DataVault(self)
         else:
@@ -78,13 +82,13 @@ class Base(Expt, Devices, Cooling, Image, Cameras, Control, Clients):
         Clients.__init__(self, suppress_live_od=suppress_live_od)
 
         # Reference images of the cooling sequence, every shot (self.diag,
-        # kexp.control.cameras.diagnostic_images; fired from Cooling.mot, gm,
-        # prepare_hf/lf_tweezers). On by default. They go to liveOD during
+        # kexp.config.camera_id.diagnostic_frame; each image's trigger() is
+        # called in Cooling.mot, cmot_d1, gm, prepare_hf/lf_tweezers). On by default. They go to liveOD during
         # the run whatever save_data is: liveOD keeps the latest of each and
         # broadcasts them, and writes them only into a run that saves. A run
         # that suppresses liveOD has nowhere to send them.
         self.diagnostic_images = bool(diagnostic_images) and not bool(suppress_live_od)
-        self.diag = DiagnosticImages(self, enabled=self.diagnostic_images)
+        self.diag = make_diagnostic_images(self, enabled=self.diagnostic_images)
 
         # Resolved above: in when acquiring with the APD, out when a camera
         # grabs frames, None (stage left alone) when acquiring nothing.
@@ -103,10 +107,19 @@ class Base(Expt, Devices, Cooling, Image, Cameras, Control, Clients):
             console.info(f"[warmup] {self.params.N_warmup_shots} warm-up "
                          "shot(s) before the first real shot.")
 
+        # Last: from here to finish_prepare, params the experiment assigns
+        # are its overrides (self._param_overrides); everything above is Base's.
+        self.start_param_override_recording()
+
     def finish_prepare(self,N_repeats=[],shuffle=True):
         """
         To be called at the end of prepare.
         """
+
+        # where each diagnostic frame is taken, as this run takes it (t_stage
+        # from the params and scan as prepare left them)
+        self.diag.resolve_stages(self.params, self.scan_xvars)
+        self._extra_file_texts["diagnostic_images"] = json.dumps(self.diag.record())
 
         self.finish_prepare_wax(N_repeats=N_repeats,shuffle=shuffle)
 
@@ -262,6 +275,7 @@ class Base(Expt, Devices, Cooling, Image, Cameras, Control, Clients):
 
         self.background_field()
         self.read_magnetometer()
+        self.read_raman_wavemeter()
         # arm the once-per-shot capture of the outer-coil current at imaging
         self._imaging_conditions_recorded = False
         
@@ -370,6 +384,40 @@ class Base(Expt, Devices, Cooling, Image, Cameras, Control, Clients):
         except:
             aprint("[scan] cleanup_abort_kernel: restoring the raman DDS from fast "
                    "frequency update mode failed; the next run's init_kernel re-inits it.")
+
+    # ---- interleaved sub-scan points (waxx Scanner / Expt.add_sub_scan) ----
+
+    @kernel
+    def init_calibration_kernel(self):
+        """Before a sub-scan point: the per-shot reset a warm-up shot gets
+        (pre_scan) -- devices and tweezers reset, the diagnostic cameras off
+        so no frame is triggered for a shot liveOD does not count. No scope
+        arming, no magnetometer read, no DataVault write."""
+        self.diag.active = False
+        self.core.break_realtime()
+        self.reset_devices()
+        self.core.break_realtime()
+        self.reset_tweezers(False)
+        self.core.break_realtime()
+
+    @kernel
+    def cleanup_calibration_kernel(self):
+        """After a sub-scan point (also after one that ended on an RTIO
+        error): the TTL input drain every data shot gets
+        (cleanup_scan_kernel_wax -- a point's prep_raman waits on the line
+        trigger, and a stale edge would let the next shot's wait return at
+        once), the safety cleanup with the raman DDS taken out of
+        fast-frequency-update mode (cleanup_abort_kernel, failure swallowed),
+        the imaging and raman RF off as cleanup_scan_kernel leaves them, and
+        the diagnostic cameras back on."""
+        self.core.break_realtime()
+        self.ttl.clear_input_events()
+        self.cleanup_abort_kernel()
+        self.core.break_realtime()
+        self.imaging.off()
+        self.raman.off()
+        self.core.break_realtime()
+        self.diag.active = self.diag.enabled
 
     @kernel
     def cleanup_scan_kernel(self):

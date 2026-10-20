@@ -17,7 +17,7 @@ class mag_trap(EnvExperiment, Base):
 
         self.p.t_tof = 20.e-6
         # self.xvar('t_tof',np.linspace(7.5,15.,10)*1.e-3)
-        # self.xvar('dumy',[0,1,2,3])
+        self.xvar('dumy',[1,2,3] * 1000)
         # self.xvar('dumy',[2,3] * 1000)
         self.p.dumy = 3
 
@@ -27,7 +27,7 @@ class mag_trap(EnvExperiment, Base):
 
         self.p.t_lightsheet_hold = .15
 
-        self.p.N_repeats = 1000
+        self.p.N_repeats = 1
         self.p.t_mot_load = 1.0
 
         # self.camera_params.exposure_time = 100.e-6

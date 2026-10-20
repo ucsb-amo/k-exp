@@ -13,15 +13,15 @@ class mag_trap(EnvExperiment, Base):
 
     def prepare(self):
         Base.__init__(self,
-                      save_data=True,
-                      camera_select=cameras.andor,
+                      save_data=False,
+                      camera_select=cameras.xy_basler,
                       imaging_type=img_types.ABSORPTION,
                       warmup_shots=0)
 
-        self.p.t_tof = 800e-6
+        self.p.t_tof = 875e-6
         # self.xvar('beans',np.linspace(1,10.,10))
 
-        # self.xvar('t_tof',np.linspace(200,1100.,9)*1.e-6)
+        # self.xvar('t_tof',np.linspace(400,1300.,9)*1.e-6)
 
         # self.xvar('t_lightsheet_rampup',np.linspace(20.,400.,15)*1.e-3)
         # self.xvar('v_pd_lightsheet_rampup_end',np.linspace(4.,8.6,11))
@@ -48,10 +48,10 @@ class mag_trap(EnvExperiment, Base):
         # self.p.n_lightsheet_evap1_decay_exponential = 1.5
         # self.xvar('n_decay_exponential', np.linspace(2.5,5.,7))
 
-        self.p.N_repeats = 1
+        self.p.N_repeats = 1000
         self.p.t_mot_load = 1.
 
-        # Adjust.__init__(self)
+        Adjust.__init__(self)
 
         # self.p.use_imaging_calibration = 1
         # self.adjust('use_imaging_calibration', min_val=0.,max_val=1.,step=1.,dtype=float)
@@ -102,7 +102,6 @@ class mag_trap(EnvExperiment, Base):
         self.lightsheet.exponential_ramp(t=self.p.t_hf_lightsheet_rampdown,
                              v_start=self.p.v_pd_lightsheet_rampup_end,
                              v_end=self.p.v_pd_hf_lightsheet_rampdown_end)
-        self.diag.lightsheet_evap()     # diagnostic frame (no-op when off)
 
         # self.lightsheet.exponential_rampramp(t=self.p.t_hf_lightsheet_rampdown,
         #                             v_start=self.p.v_pd_lightsheet_rampup_end,

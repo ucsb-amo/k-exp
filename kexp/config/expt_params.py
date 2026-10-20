@@ -99,27 +99,11 @@ class ExptParams(ExptParamsWaxx):
         self.t_gm = 3.e-3
         self.t_gmramp = 6.e-3 #CC changed from 6.5e-3
 
-        # Diagnostic reference images (Base.__init__(diagnostic_images=True);
-        # kexp.control.cameras.diagnostic_images): the 2D-MOT-only window
-        # (push off) at the start of mot(), and where each frame sits.
+        # Diagnostic reference images (Base.__init__(diagnostic_images=True)):
+        # the 2D-MOT-only window (push off) at the start of mot(). Where each
+        # frame sits is on its DiagnosticImage in kexp.config.camera_id
+        # (the t_diag_* params until 2026-10-19).
         self.t_2dmot_prephase = 150.e-3
-        # The 2D-MOT and MOT baslers (Basler a2A3840-45um, rolling shutter)
-        # expose a mid-sensor ROI ~15-40 ms AFTER the trigger edge: lead the
-        # moment of interest by that much, and keep the scene static for the
-        # ROI's row span (~16 ms).
-        # self.t_diag_2dmot_before_push = 10.e-3 # saw the push on (84547-84556), 2026-10-01
-        self.t_diag_2dmot_before_push = 60.e-3 #84556, 2026-10-01
-        self.t_diag_mot_beams_after_on = 5.e-3
-        # self.t_diag_mot_before_end = 50.e-3 # 2026-10-01; >= 100 ms from the GM trigger below
-        self.t_diag_mot_before_end = 150.e-3 #84561, 2026-10-01
-        self.t_diag_gm_beams_after_start = 0.25e-3
-        # self.t_diag_gm_before_end = 0.5e-3 # blank: the ROI exposed after GM (84546-84561)
-        # the GM frame's trigger leads GM start by this (rolling shutter)
-        self.t_diag_gm_trigger_lead = 25.e-3 #84561, 2026-10-01
-        self.t_diag_lightsheet_after_load = 50.e-3
-        self.t_diag_lightsheet_after_evap1 = 3.e-3
-        self.t_diag_tweezer_after_load = 1.e-3
-        self.t_diag_tweezer_after_evap = 1.e-3
         
         self.t_pump_to_F1 = 150.e-6
         self.t_optical_pumping = 200.e-6
@@ -183,7 +167,18 @@ class ExptParams(ExptParamsWaxx):
         # self.t_raman_pi_pulse = 6.7885e-06 #84965, 2026-10-02
         # self.t_raman_pi_pulse = 5.6102e-06 #85151, 2026-10-06
         # self.t_raman_pi_pulse = 5.5257e-06 #85159, 2026-10-06
-        self.t_raman_pi_pulse = 4.9248e-06 #85248, 2026-10-07
+        # self.t_raman_pi_pulse = 4.9248e-06 #85248, 2026-10-07
+        # self.t_raman_pi_pulse = 3.8081e-06 #85284, 2026-10-07
+        # self.t_raman_pi_pulse = 3.8588e-06 #85314, 2026-10-07
+        # self.t_raman_pi_pulse = 3.7870e-06 #85342, 2026-10-07
+        # self.t_raman_pi_pulse = 3.7892e-06 #85409, 2026-10-07
+        # self.t_raman_pi_pulse = 3.8805e-06 #85470, 2026-10-08
+        # self.t_raman_pi_pulse = 3.7785e-06 #85505, 2026-10-08  # night recal: rate pi 1/(2f), f 132.33 +/- 0.94 kHz (pooled)
+        # self.t_raman_pi_pulse = 3.8831e-06 #85547, 2026-10-09  # sensing-day recal: rate pi 1/(2f), f 128.76 +/- 0.60 kHz (pooled)
+        # self.t_raman_pi_pulse = 3.7650e-06 #86101, 2026-10-10 theta re-run Rabi step (code-96), user-approved
+        # self.t_raman_pi_pulse = 3.3964e-06 #86166, 2026-10-10  # recal at new Raman lock 41.440 GHz: rate pi 1/(2f), f 147.21 +/- 0.63 kHz (pooled), -9.8 % accepted under the one-off 20 % window
+        # self.t_raman_pi_pulse = 3.2481e-06 #86240, 2026-10-11  # recal at new Raman lock 41.440 GHz: rate pi 1/(2f), f 153.94 +/- 0.83 kHz (pooled), -4.4 % (accepted, 8 % window)
+        self.t_raman_pi_pulse = 3.4130e-06 #86490, 2026-10-11  # recal at new Raman lock 41.440 GHz: rate pi 1/(2f), f 146.50 +/- 0.70 kHz (pooled), +5.1 % (accepted, 8 % window)
          
         # DAC controlled AO amplitudes
         self.amp_d1_3d_c = 0.3
@@ -264,7 +259,7 @@ class ExptParams(ExptParamsWaxx):
 
         self.v_xshim_current_gm = 0.429
         self.v_yshim_current_gm = 2.86
-        self.v_zshim_current_gm = 0.8
+        self.v_zshim_current_gm = 0.86
 
         self.detune_d1_c_gm = 7.5 # 7.37F
         # self.pfrac_d1_c_gm = .736 # there is an ND on this photodiode -- much higher power/volt than the repump
@@ -391,13 +386,27 @@ class ExptParams(ExptParamsWaxx):
         self.frequency_raman_transition_1m1_2m2 = 147.2593e6 #76037 2026-8-20
         # self.frequency_raman_transition = 147.2593e6 # 62500, 520 G 1-1 to 2-2
         # self.frequency_raman_transition = 119.4639e6 #80650
-        self.frequency_raman_transition = 119.463914e6 #85247, 2026-10-07  # Ramsey 13 detunings x 5 t_ramsey, shared resonance +/- 34 Hz (+14 Hz from #80650)
+        # self.frequency_raman_transition = 119.463914e6 #85247, 2026-10-07  # Ramsey 13 detunings x 5 t_ramsey, shared resonance +/- 34 Hz (+14 Hz from #80650)
+        # self.frequency_raman_transition = 119.463741e6 #85285, 2026-10-07  # Ramsey 13 x 5 after Raman lock change, shared resonance +/- 25 Hz (-173 Hz from #85247)
+        # self.frequency_raman_transition = 119.463653e6 #85343, 2026-10-07  # Ramsey 13 x 5 after the Raman frequency-stabilization session, shared resonance +/- 32 Hz (-88 Hz from #85285)
+        # self.frequency_raman_transition = 119.463592e6 #85410, 2026-10-07  # Ramsey 13 x 5, evening recalibration, shared resonance +/- 33 Hz (-62 Hz from #85343)
+        # self.frequency_raman_transition = 119.463631e6 #85471, 2026-10-08  # Ramsey 13 x 5, morning recalibration, shared resonance +/- 23 Hz (+39 Hz from #85410)
+        # self.frequency_raman_transition = 119.463671e6 #85507, 2026-10-08  # Ramsey 13 x 5, night recalibration, shared resonance +/- 28 Hz (+40 Hz from #85471)
+        # self.frequency_raman_transition = 119.463664e6 #85548, 2026-10-09  # Ramsey 13 x 5, sensing-day, shared resonance +/- 24 Hz (-7 Hz)
+        # self.frequency_raman_transition = 119.463760e6 #86167, 2026-10-10  # recal at new Raman lock 41.440 GHz: Ramsey 13 x 5, shared resonance +/- 27 Hz (+96 Hz)
+        self.frequency_raman_transition = 119.463567e6 #86241, 2026-10-11  # recal at new Raman lock 41.440 GHz: Ramsey 13 x 5, shared resonance +/- 22 Hz (-193 Hz)
         # self.frequency_raman_transition = 119.3977e6 # 176.5 A
 
         self.frequency_raman_transition_nf_1m1_20 = 460.7e6 # 1.5 G 1,-1 to 2,0
         self.frequency_raman_transition_nf_1m1_2m2 = 458.4e6 # 1.5 G 1,-1 to 2,-2
         self.frequency_raman_transition_nf_10_21 = 462.85e6 # 1.5 G 1,-1 to 2,0
         self.frequency_raman_transition_nf_1m1_20 = 459.87e6 # 9 V X shim (v_x_shim_pol_contrast)
+
+        # raman laser frequency, read per shot from the Bristol wavemeter
+        # server into data.frequency_detuned_raman (= mean - reference)
+        self.frequency_raman_wavemeter_reference = 389.28617e12 # K-39 D1 line (Bristol GUI f0)
+        self.N_raman_wavemeter_avg = 20 # readings averaged (~0.2 s apart)
+        self.t_raman_wavemeter_max_age = 10. # readings older than this are not used
 
         # earth shim values to cancel earths field
         self.v_xcancel = 0.

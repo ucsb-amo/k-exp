@@ -135,6 +135,9 @@ class FeedbackReplayCore(Feedback):
         "frequency_raman_transition": "frequency_resonance",
         "frequency_lightshift": "frequency_z_lightshift",
         "back_action_coherence": "back_action_coherence",
+        "read_twist_per_sz": "read_twist_per_sz",
+        "back_action_coherence_slope": "back_action_coherence_slope",
+        "read_alpha_lightshift": "read_alpha_lightshift",
         "feedback_fractional_grid_center_offset": "fractional_grid_center_offset",
         "feedback_fractional_initial_offset": "fractional_initial_offset",
         "feedback_guess_span_Omega": "guess_span_Omega",
@@ -323,6 +326,16 @@ class FeedbackReplayCore(Feedback):
         if kwargs.get("back_action_coherence") is not None:
             p.back_action_coherence = float(kwargs["back_action_coherence"])
 
+        # the state-dependent read model (kexp.base.feedback.READ_TWIST_SIGN)
+        if kwargs.get("read_twist_per_sz") is not None:
+            p.read_twist_per_sz = float(kwargs["read_twist_per_sz"])
+
+        if kwargs.get("back_action_coherence_slope") is not None:
+            p.back_action_coherence_slope = float(kwargs["back_action_coherence_slope"])
+
+        if kwargs.get("read_alpha_lightshift") is not None:
+            p.read_alpha_lightshift = float(kwargs["read_alpha_lightshift"])
+
         if kwargs.get("fractional_grid_center_offset") is not None:
             p.feedback_fractional_grid_center_offset = float(kwargs["fractional_grid_center_offset"])
 
@@ -428,6 +441,10 @@ class FeedbackReplayCore(Feedback):
             if omega_guess.ndim == 1 and omega_guess.size > 0:
                 kwargs["feedback_grid_size"] = int(omega_guess.size)
 
+        # The per-shot read model (p.feedback_read_model scanned: a per-shot A/B of two
+        # read models), kept raw like the offset below; -1 = not interleaved.
+        self._read_model_source = getattr(p, "feedback_read_model", -1.0)
+
         # Keep the raw value for per-repeat replay support when scanned in xvar.
         self._fractional_initial_offset_source = getattr(
             p,
@@ -452,6 +469,23 @@ class FeedbackReplayCore(Feedback):
         if not np.isfinite(arr[0]):
             raise ValueError(f"{name} must contain finite values.")
         return float(arr[0])
+
+    def _resolve_read_model_r(self, n_repeat: int) -> np.ndarray:
+        """The read model of each shot (row): from the run's xvars when it was
+        scanned (any number of xvars, in the replay's row order), else the run's
+        p.feedback_read_model -- one value for every shot (-1: not interleaved),
+        or one value per shot. Anything else raises."""
+        per_shot = self._xvar_per_shot("feedback_read_model", n_repeat)
+        if per_shot is not None:
+            return per_shot
+        values = np.asarray(getattr(self, "_read_model_source", -1.0), dtype=float).ravel()
+        if values.size == 1:
+            return np.full((n_repeat,), float(values[0]), dtype=float)
+        if values.size == int(n_repeat):
+            return values.astype(float)
+        raise ValueError(
+            f"feedback_read_model has {values.size} values for {n_repeat} shots and is not one "
+            f"of the run's xvars: which shot used which model is unknown")
 
     def _resolve_fractional_initial_offset_r(
         self,
@@ -485,6 +519,14 @@ class FeedbackReplayCore(Feedback):
             and np.isclose(values[0], raw[0])
         ):
             values = raw
+        # A run with several xvars (e.g. offset x read model): the raw value is not
+        # one per shot, and the scalar above would replay every shot on shot 0's
+        # grid. While self.p still holds the collapsed first element (no override),
+        # take each shot's offset from the run's xvars, in the replay's row order.
+        if values.size == 1 and raw.size > 0 and np.isclose(values[0], raw[0]):
+            per_shot = self._xvar_per_shot("feedback_fractional_initial_offset", n_repeat)
+            if per_shot is not None and per_shot.size > 1:
+                values = per_shot
         if not np.all(np.isfinite(values)):
             raise ValueError("feedback_fractional_initial_offset must be finite.")
 
@@ -568,7 +610,30 @@ class FeedbackReplayCore(Feedback):
             return x.reshape(1, -1)
         if x.ndim == 2:
             return x
+        if x.ndim > 2:
+            # a run with several xvars: (*xvardims, step) -> one row per shot, in
+            # C order -- the order _xvar_per_shot gives each xvar's values in
+            return x.reshape(-1, x.shape[-1])
         raise ValueError(f"{name} must be 1D or 2D (repeat, step), got shape {x.shape}.")
+
+    def _xvar_per_shot(self, key: str, n_repeat: int) -> Optional[np.ndarray]:
+        """The value of xvar ``key`` for every shot row, in the replay's row order
+        (the run's xvars, C order: the last xvar fastest, as _to_repeat_step
+        flattens the data); None when ``key`` is not one of the run's xvars.
+        Raises when the shot count does not match."""
+        ad = getattr(self, "ad", None)
+        # ad.xvarnames is an ndarray: 'or []' on it raises for two or more xvars
+        xn = getattr(ad, "xvarnames", None)
+        names = [] if xn is None else [str(n) for n in np.atleast_1d(xn).tolist()]
+        if key not in names:
+            return None
+        axes = [np.asarray(x, dtype=float).ravel() for x in ad.xvars]
+        values = np.meshgrid(*axes, indexing="ij")[names.index(key)].ravel()
+        if values.size != int(n_repeat):
+            raise ValueError(
+                f"xvar {key}: {values.size} per-shot values from the run's xvars "
+                f"({[len(a) for a in axes]}) but {n_repeat} shots in the data")
+        return values
 
     def _resolve_trace_indices(
         self,
@@ -1263,10 +1328,14 @@ class FeedbackReplayCore(Feedback):
         omega_control_rr = np.zeros((n_repeat, n_step), dtype=float)
         s_z_true_rr = np.zeros((n_repeat, n_step), dtype=float)
 
+        read_model_r = (self._resolve_read_model_r(n_repeat) if self.read_model_per_shot
+                        else None)
         for r in range(n_repeat):
             grid_r, _ = self._grid_for_offset(float(fractional_initial_offset_r[r]))
             self.omega_guess_list = grid_r
             self.omega_sq_list = grid_r * grid_r
+            if read_model_r is not None:
+                self.select_read_model(float(read_model_r[r]))
             self.reset_feedback_state()
 
             t_pulse_s = np.asarray(t_raman_pulse_rr[r], dtype=float)
@@ -1341,9 +1410,18 @@ class FeedbackReplayCore(Feedback):
                 # z rotation from the imaging light shift, then measurement
                 # back-action on the transverse components only.
                 alpha_z = dt_eff * (omega_true - omega_ctrl) - self.omega_z_lightshift * t_img
+                if self.read_alpha_lightshift_on:
+                    alpha_z = dt_eff * (omega_true - omega_ctrl) - self.read_alpha_lightshift
+                # the state-dependent read (as the kernel; here the truth, so the
+                # twist's sin / cos are exact, not the kernel's polynomials)
+                if self.read_twist_on:
+                    alpha_z = alpha_z + self.read_twist * hz
+                coherence = self.back_action_coherence
+                if self.read_coherence_slope_on:
+                    coherence = float(np.clip(coherence + self.read_coherence_slope * hz, 0.0, 1.0))
                 cos_z, sin_z = np.cos(alpha_z), np.sin(alpha_z)
-                sx = (cos_z * hx + sin_z * hy) * self.back_action_coherence
-                sy = (-sin_z * hx + cos_z * hy) * self.back_action_coherence
+                sx = (cos_z * hx + sin_z * hy) * coherence
+                sy = (-sin_z * hx + cos_z * hy) * coherence
                 sz = hz
 
                 apd_rr[r, i] = v_apd
@@ -1416,6 +1494,9 @@ class FeedbackReplayCore(Feedback):
         self.omega_guess_list = grid_r
         self.omega_sq_list = grid_r * grid_r
 
+        # this shot's read model, as the kernel's initialize_feedback selects it
+        if self.read_model_per_shot:
+            self.select_read_model(float(self._resolve_read_model_r(int(apd_rr.shape[0]))[r]))
         self.reset_feedback_state()
 
         phase_tracker = 0.0

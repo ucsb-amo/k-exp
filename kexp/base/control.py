@@ -19,6 +19,7 @@ from kexp.control.awg_tweezer import tweezer
 from kexp.control.painted_lightsheet import lightsheet
 from waxx.control.integrator import Integrator
 from waxx.util.guis.HMR_magnetometer.hmr_magnetometer_client import HMRClient
+from waxx.util.guis.bristol.bristol_wavemeter_client import BristolAverageReader
 from waxx.control.misc.oscilloscopes import ScopeData
 from waxx.control.beat_lock import BeatLockImagingPID
 
@@ -32,6 +33,9 @@ dvlist = np.linspace(1.,1.,5)
 # wait_for_quantum_machines_handback(t_timeout=...).
 T_OPX_HANDBACK_TIMEOUT = 2.
 T_OPX_TRIGGER_PULSE = 1.e-6
+
+# Failed magnetometer reads in a row before a run stops reading it.
+MAGNETOMETER_MAX_FAILS = 4
 
 class Control():
     def __init__(self):
@@ -49,6 +53,7 @@ class Control():
         self.raman = RamanBeamPair()
         self.raman_nf = RamanBeamPair()
         self.magnetometer = HMRClient()
+        self.raman_wavemeter = BristolAverageReader()
         self.integrator = Integrator()
         self.scope_data = ScopeData()
         self.imaging = BeatLockImagingPID()
@@ -146,9 +151,66 @@ class Control():
     @kernel
     def read_magnetometer(self):
         self.core.wait_until_mu(now_mu())
-        b_magnitude = self.magnetometer.get_field_magnitude()
+        b_magnitude = self._read_magnetometer()
         self.data.b.put_data(b_magnitude)
         self.core.break_realtime()
+
+    def _read_magnetometer(self) -> TFloat:
+        """Host side of read_magnetometer: |B| in G, or 0. (= not read).
+
+        After MAGNETOMETER_MAX_FAILS failed reads in a row (the client gave
+        up after all its attempts), the rest of this run skips the read and
+        records 0., so a dead server stops costing seconds per shot.
+        """
+        if self._magnetometer_skipped:
+            return 0.
+        b = float(self.magnetometer.get_field_magnitude())
+        if getattr(self.magnetometer, 'last_read_failed', False):
+            self._magnetometer_fails += 1
+            if self._magnetometer_fails >= MAGNETOMETER_MAX_FAILS:
+                self._magnetometer_skipped = True
+                print(f"[magnetometer] {self._magnetometer_fails} failed reads in a row: "
+                      "skipping the read for the rest of this run; data.b records 0. (not read).")
+        else:
+            self._magnetometer_fails = 0
+        return b
+
+    @kernel
+    def read_raman_wavemeter(self):
+        """Record the Raman laser frequency for this shot from the Bristol
+        wavemeter server: the mean of the last p.N_raman_wavemeter_avg
+        readings (no older than p.t_raman_wavemeter_max_age) before this
+        call, i.e. the few seconds before the shot starts -- not the
+        frequency during the Raman pulses.
+
+        Stores mean - p.frequency_raman_wavemeter_reference in
+        data.frequency_detuned_raman and the sample std of the readings in
+        data.frequency_raman_detuning_std (Hz). Fewer fresh readings than
+        asked for are averaged as they are; none (server down, too old, or
+        wavemeter disconnected) stores 0. in both. Bounded: one request with
+        a 0.5 s deadline, skipped for 30 s after a failure (see
+        waxx BristolAverageReader).
+        """
+        self.core.wait_until_mu(now_mu())
+        f = self._read_raman_wavemeter()
+        self.data.frequency_detuned_raman.put_data(f[0])
+        self.data.frequency_raman_detuning_std.put_data(f[1])
+        self.core.break_realtime()
+
+    def _read_raman_wavemeter(self) -> TList(TFloat):
+        """Host side of read_raman_wavemeter: [detuning, std] in Hz, or
+        [0., 0.] when no reading was had."""
+        try:
+            reply = self.raman_wavemeter.get_average(
+                int(self.p.N_raman_wavemeter_avg),
+                float(self.p.t_raman_wavemeter_max_age))
+            if reply is None or not reply.get("ok") or reply.get("n_used", 0) < 1:
+                return [0., 0.]
+            detuning = float(reply["mean_hz"]) - float(self.p.frequency_raman_wavemeter_reference)
+            return [detuning, float(reply["std_hz"])]
+        except Exception as e:
+            print(f"[raman wavemeter] read failed, recording 0.: {e!r}")
+            return [0., 0.]
 
     @kernel
     def prep_raman(self,

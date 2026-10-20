@@ -1,7 +1,12 @@
 from waxx.base import Scanner
+from kexp.config import ExptParams
 
 class Adjust(Scanner):
-    def __init__(self):
+    def __init__(self, p=ExptParams()):
+
+        if not hasattr(self, 'p'):
+            self.p = p
+
         self.adjust('t_tof',min_val=20.e-6, max_val=20.e-3)
 
         self.adjust('i_mot', min_val=0., max_val=80.)
@@ -42,6 +47,7 @@ class Adjust(Scanner):
         self.adjust('t_hf_lightsheet_rampdown',min_val=0.01, max_val=1.)
         self.adjust('v_pd_hf_lightsheet_rampdown_end',min_val=0.5,max_val=6.)
         self.adjust('i_hf_lightsheet_evap1_current', min_val=184., max_val=250., step=0.5)
+        self.adjust('v_pd_hf_tweezer_1064_ramp_end',min_val=0.1,max_val=9.8)
         self.adjust('i_hf_tweezer_load_current',min_val=184.,max_val=220., step=1.)
         self.adjust('t_feshbach_field_ramp', min_val=10.e-3, max_val=250.e-3, step=10.e-3)
         self.adjust('i_hf_tweezer_evap1_current',min_val=192.,max_val=197., step=0.5)
