@@ -120,8 +120,10 @@ _registered = []
 
 
 def _specs(on_error="dummy"):
+    """As diagnostic_frame.bind makes them."""
     return [dict(camera=e.camera, key=list(e.frames), mode="triggered", on_error=on_error,
-                 exposure_time=e.exposure_time, gain=e.gain, roi=e.roi,
+                 exposure_time=e.images[0].exposure_time, gain=e.images[0].gain,
+                 crop_to_saved_roi=False, frame_rois=e.frame_rois,
                  frame_settings=e.frame_settings or None)
             for e in diagnostic_cameras.entries()]
 
@@ -154,9 +156,9 @@ def test_shared_trigger_line_streams_become_siblings(rig):
     out = cs_mod.camera_streams(fe, _specs())
     _keep(fe)
     by_key = {e.key: s for e, s in zip(entries, out)}
-    assert by_key["mot"]._siblings == [by_key["x"]]
-    assert by_key["x"]._siblings == [by_key["mot"]]
-    assert by_key["xy"]._siblings == []
+    assert by_key["mot_basler"]._siblings == [by_key["x_basler"]]
+    assert by_key["x_basler"]._siblings == [by_key["mot_basler"]]
+    assert by_key["xy_basler"]._siblings == []
 
 
 def test_failed_camera_gets_a_placeholder_in_its_place(rig, capsys):

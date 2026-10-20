@@ -3,8 +3,8 @@
 No Qt here: the per-frame statistics, the per-run tally and the history the
 reference is built from are plain Python, so they can be tested alone.
 
-A frame's numbers are taken over the frame exactly as the run stores it (the
-DiagnosticCamera ROI, block-averaged when the camera has none), in camera
+A frame's numbers are taken over the frame exactly as the run stores it (its
+image's ROI, block-averaged full frame when it has none), in camera
 counts (DN), with nothing subtracted. Each frame's ``<key>_meta`` record says
 what it was taken with; a record whose ``seq`` is NaN is a cleared slot (a
 warm-up / repeated shot starting over), not a frame, and is never counted.

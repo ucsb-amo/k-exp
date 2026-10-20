@@ -7,7 +7,7 @@ count of the latest shot and of the run so far, against a saved reference.
 Where the numbers come from: liveOD broadcasts an AUX_NOTICE for every
 PUT_DATA (no arrays); the viewer then asks liveOD for the latest frame of
 each announced key (GET_AUX_DATA) with its ``<key>_meta`` record. Means are
-over the frame as the run stores it (the DiagnosticCamera ROI), in DN, raw --
+over the frame as the run stores it (its image's ROI), in DN, raw --
 nothing subtracted. A frame is compared with a reference only when it was
 taken at the reference's exposure and gain. A frame liveOD never received
 (a placeholder camera, a dropped frame) is shown as missing, never as zero.

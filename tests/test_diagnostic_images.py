@@ -18,7 +18,7 @@ from types import SimpleNamespace
 import pytest
 
 from waxx.control.cameras import camera_stream_client as csc
-from waxx.control.cameras.diagnostic_frame import DiagnosticCamera, DiagnosticImage
+from waxx.control.cameras.diagnostic_frame import DiagnosticImage
 from waxx.control.cameras.diagnostic_frame import diagnostic_frame as diagnostic_frame_waxx
 
 from kexp.config.camera_id import cameras, diagnostic_cameras, diagnostic_frame
@@ -48,32 +48,42 @@ def _bound(enabled=False, make_streams=None, expt=None):
 # ---- config ---------------------------------------------------------------
 
 def test_the_config_carried_over_unchanged():
-    """Frames, per-frame settings and camera settings as on main before the
-    move (k-exp bc551317); offsets as the t_diag_* params; the tweezer pickoff
-    as found in the live tree on 2026-10-19."""
+    """Each image at the exposure / gain / ROI it ran at when they were set per
+    camera (k-exp 67e72978: the camera's, or the image's own exposure / gain);
+    offsets as the t_diag_* params; the tweezer pickoff and the x basler's ROI
+    (#87302) as on 2026-10-19."""
     d = diagnostic_cameras
-    assert [(e.key, e.camera.key) for e in d.entries()] == [
-        ("mot_2d", "basler_2dmot"), ("xy", "xy_basler"), ("z", "z_basler"),
-        ("mot", "mot_basler"), ("x", "x_basler"), ("tweezer_pickoff", "tweezer_pickoff_basler")]
+    assert [e.key for e in d.entries()] == [
+        "basler_2dmot", "xy_basler", "z_basler", "mot_basler", "x_basler",
+        "tweezer_pickoff_basler"]
+    assert all(e.camera is getattr(cameras, e.key) for e in d.entries())
     assert {e.key: e.frames for e in d.entries()} == {
-        "mot_2d": ["img_2dmot"],
-        "xy": ["img_mot_beams_xy", "img_gm_beams_xy"],
-        "z": ["img_mot_beams_z", "img_gm_beams_z"],
-        "mot": ["img_mot", "img_gm"],
-        "x": ["img_tweezer_load_x", "img_tweezer_evap_x"],
-        "tweezer_pickoff": ["img_tweezer_pickoff"]}
+        "basler_2dmot": ["img_2dmot"],
+        "xy_basler": ["img_mot_beams_xy", "img_gm_beams_xy"],
+        "z_basler": ["img_mot_beams_z", "img_gm_beams_z"],
+        "mot_basler": ["img_mot", "img_gm"],
+        "x_basler": ["img_tweezer_load_x", "img_tweezer_evap_x"],
+        "tweezer_pickoff_basler": ["img_tweezer_pickoff"]}
+    xy, z, mot, x = ([382, 398, 943, 755], [660, 300, 1260, 900], [1668, 1049, 2373, 1767],
+                     [636, 366, 872, 662])
+    assert {k: (img.exposure_time, img.gain, img.roi) for k, img in d.images().items()} == {
+        "img_2dmot": (3.5e-3, 20., [1685, 741, 1959, 1022]),
+        "img_mot_beams_xy": (19.e-6, 0., xy),
+        "img_gm_beams_xy": (19.e-6, 18., xy),
+        "img_mot_beams_z": (19.e-6, 0., z),
+        "img_gm_beams_z": (19.e-6, 0., z),
+        "img_mot": (300.e-6, 3., mot),
+        "img_gm": (3.e-3, 30., mot),
+        "img_tweezer_load_x": (50.e-6, 5., x),
+        "img_tweezer_evap_x": (300.e-6, 30., x),
+        "img_tweezer_pickoff": (2.e-6, 0., [1799, 909, 2787, 1804])}
+    assert all(img.given == ("exposure_time", "gain", "roi") for img in d.images().values())
+    # what the streams set between frames: the frames at other settings than their camera's first
     assert {e.key: e.frame_settings for e in d.entries()} == {
-        "mot_2d": {}, "xy": {"img_gm_beams_xy": {"gain": 18.}}, "z": {},
-        "mot": {"img_gm": {"exposure_time": 3.e-3, "gain": 30.}},
-        "x": {"img_tweezer_load_x": {"exposure_time": 50.e-6, "gain": 5.}},
-        "tweezer_pickoff": {}}
-    assert {e.key: (e.exposure_time, e.gain, e.roi) for e in d.entries()} == {
-        "mot_2d": (3.5e-3, 20., [1685, 741, 1959, 1022]),
-        "xy": (19.e-6, 0., [382, 398, 943, 755]),
-        "z": (19.e-6, 0., [660, 300, 1260, 900]),
-        "mot": (300.e-6, 3., [1668, 1049, 2373, 1767]),
-        "x": (300.e-6, 30., [1511, 141, 1729, 788]),
-        "tweezer_pickoff": (2.e-6, 0., [1799, 909, 2787, 1804])}
+        "basler_2dmot": {}, "xy_basler": {"img_gm_beams_xy": {"exposure_time": 19.e-6, "gain": 18.}},
+        "z_basler": {}, "mot_basler": {"img_gm": {"exposure_time": 3.e-3, "gain": 30.}},
+        "x_basler": {"img_tweezer_evap_x": {"exposure_time": 300.e-6, "gain": 30.}},
+        "tweezer_pickoff_basler": {}}
     assert {k: (img.t_offset, img.t_stage) for k, img in d.images().items()} == {
         "img_2dmot": (-60.e-3, None),             # t_diag_2dmot_before_push
         "img_mot_beams_xy": (5.e-3, None),        # t_diag_mot_beams_after_on
@@ -90,64 +100,95 @@ def test_the_config_carried_over_unchanged():
         "img_mot_beams_z": "counts", "img_gm_beams_z": "counts", "img_mot": "image",
         "img_gm": "image", "img_tweezer_load_x": None, "img_tweezer_evap_x": None,
         "img_tweezer_pickoff": "image"}
-    assert d.mot.frame_index("img_gm") == 1 and d.mot.frame_index("img_2dmot") == -1
+    mot = d.entries()[3]
+    assert mot.frame_index("img_gm") == 1 and mot.frame_index("img_2dmot") == -1
+    assert mot.frame_rois == {"img_mot": [1668, 1049, 2373, 1767], "img_gm": [1668, 1049, 2373, 1767]}
 
 
 def test_tweezer_pickoff_entry():
     """The tweezer pickoff camera (2026-10-19): on the 2D-MOT basler's trigger
     line, Line2, so the two streams are siblings."""
-    e = diagnostic_cameras.tweezer_pickoff
-    assert e.camera.key == "tweezer_pickoff_basler" and e.camera.serial_no == "40427782"
-    assert e.camera.trigger_ttl == cameras.basler_2dmot.trigger_ttl == "basler_2dmot"
-    assert e.camera.trigger_source == "Line2"
+    cam = diagnostic_cameras.img_tweezer_pickoff.camera
+    assert cam.key == "tweezer_pickoff_basler" and cam.serial_no == "40427782"
+    assert cam.trigger_ttl == cameras.basler_2dmot.trigger_ttl == "basler_2dmot"
+    assert cam.trigger_source == "Line2"
+
+
+class _Frame(diagnostic_frame_waxx):
+    def __init__(self, body, setup=None):
+        self.setup()
+        if setup:
+            setup(self)
+        body(self)
+        self.cleanup()
 
 
 def test_names_labels_and_refusals():
     d = diagnostic_cameras
-    assert d.img_mot.key == "img_mot" and d.img_mot.camera is d.mot
-    assert d.mot.images == [d.img_mot, d.img_gm]
-    assert d.mot.label == "MOT basler" and d.img_mot_beams_z.label == "MOT beams"
-
-    class Frame(diagnostic_frame_waxx):
-        def __init__(self, body):
-            self.setup()
-            body(self)
-            self.cleanup()
+    assert d.img_mot.key == "img_mot" and d.img_mot.camera is cameras.mot_basler
+    mot = d.entries()[3]
+    assert mot.images == [d.img_mot, d.img_gm]
+    assert mot.label == "mot_basler" and d.img_mot_beams_z.label == "MOT beams"
 
     def ok(f):
-        f.cam = f.camera(cameras.z_basler)
-        f.img_a_b = f.image(f.cam, t_offset=1.e-3)
-    f = Frame(ok)
-    assert f.img_a_b.label == "a b" and f.cam.label == "z basler" and f.cam.frames == ["img_a_b"]
+        f.img_a_b = f.image(cameras.z_basler, t_offset=1.e-3)
+    f = _Frame(ok)
+    (cam,) = f.entries()
+    assert f.img_a_b.label == "a b" and cam.label == "z_basler" and cam.frames == ["img_a_b"]
 
     def twice(f):
-        f.cam = f.camera(cameras.z_basler)
-        f.img_a = f.image(f.cam)
+        f.img_a = f.image(cameras.z_basler)
         f.img_b = f.img_a
     with pytest.raises(ValueError, match="already .img_a"):
-        Frame(twice)
+        _Frame(twice)
 
     def taken(f):
-        f.cam = f.camera(cameras.z_basler)
-        f.images = f.image(f.cam)
+        f.images = f.image(cameras.z_basler)
     with pytest.raises(ValueError, match="taken"):
-        Frame(taken)
+        _Frame(taken)
 
     def unassigned(f):
-        f.cam = f.camera(cameras.z_basler)
-        f.image(f.cam)
+        f.image(cameras.z_basler)
     with pytest.raises(ValueError, match="not assigned"):
-        Frame(unassigned)
+        _Frame(unassigned)
 
-    def foreign(f):
-        f.img_a = f.image(DiagnosticCamera(cameras.z_basler))
-    with pytest.raises(ValueError, match="not an attribute"):
-        Frame(foreign)
+    def old_camera_line(f):
+        f.z = f.camera(cameras.z_basler, exposure_time=19.e-6)
+    with pytest.raises(TypeError, match="no longer assigned"):
+        _Frame(old_camera_line)
 
     with pytest.raises(ValueError, match="show"):
-        DiagnosticImage(DiagnosticCamera(cameras.z_basler), show="table")
-    with pytest.raises(TypeError, match="DiagnosticCamera"):
-        DiagnosticImage(cameras.z_basler)
+        DiagnosticImage(cameras.z_basler, show="table")
+    with pytest.raises(TypeError, match="camera-frame entry"):
+        DiagnosticImage("40416468")
+    for bad in ([0, 0, 10], [5, 0, 5, 10], [-1, 0, 4, 4]):
+        with pytest.raises(ValueError, match="roi"):
+            DiagnosticImage(cameras.z_basler, roi=bad)
+
+
+def test_defaults_from_the_camera_entry():
+    """What an image does not give: the entry's absorption exposure / gain (z
+    basler: 19 us, 24 dB) and the full frame; the frame's default_imaging_type
+    picks another set. The shared entry is never changed."""
+    before = (cameras.z_basler.exposure_time, cameras.z_basler.gain)
+
+    def body(f):
+        f.img_a = f.image(cameras.z_basler)
+        f.img_b = f.image(cameras.z_basler, gain=3., roi=[1, 2, 30, 40])
+    f = _Frame(body)
+    assert (f.img_a.exposure_time, f.img_a.gain, f.img_a.roi, f.img_a.given) == (19.e-6, 24., None, ())
+    assert (f.img_b.exposure_time, f.img_b.gain, f.img_b.roi) == (19.e-6, 3., [1, 2, 30, 40])
+    assert f.img_b.given == ("gain", "roi")
+    assert f.entries()[0].frame_settings == {"img_b": {"exposure_time": 19.e-6, "gain": 3.}}
+    assert f.entries()[0].frame_rois == {"img_a": None, "img_b": [1, 2, 30, 40]}
+
+    from waxx.control.cameras.camera_param_classes import img_types
+
+    def fluorescence(f):
+        f.default_imaging_type = img_types.FLUORESCENCE
+    f = _Frame(lambda f: setattr(f, "img_a", f.image(cameras.z_basler)), setup=fluorescence)
+    assert (f.img_a.exposure_time, f.img_a.gain) == (1.e-3, 0.)
+    assert (cameras.z_basler.exposure_time, cameras.z_basler.gain) == before
 
 
 # ---- binding --------------------------------------------------------------
@@ -170,8 +211,10 @@ def test_bind_with_diagnostics_off(monkeypatch):
 
 def test_bind_with_streams_and_the_edge_reaching_its_stream(capsys):
     calls = []
+    seen = []
 
     def make_streams(expt, specs):
+        seen.extend(specs)
         out = []
         for i, spec in enumerate(specs):
             if i % 2 == 0:
@@ -197,7 +240,17 @@ def test_bind_with_streams_and_the_edge_reaching_its_stream(capsys):
     diag.img_mot.announce_edge(5)                           # not live: nothing, nothing raised
     assert calls == [(4, 1234, 1)]
     out = capsys.readouterr().out
-    assert "connected: mot_2d, z, x | NOT connected: xy, mot, tweezer_pickoff" in out
+    assert ("connected: basler_2dmot, z_basler, x_basler | NOT connected: xy_basler, mot_basler, "
+            "tweezer_pickoff_basler") in out
+    # the MOT basler's stream: at its first frame's settings, each frame cropped to its own ROI,
+    # no saved viewer ROI read
+    spec = seen[3]
+    assert spec["camera"] is cameras.mot_basler and spec["key"] == ["img_mot", "img_gm"]
+    assert (spec["exposure_time"], spec["gain"], spec["crop_to_saved_roi"]) == (300.e-6, 3., False)
+    assert spec["frame_settings"] == {"img_gm": {"exposure_time": 3.e-3, "gain": 30.}}
+    assert spec["frame_rois"] == {"img_mot": [1668, 1049, 2373, 1767],
+                                  "img_gm": [1668, 1049, 2373, 1767]}
+    assert seen[0]["frame_settings"] is None
 
 
 def test_t_stage_from_the_run_params_and_scan(capsys):
@@ -223,13 +276,16 @@ def test_the_record():
     diag.img_mot.t_offset = -0.1           # an experiment's own offset, set in prepare
     diag.resolve_stages(SimpleNamespace(t_mot_load=0.5))
     rec = json.loads(json.dumps(diag.record()))
-    assert rec["enabled"] is False
-    assert rec["images"]["img_mot"] == {"camera": "mot", "camera_id": "mot_basler", "frame": 0,
-                                        "t_offset": -0.1, "t_stage": "t_mot_load", "t_stage_s": 0.5,
-                                        "taken": False}
-    assert rec["images"]["img_gm"] == {"camera": "mot", "camera_id": "mot_basler", "frame": 1,
-                                       "t_offset": -25.e-3, "t_stage": None, "t_stage_s": None,
-                                       "taken": False, "exposure_time": 3.e-3, "gain": 30.}
+    assert rec["enabled"] is False and rec["default_imaging_type"] == "ABSORPTION"
+    roi = [1668, 1049, 2373, 1767]
+    assert rec["images"]["img_mot"] == {"camera": "mot_basler", "camera_id": "mot_basler",
+                                        "frame": 0, "t_offset": -0.1, "t_stage": "t_mot_load",
+                                        "t_stage_s": 0.5, "taken": False, "exposure_time": 300.e-6,
+                                        "gain": 3., "roi": roi, "from_camera_entry": []}
+    assert rec["images"]["img_gm"] == {"camera": "mot_basler", "camera_id": "mot_basler",
+                                       "frame": 1, "t_offset": -25.e-3, "t_stage": None,
+                                       "t_stage_s": None, "taken": False, "exposure_time": 3.e-3,
+                                       "gain": 30., "roi": roi, "from_camera_entry": []}
     assert diagnostic_cameras.img_mot.t_offset == -150.e-3
 
 
