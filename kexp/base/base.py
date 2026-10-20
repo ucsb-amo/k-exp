@@ -242,10 +242,12 @@ class Base(Expt, Devices, Cooling, Image, Cameras, Control, Clients):
                     init_ry = True,
                     force_dds_init = True):
         """
-        force_dds_init: run the full AD9910 init on every channel. By default
-        (False) channels that still hold their PLL / SYNC setup from an earlier
-        run are skipped, which saves ~1.5 s per run -- see Devices.init_all_dds
-        for the checks. Pass True after touching the Urukul clocking or SYNC
+        force_dds_init: run the full AD9910 init on every channel. The default
+        is True (since k-exp 68d8dcb8, 2026-09-22): every run pays the full init
+        (~1.4 s). With False, channels that still hold their PLL / SYNC setup
+        from an earlier run are skipped (see Devices.init_all_dds for the
+        checks); that fast path stays off until the Raman relative-phase check
+        has validated it. Keep True after touching the Urukul clocking or SYNC
         wiring, or whenever DDS phase coherence is in doubt.
         """
 
