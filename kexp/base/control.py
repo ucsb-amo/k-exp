@@ -111,6 +111,8 @@ class Control():
         
         self.tweezer.pid1_int_hold_zero.pulse(1.e-6)
         self.tweezer.pid1_int_hold_zero.on()
+        # PID2 AO on at the start of every shot (left alone if PID2 is enabled)
+        self.tweezer.keep_ao2_on()
 
     @kernel
     def reset_coils(self):

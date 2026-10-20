@@ -122,15 +122,37 @@ class tweezer(wax_tweezer.TweezerController, PaintedBeam):
 
     @kernel
     def off(self):
-        """Turns the tweezer off, disables both PIDs, and zeros the integrator
-        for PID1.
-        """        
+        """Turns the tweezer off (AO1 off, AWG rf sw off), disables PID2, and
+        zeros the integrator for PID1. AO2 is left ON (ao2_idle): it stays on
+        whenever the low-power servo is not in use, so its thermal load does
+        not change between shots and runs. The light is cut by AO1 and the rf
+        sw.
+
+        ao2_idle's DAC write takes the slot AO2's switch-off write used to, so
+        the timeline advances by the same amount as before.
+        """
         self.ao1_dds.off()
-        self.ao2_dds.off()
+        self.ao2_idle()
         self.pid1_int_hold_zero.on()
         self.pid1_dac.set(v=0.)
-        self.pid2_enable_ttl.off()
         self.sw_ttl.off()
+
+    @kernel
+    def ao2_idle(self):
+        """PID2 disabled, AO2 rf on (setpoint restored as in on()): the state
+        AO2 holds whenever the low-power servo is not in use, including
+        between runs.
+        """
+        self.pid2_enable_ttl.off()
+        self.ao2_dds.on()
+
+    @kernel
+    def keep_ao2_on(self):
+        """AO2 rf on, unless PID2 is enabled (a low_power ramp holds the
+        power, and AO2 is then the servo's): that case is left alone.
+        """
+        if self.pid2_enable_ttl.state == 0:
+            self.ao2_dds.on()
 
     @kernel
     def set_power(self,v_pd=dv,load_dac=True):

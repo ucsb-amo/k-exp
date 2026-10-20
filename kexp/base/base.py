@@ -238,6 +238,10 @@ class Base(Expt, Devices, Cooling, Image, Cameras, Control, Clients):
             self.set_all_dds() # set DDS to default values
         if dds_off:
             self.switch_all_dds(0) # turn all DDS off to start experiment
+            self.core.break_realtime()
+            # except the tweezer's PID2 AO, which stays on (PID2 disabled)
+            # whenever the low-power servo is not in use
+            self.tweezer.ao2_idle()
         self.core.break_realtime()
         # A crashed OPX run leaves this line HIGH (raman 80/150 AOs routed to
         # a halted OPX); nothing else drops it before the first shot's
@@ -431,6 +435,8 @@ class Base(Expt, Devices, Cooling, Image, Cameras, Control, Clients):
         self.core.break_realtime()
         self.reset_coils()
         self.lightsheet.off()
+        # PID2 AO stays on between shots (left alone if PID2 is enabled)
+        self.tweezer.keep_ao2_on()
 
         # line_trigger (and every other TTLInOut) input FIFO is drained in
         # cleanup_scan_kernel_wax via ttl_frame.clear_input_events().
