@@ -790,25 +790,33 @@ def test_1_warm_start_happy_path(lab, monkeypatch, tmp_path):
 
 
 def test_2b_a_person_hold_while_it_waits(lab, monkeypatch, tmp_path):
+    """Decision 1 (user, 2026-10-19): the hold keeps the warm process ready
+    (nothing claimed); GO only after the release."""
     lab = lab()
     a, b, proc = warm_job_ready(lab, monkeypatch, tmp_path)
     files0, talk0 = lab.hdf5_files(), lab.saver.server_talk.next_id
     assert lab.q.hold_request({"reason": "aligning", "by": "jp"})["status"] == "ok"
     lab.tick()
-    assert lab.q._jobs[b].warm["state"] == "aborting"
-    assert proc.join() == ("exit", 78)
+    assert lab.q._jobs[b].warm["state"] == "ready"
+    # the slot job ends while held: still no GO, nothing claimed, the
+    # reservation still the warm process's
+    end_slot_job(lab)
+    lab.tick(3)
+    time.sleep(3 * proc.qg.POLL_S)
+    assert lab.job(a)["state"] == "saved"
+    assert lab.job(b)["state"] == "queued" and lab.q._jobs[b].warm.get("go") is None
+    assert proc.thread.is_alive()
     assert_nothing_claimed(lab, proc, files0, talk0)
-    proc.exit()
-    lab.tick(2)
-    jb = lab.job(b)
-    assert jb["state"] == "queued" and jb["warm"] is None
-    assert len(lab.spawner.calls) == 2                               # held: no new warm launch
-    assert lab.poll()["reservation"] is None
+    assert lab.poll()["reservation"]["pid"] == os.getpid()
+    assert len(lab.spawner.calls) == 2                               # no cold launch
     assert lab.q.release_request({"by": "jp", "owner": "person"})["status"] == "ok"
     lab.tick()
-    assert len(lab.spawner.calls) == 3                               # released: re-warmed
-    assert lab.spawner.calls[2]["env"]["WAXX_QUEUE_JOB"] == lab.qj(b)
-    assert lab.hdf5_files() == files0
+    assert lab.job(b)["state"] == "running" and lab.q._jobs[b].warm["go"] is not None
+    result = proc.join()
+    assert result[0] == "return", result
+    ev = names(lab.events)
+    assert ev.count("claim") == 1 and ev.count("START_RUN") == 1 and "INIT_RUN" not in ev
+    assert len(lab.spawner.calls) == 2                               # the warm process ran it
 
 
 # ------------------------------------------------------------------ 2. discard while waiting
