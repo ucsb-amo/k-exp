@@ -92,7 +92,8 @@ class camera_frame(camera_frame_waxx):
         # 3.45 um per user, 2026-09-30.
         self.mot_basler = BaslerParams(serial_number='40277706',
                                        trigger_source='Line2',
-                                       trigger_ttl=_ttl.mot_basler_trigger)
+                                       trigger_ttl=_ttl.mot_basler_trigger,
+                                       pixel_size_m=2.e-6)
 
         # Tweezer beam pickoff, for the beam position each shot ("image plain
         # camera" in the Camera Viewer). Trigger wired to the 2D-MOT basler's
@@ -101,7 +102,8 @@ class camera_frame(camera_frame_waxx):
         # Resolution/magnification not set.
         self.tweezer_pickoff_basler = BaslerParams(serial_number='40427782',
                                                    trigger_source='Line2',
-                                                   trigger_ttl=_ttl.basler_2dmot)
+                                                   trigger_ttl=_ttl.basler_2dmot,
+                                                   pixel_size_m=2.5e-6)
 
         self.cleanup()
 
