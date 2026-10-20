@@ -170,8 +170,12 @@ class diagnostic_frame(diagnostic_frame_waxx):
                                  label='GM fluorescence', show='image')
 
         # shares the MOT basler's trigger line
+        # self.x = self.camera(cameras.x_basler, label='x basler',
+        #                      exposure_time=300.e-6, gain=30., roi=[1511, 141, 1729, 788])
+        # roi moved to the realigned tweezer: full-sensor run 87302 put the beam at (x,y)=(749,519); ROI = pixels
+        # above 5% of the full-power peak, padded 30 px (user OK'd the ROI change, 2026-10-19)
         self.x = self.camera(cameras.x_basler, label='x basler',
-                             exposure_time=300.e-6, gain=30., roi=[1511, 141, 1729, 788])
+                             exposure_time=300.e-6, gain=30., roi=[636, 366, 872, 662]) #87302, 2026-10-19
         # end of the tweezer ramp-up
         self.img_tweezer_load_x = self.image(self.x, t_offset=1.e-3, exposure_time=50.e-6, gain=5.,
                                              label='tweezer load', show=None)
