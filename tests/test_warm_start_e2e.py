@@ -82,8 +82,8 @@ class WarmE2E(EnvExperiment, Base):
 
     @kernel
     def scan_kernel(self):
-        self.diag.mot_2d()
-        self.diag.tweezer_evap()
+        self.diag.img_2dmot.trigger()
+        self.diag.img_tweezer_evap_x.trigger()
         delay(self.p.t_tof)
 
     @kernel

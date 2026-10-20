@@ -125,6 +125,34 @@ def test_reference_csv_round_trip(tmp_path):
     assert [p.name for p in tmp_path.iterdir()] == ["refs.csv"]      # no temp file left
 
 
+def test_frames_follow_the_config():
+    from kexp.config.camera_id import diagnostic_cameras
+    shown = [(i.key, i.show) for e in diagnostic_cameras.entries() for i in e.images if i.show]
+    assert FRAME_KEYS == tuple([k for k, s in shown if s == "image"]
+                               + [k for k, s in shown if s == "counts"])
+    assert "img_tweezer_evap_x" not in FRAME_KEYS                   # show=None
+
+
+def test_a_reference_keeps_the_columns_of_frames_no_longer_configured(tmp_path):
+    """Dropping a frame from the config never drops its saved references."""
+    import csv
+    path = tmp_path / "refs.csv"
+    h = FrameHistory()
+    h.add("img_mot", _stats(10, idx=0))
+    store = ReferenceStore(str(path))
+    old, _ = build_reference(h, 1, now=100.)
+    old["extra"] = {"img_gone__mean": "42.5", "img_gone__n": "7"}
+    store.write([old])
+    store.append(build_reference(h, 1, now=200.)[0])
+    store.delete(200.)
+    store.append(build_reference(h, 1, now=300.)[0])
+    with open(path, newline="", encoding="utf-8") as f:
+        rows = list(csv.DictReader(f))
+    assert [(r["timestamp_s"], r["img_gone__mean"], r["img_gone__n"]) for r in rows] == [
+        ("100.0", "42.5", "7"), ("300.0", "", "")]
+    assert "img_gone" not in store.load()[1]["keys"]
+
+
 def _items(run, idx, frames):
     """A GET_AUX_DATA reply: ``frames`` = {key: (img, meta_row)}."""
     out = {}
@@ -152,7 +180,7 @@ def test_window_fed_fake_replies(qapp):
         t = w.table
         # folded by default, the trend open; the header still says how things are
         assert not w.values_section.expanded() and w.trend_section.expanded()
-        assert w.values_section.summary.text().startswith("2/7 frames this run")
+        assert w.values_section.summary.text().startswith(f"2/{len(FRAME_KEYS)} frames this run")
         assert "1 with saturated pixels" in w.values_section.summary.text()
         # every row starts on the total: 600 px x 14 DN
         assert all(c.currentText() == "total" for c in w.stat_combos.values())

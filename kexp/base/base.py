@@ -1,3 +1,4 @@
+import json
 import numpy as np
 import os
 
@@ -16,7 +17,7 @@ from kexp.config.calibration import CALIBRATION_CONFIG
 from kexp.config.camera_id import cameras
 from kexp.config.ip import PATHS, server_talk
 from kexp.config.data_vault import DataVault
-from kexp.control.cameras.diagnostic_images import DiagnosticImages
+from kexp.control.cameras.diagnostic_images import diagnostic_images as make_diagnostic_images
 from kexp.control.cameras.camera_stream import connect_camera_streams
 
 from kexp.util.artiq.async_print import aprint
@@ -85,14 +86,14 @@ class Base(Expt, Devices, Cooling, Image, Cameras, Control, Clients):
         Clients.__init__(self, suppress_live_od=suppress_live_od)
 
         # Reference images of the cooling sequence, every shot (self.diag,
-        # kexp.control.cameras.diagnostic_images; fired from Cooling.mot, gm,
-        # prepare_hf/lf_tweezers). On by default. They go to liveOD during
+        # kexp.config.camera_id.diagnostic_frame; each image's trigger() is
+        # called in Cooling.mot, cmot_d1, gm, prepare_hf/lf_tweezers). On by default. They go to liveOD during
         # the run whatever save_data is: liveOD keeps the latest of each and
         # broadcasts them, and writes them only into a run that saves. A run
         # that suppresses liveOD has nowhere to send them. Built here without
         # a connection; the claim connects the cameras (claim_hardware).
         self.diagnostic_images = bool(diagnostic_images) and not bool(suppress_live_od)
-        self.diag = DiagnosticImages(self, enabled=self.diagnostic_images)
+        self.diag = make_diagnostic_images(self, enabled=self.diagnostic_images)
 
         # Resolved above: in when acquiring with the APD, out when a camera
         # grabs frames, None (stage left alone) when acquiring nothing.
@@ -132,6 +133,14 @@ class Base(Expt, Devices, Cooling, Image, Cameras, Control, Clients):
         # (a cold run claims inside: stage, SLM, wavemeter, cameras, liveOD
         # start, device-state stamp, announce -- see claim_hardware and
         # claim_after_start; a warm-launched one after its compile)
+
+        # where each diagnostic frame is taken, as this run takes it (t_stage
+        # from the params and scan as prepare left them; before the compile:
+        # in_stage is read by the kernel). The record is written again by
+        # claim_hardware once the cameras are connected ("taken").
+        self.diag.resolve_stages(self.params, self.scan_xvars)
+        self._extra_file_texts["diagnostic_images"] = json.dumps(self.diag.record())
+
         self.finish_prepare_wax(N_repeats=N_repeats,shuffle=shuffle)
 
         # self.configure_imaging_system(polmod_ao_bool=self._polmod_config)
@@ -155,6 +164,9 @@ class Base(Expt, Devices, Cooling, Image, Cameras, Control, Clients):
         self._fzw.connect()
         connect_camera_streams(self)
         self.diag.report_connected()
+        # the record as the run takes it: a camera that failed to connect
+        # takes nothing (its edges still fire; nothing is stored)
+        self._extra_file_texts["diagnostic_images"] = json.dumps(self.diag.record())
 
     def claim_after_start(self):
         """The run's claim, after the liveOD start and BEFORE the monitor

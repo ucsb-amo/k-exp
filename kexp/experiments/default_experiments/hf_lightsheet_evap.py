@@ -102,7 +102,6 @@ class mag_trap(EnvExperiment, Base):
         self.lightsheet.exponential_ramp(t=self.p.t_hf_lightsheet_rampdown,
                              v_start=self.p.v_pd_lightsheet_rampup_end,
                              v_end=self.p.v_pd_hf_lightsheet_rampdown_end)
-        self.diag.lightsheet_evap()     # diagnostic frame (no-op when off)
 
         # self.lightsheet.exponential_rampramp(t=self.p.t_hf_lightsheet_rampdown,
         #                             v_start=self.p.v_pd_lightsheet_rampup_end,

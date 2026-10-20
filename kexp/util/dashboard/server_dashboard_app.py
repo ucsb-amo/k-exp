@@ -321,6 +321,7 @@ def main(argv: list[str] | None = None) -> int:
         app_id=app_id,
     )
     win.attach_log_panel(log_panel)
+    win.set_auto_layout_hints(host_config.load_auto_layout_hints())
     com_ids = {spec.id for spec in specs if spec.com_label}
     win.register_supervisors(supervisors, com_ids=com_ids, labels=labels)
     win.register_links(links)

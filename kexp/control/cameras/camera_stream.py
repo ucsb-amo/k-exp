@@ -27,7 +27,7 @@ run id. Triggered streams whose cameras share a trigger line are made
 siblings. A camera on liveOD's bar is leased from liveOD.
 
 ``camera_streams(expt, specs)`` builds several streams at once
-(DiagnosticImages uses it).
+(the diagnostic frame's bind uses it).
 """
 
 import logging

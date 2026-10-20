@@ -1,5 +1,8 @@
 from waxx.control.cameras.camera_param_classes import CameraParams, BaslerParams, AndorParams, APDParams, img_types
 from waxx.config.camera_id import camera_frame as camera_frame_waxx
+from waxx.control.cameras.diagnostic_frame import (DiagnosticImage, DiagnosticCamera,
+                                                  camera_trigger_ttl,
+                                                  diagnostic_frame as diagnostic_frame_waxx)
 
 from kexp.config.ttl_id import ttl_frame
 
@@ -91,103 +94,103 @@ class camera_frame(camera_frame_waxx):
                                        trigger_source='Line2',
                                        trigger_ttl=_ttl.mot_basler_trigger)
 
+        # Tweezer beam pickoff, for the beam position each shot ("image plain
+        # camera" in the Camera Viewer). Trigger wired to the 2D-MOT basler's
+        # line (user, 2026-10-19): a pulse on ttl.basler_2dmot exposes both,
+        # and their streams are siblings. Input on Line2 (user, 2026-10-19).
+        # Resolution/magnification not set.
+        self.tweezer_pickoff_basler = BaslerParams(serial_number='40427782',
+                                                   trigger_source='Line2',
+                                                   trigger_ttl=_ttl.basler_2dmot)
+
         self.cleanup()
 
 cameras = camera_frame()
 
 
-def camera_trigger_ttl(ttl, camera):
-    """The TTL object on the experiment's ttl frame `ttl` wired to `camera`'s
-    trigger input: the frame's attribute named by the entry's `trigger_ttl`,
-    or, failing that, its TTL on channel `trigger_ttl_ch`. The entry's own
-    `_trigger_ttl` object is never returned -- it belongs to this module's
-    unbound frame, not to the experiment's devices. Raises ValueError for an
-    entry with no trigger, or one the frame does not have."""
-    name = getattr(camera, 'trigger_ttl', '')
-    ch = int(getattr(camera, 'trigger_ttl_ch', -1))
-    if not name and ch < 0:
-        raise ValueError(
-            f"No camera TTL mapping found for camera key '{camera.key}' "
-            f"(set trigger_ttl on its entry in kexp.config.camera_id).")
-    if name and hasattr(ttl, name):
-        return getattr(ttl, name)
-    if ch >= 0:
-        for t in getattr(ttl, 'ttl_list', ()):
-            if getattr(t, 'ch', None) == ch:
-                return t
-    raise ValueError(
-        f"Camera '{camera.key}' names trigger_ttl '{name}' (ch {ch}), which "
-        f"is not a TTL in kexp.config.ttl_id.")
+class diagnostic_frame(diagnostic_frame_waxx):
+    """The reference frames every data-saving run takes (Base(diagnostic_images=True)),
+    as ``self.diag``: cameras, and the images they take every shot.
 
+    camera  a ``cameras`` entry (which names its ``trigger_ttl``) and the exposure_time (s),
+            gain (dB) and viewer ROI it runs at (None = the camera's saved defaults)
+    image   one frame per shot, saved under its attribute name. The sequence takes it with
+            ``self.diag.<image>.trigger()``: ``t_offset`` (s) from the cursor, negative = before it.
+            Optional: ``t_stage`` (s or an ExptParams name) -- the length of the stage it sits
+            in, an image with |t_offset| longer is not taken; its own exposure_time / gain; ``label``
+            and ``show`` ('image' | 'counts' | None) for the diagnostic viewer.
 
-class DiagnosticCamera:
-    """One camera of the per-shot diagnostics: its ``cameras`` entry, the
-    frames it takes per shot (DataVault keys, in order), the exposure_time
-    (s), gain (dB) and viewer ROI ``[x1, y1, x2, y2]`` it runs at (None =
-    the camera's saved beacon-server defaults) and per-frame overrides of
-    exposure / gain. The camera viewer's Save button copies a line in this
-    form (right-click). Tag value changes with a run id, like a calibration."""
-
-    def __init__(self, camera, frames, exposure_time=None, gain=None, roi=None,
-                 frame_settings=None):
-        self.camera = camera
-        self.frames = list(frames)
-        self.exposure_time = exposure_time
-        self.gain = gain
-        self.roi = [int(v) for v in roi] if roi else None
-        self.frame_settings = {k: dict(v) for k, v in (frame_settings or {}).items()}
-        for k in self.frame_settings:
-            if k not in self.frames:
-                raise ValueError(f"frame_settings for {k!r}: not one of {self.frames}")
-        self.key = ""       # attribute name, written by diagnostic_frame
-
-    def frame_index(self, key):
-        """The index of frame ``key`` on this camera, -1 if it takes none."""
-        return self.frames.index(key) if key in self.frames else -1
-
-
-class diagnostic_frame:
-    """The cameras every data-saving run takes reference frames with
-    (Base(diagnostic_images=True); fired by kexp.control.cameras
-    .diagnostic_images). Where each frame sits in the sequence is
-    ExptParams t_diag_*. Entries are built in order; cameras on one trigger
-    line (mot, x) become siblings."""
+    A camera's frame index is the order its images are assigned here: assign them in the
+    order the sequence takes them. New image: one line here and its trigger() call in the
+    sequence. New camera: its line and its images. Tag value changes with a run id."""
 
     def __init__(self):
-        # values settled 2026-10-01 (runs 84546-84574)
-        self.mot_2d = DiagnosticCamera(cameras.basler_2dmot, frames=['img_2dmot'],
-                                       exposure_time=3.5e-3, gain=20., roi=[1685, 741, 1959, 1022])
 
-        # 19 us / 0 dB is the minimum; the MOT-beam frame still saturates at its bright edge,
-        # the GM-beam frame peaked at 29 DN there (84858-84867) -> its own gain
-        self.xy = DiagnosticCamera(cameras.xy_basler, frames=['img_mot_beams_xy', 'img_gm_beams_xy'],
-                                   exposure_time=19.e-6, gain=0., roi=[382, 398, 943, 755],
-                                   frame_settings={'img_gm_beams_xy': dict(gain=18.)})
+        self.setup()
 
-        # lightsheet frames dropped: this camera does not see the lightsheet (blank up to 20 ms / 20 dB)
-        self.z = DiagnosticCamera(cameras.z_basler, frames=['img_mot_beams_z', 'img_gm_beams_z'],
-                                  exposure_time=19.e-6, gain=0., roi=[660, 300, 1260, 900])
+        # values settled 2026-10-01 (runs 84546-84574). Offsets were ExptParams
+        # t_diag_* until 2026-10-19; their history moved here with them.
+        # The 2D-MOT and MOT baslers (Basler a2A3840-45um, rolling shutter)
+        # expose a mid-sensor ROI ~15-40 ms AFTER the trigger edge: lead the
+        # moment of interest by that much, and keep the scene static for the
+        # ROI's row span (~16 ms). Edges on one trigger line >~50 ms apart.
 
-        # img_gm was blank at the MOT settings (max 1 DN, 84858-84867): try the whole GM at full gain
-        self.mot = DiagnosticCamera(cameras.mot_basler, frames=['img_mot', 'img_gm'],
-                                    exposure_time=300.e-6, gain=3., roi=[1668, 1049, 2373, 1767],
-                                    frame_settings={'img_gm': dict(exposure_time=3.e-3, gain=30.)})
+        # 2D MOT: mot(), the 2D-MOT-only window before the push comes on
+        self.mot_2d = self.camera(cameras.basler_2dmot, label='2D-MOT basler',
+                                  exposure_time=3.5e-3, gain=20., roi=[1685, 741, 1959, 1022])
+        # t = -10 ms saw the push on (84547-84556), 2026-10-01 -> -60 ms #84556, 2026-10-01
+        self.img_2dmot = self.image(self.mot_2d, t_offset=-60.e-3, label='2D MOT fluorescence', show='image')
+
+        # 19 us / 0 dB is the minimum; the MOT-beam frame still saturates at its bright edge
+        self.xy = self.camera(cameras.xy_basler, label='xy basler',
+                              exposure_time=19.e-6, gain=0., roi=[382, 398, 943, 755])
+        # mot(): after the 3D beams come on
+        self.img_mot_beams_xy = self.image(self.xy, t_offset=5.e-3, label='MOT beams')
+        # gm(): after the D1 beams come on; 29 DN at 0 dB (84858-84867) -> its own gain
+        self.img_gm_beams_xy = self.image(self.xy, t_offset=0.25e-3, gain=18., label='GM beams')
+
+        # lightsheet frames dropped: this camera does not see the lightsheet (blank up to 20 ms / 20 dB;
+        # they were 50 ms after the lightsheet ramp-up and 3 ms after evap 1, 2 ms / 20 dB)
+        self.z = self.camera(cameras.z_basler, label='z basler',
+                             exposure_time=19.e-6, gain=0., roi=[660, 300, 1260, 900])
+        self.img_mot_beams_z = self.image(self.z, t_offset=5.e-3, label='MOT beams')
+        self.img_gm_beams_z = self.image(self.z, t_offset=0.25e-3, label='GM beams')
+
+        self.mot = self.camera(cameras.mot_basler, label='MOT basler',
+                               exposure_time=300.e-6, gain=3., roi=[1668, 1049, 2373, 1767])
+        # mot(): before the load ends. t = -50 ms (2026-10-01) -> -150 ms #84561, 2026-10-01
+        # (>= 100 ms from the GM edge); not taken for a load shorter than that
+        self.img_mot = self.image(self.mot, t_offset=-150.e-3, t_stage='t_mot_load',
+                                  label='MOT fluorescence', show='image')
+        # end of cmot_d1(), where GM starts: 0.5 ms before GM end was blank, the ROI exposed after
+        # GM (84546-84561) -> triggered 25 ms before GM starts #84561, 2026-10-01: a rolling
+        # exposure across CMOT end, GM and the ramp start; blank at the MOT settings (max 1 DN,
+        # 84858-84867): the whole GM at full gain
+        self.img_gm = self.image(self.mot, t_offset=-25.e-3, exposure_time=3.e-3, gain=30.,
+                                 label='GM fluorescence', show='image')
 
         # shares the MOT basler's trigger line
-        self.x = DiagnosticCamera(cameras.x_basler, frames=['img_tweezer_load_x', 'img_tweezer_evap_x'],
-                                  exposure_time=300.e-6, gain=30., roi=[1511, 141, 1729, 788],
-                                  frame_settings={'img_tweezer_load_x': dict(exposure_time=50.e-6, gain=10.)})
+        # self.x = self.camera(cameras.x_basler, label='x basler',
+        #                      exposure_time=300.e-6, gain=30., roi=[1511, 141, 1729, 788])
+        # roi moved to the realigned tweezer: full-sensor run 87302 put the beam at (x,y)=(749,519); ROI = pixels
+        # above 5% of the full-power peak, padded 30 px (user OK'd the ROI change, 2026-10-19)
+        self.x = self.camera(cameras.x_basler, label='x basler',
+                             exposure_time=300.e-6, gain=30., roi=[636, 366, 872, 662]) #87302, 2026-10-19
+        # end of the tweezer ramp-up
+        self.img_tweezer_load_x = self.image(self.x, t_offset=1.e-3, exposure_time=50.e-6, gain=5.,
+                                             label='tweezer load', show=None)
+        # end of the last tweezer evap
+        self.img_tweezer_evap_x = self.image(self.x, t_offset=1.e-3, label='tweezer evap', show=None)
 
-        # a camera with no saved viewer ROI stores its frames block-averaged this much
-        self.no_roi_downsample = 4
+        # tweezer beam position from the pickoff; shares the 2D-MOT basler's trigger line (2026-10-19)
+        self.tweezer_pickoff = self.camera(cameras.tweezer_pickoff_basler, label='tweezer pickoff',
+                                           exposure_time=2.e-6, gain=0., roi=[1799, 909, 2787, 1804])
+        # end of the tweezer ramp-up, 1 ms after it (user, 2026-10-19; a 2 us offset briefly
+        # set that day was a mix-up with the 2 us exposure)
+        self.img_tweezer_pickoff = self.image(self.tweezer_pickoff, t_offset=1.e-3,
+                                              label='tweezer pickoff', show='image')
 
-        for name, entry in vars(self).items():
-            if isinstance(entry, DiagnosticCamera):
-                entry.key = name
-
-    def entries(self):
-        return [v for v in vars(self).values() if isinstance(v, DiagnosticCamera)]
+        self.cleanup()
 
 
 diagnostic_cameras = diagnostic_frame()
-

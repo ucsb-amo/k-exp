@@ -49,13 +49,16 @@ class ClaimSplitCompile(EnvExperiment, Base):
 
     @kernel
     def scan_kernel(self):
-        self.diag.mot_2d()
-        self.diag.mot_beams()
-        self.diag.mot_fluorescence(1.)
-        self.diag.gm_fluorescence()
-        self.diag.gm_beams()
-        self.diag.tweezer_load()
-        self.diag.tweezer_evap()
+        self.diag.img_2dmot.trigger()
+        self.diag.img_mot_beams_xy.trigger()
+        self.diag.img_mot_beams_z.trigger()
+        self.diag.img_mot.trigger()
+        self.diag.img_gm.trigger()
+        self.diag.img_gm_beams_xy.trigger()
+        self.diag.img_gm_beams_z.trigger()
+        self.diag.img_tweezer_load_x.trigger()
+        self.diag.img_tweezer_evap_x.trigger()
+        self.diag.img_tweezer_pickoff.trigger()
         delay(self.p.t_tof)
 
     @kernel
@@ -436,12 +439,12 @@ def test_cold_claims_once_at_finish_prepare_and_compiles(monkeypatch, tmp_path,
         assert [e for e in ev[i_claim:] if e[0] == "pdxc"] == [("pdxc", True)]
         assert ("liveod_reserve",) not in ev and not any(e[0] == "liveod_start" for e in ev)
         n_streams = sum(1 for e in ev if e[0] == "cam_connect")
-        assert n_streams == len([s for s in b.exp.diag.streams.values()
+        assert n_streams == len([s for s in b.exp.diag.streams().values()
                                  if hasattr(s, "connect")]) > 0
-        assert all(s.live for s in b.exp.diag.streams.values() if hasattr(s, "connect"))
+        assert all(s.live for s in b.exp.diag.streams().values() if hasattr(s, "connect"))
         # the liveOD payload carries the probe frames' shapes, not the provisional one
         shapes = b.liveod.payloads["init"]["datavault_shapes"]
-        for s in b.exp.diag.streams.values():
+        for s in b.exp.diag.streams().values():
             if hasattr(s, "connect"):
                 assert shapes[s.keys[0]]["shape"][1:] == s._frame_shape != (1,)
         assert b.exp.run_info.run_id == 4242
@@ -490,7 +493,7 @@ def test_warm_claims_nothing_before_go_and_the_claim_changes_no_kernel_value(
         assert b.exp.run_info.run_id == 4242
         assert b.exp.run_info.run_datetime_str == "2026-10-14_18-30-05"
         assert b.exp.run_info.run_date_str == "2026-10-14"
-        assert all(s.live for s in b.exp.diag.streams.values() if hasattr(s, "connect"))
+        assert all(s.live for s in b.exp.diag.streams().values() if hasattr(s, "connect"))
         assert _stamped_trust(b.exp)["trusted"] is True     # from before its announcement
 
         after = _kernel_view(embedding_map)
