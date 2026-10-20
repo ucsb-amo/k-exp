@@ -2,26 +2,26 @@
 
 from __future__ import annotations
 
-from PyQt6.QtCore import QSize, QTimer
+from PyQt6.QtCore import QTimer
 
 from waxx.util.dashboard.embed_helpers import (
-    WidgetPanelBase,
+    StagedCollapsePanel,
     embed_main_window,
     _strip_minimum_sizes,
 )
 
 
-class AlsPanel(WidgetPanelBase):
+class AlsPanel(StagedCollapsePanel):
     """Embed ``waxx.util.guis.als.als_control_gui.ALSControlGUI``.
 
     Only this kexp wrapper knows the lab-specific IP / port / COM defaults;
     all UI logic lives in waxx.
     """
 
-    # Vertical-collapse stages, in order: when the panel shrinks below the
-    # corresponding threshold (px) we hide the listed attributes on the
-    # embedded GUI.  Stages stack: at stage 0 nothing is hidden; at the
-    # smallest height every stage's widgets are hidden.
+    # Vertical-collapse stages, first to hide first.  A stage hides below its
+    # threshold (px), or sooner if what is left would not fit.  The Power and
+    # Optical Output readouts are in no stage: they never hide, and their
+    # height is the panel's minimum height.
     _COLLAPSE_STAGES = (
         # Hide telemetry + activity log dropdowns first.
         (270, ("telem_group", "log_box")),
@@ -51,28 +51,16 @@ class AlsPanel(WidgetPanelBase):
         # Re-strip after the event loop ticks so the dock can be shrunk.
         QTimer.singleShot(0, lambda: _strip_minimum_sizes(self))
         QTimer.singleShot(100, lambda: _strip_minimum_sizes(self))
-        # Apply collapse stages once so the panel honours the current
-        # height even before the first resize event.
-        QTimer.singleShot(150, self._apply_collapse_stages)
+        self._start_staged_collapse()
 
-    def minimumSizeHint(self) -> QSize:  # noqa: N802 (Qt API)
-        # Override Qt's default (which sums child minimumSizeHints) so the
-        # dashboard layout can collapse the panel to an arbitrarily small
-        # height.
-        return QSize(0, 0)
-
-    def resizeEvent(self, event):  # noqa: N802 (Qt API)
-        super().resizeEvent(event)
-        self._apply_collapse_stages()
-
-    def _apply_collapse_stages(self) -> None:
-        h = self.height()
-        for threshold, attrs in self._COLLAPSE_STAGES:
-            hide = h < threshold
-            for attr in attrs:
-                widget = getattr(self._gui, attr, None)
-                if widget is not None:
-                    widget.setVisible(not hide)
+    def _readout_modes(self) -> dict:
+        g = self._gui
+        return {
+            g.power_box: [
+                ([g.power_setpoint_label], [g.power_input_field, g.power_submit_hint]),
+                ([g.power_input_field, g.power_submit_hint], [g.power_setpoint_label]),
+            ],
+        }
 
 
 __all__ = ["AlsPanel"]
