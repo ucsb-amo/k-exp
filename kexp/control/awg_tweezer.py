@@ -18,6 +18,7 @@ import numpy as np
 # di = 666420695318008 #causes failure #lmao
 di = 0
 dv = -1000.
+PAINT_EXPONENT_CONSTANT_TRAP_FREQUENCY = 0.3333   # PaintedBeam's default law
 
 # painting-amplitude control voltage for zero painting. Set per beam because
 # the RF chain in front of each FM source has its own attenuation.
@@ -245,7 +246,8 @@ class tweezer(wax_tweezer.TweezerController, PaintedBeam):
              v_pd_max=dv,
              keep_trap_frequency_constant=True,
              low_power=False,
-             cubic_ramp=False):
+             cubic_ramp=False,
+             paint_exponent=dv):
         """Ramps the voltage that controls the tweezer power, linearly by
         default or on a smoothstep if cubic_ramp is True.
 
@@ -292,8 +294,15 @@ class tweezer(wax_tweezer.TweezerController, PaintedBeam):
 
             cubic_ramp (bool, optional): If True, uses a smoothstep instead of a
             linear ramp. Defaults to False.
+
+            paint_exponent (float, optional): exponent e of the painting law
+            paint_frac = (P/P_max)**e when keep_trap_frequency_constant.
+            Defaults to 0.3333 (constant trap frequency).
         """
 
+        if paint_exponent == dv:
+            paint_exponent = PAINT_EXPONENT_CONSTANT_TRAP_FREQUENCY
+        self.paint_amp_exponent = paint_exponent
         if v_start == dv:
             v_start = self.pid1_dac.v
         if v_end == dv:
@@ -330,13 +339,19 @@ class tweezer(wax_tweezer.TweezerController, PaintedBeam):
                 v_pd_max=dv,
                 keep_trap_frequency_constant=True,
                 low_power=False,
-                v_offset=0.02):
+                v_offset=0.02,
+                paint_exponent=dv):
         """Constant-adiabaticity power ramp. Arguments as for ramp(), plus:
 
         Args:
             v_offset (float, optional): PID setpoint at zero optical power;
             power is taken proportional to (v - v_offset). Defaults to 0.02.
+            paint_exponent (float, optional): painting-law exponent, as for
+            ramp(). Defaults to 0.3333.
         """
+        if paint_exponent == dv:
+            paint_exponent = PAINT_EXPONENT_CONSTANT_TRAP_FREQUENCY
+        self.paint_amp_exponent = paint_exponent
         if v_start == dv:
             v_start = self.pid1_dac.v
         if v_end == dv:
@@ -368,13 +383,19 @@ class tweezer(wax_tweezer.TweezerController, PaintedBeam):
                 v_awg_am_max=dv,
                 v_pd_max=dv,
                 keep_trap_frequency_constant=True,
-                low_power=False):
+                low_power=False,
+                paint_exponent=dv):
         """Exponential power ramp. Arguments as for ramp(), plus:
 
         Args:
             tau (float, optional): time constant (s). Defaults to t/3, which is
             the slow-start / fast-finish curvature; negative tau flips it.
+            paint_exponent (float, optional): painting-law exponent, as for
+            ramp(). Defaults to 0.3333.
         """
+        if paint_exponent == dv:
+            paint_exponent = PAINT_EXPONENT_CONSTANT_TRAP_FREQUENCY
+        self.paint_amp_exponent = paint_exponent
         if v_start == dv:
             v_start = self.pid1_dac.v
         if v_end == dv:
@@ -421,6 +442,9 @@ class tweezer(wax_tweezer.TweezerController, PaintedBeam):
         Returns:
             TFloat: the paint amplitude voltage that gives the same trap
             frequency with v_pd as with (v_pd_max,v_awg_am_max).
+
+        Uses whatever painting-law exponent the last ramp set
+        (self.paint_amp_exponent); meant for host-side checks.
         """
         if v_awg_am_max == dv:
             v_awg_am_max = self.params.v_hf_tweezer_paint_amp_max
