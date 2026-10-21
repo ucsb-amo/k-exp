@@ -75,7 +75,7 @@ class camera_frame(camera_frame_waxx):
 
         self.z_basler = BaslerParams(serial_number='40416468',
                                     exposure_time_fluor = 1.e-3, amp_fluorescence=0.5,
-                                    exposure_time_abs = 19.e-6, amp_absorption = 0.5,gain_abs=24.,
+                                    exposure_time_abs = 19.e-6, amp_absorption = 1.0, gain_abs=30.,
                                     exposure_time_dispersive = 100.e-6, amp_dispersive = 0.248,
                                     trigger_ttl=_ttl.z_basler)
 
