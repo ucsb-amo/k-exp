@@ -3,8 +3,9 @@
 ``Base.__init__(diagnostic_images=True)`` (the default) makes ``self.diag``
 with ``diagnostic_images(expt, enabled)``: a fresh
 ``kexp.config.camera_id.diagnostic_frame`` bound to this run -- one triggered
-camera stream per camera, set up together, and each image given its camera's
-trigger TTL and frame index. The sequence takes an image where it belongs::
+camera stream per camera the images name, set up together (each frame at its
+image's exposure, gain and ROI), and each image given its camera's trigger
+TTL and frame index. The sequence takes an image where it belongs::
 
     self.diag.img_tweezer_load_x.trigger()
 
@@ -17,7 +18,8 @@ image whose ``|t_offset|`` is longer than its ``t_stage``.
 Each frame is saved under its key with a ``<key>_meta`` record per shot
 (waxa.data.camera_frames) and a ``camera_stream_<key>`` provenance record;
 the run file's root attribute ``diagnostic_images`` records every image's
-camera, offset, stage, frame index and own settings as the run took them.
+camera, offset, stage, frame index, exposure / gain / ROI (and which of them
+came from the camera entry) as the run took them.
 The framework is waxx.control.cameras.diagnostic_frame.
 """
 

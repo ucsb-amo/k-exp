@@ -17,7 +17,7 @@ class mag_trap(EnvExperiment, Base):
                       save_data=True,
                       camera_select=cameras.andor,
                       imaging_type=img_types.ABSORPTION, warmup_shots=0,
-                      diagnostic_images=False)
+                      diagnostic_images=True)
 
         # Adjust.__init__(self)
         
@@ -139,6 +139,8 @@ class mag_trap(EnvExperiment, Base):
                                     # v_start=self.p.v_pd_hf_lightsheet_rampdown2_end,
                                     v_end=0.)
             delay(self.p.t_tweezer_hold)
+
+        self.diag.img_tweezer_load_x.trigger()
 
         # self.tweezer.ramp(t=self.p.t_hf_tweezer_1064_ramp,
         #                     v_start=self.p.v_pd_hf_tweezer_1064_ramp_end,

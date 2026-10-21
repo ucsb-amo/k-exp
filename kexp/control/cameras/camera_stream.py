@@ -191,7 +191,9 @@ def _plan(expt, spec, taken):
             p.ctor = lambda: TriggeredCameraStreamClient(
                 expt, serial, key, ttl=ttl,
                 trigger_source=trigger_source or entry.trigger_source,
-                exposure_delay=entry.exposure_delay, t_trigger=entry.t_camera_trigger,
+                exposure_delay=getattr(entry, 'exposure_delay_configured', entry.exposure_delay),
+                exposure_delay_from_camera=getattr(entry, 'exposure_delay_from_camera', True),
+                t_trigger=entry.t_camera_trigger,
                 exposure_time=exposure_time, gain=gain, live_od_client=live_od_client,
                 defer_register=True, connect=False, on_error=on_error, **kw)
     except Exception as e:

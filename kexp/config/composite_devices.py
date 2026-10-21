@@ -1028,8 +1028,8 @@ delay(1.e-3)
 expt.tweezer.set_power({v_pd1})
 """),
         Op("off", "Off", code="expt.tweezer.off()",
-           tooltip="tweezer.off(): both AOs off, PID1 integrator held, PID1 to 0, "
-                   "PID2 disabled, RF switch off."),
+           tooltip="tweezer.off(): AO1 off, PID2 disabled with AO2 left on, PID1 "
+                   "integrator held, PID1 to 0, RF switch off."),
         Op("set_pd1", "Set", args=("v_pd1",), code="expt.tweezer.set_power({v_pd1})"),
         Op("ramp_pd1", "Ramp", args=("v_pd1", "t_ramp"),
            code="expt.tweezer.pid1_dac.linear_ramp({t_ramp}, expt.tweezer.pid1_dac.v, "

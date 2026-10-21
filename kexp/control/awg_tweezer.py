@@ -1,12 +1,13 @@
 from waxx.control.artiq.DAC_CH import DAC_CH
 from waxx.control.artiq.TTL import TTL_OUT
 from waxx.control.artiq.DDS import DDS
+from waxx.control.artiq.Sampler_CH import Sampler_CH
 from waxx.control.painted_beam import PaintedBeam, DAC_PRIMARY, DAC_SECONDARY
 import waxx.control.tweezer.spectrum_DDS_tweezer as wax_tweezer
 
 from artiq.language.core import now_mu
 from artiq.coredevice.core import Core
-from artiq.experiment import rpc, kernel, delay, parallel, TFloat, portable, TArray, TInt32
+from artiq.experiment import rpc, kernel, delay, parallel, TFloat, portable, TArray, TInt32, TTuple
 
 from kexp.config.expt_params import ExptParams
 from kexp.calibrations.tweezer import tweezer_vpd1_to_vpd2
@@ -62,11 +63,16 @@ class tweezer(wax_tweezer.TweezerController, PaintedBeam):
                   pid1_int_hold_zero_ttl=TTL_OUT,
                   pid2_enable_ttl=TTL_OUT,
                   painting_dac=DAC_CH,
+                  pid1_pd=Sampler_CH,
+                  pid2_pd=Sampler_CH,
                   v_paint_min=V_TWEEZER_PAINT_MIN,
                   expt_params=ExptParams(),
                   core=Core):
         """Controls the tweezers.
-        """        
+
+        pid1_pd / pid2_pd are the Sampler channels reading the PID1 (high
+        power) and PID2 (low power) servo photodiodes (read_pds).
+        """
 
         super().__init__(awg_ip=AWG_IP,
                          awg_trg_ttl=awg_trg_ttl,
@@ -83,6 +89,8 @@ class tweezer(wax_tweezer.TweezerController, PaintedBeam):
         self.sw_ttl = sw_ttl
         self.pid1_int_hold_zero = pid1_int_hold_zero_ttl
         self.pid2_enable_ttl = pid2_enable_ttl
+        self.pid1_pd = pid1_pd
+        self.pid2_pd = pid2_pd
 
         self._init_painting(paint_amp_dac=painting_dac,
                             v_paint_min=v_paint_min,
@@ -122,21 +130,67 @@ class tweezer(wax_tweezer.TweezerController, PaintedBeam):
 
     @kernel
     def off(self):
-        """Turns the tweezer off, disables both PIDs, and zeros the integrator
-        for PID1.
-        """        
+        """Turns the tweezer off (AO1 off, AWG rf sw off), disables PID2, and
+        zeros the integrator for PID1. AO2 is left ON (ao2_idle): it stays on
+        whenever the low-power servo is not in use, so its thermal load does
+        not change between shots and runs. The light is cut by AO1 and the rf
+        sw.
+
+        ao2_idle's DAC write takes the slot AO2's switch-off write used to, so
+        the timeline advances by the same amount as before.
+        """
         self.ao1_dds.off()
-        self.ao2_dds.off()
+        self.ao2_idle()
         self.pid1_int_hold_zero.on()
         self.pid1_dac.set(v=0.)
-        self.pid2_enable_ttl.off()
         self.sw_ttl.off()
+
+    @kernel
+    def ao2_idle(self):
+        """PID2 disabled, AO2 rf on (setpoint restored as in on()): the state
+        AO2 holds whenever the low-power servo is not in use, including
+        between runs.
+        """
+        self.pid2_enable_ttl.off()
+        self.ao2_dds.on()
+
+    @kernel
+    def keep_ao2_on(self):
+        """AO2 rf on, unless PID2 is enabled (a low_power ramp holds the
+        power, and AO2 is then the servo's): that case is left alone.
+        """
+        if self.pid2_enable_ttl.state == 0:
+            self.ao2_dds.on()
 
     @kernel
     def set_power(self,v_pd=dv,load_dac=True):
         if v_pd == dv:
             v_pd = self.params.v_pd_tweezer_1064
         self.pid1_dac.set(v=v_pd,load_dac=load_dac)
+
+    # -------------------------------------------------------------------------
+    # servo photodiode readout (Sampler). A Sampler read blocks until the
+    # conversion's timestamp has passed, so slack is ~0 afterwards: give the
+    # timeline room (delay / break_realtime) before the next output event.
+    # -------------------------------------------------------------------------
+
+    @kernel
+    def read_pid1_pd(self) -> TFloat:
+        """The PID1 (high-power servo) photodiode voltage (V)."""
+        return self.pid1_pd.sample()
+
+    @kernel
+    def read_pid2_pd(self) -> TFloat:
+        """The PID2 (low-power servo) photodiode voltage (V)."""
+        return self.pid2_pd.sample()
+
+    @kernel
+    def read_pds(self) -> TTuple([TFloat, TFloat]):
+        """(PID1 PD, PID2 PD) voltages (V), from one conversion of the
+        Sampler (all eight channels are converted together)."""
+        self.pid1_pd.sample()
+        return (self.pid1_pd.samples[self.pid1_pd.ch],
+                self.pid1_pd.samples[self.pid2_pd.ch])
 
 
     # -------------------------------------------------------------------------

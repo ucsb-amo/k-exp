@@ -18,8 +18,12 @@ class sampler_frame(sampler_frame_waxx):
         
         ### begin assignments
  
-        self.reference_beam_pd = self.sampler_assign(0,gain=0)
-        
+        # self.reference_beam_pd = self.sampler_assign(0,gain=0) # ch0 -> tweezer PID1 PD, 2026-10-20
+
+        # tweezer servo photodiodes (kexp.control.awg_tweezer.tweezer.read_pds)
+        self.tweezer_pid1_pd = self.sampler_assign(0,gain=0)
+        self.tweezer_pid2_pd = self.sampler_assign(1,gain=0)
+
         self.apd_integrator = self.sampler_assign_lastch(7,gain=0)
 
         ### end assignments

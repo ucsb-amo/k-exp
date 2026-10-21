@@ -3,11 +3,26 @@ from artiq.experiment import TFloat, TArray, portable, rpc
 
 #Calibration coefficients are from
 #k-jam\analysis\measurements\PID1_vs_PID2.ipynb
-vpd2_per_vpd1_slope =  71.67500001330266
-v_pd2_y_intercept =  -2.1376785723712772
+#
+#To recalibrate (PID2 photodiode vs PID1 setpoint, Sampler ch0/ch1):
+#run kexp/experiments/calibration/tweezer_pid2_vs_pid1.py. Its analyze()
+#fits the sweep (kexp.analysis.tweezer_pid_calibration) and, when nothing is
+#flagged, writes vpd2_per_vpd1_slope and v_pd2_y_intercept below (old line
+#commented out, new one tagged #run_id, date). The _squeezer pair is separate
+#and not touched by it.
+#vpd2_per_vpd1_slope =  71.67500001330266
+#v_pd2_y_intercept =  -2.1376785723712772
+
+# vpd2_per_vpd1_slope =  66.84742067299531
+# v_pd2_y_intercept =  -1.5544270390556685
+
+vpd2_per_vpd1_slope = 25.5342 # +/- 0.51 V/V (was 66.8474, -61.80 %)
+v_pd2_y_intercept = -1.82941 # +/- 0.13 V (was -1.55443, -17.69 %)
 
 vpd2_per_vpd1_slope_squeezer =  70.20864948083167
 v_pd2_y_intercept_squeezer =  -.9167412763522654
+
+
 
 @portable(flags={"fast-math"})
 def tweezer_vpd1_to_vpd2(vpd_pid1) -> TFloat:
