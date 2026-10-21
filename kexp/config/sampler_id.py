@@ -24,6 +24,13 @@ class sampler_frame(sampler_frame_waxx):
         self.tweezer_pid1_pd = self.sampler_assign(0,gain=0)
         self.tweezer_pid2_pd = self.sampler_assign(1,gain=0)
 
+        # coil current transducers (user, 2026-10-21; for the coil-reset
+        # timing measurement). Outer: 60 A/V (measure_i_transducer_per_i_supply),
+        # ~3.2 V at 193 A. Inner: scale not recorded here yet. Not read by any
+        # sequence.
+        self.inner_coil_transducer = self.sampler_assign(2,gain=0)
+        self.outer_coil_transducer = self.sampler_assign(3,gain=0)
+
         self.apd_integrator = self.sampler_assign_lastch(7,gain=0)
 
         ### end assignments

@@ -130,10 +130,11 @@ class Cameras():
         # needs the same phase mask. (This compared a *type* against a *key*
         # before, which coincided only for the Andor.)
         if self.camera_params.optical_path_key == cameras.andor.key:
+            # Once per run, before the scan: the blocking write (parallel=False).
             if imaging_type == img_types.ABSORPTION or imaging_type == img_types.ABSORPTION:
-                self.slm.write_phase_mask_kernel(0.,0.)
+                self.slm.write_phase_mask_kernel(0.,0.,parallel=False)
             elif imaging_type == img_types.DISPERSIVE:
-                self.slm.write_phase_mask_kernel()
+                self.slm.write_phase_mask_kernel(parallel=False)
 
     def assign_camera_stuff(self,
                             camera:CameraParams,

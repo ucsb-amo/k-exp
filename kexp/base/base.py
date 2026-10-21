@@ -35,7 +35,8 @@ class Base(Expt, Devices, Cooling, Image, Cameras, Control, Clients):
                  override_apd_stage=None,
                  warmup_shots=0,
                  verbosity=None,
-                 diagnostic_images=True):
+                 diagnostic_images=True,
+                 fast_coil_reset=True):
 
         # camera_select picks the detector and setup_camera says whether to
         # acquire with it: liveOD frames for a camera, the pickoff stage in
@@ -68,7 +69,10 @@ class Base(Expt, Devices, Cooling, Image, Cameras, Control, Clients):
         # __init__s are not chained, so it is set here). Reset each shot in
         # init_scan_kernel.
         self._imaging_conditions_recorded = False
-        
+        # cleanup_scan_kernel's short coil reset for a coil already off after
+        # a normal shot (Control.reset_coils); False = the full reset always.
+        self.fast_coil_reset = bool(fast_coil_reset)
+
         self.prepare_devices(expt_params=self.params)
 
         _img_config = self.choose_camera(imaging_type, camera_select)
@@ -435,7 +439,7 @@ class Base(Expt, Devices, Cooling, Image, Cameras, Control, Clients):
         self.core.break_realtime()
         # The cached coil state is trusted only after a shot that returned
         # normally (not after an underflow): see Control.reset_coils.
-        self.reset_coils(trust_cached_state=self.shot_completed)
+        self.reset_coils(trust_cached_state=self.shot_completed and self.fast_coil_reset)
         self.lightsheet.off()
         # PID2 AO stays on between shots (left alone if PID2 is enabled)
         self.tweezer.keep_ao2_on()
@@ -457,6 +461,13 @@ class Base(Expt, Devices, Cooling, Image, Cameras, Control, Clients):
         self.core.break_realtime()
         self.ry_405.lock_status()
         self.ry_980.lock_status()
+
+        # A first use of the imaging path after a parallel SLM write that
+        # came too close to real time to be checked then is checked now --
+        # after the coils are safe, before the shot is recorded (raises if
+        # the mask was not settled; the shot is then not recorded).
+        self.slm.end_of_shot(self.shot_completed)
+        self.core.break_realtime()
 
         self.cleanup_scan_kernel_wax()
 

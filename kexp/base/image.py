@@ -417,8 +417,11 @@ class Image():
         cursor to this position after pretrigger.
 
         Every camera frame passes through here, so the first call of a shot
-        also records the imaging conditions (record_imaging_conditions).
+        also records the imaging conditions (record_imaging_conditions), and
+        a mask written to the SLM in parallel is checked before its first
+        frame (SLM.ensure_mask_settled).
         '''
+        self.slm.ensure_mask_settled()
         self.record_imaging_conditions()
         delay(-self.camera_params.exposure_delay * s)
         self.ttl.camera.pulse(self.camera_params.t_camera_trigger * s)

@@ -251,6 +251,10 @@ class Devices():
                                               sampler=self.sampler,
                                               core=self.core,
                                               expt_params=self.params)
+            # The SLM is in the Andor imaging path: before the imaging beam's
+            # first light after a parallel mask write, the SLM checks that
+            # the mask is on and settled (SLM.ensure_mask_settled).
+            self.imaging.light_guard = self.slm
         else:
             raise ValueError('Both the xy and x imaging fibers are currently derived from the PID setup (as of 2026-02-17)')
         # elif imaging_configuration == img_config.SWITCH:

@@ -30,12 +30,21 @@ class ShotDeadtimeCompile(EnvExperiment, Base):
 
     @kernel
     def scan_kernel(self):
-        self.slm.write_phase_mask_kernel(phase=self.p.phase_slm_mask)
+        self.slm.write_phase_mask_kernel(phase=self.p.phase_slm_mask)       # parallel (default)
+        self.slm.write_phase_mask_kernel(phase=self.p.phase_slm_mask, parallel=False,
+                                         skip_if_unchanged=False)
         self.slm.write_phase_mask_async(phase=self.p.phase_slm_mask)
         self.inner_coil.snap_off()
         self.dac.supply_current_2dmot.set(v=self.p.v_2d_mot_current)
         delay(self.p.t_tof)
         self.slm.wait_phase_mask_settled()
+        self.imaging.pulse(1.e-6)               # the guard inside the imaging beam
+        delay(1.e-3)
+        self.imaging.on()
+        delay(1.e-6)
+        self.imaging.off()
+        delay(1.e-3)
+        self.trigger_camera()                   # ... and before a camera trigger
 
     @kernel
     def run(self):
@@ -49,6 +58,18 @@ def test_scan_with_coil_skip_and_slm_paths_compiles(monkeypatch, tmp_path):
     cls, exp, device_mgr = harness._build(monkeypatch, tmp_path)
     try:
         assert exp.shot_completed is False
+        harness._compile(cls, exp)
+    finally:
+        device_mgr.close_devices()
+
+
+def test_the_full_reset_switch_compiles(monkeypatch, tmp_path):
+    monkeypatch.setattr(harness, "EXPT", EXPT.replace(
+        "save_data=False)", "save_data=False, fast_coil_reset=False)"))
+    cls, exp, device_mgr = harness._build(monkeypatch, tmp_path)
+    try:
+        assert exp.fast_coil_reset is False
+        assert exp.imaging.light_guard is exp.slm
         harness._compile(cls, exp)
     finally:
         device_mgr.close_devices()
