@@ -11,12 +11,14 @@ camera waits for edges on its trigger line (the entry's ``trigger_ttl`` /
 frame ``j`` at the cursor. See waxx.control.cameras.camera_stream_client.
 
 Nothing here touches the network: the stream objects (what the kernel
-sees: class, trigger line, exposure delay) are built from the config, and
-their containers registered with a provisional shape. The cameras are
+sees: class, trigger line, exposure-delay cell) are built from the config,
+and their containers registered with a provisional shape. The cameras are
 connected by the run's claim (kexp Base.claim_hardware ->
 ``connect_camera_streams``), in parallel -- for a warm-launched run after
 the kernel was compiled; the probe frame then gives the containers their
-shape.
+shape. A triggered stream's exposure delay is the one its camera reports at
+the claim, with this run's settings; the kernel takes it at its start
+(init_kernel / scan -> waxx Scanner.load_exposure_delays).
 
 A camera that is this run's acquisition camera, or (triggered) is wired to
 the run camera's trigger line, gets a placeholder (DummyCameraStreamClient).

@@ -165,8 +165,18 @@ class Base(Expt, Devices, Cooling, Image, Cameras, Control, Clients):
         connect_camera_streams(self)
         self.diag.report_connected()
         # the record as the run takes it: a camera that failed to connect
-        # takes nothing (its edges still fire; nothing is stored)
+        # takes nothing (its edges still fire; nothing is stored). Each
+        # image's exposure delay is the compiled one here; the kernel takes
+        # the claim's at its start, and exposure_delays_loaded rewrites this.
         self._extra_file_texts["diagnostic_images"] = json.dumps(self.diag.record())
+
+    def exposure_delays_loaded(self):
+        """waxx hook (inside init_kernel's / scan()'s RPC): the kernel has the
+        exposure delays the claim decided; the diagnostic_images record now
+        says so (value used, its source, the pre-compile value)."""
+        diag = getattr(self, 'diag', None)
+        if diag is not None:
+            self._extra_file_texts["diagnostic_images"] = json.dumps(diag.record())
 
     def claim_after_start(self):
         """The run's claim, after the liveOD start and BEFORE the monitor
@@ -251,6 +261,9 @@ class Base(Expt, Devices, Cooling, Image, Cameras, Control, Clients):
         wiring, or whenever DDS phase coherence is in doubt.
         """
 
+        # the camera streams' exposure delays as the run's claim measured them
+        # (one RPC; before the reset, so its wall time costs no slack)
+        self.load_exposure_delays()
         self.core.reset()
 
         if self.setup_camera:
