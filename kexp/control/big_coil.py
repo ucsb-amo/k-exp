@@ -1,4 +1,4 @@
-from artiq.experiment import kernel, delay, parallel, portable, TFloat
+from artiq.experiment import kernel, delay, parallel, portable, TFloat, TBool
 import numpy as np
 
 from waxx.control.artiq.DAC_CH import DAC_CH
@@ -304,7 +304,31 @@ class igbt_magnet():
         self.pid_on = False
         delay(5.e-3)
         self.discharge()
-        
+
+    @kernel
+    def cached_off(self) -> TBool:
+        """Whether this coil's cached state says it carries no current: IGBT
+        open, supply set to 0 A, PID off. Only as true as the cache: after an
+        exception (dropped events) it may not be the hardware's -- see
+        kexp.base.control.Control.reset_coils."""
+        return self.igbt_ttl.state == 0 and self.i_supply == 0. and not self.pid_on
+
+    @kernel
+    def off_from_off(self):
+        """off() for a coil that carries no current (cached_off). The PID and
+        both set points are put off / to zero again (they are already, by the
+        cache), the T_ANALOG_DELAY + 5 ms that off() leaves between its last
+        set point and discharge() is waited, then discharge() exactly as in
+        off(). What it leaves out is stop_pid and off()'s two ramps, which go
+        from 0 A to 0 A here (~150 ms)."""
+        self.pid_ttl.off()
+        self.pid_on = False
+        self.set_supply(0.)
+        self.set_voltage(0.)
+        delay(T_ANALOG_DELAY)
+        delay(5.e-3)
+        self.discharge()
+
     # @kernel
     # def open_discharge_igbt(self):
     #     """Opens the discharge_igbt.

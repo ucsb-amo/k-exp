@@ -433,7 +433,9 @@ class Base(Expt, Devices, Cooling, Image, Cameras, Control, Clients):
         self.raman.clean_up_fast_frequency_update()
 
         self.core.break_realtime()
-        self.reset_coils()
+        # The cached coil state is trusted only after a shot that returned
+        # normally (not after an underflow): see Control.reset_coils.
+        self.reset_coils(trust_cached_state=self.shot_completed)
         self.lightsheet.off()
         # PID2 AO stays on between shots (left alone if PID2 is enabled)
         self.tweezer.keep_ao2_on()

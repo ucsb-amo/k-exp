@@ -115,7 +115,7 @@ class Control():
         self.tweezer.keep_ao2_on()
 
     @kernel
-    def reset_coils(self):
+    def reset_coils(self, trust_cached_state=False):
         """
         Reset the inner, outer, and 2D coils to their default state.
         This includes stopping any PID control, turning off the coils,
@@ -123,16 +123,32 @@ class Control():
 
         This is typically called at the end of an experiment to ensure
         that the coils are in a safe state for the next experiment.
+
+        trust_cached_state: True only when the kernel's cached coil state is
+        known to be the hardware's -- after a shot that returned normally
+        (Scanner.shot_completed, cleanup_scan_kernel). A coil whose cache
+        then says it carries no current (igbt_magnet.cached_off: IGBT open,
+        0 A, PID off) gets off_from_off() -- set points zeroed again, the
+        same wait before the same discharge() -- instead of stop_pid + off(),
+        whose ramps go from 0 A to 0 A (~150 ms inner, ~200 ms outer). Never
+        True after an exception: an underflow drops events, so a coil the
+        cache calls off may still carry current.
         """
-    
+
         # igbt_magnet.off() already ends with discharge() -- do not add a
         # second discharge() here, it costs ~130 ms per coil for nothing.
-        self.outer_coil.stop_pid()
-        delay(50.e-3)
-        self.outer_coil.off()
+        if trust_cached_state and self.outer_coil.cached_off():
+            self.outer_coil.off_from_off()
+        else:
+            self.outer_coil.stop_pid()
+            delay(50.e-3)
+            self.outer_coil.off()
 
-        self.inner_coil.stop_pid()
-        self.inner_coil.off()
+        if trust_cached_state and self.inner_coil.cached_off():
+            self.inner_coil.off_from_off()
+        else:
+            self.inner_coil.stop_pid()
+            self.inner_coil.off()
 
     @kernel
     def arm_scopes(self):
