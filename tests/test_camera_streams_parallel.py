@@ -189,14 +189,16 @@ def test_connect_in_parallel_activates_and_sets_the_real_shapes(rig):
     assert [e for _, e in res] == [None] * len(specs)
     assert all(s.live for s in out) and fe.camera_streams == out
     for sp, s in zip(specs, out):
-        # the probe frame's shape (cropped to the entry's or the saved roi)
-        assert s._frame_shape != csc.PROVISIONAL_FRAME_SHAPE
-        if not sp["roi"]:
-            assert s._frame_shape == CROPPED
-        for k in sp["key"]:
+        # each frame at its own stored shape: the probe frame cropped to that
+        # frame's roi (frame_rois, as diagnostic_frame.bind gives them)
+        assert len(s._geometry) == len(sp["key"])
+        for j, k in enumerate(sp["key"]):
+            roi, ds, shape = s._geometry[j]
+            assert roi == sp["frame_rois"].get(k, s._roi)
             dc = _container(fe, k)
-            assert dc._per_shot_data_shape == s._frame_shape and dc.stream_only
-            assert dc._run_data.shape == (2,) + s._frame_shape    # resized after init()
+            assert dc._per_shot_data_shape == shape and dc.stream_only
+            assert dc._per_shot_data_shape != csc.PROVISIONAL_FRAME_SHAPE
+            assert dc._run_data.shape == (2,) + shape             # resized after init()
     # a second connect does nothing
     n = {k: s.calls for k, s in rig.streams.items()}
     cs_mod.connect_camera_streams(fe)
@@ -217,7 +219,7 @@ def test_shared_trigger_line_streams_become_siblings_before_connect(rig):
 def test_failed_connect_makes_a_dead_stream_not_a_placeholder_swap(rig, capsys):
     fe = FakeExpt()
     entries = diagnostic_cameras.entries()
-    i_bad = [e.key for e in entries].index("mot")
+    i_bad = [e.key for e in entries].index("mot_basler")
     bad = entries[i_bad]
     rig.fail.add(str(bad.camera.serial_no))
     out = cs_mod.camera_streams(fe, _specs(on_error="dummy"))
@@ -238,7 +240,7 @@ def test_failed_connect_makes_a_dead_stream_not_a_placeholder_swap(rig, capsys):
         assert not dc.stream_only
         assert np.isnan(np.asarray(_container(fe, k + "_meta")._run_data)).all()
     # its kernel calls are counted, its live sibling still hears the edge
-    sib = out[[e.key for e in entries].index("x")]
+    sib = out[[e.key for e in entries].index("x_basler")]
     n_sib = sib.counts.get("sibling_edges", 0)
     dead.announce_trigger_mu(0, 0)
     assert dead.counts["edges_not_served"] == 1
