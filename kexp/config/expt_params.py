@@ -145,7 +145,7 @@ class ExptParams(ExptParamsWaxx):
         self.t_mot_reload = 2.
         self.t_bias_off_wait = 20.e-3
         
-        self.t_recover = 100.e-3
+        # self.t_recover = 100.e-3 # removed 2026-10-21 (user): no delay between shots; it guarded scope reads, which cannot outlast the re-arm (both blocking kernel RPCs)
         self.t_magtrap_delay = 1.e-3
         self.t_pre_lightsheet_rampup_delay = 0.e-3
         self.t_magtrap = 1.2

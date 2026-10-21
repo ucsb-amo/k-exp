@@ -27,10 +27,11 @@ class sampler_frame(sampler_frame_waxx):
         # coil current transducers (user, 2026-10-21; for the coil-reset
         # timing measurement). Not read by any sequence yet.
         # Inner: 20 A/V (user 2026-10-21) -> 8.5 V at the 170 A max_current.
-        # Outer: 40 A/V (user 2026-10-21; experiments/calibration/
-        # measure_i_transducer_per_i_supply.py says 60 A/V for the transducer
-        # it reads with the Keithley) -> ~4.8 V at 193 A; beyond the +/-10 V
-        # range above 400 A (max_current 500 A).
+        # Outer: 40 A/V (user 2026-10-21; a different transducer from the
+        # 60 A/V one that experiments/calibration/
+        # measure_i_transducer_per_i_supply.py reads with the Keithley) ->
+        # ~4.8 V at 193 A; beyond the +/-10 V range above 400 A (max_current
+        # 500 A).
         self.inner_coil_transducer = self.sampler_assign(2,gain=0)
         self.outer_coil_transducer = self.sampler_assign(3,gain=0)
 

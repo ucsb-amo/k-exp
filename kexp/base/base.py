@@ -275,7 +275,7 @@ class Base(Expt, Devices, Cooling, Image, Cameras, Control, Clients):
         # Fresh RTIO state at the start of every shot. Wait first: reset()
         # drops every output event not yet played, and after the warm-up
         # shots the coil ramp-down from cleanup_warmup_kernel is still on the
-        # timeline (nothing drains it). The wait also keeps t_recover.
+        # timeline (nothing drains it).
         self.core.wait_until_mu(now_mu())
         self.core.reset()
 
@@ -353,7 +353,6 @@ class Base(Expt, Devices, Cooling, Image, Cameras, Control, Clients):
             self.warmup_kernel()
             self.cleanup_warmup_kernel()
 
-            delay(self.p.t_recover)
             self.core.break_realtime()
         self.diag.active = self.diag.enabled
 
