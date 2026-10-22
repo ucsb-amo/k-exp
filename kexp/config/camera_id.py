@@ -185,14 +185,14 @@ class diagnostic_frame(diagnostic_frame_waxx):
         # the realigned tweezer: full-sensor run 87302 put the beam at (x,y)=(749,519); ROI = pixels
         # above 5% of the full-power peak, padded 30 px (user OK'd the ROI change, 2026-10-19)
         # end of the tweezer ramp-up
-        self.img_tweezer_load_x = self.image(cameras.x_basler, t_offset=1.e-3,
-                                             exposure_time=50.e-6, gain=5.,
-                                             roi=[636, 366, 872, 662], #87302, 2026-10-19
+        self.img_tweezer_load_x = self.image(cameras.x_basler, t_offset=0.,
+                                             exposure_time=100.e-6, gain=8.,
+                                             roi=[631, 95, 1099, 988], #87302, 2026-10-19
                                              label='tweezer load', show=None)
         # end of the last tweezer evap
         self.img_tweezer_evap_x = self.image(cameras.x_basler, t_offset=1.e-3,
-                                             exposure_time=300.e-6, gain=30.,
-                                             roi=[636, 366, 872, 662], #87302, 2026-10-19
+                                             exposure_time=300.e-6, gain=8.,
+                                             roi=[631, 95, 1099, 988], #87302, 2026-10-19
                                              label='tweezer evap', show=None)
 
         # tweezer beam position from the pickoff; shares the 2D-MOT basler's trigger line (2026-10-19)
