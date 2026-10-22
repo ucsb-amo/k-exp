@@ -43,7 +43,7 @@ class hf_lightsheet_bec_rydberg(EnvExperiment, Base):
 
         self.p.hf_imaging_detuning = -568.e6 
 
-        self.xvar('frequency_eo_980', np.linspace(335.,469.,7)*1.e6)
+        self.xvar('frequency_eo_980', np.linspace(470.,499.,7)*1.e6)
         self.p.frequency_eo_980 = 422.7e6
 
         self.p.v_pd_ry_405 = 0.8

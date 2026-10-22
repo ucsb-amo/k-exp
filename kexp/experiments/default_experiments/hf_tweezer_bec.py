@@ -15,7 +15,8 @@ class hf_bec(EnvExperiment, Base):
                       warmup_shots=0)
 
         self.p.t_mot_load = 1.0
-        self.p.t_tweezer_hold = 100.e-3
+        # self.p.t_tweezer_hold = 100.e-3
+        self.p.t_tweezer_hold = 20.e-3 #87461 (20 ms gave +20-40 % vs 100 ms), 2026-10-20
 
         # self.xvar('t_tof',np.linspace(0.,4000.,13)*1.e-6)
         self.p.t_tof = 1.e-3
@@ -61,7 +62,8 @@ class hf_bec(EnvExperiment, Base):
     def scan_kernel(self):
         self.set_imaging_detuning(frequency_detuned=self.p.frequency_detuned_hf_f1m1)
 
-        self.prepare_hf_tweezers(do_tweezer_evap_2=False)
+        # self.prepare_hf_tweezers(do_tweezer_evap_2=False)
+        self.prepare_hf_tweezers(do_tweezer_evap_2=True) # 2026-10-21: evap 2 (PID2) on, operating point #87461
          
         delay(self.p.t_tweezer_hold)
         
