@@ -89,18 +89,6 @@ class ExptParams(ExptParamsWaxx):
         self.t_mot_kill = 1.
         self.t_2D_mot_load_delay = 1.
         self.t_mot_load = 1.0
-        # MOT pre-load (Base(mot_preload=True), off by default): the MOT is
-        # switched on at the end of each shot and loads through the gap to the
-        # next shot's mot(). do_mot_preload records whether the run used it
-        # (set by Base.__init__; not an xvar). t_mot_load_total > 0 makes the
-        # in-shot load max(t_mot_load_min, t_mot_load_total - pre-load time)
-        # instead of t_mot_load; 0 keeps t_mot_load. Both durations land in
-        # data.mot_preload every shot. With the per-shot field read on, a
-        # pre-load run takes it at the end of the shot (coils off), not at the
-        # shot's start.
-        self.do_mot_preload = 0
-        self.t_mot_load_total = 0.
-        self.t_mot_load_min = 0.1
 
         self.t_d2cmot = 50.e-3
         self.t_d1cmot = 10.e-3
@@ -116,6 +104,19 @@ class ExptParams(ExptParamsWaxx):
         # frame sits is on its DiagnosticImage in kexp.config.camera_id
         # (the t_diag_* params until 2026-10-19).
         self.t_2dmot_prephase = 150.e-3
+
+        # MOT pre-load (Base(mot_preload=True), off by default): the MOT is
+        # switched on at the end of each shot and loads through the gap to the
+        # next shot's mot(). do_mot_preload records whether the run used it
+        # (set by Base.__init__; not an xvar). t_mot_load_total > 0 makes the
+        # in-shot load max(t_mot_load_min, t_mot_load_total - pre-load time)
+        # instead of t_mot_load; 0 keeps t_mot_load. Both durations land in
+        # data.mot_preload every shot. With the per-shot field read on, a
+        # pre-load run takes it at the end of the shot (coils off), not at the
+        # shot's start.
+        self.do_mot_preload = 0
+        self.t_mot_load_total = 0.
+        self.t_mot_load_min = 0.1
         
         self.t_pump_to_F1 = 150.e-6
         self.t_optical_pumping = 200.e-6
