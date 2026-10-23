@@ -1,5 +1,6 @@
 from artiq.experiment import *
 from artiq.experiment import delay, delay_mu, parallel, sequential
+from artiq.language.core import now_mu
 
 from waxx.control.raman_beams import RamanBeamPair
 
@@ -31,6 +32,13 @@ class Cooling():
     # just to get syntax highlighting; set by Base.__init__
     if TYPE_CHECKING:
         diag: "diagnostic_frame"
+
+    # MOT pre-load state (Base(mot_preload=...); Base.__init__ sets them on
+    # the instance too). Class defaults so that any object mixing Cooling in
+    # (the monitor's composite ops call mot()) compiles mot()'s bookkeeping.
+    mot_preload = False
+    _mot_preloaded = False
+    _t_mot_preload_on_mu = np.int64(0)
 
     def __init__(self):
         # just to get syntax highlighting
@@ -472,7 +480,9 @@ class Cooling():
         if self.diagnostic_images:
             # 2D-MOT-only window (push off; the 2D beams are on) for the 2D
             # MOT diagnostic frames, which lead the push coming on below (the
-            # two 1 ms delays follow).
+            # two 1 ms delays follow). With a MOT pre-loaded at the end of
+            # the last shot, the 3D MOT is already there (and holds) in this
+            # window.
             self.dds.push.off()
             delay(self.p.t_2dmot_prephase - 2.e-3)
             self.diag.img_2dmot.trigger()
@@ -480,7 +490,40 @@ class Cooling():
         delay(1.e-3)
 
         delay(1.e-3)
-            
+
+        self._mot_on(detune_d2_c, amp_d2_c, detune_d2_r, amp_d2_r,
+                     detune_push, amp_push, i_supply,
+                     v_xshim_current, v_yshim_current, v_zshim_current)
+        # diagnostic frames (no-ops with diagnostics off; the cursor stays).
+        # After a pre-load these frames show the MOT's fluorescence as well.
+        self.diag.img_mot_beams_xy.trigger()
+        self.diag.img_mot_beams_z.trigger()
+
+        # MOT pre-load bookkeeping (Base(mot_preload=True)): how long the
+        # MOT has been on since the end of the last shot, and the in-shot
+        # load -- t, or with p.t_mot_load_total > 0 what the total still
+        # needs (never below p.t_mot_load_min).
+        t_pre = 0.
+        if self._mot_preloaded:
+            t_pre = self.core.mu_to_seconds(now_mu() - self._t_mot_preload_on_mu)
+            self._mot_preloaded = False
+            if self.p.t_mot_load_total > 0.:
+                t = max(self.p.t_mot_load_min, self.p.t_mot_load_total - t_pre)
+        self.data.mot_preload.put_data(t_pre, 0)
+        self.data.mot_preload.put_data(t, 1)
+
+        delay(t)
+        self.diag.img_mot.trigger()
+
+    @kernel
+    def _mot_on(self, detune_d2_c, amp_d2_c, detune_d2_r, amp_d2_r,
+                detune_push, amp_push, i_supply,
+                v_xshim_current, v_yshim_current, v_zshim_current):
+        """The 3D MOT switched on (no wait, no diagnostic frame): inner coil
+        at i_supply (20 V compliance), cooler / repump / push set and on,
+        z-shim H-bridge unflipped, shims set. Shared by mot() and the
+        end-of-shot pre-load (mot_preload_on), so both make the same MOT.
+        Moves the cursor by 2 x t_rtio plus the DAC / DDS writes' own time."""
         self.inner_coil.set_supply(i_supply)
         self.inner_coil.set_voltage(20.)
         self.inner_coil.on()
@@ -493,18 +536,47 @@ class Cooling():
         delay(self.params.t_rtio)
         self.dds.push.set_dds_gamma(delta=detune_push,
                                  amplitude=amp_push)
-        
+
         self.ttl.zshim_hbridge_flip.off()
-        
+
         self.set_shims(v_xshim_current,v_yshim_current,v_zshim_current)
         with parallel:
             self.switch_d2_3d(1)
             self.dds.push.on()
-        # diagnostic frames (no-ops with diagnostics off; the cursor stays)
-        self.diag.img_mot_beams_xy.trigger()
-        self.diag.img_mot_beams_z.trigger()
-        delay(t)
-        self.diag.img_mot.trigger()
+
+    @kernel
+    def mot_preload_on(self):
+        """MOT pre-load (Base(mot_preload=True)): the 2D MOT (beams, push
+        set, 2D coil current) and the 3D MOT exactly as mot() makes them with
+        the default parameters, switched on now and left on. Called at the end
+        of a shot (Base.cleanup_scan_kernel, after the coils are reset, the
+        background field is read and the shot is recorded) and after each
+        warm-up, so the MOT loads through the gap to the next shot's mot(),
+        which records the pre-load time (data.mot_preload[0]). Starts with a
+        break_realtime + 2 ms (it follows host RPCs)."""
+        self.core.break_realtime()
+        delay(2.e-3)
+        self.load_2D_mot(0.)
+        delay(1.e-3)
+        self._mot_on(self.params.detune_d2_c_mot, self.params.amp_d2_c_mot,
+                     self.params.detune_d2_r_mot, self.params.amp_d2_r_mot,
+                     self.params.detune_push, self.params.amp_push,
+                     self.params.i_mot,
+                     self.params.v_xshim_current, self.params.v_yshim_current,
+                     self.params.v_zshim_current)
+        self._t_mot_preload_on_mu = now_mu()
+        self._mot_preloaded = True
+
+    @kernel
+    def mot_preload_off(self):
+        """Undo a pre-load's light and 2D coil current: 3D, 2D beams and
+        push off, 2D MOT current to 0 V. The inner coil is not touched here
+        (reset_coils / background_field turn it off and discharge it)."""
+        self.switch_d2_3d(0)
+        self.switch_d2_2d(0)
+        self.dds.push.off()
+        self.dac.supply_current_2dmot.set(v=0.)
+        self._mot_preloaded = False
 
     @kernel
     def mot_reload(self,t,

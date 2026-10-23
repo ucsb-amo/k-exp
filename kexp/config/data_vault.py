@@ -20,6 +20,19 @@ class DataVault(DataVaultWax):
         # HMR server's samples are ~0.16 s apart.
         self.b = self.add_data_container(1)
 
+        # MOT pre-load bookkeeping (Base(mot_preload=...), 2026-10-23), every
+        # shot: [0] the pre-load time (s, RTIO timeline): from the MOT being
+        # switched on at the end of the previous shot (or warm-up) to the
+        # start of this shot's in-shot MOT load in mot(); 0. = no pre-load.
+        # [1] the in-shot MOT load mot() used (s). [2] pre-load runs only
+        # (they read data.b at the END of the shot, coils off): the delay (s)
+        # from the end of the outer coil's discharge to the completion of the
+        # magnetometer sample behind data.b (Control.
+        # read_magnetometer_after_coil_reset); NaN if the read failed;
+        # -1. = a run without pre-load (data.b read at the shot's start).
+        # [0] and [1] stay -1. in a shot that never called mot().
+        self.mot_preload = self.add_data_container(3)
+
         # Outer-coil current at the first camera trigger of each shot (A),
         # written once per shot by Image.record_imaging_conditions. Analysis
         # switches the absorption cross section on it
