@@ -9,6 +9,15 @@ class DataVault(DataVaultWax):
 
         self.post_shot_absorption = self.add_data_container(4)
 
+        # |B| (G) from the HMR magnetometer at shot start (Control.
+        # read_magnetometer), 0. = not read. Since 2026-10-23 the per-shot read
+        # is OFF by default (Base(read_magnetometer_per_shot=False), recorded
+        # as p.do_read_magnetometer_per_shot): data.b is 0. in every shot. For
+        # the field use the Zabbix log (waxa.climate, ClimateClient /
+        # climate_for_run). With the read on, note that on the shot-deadtime
+        # branch it comes ~0.15 s sooner after the outer-coil discharge than
+        # on main and reads ~0.55 mG low with ~0.5 mG shot scatter (a
+        # transient; 88052-88057, 88062-88065, 88071-88074).
         self.b = self.add_data_container(1)
 
         # Outer-coil current at the first camera trigger of each shot (A),

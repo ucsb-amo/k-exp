@@ -37,7 +37,8 @@ class Base(Expt, Devices, Cooling, Image, Cameras, Control, Clients):
                  warmup_shots=0,
                  verbosity=None,
                  diagnostic_images=True,
-                 fast_coil_reset=True):
+                 fast_coil_reset=True,
+                 read_magnetometer_per_shot=False):
 
         # camera_select picks the detector and setup_camera says whether to
         # acquire with it: liveOD frames for a camera, the pickoff stage in
@@ -73,6 +74,12 @@ class Base(Expt, Devices, Cooling, Image, Cameras, Control, Clients):
         # cleanup_scan_kernel's short coil reset for a coil already off after
         # a normal shot (Control.reset_coils); False = the full reset always.
         self.fast_coil_reset = bool(fast_coil_reset)
+        # The per-shot magnetometer read at shot start (Control.read_magnetometer:
+        # a wait for the timeline + one RPC). OFF by default since 2026-10-23
+        # (user): data.b then holds 0. (= not read) every shot; the field is
+        # logged to Zabbix (waxa.climate) for a rough estimate. True restores
+        # the read exactly. Recorded as p.do_read_magnetometer_per_shot.
+        self.read_magnetometer_per_shot = bool(read_magnetometer_per_shot)
 
         self.prepare_devices(expt_params=self.params)
 
@@ -118,6 +125,7 @@ class Base(Expt, Devices, Cooling, Image, Cameras, Control, Clients):
         # N imaging-free preparations (Cooling.warmup_kernel) before the first
         # real shot, invisible to the camera, DataSaver and liveOD.
         self.params.N_warmup_shots = int(warmup_shots)
+        self.params.do_read_magnetometer_per_shot = int(self.read_magnetometer_per_shot)
         if self.params.N_warmup_shots <= 0:
             console.info("[warmup] none: first shot likely ~25% low "
                          "(Base(warmup_shots=2) to fix).")
@@ -340,7 +348,12 @@ class Base(Expt, Devices, Cooling, Image, Cameras, Control, Clients):
         self.arm_scopes()
 
         self.background_field()
-        self.read_magnetometer()
+        if self.read_magnetometer_per_shot:
+            self.read_magnetometer()
+        else:
+            # not read (Base(read_magnetometer_per_shot=False)): the "not read"
+            # value, written explicitly so the file never depends on a fill
+            self.data.b.put_data(0.)
         self.read_raman_wavemeter()
         # arm the once-per-shot capture of the outer-coil current at imaging
         self._imaging_conditions_recorded = False
