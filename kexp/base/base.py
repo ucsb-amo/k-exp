@@ -192,6 +192,15 @@ class Base(Expt, Devices, Cooling, Image, Cameras, Control, Clients):
                              f"Base argument, not the parameter.")
         # (add_sub_scan registers self._subscan in prepare; _subscan_enabled is
         # decided later, in finish_prepare_wax)
+        if self.mot_preload:
+            # The MOT goes on before SHOT_COMPLETE and stays on between shots:
+            # only safe with a scan loop that runs cleanup_abort_kernel on any
+            # exception out of a cleanup or between shots (waxx 2852e9b+).
+            from waxx.base import scanner as _scanner
+            if not getattr(_scanner, "SAFE_STATE_ON_EVERY_CLEANUP_FAILURE", False):
+                raise ValueError("Base(mot_preload=True) needs a waxx scan loop with "
+                                 "SAFE_STATE_ON_EVERY_CLEANUP_FAILURE (jep/mot-preload wax); "
+                                 f"the loaded one ({_scanner.__file__}) lacks it.")
         if self.mot_preload and getattr(self, '_subscan', None) is not None:
             raise ValueError("Base(mot_preload=True) with an interleaved sub-scan is "
                              "not supported.")

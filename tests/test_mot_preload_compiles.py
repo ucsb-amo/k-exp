@@ -165,3 +165,14 @@ def test_a_failed_field_read_records_zero_and_nan():
     me = _fake_self(_Dead())
     b, delay = Control._read_magnetometer_after(me, 0.01)
     assert b == 0. and math.isnan(delay) and me._magnetometer_fails == 1
+
+
+@harness.pytestmark
+def test_a_scan_loop_without_the_safe_state_handler_is_refused(monkeypatch, tmp_path):
+    """Reviewer B: the pre-load keeps the MOT on between shots, safe only with
+    the waxx scan loop's cleanup_abort_kernel on every cleanup failure."""
+    from waxx.base import scanner
+    monkeypatch.delattr(scanner, "SAFE_STATE_ON_EVERY_CLEANUP_FAILURE")
+    monkeypatch.setattr(harness, "EXPT", EXPT)
+    with pytest.raises(ValueError, match="SAFE_STATE_ON_EVERY_CLEANUP_FAILURE"):
+        harness._build(monkeypatch, tmp_path)
