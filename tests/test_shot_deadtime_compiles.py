@@ -89,3 +89,72 @@ def test_a_wrong_coil_attribute_fails_the_compile(monkeypatch, tmp_path):
             harness._compile(cls, exp)
     finally:
         device_mgr.close_devices()
+
+
+def _calls(nodes):
+    """Dotted names of the calls in `nodes`, in source order."""
+    import ast
+    out = []
+    for n in nodes:
+        for c in ast.walk(n):
+            if isinstance(c, ast.Call):
+                f, parts = c.func, []
+                while isinstance(f, ast.Attribute):
+                    parts.append(f.attr)
+                    f = f.value
+                if isinstance(f, ast.Name):
+                    parts.append(f.id)
+                out.append((".".join(reversed(parts)), c))
+    return sorted(out, key=lambda t: (t[1].lineno, t[1].col_offset))
+
+
+def test_cleanup_makes_the_high_power_outputs_safe_before_anything_can_raise():
+    """2026-10-23 (user: "fix cleanup hazard"; Reviewer B): cleanup_image_count
+    can raise (wrong PWA count after a pre-imaging underflow; an underflow in the
+    reference frames), and the raman DDS restore can raise. Neither may run
+    before the coils are reset: the first statement wraps cleanup_image_count
+    in a bare except that resets the coils (full path), switches the high-power
+    outputs off and re-raises; the restore comes after reset_coils."""
+    import ast
+    import inspect
+    import textwrap
+    from kexp.base.base import Base
+
+    fn = ast.parse(textwrap.dedent(inspect.getsource(Base.cleanup_scan_kernel))).body[0]
+    first = fn.body[0]
+    assert isinstance(first, ast.Try), "cleanup_image_count must be wrapped"
+    assert [n for n, _ in _calls(first.body)] == ["self.cleanup_image_count"]
+    (handler,) = first.handlers
+    assert handler.type is None and handler.name is None          # bare except
+    assert isinstance(handler.body[-1], ast.Raise) and handler.body[-1].exc is None
+    names = [n for n, _ in _calls(handler.body)]
+    for needed in ("self.reset_coils", "self.lightsheet.off", "self.tweezer.off",
+                   "self.imaging.off", "self.raman.off"):
+        assert needed in names, needed
+    (rc,) = [c for n, c in _calls(handler.body) if n == "self.reset_coils"]
+    kw = {k.arg: k.value for k in rc.keywords}
+    assert isinstance(kw.get("trust_cached_state"), ast.Constant) and kw["trust_cached_state"].value is False
+
+    rest = [n for n, _ in _calls(fn.body[1:])]
+    assert rest.index("self.reset_coils") < rest.index("self.raman.clean_up_fast_frequency_update")
+
+
+def test_a_short_image_count_after_a_failed_shot_does_not_raise():
+    """2026-10-23 (organizer, from the MOT-preload analysis): after a shot that
+    raised before its image (an underflow; Scanner's handler then runs the
+    cleanup), cleanup_image_count resets the counters and warns instead of
+    raising ValueError, so the cleanup reaches reset_coils and the underflow
+    stays the reported exception. A shot that completed with a wrong count
+    still raises."""
+    import ast
+    import inspect
+    import textwrap
+    from kexp.base.image import Image
+
+    fn = ast.parse(textwrap.dedent(inspect.getsource(Image.cleanup_image_count))).body[0]
+    src = ast.unparse(fn)
+    assert "elif self.shot_completed:" in src
+    raises = [n for n in ast.walk(fn) if isinstance(n, ast.Raise)]
+    assert len(raises) == 1                     # only in the completed-shot branch
+    # the counters are reset on every path
+    assert src.rstrip().endswith("self._counter.img_idx = 0")

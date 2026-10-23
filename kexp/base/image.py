@@ -450,8 +450,16 @@ class Image():
                 and img_idx == N_pwa_target + 2:
                 pass
 
-            else:
+            elif self.shot_completed:
                 raise ValueError("Incorrect number of PWA acquired during the shot.")
+            else:
+                # The shot raised (an underflow before its image, say) and
+                # Scanner's handler runs this cleanup: the count is short
+                # because the shot never got there. That exception is the one
+                # to report, so the counters are reset (below) and the
+                # cleanup goes on to make the coils safe (2026-10-23).
+                aprint("[cleanup] shot ended early: image count", img_idx,
+                       "/", N_pwa_target, "-- counters reset, no reference frames")
         
         self._counter.light_img_idx = 0
         self._counter.img_idx = 0

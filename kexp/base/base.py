@@ -487,7 +487,25 @@ class Base(Expt, Devices, Cooling, Image, Cameras, Control, Clients):
     @kernel
     def cleanup_scan_kernel(self):
 
-        self.cleanup_image_count()
+        # cleanup_image_count can raise -- ValueError on a wrong PWA count
+        # (Scanner runs this cleanup inside its RTIOUnderflow handler, and a
+        # shot that underflowed before its image has 0 PWA), or an
+        # RTIOUnderflow in the light/dark reference frames -- and nothing
+        # below would run (no cleanup runs after it). So on any exception the
+        # high-power outputs are made safe first (full coil reset: the cache
+        # is not trusted), then the exception is re-raised unchanged.
+        try:
+            self.cleanup_image_count()
+        except:
+            self.core.break_realtime()
+            self.reset_coils(trust_cached_state=False)
+            self.lightsheet.off()
+            self.tweezer.off()
+            self.ttl.quantum_machines_raman_rf_handoff_ttl.off()
+            self.imaging.off()
+            self.raman.off()
+            self.core.break_realtime()
+            raise
 
         self.core.break_realtime()
         self.ttl.raman_shutter.off()
