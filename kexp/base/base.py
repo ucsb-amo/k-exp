@@ -491,9 +491,12 @@ class Base(Expt, Devices, Cooling, Image, Cameras, Control, Clients):
 
         self.core.break_realtime()
         self.ttl.raman_shutter.off()
-        self.raman.clean_up_fast_frequency_update()
 
         self.core.break_realtime()
+        # The coils and every high-power output come first, the raman DDS
+        # restore after them (2026-10-23): with the restore first, an
+        # exception there skipped the rest and left the outer coil at its HF
+        # current with the PID on (no cleanup runs after that exception).
         # The cached coil state is trusted only after a shot that returned
         # normally (not after an underflow): see Control.reset_coils.
         self.reset_coils(trust_cached_state=self.shot_completed and self.fast_coil_reset)
@@ -514,6 +517,11 @@ class Base(Expt, Devices, Cooling, Image, Cameras, Control, Clients):
         # two switch DDSs have no DAC channel).
         self.imaging.off()
         self.raman.off()
+
+        # DDS register writes only (profile mode, fast-update state): needs
+        # neither the coils nor any RF on.
+        self.core.break_realtime()
+        self.raman.clean_up_fast_frequency_update()
 
         self.core.break_realtime()
         self.ry_405.lock_status()
