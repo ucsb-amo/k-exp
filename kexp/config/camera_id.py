@@ -121,7 +121,10 @@ class diagnostic_frame(diagnostic_frame_waxx):
             entry's absorption exposure / gain, and the full frame (stored downsampled
             ``no_roi_downsample`` x). Optional: ``t_stage`` (s or an ExptParams name) -- the length
             of the stage it sits in, an image with |t_offset| longer is not taken; ``label`` and
-            ``show`` ('image' | 'counts' | None) for the diagnostic viewer.
+            ``show`` ('image' | 'counts' | None) for the diagnostic viewer; ``max_exposure_time``
+            (s) -- the longest exposure its timing allows: during a run an operator may override
+            an image's gain from the Camera Viewer (that image shown alone with Frames, then
+            Override...), and its exposure only up to this (none given: gain only).
 
     A camera's frame index is the order its images are assigned here: assign them in the
     order the sequence takes them. New image: one line here and its trigger() call in the
