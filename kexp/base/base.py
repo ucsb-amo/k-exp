@@ -89,6 +89,16 @@ class Base(Expt, Devices, Cooling, Image, Cameras, Control, Clients):
         # goes on (the latest sample; its delay after the outer-coil discharge
         # is recorded). Recorded as p.do_mot_preload and the root text
         # 'mot_preload'.
+        # Tested 2026-10-23 (runs 88092-88098, hf_bec, total MOT 0.5 s, hold
+        # 1.2 s; outputs/2026-10-23_07-38_mot_preload/RESULTS.md): same cloud
+        # within +/-15 % (N 0.979, 90 % CI 0.93-1.03; width 0.989), period
+        # -0.156 s; throughput gain NOT resolved (N per second 1.02, CI
+        # 0.94-1.11). Caveats: data.b in this mode is ~4x noisier and read a
+        # variable 0.01-0.19 s after the outer discharge -- not comparable with
+        # the default mode's shot-start read; the inner coil supply ramps for
+        # ~0.2 s, so the ~0.16 s pre-load runs at a reduced, rising gradient
+        # (12.7-14.5 A median at 0.05-0.15 s vs 21 A); the benefit at this MOT
+        # power is unresolved.
         self.mot_preload = bool(mot_preload)
         self._mot_preloaded = False
         self._t_mot_preload_on_mu = np.int64(0)

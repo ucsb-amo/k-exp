@@ -30,6 +30,9 @@ class DataVault(DataVaultWax):
         # end of the outer coil's discharge (s; negative = before it; NaN =
         # the read failed; Control.read_magnetometer_after_coil_reset);
         # -1. = no such read (no pre-load: data.b read at the shot's start).
+        # data.b of a pre-load run (read 0.01-0.19 s after the discharge, SD
+        # ~4x the shot-start read's, 2026-10-23) is NOT comparable with data.b
+        # of a run without the pre-load.
         # [0] and [1] stay -1. in a shot that never called mot().
         self.mot_preload = self.add_data_container(3)
 

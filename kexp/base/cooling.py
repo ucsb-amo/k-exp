@@ -553,7 +553,11 @@ class Cooling():
         background field is read and the shot is recorded) and after each
         warm-up, so the MOT loads through the gap to the next shot's mot(),
         which records the pre-load time (data.mot_preload[0]). Starts with a
-        break_realtime + 2 ms (it follows host RPCs)."""
+        break_realtime + 2 ms (it follows host RPCs).
+
+        The inner coil's supply needs ~0.1 s to pass 15 A and ~0.2-0.25 s to
+        reach i_mot after the switch-on (Keysight readback, 2026-10-23), so a
+        ~0.16 s pre-load holds the MOT at a reduced, rising gradient."""
         self.core.break_realtime()
         delay(2.e-3)
         self.load_2D_mot(0.)
