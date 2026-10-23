@@ -129,7 +129,7 @@ def test_cleanup_makes_the_high_power_outputs_safe_before_anything_can_raise():
     assert isinstance(handler.body[-1], ast.Raise) and handler.body[-1].exc is None
     names = [n for n, _ in _calls(handler.body)]
     for needed in ("self.reset_coils", "self.lightsheet.off", "self.tweezer.off",
-                   "self.imaging.off", "self.raman.off"):
+                   "self.imaging.off", "self.raman.off", "self.ttl.raman_shutter.off"):
         assert needed in names, needed
     (rc,) = [c for n, c in _calls(handler.body) if n == "self.reset_coils"]
     kw = {k.arg: k.value for k in rc.keywords}

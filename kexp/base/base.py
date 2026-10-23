@@ -504,6 +504,7 @@ class Base(Expt, Devices, Cooling, Image, Cameras, Control, Clients):
             self.ttl.quantum_machines_raman_rf_handoff_ttl.off()
             self.imaging.off()
             self.raman.off()
+            self.ttl.raman_shutter.off()
             self.core.break_realtime()
             raise
 
