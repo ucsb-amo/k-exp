@@ -89,7 +89,7 @@ class ExptParams(ExptParamsWaxx):
         self.t_mot_kill = 1.
         self.t_2D_mot_load_delay = 1.
         self.t_mot_load = 1.0
-
+        
         self.t_d2cmot = 50.e-3
         self.t_d1cmot = 10.e-3
         
