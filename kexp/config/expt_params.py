@@ -88,7 +88,8 @@ class ExptParams(ExptParamsWaxx):
         
         self.t_mot_kill = 1.
         self.t_2D_mot_load_delay = 1.
-        self.t_mot_load = 1.0
+        # self.t_mot_load = 1.0
+        self.t_mot_load = 0.5 #88059-88061 (MOT 0.5 vs 1.0 at hold 1.2: N 1.16x, N/s 1.32x; user's choice), 2026-10-23
         
         self.t_d2cmot = 50.e-3
         self.t_d1cmot = 10.e-3
@@ -334,7 +335,8 @@ class ExptParams(ExptParamsWaxx):
         # self.v_pd_hf_tweezer_1064_rampdown_end = 0.16
         self.v_pd_hf_tweezer_1064_rampdown_end = 0.08 #87461, 2026-10-20
         # self.v_pd_hf_tweezer_1064_rampdown2_end = 4. # 2.2
-        self.v_pd_hf_tweezer_1064_rampdown2_end = 0.20 # PID2 units, absolute #87461/87466, 2026-10-20
+        # self.v_pd_hf_tweezer_1064_rampdown2_end = 0.20 # PID2 units, absolute #87461/87466, 2026-10-20
+        self.v_pd_hf_tweezer_1064_rampdown2_end = 0.604 # PID2 units, absolute: the 0.20 V point on the new PD2 (+/- 0.007) #87842+87843, 2026-10-22
         self.n_tweezer_ramp_steps = 200
         # HF tweezer evap 1 painting law: paint_frac = (P/P_max)**e (0.3333 = constant trap frequency)
         self.paint_amp_exponent_hf_tweezer = 1.0 #87461 (e 0.85-1 best), 2026-10-20
@@ -345,6 +347,7 @@ class ExptParams(ExptParamsWaxx):
 
         self.v_tweezer_paint_rampdown_end1 = -4.985
         self.v_tweezer_paint_rampdown_end2 = -6.5
+        # INVALID since PD2 move 2026-10-22: 9.99 > PD2 saturation 9.5 V on new map #87842; recalibrate before use
         self.v_pd_tweezer_squeeze_rampup_handoff_lp = 9.99 # 0.155 on vpd1
         self.v_pd_hf_tweezer_squeeze_power = .444
 
@@ -364,7 +367,7 @@ class ExptParams(ExptParamsWaxx):
         self.v_lf_tweezer_paint_amp_max = .5
         # self.v_hf_tweezer_paint_amp_max = -1.94 # -1.7
         # self.v_hf_tweezer_paint_amp_max = 3.25 # 2.0
-        self.v_hf_tweezer_paint_amp_max = 2.5 #87465, 2026-10-20
+        self.v_hf_tweezer_paint_amp_max = 4.99 #87465, 2026-10-20
 
 
         self.v_paint_amp_end = -5.444444
