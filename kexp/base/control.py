@@ -202,16 +202,14 @@ class Control():
 
     @kernel
     def read_magnetometer_after_coil_reset(self):
-        """The end-of-shot field read of a MOT pre-load run (Base.
+        """The per-shot field read of a MOT pre-load run (Base.
         cleanup_scan_kernel, after reset_coils and background_field, before
-        the MOT goes back on). Waits for the timeline, then takes the first
-        magnetometer sample completed at least
-        p.t_magnetometer_after_outer_off after the outer coil's discharge
-        ended (reset_coils stamps that time), waiting at most
-        p.t_magnetometer_wait_max. data.b gets |B| (0. = not read, as
-        read_magnetometer) and data.mot_preload[2] the sample's actual delay
-        after the outer discharge (s; NaN when no timed sample was had).
-        The wall time it takes comes out of the pre-load, not the shot."""
+        the MOT goes back on). Waits for the timeline (as read_magnetometer
+        does), then ONE request for the magnetometer server's latest sample,
+        no wait for a newer one. data.b gets |B| (0. = not read, as
+        read_magnetometer) and data.mot_preload[2] the sample's delay after
+        the outer coil's discharge ended (reset_coils stamps that time; s,
+        negative = the sample predates it; NaN = no timed sample)."""
         self.core.wait_until_mu(now_mu())
         t_since_outer = self.core.mu_to_seconds(now_mu() - self._t_outer_coil_reset_end_mu)
         r = self._read_magnetometer_after(t_since_outer)
@@ -225,39 +223,25 @@ class Control():
         Called when the timeline has reached the read (the kernel waited), so
         the outer coil's discharge ended t_since_outer before now, on this
         PC's clock. The magnetometer server (on kong with the Server
-        Dashboard; the sample times 't' are its time.time()) polls the
-        HMR2300 every ~0.12 s and keeps the latest sample; this takes the
-        first one whose time is >= that end + p.t_magnetometer_after_outer_off.
-        None in time: the latest sample, its delay recorded as it is (may be
-        shorter than asked). A failed read: [0., NaN]; after
-        MAGNETOMETER_MAX_FAILS failures in a row the run stops reading, as
-        _read_magnetometer does. Never raises."""
+        Dashboard; its sample times 't' are its time.time()) polls the
+        HMR2300 every ~0.12 s; one GET returns the latest sample. A failed
+        read: [0., NaN]; after MAGNETOMETER_MAX_FAILS failures in a row the
+        run stops reading, as _read_magnetometer does. Never raises."""
         import time
         nan = float("nan")
         if self._magnetometer_skipped:
             return [0., nan]
         t_end_outer = time.time() - float(t_since_outer)
-        t_want = t_end_outer + float(self.p.t_magnetometer_after_outer_off)
-        deadline = time.time() + float(self.p.t_magnetometer_wait_max)
         get = getattr(self.magnetometer, "_get_field", None)
         if get is None:
             # a client without timed samples (the offline stub): the plain read
             return [self._read_magnetometer(), nan]
-        last = None
+        reply = None
         try:
-            while True:
-                reply = get(timeout=0.5)
-                if reply.get("ok") and "t" in reply and "Btot" in reply:
-                    last = reply
-                    if float(reply["t"]) >= t_want:
-                        break
-                if time.time() >= deadline:
-                    break
-                time.sleep(0.02)
+            reply = get(timeout=0.5)
         except Exception as e:
             print(f"[magnetometer] end-of-shot read failed ({e!r}); data.b records 0.")
-            last = None
-        if last is None:
+        if not (reply and reply.get("ok") and "t" in reply and "Btot" in reply):
             self._magnetometer_fails += 1
             if self._magnetometer_fails >= MAGNETOMETER_MAX_FAILS:
                 self._magnetometer_skipped = True
@@ -265,7 +249,7 @@ class Control():
                       "skipping the read for the rest of this run; data.b records 0. (not read).")
             return [0., nan]
         self._magnetometer_fails = 0
-        return [float(last["Btot"]), float(last["t"]) - t_end_outer]
+        return [float(reply["Btot"]), float(reply["t"]) - t_end_outer]
 
     @kernel
     def read_raman_wavemeter(self):

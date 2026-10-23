@@ -95,19 +95,12 @@ class ExptParams(ExptParamsWaxx):
         # (set by Base.__init__; not an xvar). t_mot_load_total > 0 makes the
         # in-shot load max(t_mot_load_min, t_mot_load_total - pre-load time)
         # instead of t_mot_load; 0 keeps t_mot_load. Both durations land in
-        # data.mot_preload every shot. A pre-load run reads data.b at the end
-        # of the shot from the first magnetometer sample completed at least
-        # t_magnetometer_after_outer_off after the outer coil's discharge
-        # ended (waiting at most t_magnetometer_wait_max); the actual delay is
-        # data.mot_preload[2]. do_mot_preload_b_with_mot = 1 switches the MOT
-        # on BEFORE that read (data.b then includes the MOT coil / shim / 2D
-        # coil fields at the magnetometer); 0 reads with them all at 0.
+        # data.mot_preload every shot. With the per-shot field read on, a
+        # pre-load run takes it at the end of the shot (coils off), not at the
+        # shot's start.
         self.do_mot_preload = 0
-        self.do_mot_preload_b_with_mot = 0
         self.t_mot_load_total = 0.
         self.t_mot_load_min = 0.1
-        self.t_magnetometer_after_outer_off = 0.2
-        self.t_magnetometer_wait_max = 0.5
 
         self.t_d2cmot = 50.e-3
         self.t_d1cmot = 10.e-3

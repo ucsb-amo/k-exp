@@ -200,28 +200,23 @@ class Base(Expt, Devices, Cooling, Image, Cameras, Control, Clients):
             record.update({
                 "what": "MOT (2D beams + push + 2D coil, 3D beams, inner coil at i_mot, "
                         "MOT shims; default parameters) switched on at the end of each "
-                        "data shot that returned normally -- after the coil reset (and, unless "
-                        "data_b_with_mot_on, after the field read and the shot-complete "
-                        "message) -- and "
-                        "after each warm-up shot; it loads until the next shot's mot().",
-                "data_b": "read at the END of each shot (coils reset; shims and 2D coil "
-                          "at 0 unless data_b_with_mot_on) from the first magnetometer "
-                          "sample completed at least "
-                          "t_magnetometer_after_outer_off after the end of the outer-coil "
-                          "discharge (waiting at most t_magnetometer_wait_max); the "
-                          "actual delay is data.mot_preload[2]. Stored in that shot's "
-                          "slot. Runs without the pre-load read it at the shot's start.",
+                        "data shot that returned normally -- after the coil reset and "
+                        "the shims / 2D coil to 0 (and the field read, when on), before "
+                        "the shot-complete message -- and after each warm-up shot; it "
+                        "loads until the next shot's mot().",
+                "data_b": ("read once per shot at the END of the shot (coils reset, shims "
+                           "and 2D coil at 0, before the MOT goes on): the magnetometer "
+                           "server's latest sample, no wait; its delay after the end of the "
+                           "outer-coil discharge is data.mot_preload[2] (negative = taken "
+                           "before that end). Stored in that shot's slot. Runs without the "
+                           "pre-load read it at the shot's start.")
+                          if self.read_magnetometer_per_shot else
+                          "not read (read_magnetometer_per_shot=False): 0. every shot",
                 "data_mot_preload": "[pre-load s, in-shot MOT load s, magnetometer sample "
-                                    "delay after the outer-coil discharge s] per shot",
+                                    "delay after the outer-coil discharge s (-1 = no read)] "
+                                    "per shot",
                 "t_mot_load_total": float(self.params.t_mot_load_total),
                 "t_mot_load_min": float(self.params.t_mot_load_min),
-                "t_magnetometer_after_outer_off": float(self.params.t_magnetometer_after_outer_off),
-                "t_magnetometer_wait_max": float(self.params.t_magnetometer_wait_max),
-                "data_b_with_mot_on": bool(int(self.params.do_mot_preload_b_with_mot)),
-                "data_b_with_mot_on_means": "True: the MOT (inner coil i_mot, MOT shims, "
-                                            "2D coil) was switched on before the read, so "
-                                            "data.b includes their fields; False: read with "
-                                            "coils, shims and 2D coil at 0.",
                 "end_of_run": "post_scan switches the pre-loaded MOT's light and 2D coil "
                               "current off and turns the inner coil off (background_field).",
                 "on_error": "cleanup_abort_kernel: coils reset (full path), MOT light and "
@@ -426,11 +421,14 @@ class Base(Expt, Devices, Cooling, Image, Cameras, Control, Clients):
             # coils / shims / 2D current to 0 (with a pre-loaded MOT on they
             # stay as the pre-load set them)
             self.background_field()
-        if self.read_magnetometer_per_shot and not self.mot_preload:
-            self.read_magnetometer()
+        if not self.mot_preload:
+            if self.read_magnetometer_per_shot:
+                self.read_magnetometer()
+            else:
+                # not read (Base(read_magnetometer_per_shot=False)): the "not read"
+                # value, written explicitly so the file never depends on a fill
+                self.data.b.put_data(0.)
         elif not self.read_magnetometer_per_shot:
-            # not read (Base(read_magnetometer_per_shot=False)): the "not read"
-            # value, written explicitly so the file never depends on a fill
             self.data.b.put_data(0.)
         # (a pre-load run with the read on reads it at the end of the shot,
         # cleanup_scan_kernel, coils reset, before the MOT goes on)
@@ -657,30 +655,22 @@ class Base(Expt, Devices, Cooling, Image, Cameras, Control, Clients):
         self.core.break_realtime()
 
         if self.mot_preload:
-            # this shot's field read, at a recorded delay after the outer
-            # coil's discharge (data.mot_preload[2]). Default: with the coils
-            # just reset, shims and 2D coil at 0 (background_field, 10 ms),
-            # before the MOT goes back on -- the same configuration as the
-            # shot-start read of a run without the pre-load. With
-            # p.do_mot_preload_b_with_mot = 1 the MOT goes on first and the
-            # read is taken with it loading: the wait then costs no MOT time,
-            # but data.b includes the inner coil (i_mot), shim and 2D-coil
-            # fields at the magnetometer.
-            if self.p.do_mot_preload_b_with_mot == 1 and self.shot_completed:
+            # Coils reset above; shims and 2D coil to 0 (background_field,
+            # 10 ms). With the per-shot field read on, it is taken HERE, the
+            # run's one read per shot (not at the next shot's start, where the
+            # pre-loaded MOT is on): the latest sample, no wait; its delay after
+            # the outer coil's discharge goes to data.mot_preload[2]. Then the
+            # MOT goes on, before the shot-complete message (an Abort raised
+            # there gets cleanup_abort_kernel from the scan loop, which also
+            # switches the pre-loaded MOT off), and only after a shot that
+            # returned normally (an underflow ends the run).
+            self.background_field()
+            if self.read_magnetometer_per_shot:
+                self.read_magnetometer_after_coil_reset()
+            if self.shot_completed:
                 self.mot_preload_on()
-            else:
-                self.background_field()
-            self.read_magnetometer_after_coil_reset()
 
         self.cleanup_scan_kernel_wax()
-
-        # MOT pre-load: only after a shot that returned normally (an
-        # underflow ends the run). By default on after the shot is recorded
-        # and liveOD has had its shot-complete. An exception from here on
-        # (or out of the cleanup above) gets cleanup_abort_kernel from the
-        # scan loop, which also switches a pre-loaded MOT off.
-        if self.mot_preload and self.shot_completed and not self._mot_preloaded:
-            self.mot_preload_on()
 
     @kernel
     def post_scan(self):

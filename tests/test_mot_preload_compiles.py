@@ -61,7 +61,7 @@ def test_scan_with_the_preload_compiles(monkeypatch, tmp_path):
     try:
         assert exp.mot_preload is True and exp.p.do_mot_preload == 1
         rec = json.loads(exp._extra_file_texts["mot_preload"])
-        assert rec["enabled"] is True and "END of each shot" in rec["data_b"]
+        assert rec["enabled"] is True and "END of the shot" in rec["data_b"]
         assert len(exp.data.mot_preload.shot_data) == 3
         harness._compile(cls, exp)
     finally:
@@ -115,43 +115,43 @@ def test_the_preload_is_really_compiled(monkeypatch, tmp_path):
         device_mgr.close_devices()
 
 
-# ---- host only: the end-of-shot field read --------------------------------
+# ---- host only: the end-of-shot field read (one GET, no wait) -------------
 
 class _FakeMagnetometer:
-    """Serves timed samples: one every `period` s, the first `age` s old."""
+    """Serves its latest sample: one every `period` s, the first `age` s old."""
 
-    def __init__(self, period=0.05, age=0.2):
+    def __init__(self, period=0.12, age=0.2):
         self.t0 = time.time() - age
         self.period = period
+        self.n_get = 0
 
     def _get_field(self, timeout=0.5):
+        self.n_get += 1
         n = int((time.time() - self.t0) / self.period)
         t = self.t0 + n * self.period
         return {"ok": True, "t": t, "Btot": 0.5 + 0.001 * n}
 
 
-def _fake_self(mag, after=0.1, wait_max=0.5):
-    return SimpleNamespace(
-        magnetometer=mag, _magnetometer_skipped=False, _magnetometer_fails=0,
-        p=SimpleNamespace(t_magnetometer_after_outer_off=after,
-                          t_magnetometer_wait_max=wait_max),
-        _read_magnetometer=lambda: 0.)
+def _fake_self(mag):
+    return SimpleNamespace(magnetometer=mag, _magnetometer_skipped=False,
+                           _magnetometer_fails=0, _read_magnetometer=lambda: 0.)
 
 
-def test_the_field_read_waits_for_a_late_enough_sample():
+def test_the_field_read_takes_the_latest_sample_and_records_its_delay():
     from kexp.base.control import Control
-    me = _fake_self(_FakeMagnetometer(period=0.05, age=0.2), after=0.1)
-    b, delay = Control._read_magnetometer_after(me, 0.02)    # outer ended 20 ms ago
+    mag = _FakeMagnetometer(period=0.12, age=0.5)
+    t0 = time.time()
+    b, delay = Control._read_magnetometer_after(_fake_self(mag), 0.175)   # outer ended 175 ms ago
+    assert mag.n_get == 1 and time.time() - t0 < 0.1                      # one GET, no wait
     assert b > 0.5
-    assert 0.1 <= delay < 0.1 + 0.05 + 0.03                  # one sample period + slop
+    assert 0.175 - 0.12 - 0.01 <= delay <= 0.175 + 0.01                   # latest sample 0-120 ms old
 
 
-def test_the_field_read_records_a_short_delay_when_none_comes():
+def test_a_sample_older_than_the_discharge_end_is_recorded_negative():
     from kexp.base.control import Control
-    me = _fake_self(_FakeMagnetometer(period=10., age=0.), after=0.3, wait_max=0.1)
-    b, delay = Control._read_magnetometer_after(me, 0.01)
-    assert b == pytest.approx(0.5)
-    assert delay < 0.3                                       # recorded as it is
+    mag = _FakeMagnetometer(period=10., age=0.3)                          # latest sample 0.3 s old
+    b, delay = Control._read_magnetometer_after(_fake_self(mag), 0.1)
+    assert b == pytest.approx(0.5) and delay == pytest.approx(-0.2, abs=0.02)
 
 
 def test_a_failed_field_read_records_zero_and_nan():

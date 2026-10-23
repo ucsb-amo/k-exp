@@ -24,12 +24,12 @@ class DataVault(DataVaultWax):
         # shot: [0] the pre-load time (s, RTIO timeline): from the MOT being
         # switched on at the end of the previous shot (or warm-up) to the
         # start of this shot's in-shot MOT load in mot(); 0. = no pre-load.
-        # [1] the in-shot MOT load mot() used (s). [2] pre-load runs only
-        # (they read data.b at the END of the shot, coils off): the delay (s)
-        # from the end of the outer coil's discharge to the completion of the
-        # magnetometer sample behind data.b (Control.
-        # read_magnetometer_after_coil_reset); NaN if the read failed;
-        # -1. = a run without pre-load (data.b read at the shot's start).
+        # [1] the in-shot MOT load mot() used (s). [2] pre-load runs with the
+        # per-shot field read on (they read data.b at the END of the shot,
+        # coils off, the server's latest sample): the sample's time after the
+        # end of the outer coil's discharge (s; negative = before it; NaN =
+        # the read failed; Control.read_magnetometer_after_coil_reset);
+        # -1. = no such read (no pre-load: data.b read at the shot's start).
         # [0] and [1] stay -1. in a shot that never called mot().
         self.mot_preload = self.add_data_container(3)
 
