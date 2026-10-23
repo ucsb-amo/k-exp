@@ -160,17 +160,17 @@ def test_a_short_image_count_after_a_failed_shot_does_not_raise():
     assert src.rstrip().endswith("self._counter.img_idx = 0")
 
 
-def test_the_per_shot_magnetometer_read_is_off_by_default_and_switchable():
-    """2026-10-23 (user): the per-shot magnetometer read is off by default;
-    data.b is then written 0. (= not read) every shot; Base(
-    read_magnetometer_per_shot=True) restores the read exactly; the setting is
-    recorded as p.do_read_magnetometer_per_shot."""
+def test_the_per_shot_magnetometer_read_is_on_by_default_and_switchable():
+    """2026-10-23: the per-shot magnetometer read is on by default (the
+    off-by-default of 297f045e reverted at the user's word); Base(
+    read_magnetometer_per_shot=False) skips it and writes data.b = 0. (= not
+    read); the setting is recorded as p.do_read_magnetometer_per_shot."""
     import ast
     import inspect
     import textwrap
     from kexp.base.base import Base
 
-    assert inspect.signature(Base.__init__).parameters["read_magnetometer_per_shot"].default is False
+    assert inspect.signature(Base.__init__).parameters["read_magnetometer_per_shot"].default is True
     init_src = inspect.getsource(Base.__init__)
     assert "self.params.do_read_magnetometer_per_shot = int(self.read_magnetometer_per_shot)" in init_src
     fn = ast.parse(textwrap.dedent(inspect.getsource(Base.init_scan_kernel))).body[0]
@@ -184,13 +184,13 @@ def test_the_per_shot_magnetometer_read_is_off_by_default_and_switchable():
     assert ast.unparse(fn).count("self.read_magnetometer()") == 1
 
 
-def test_the_magnetometer_read_switched_on_compiles(monkeypatch, tmp_path):
+def test_the_magnetometer_read_switched_off_compiles(monkeypatch, tmp_path):
     monkeypatch.setattr(harness, "EXPT", EXPT.replace(
-        "save_data=False)", "save_data=False, read_magnetometer_per_shot=True)"))
+        "save_data=False)", "save_data=False, read_magnetometer_per_shot=False)"))
     cls, exp, device_mgr = harness._build(monkeypatch, tmp_path)
     try:
-        assert exp.read_magnetometer_per_shot is True
-        assert exp.params.do_read_magnetometer_per_shot == 1
+        assert exp.read_magnetometer_per_shot is False
+        assert exp.params.do_read_magnetometer_per_shot == 0
         harness._compile(cls, exp)
     finally:
         device_mgr.close_devices()
