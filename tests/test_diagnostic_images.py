@@ -286,12 +286,14 @@ def test_the_record():
                                         "frame": 0, "t_offset": -0.1, "t_stage": "t_mot_load",
                                         "t_stage_s": 0.5, "taken": False, "exposure_time": 300.e-6,
                                         "gain": 3., "roi": roi, "from_camera_entry": [],
+                                        "max_exposure_time": None,
                                         # diagnostics off: no delay is used
                                         "exposure_delay": None, "exposure_delay_source": None}
     assert rec["images"]["img_gm"] == {"camera": "mot_basler", "camera_id": "mot_basler",
                                        "frame": 1, "t_offset": -25.e-3, "t_stage": None,
                                        "t_stage_s": None, "taken": False, "exposure_time": 3.e-3,
                                        "gain": 30., "roi": roi, "from_camera_entry": [],
+                                       "max_exposure_time": None,
                                        "exposure_delay": None, "exposure_delay_source": None}
     assert diagnostic_cameras.img_mot.t_offset == -150.e-3
 
