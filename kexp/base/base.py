@@ -619,13 +619,9 @@ class Base(Expt, Devices, Cooling, Image, Cameras, Control, Clients):
         # current with the PID on (no cleanup runs after that exception).
         # The cached coil state is trusted only after a shot that returned
         # normally (not after an underflow): see Control.reset_coils.
-        # The coils come first (2026-10-23): the raman DDS restore below used
-        # to precede them, and an exception there left the outer coil at its
-        # HF current with the PID on (the scan loop now also runs
-        # cleanup_abort_kernel on any exception out of this cleanup).
+        # (jep/mot-preload: the scan loop also runs cleanup_abort_kernel on
+        # any exception out of this cleanup.)
         self.reset_coils(trust_cached_state=self.shot_completed and self.fast_coil_reset)
-        self.core.break_realtime()
-        self.raman.clean_up_fast_frequency_update()
         self.lightsheet.off()
         # PID2 AO stays on between shots (left alone if PID2 is enabled)
         self.tweezer.keep_ao2_on()
