@@ -19,6 +19,7 @@ import pytest
 
 from waxx.control.cameras import camera_stream_client as csc
 from waxx.control.cameras.diagnostic_frame import DiagnosticImage
+from waxx.control.cameras.exposure_delay import ExposureDelayCell
 from waxx.control.cameras.diagnostic_frame import diagnostic_frame as diagnostic_frame_waxx
 
 from kexp.config.camera_id import cameras, diagnostic_cameras, diagnostic_frame
@@ -219,7 +220,8 @@ def test_bind_with_streams_and_the_edge_reaching_its_stream(capsys):
         for i, spec in enumerate(specs):
             if i % 2 == 0:
                 s = csc.TriggeredCameraStreamClient.__new__(csc.TriggeredCameraStreamClient)
-                s.ttl, s.exposure_delay, s.t_trigger = f"line{i}", 1.e-4, 3.e-6
+                s.ttl, s.t_trigger = f"line{i}", 3.e-6
+                s.exposure_delay_cell = ExposureDelayCell(1.e-4)
                 s.announce_trigger_mu = lambda slack, j, i=i: calls.append((i, slack, j))
             else:
                 s = csc.InactiveCameraStream(expt, spec["key"], reason="test")
@@ -234,7 +236,9 @@ def test_bind_with_streams_and_the_edge_reaching_its_stream(capsys):
         "img_mot_beams_z": True, "img_gm_beams_z": True, "img_mot": False, "img_gm": False,
         "img_tweezer_load_x": True, "img_tweezer_evap_x": True, "img_tweezer_pickoff": False}
     x = diag.img_tweezer_evap_x
-    assert (x.ttl, x.exposure_delay, x.t_trigger, x.j) == ("line4", 1.e-4, 3.e-6, 1)
+    assert (x.ttl, x.exposure_delay_cell.value, x.t_trigger, x.j) == ("line4", 1.e-4, 3.e-6, 1)
+    # the stream's cell itself (the kernel writes the claim's delay into it)
+    assert x.exposure_delay_cell is diag.img_tweezer_load_x.exposure_delay_cell
     assert diag.img_mot.ttl == "ttl:mot_basler_trigger"     # a placeholder's: its own line
     x.announce_edge(1234)
     diag.img_mot.announce_edge(5)                           # not live: nothing, nothing raised
@@ -281,11 +285,14 @@ def test_the_record():
     assert rec["images"]["img_mot"] == {"camera": "mot_basler", "camera_id": "mot_basler",
                                         "frame": 0, "t_offset": -0.1, "t_stage": "t_mot_load",
                                         "t_stage_s": 0.5, "taken": False, "exposure_time": 300.e-6,
-                                        "gain": 3., "roi": roi, "from_camera_entry": []}
+                                        "gain": 3., "roi": roi, "from_camera_entry": [],
+                                        # diagnostics off: no delay is used
+                                        "exposure_delay": None, "exposure_delay_source": None}
     assert rec["images"]["img_gm"] == {"camera": "mot_basler", "camera_id": "mot_basler",
                                        "frame": 1, "t_offset": -25.e-3, "t_stage": None,
                                        "t_stage_s": None, "taken": False, "exposure_time": 3.e-3,
-                                       "gain": 30., "roi": roi, "from_camera_entry": []}
+                                       "gain": 30., "roi": roi, "from_camera_entry": [],
+                                       "exposure_delay": None, "exposure_delay_source": None}
     assert diagnostic_cameras.img_mot.t_offset == -150.e-3
 
 
@@ -353,7 +360,7 @@ def _mixed_streams(expt, specs):
             s = csc.TriggeredCameraStreamClient.__new__(csc.TriggeredCameraStreamClient)
             s.core = expt.core
             s.ttl = camera_trigger_ttl(expt.ttl, spec["camera"])
-            s.exposure_delay = 0.
+            s.exposure_delay_cell = ExposureDelayCell(0.)
             s.t_trigger = 2.e-6
             s.keys = tuple(spec["key"])
             out.append(s)

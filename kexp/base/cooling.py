@@ -129,19 +129,32 @@ class Cooling():
         self.outer_coil.ramp_supply(t=self.p.t_feshbach_field_ramp2,
                              i_end=self.p.i_hf_tweezer_evap1_current)
 
-        # tweezer evap 1 with constant trap frequency
+        # tweezer evap 1; painting law (P/P_max)**paint_amp_exponent_hf_tweezer
         self.tweezer.exponential_ramp(t=self.p.t_hf_tweezer_1064_rampdown,
                           v_start=self.p.v_pd_hf_tweezer_1064_ramp_end,
                           v_end=self.p.v_pd_hf_tweezer_1064_rampdown_end,
-                          paint=True,keep_trap_frequency_constant=True)
-        
-        
+                          paint=True,keep_trap_frequency_constant=True,
+                          paint_exponent=self.p.paint_amp_exponent_hf_tweezer)
+
         if do_tweezer_evap_2:
-            
-            self.tweezer.exponential_ramp(t=self.p.t_hf_tweezer_1064_rampdown2,
-                            v_start=tweezer_vpd1_to_vpd2(self.p.v_pd_hf_tweezer_1064_rampdown_end),
-                            v_end=self.p.v_pd_hf_tweezer_1064_rampdown2_end,
-                            paint=True,keep_trap_frequency_constant=True,low_power=True)
+            # PID2 start biased low: integral2 is preloaded to 4 V (AO2's efficiency peak) at enable
+            v_start2 = tweezer_vpd1_to_vpd2(self.p.v_pd_hf_tweezer_1064_rampdown_end) \
+                * self.p.fraction_hf_tweezer_evap2_start
+            if self.p.do_hold_painting_hf_tweezer_evap2 == 1.:
+                # painting held at its evap-1 end value (keep_trap_frequency_constant=False
+                # writes v_awg_am_max every step)
+                self.tweezer.exponential_ramp(t=self.p.t_hf_tweezer_1064_rampdown2,
+                                v_start=v_start2,
+                                v_end=self.p.v_pd_hf_tweezer_1064_rampdown2_end,
+                                paint=True,keep_trap_frequency_constant=False,
+                                v_awg_am_max=self.tweezer.paint_amp_dac.v,
+                                low_power=True)
+            else:
+                self.tweezer.exponential_ramp(t=self.p.t_hf_tweezer_1064_rampdown2,
+                                v_start=v_start2,
+                                v_end=self.p.v_pd_hf_tweezer_1064_rampdown2_end,
+                                paint=True,keep_trap_frequency_constant=True,low_power=True,
+                                paint_exponent=self.p.paint_amp_exponent_hf_tweezer)
 
         self.diag.img_tweezer_evap_x.trigger()      # diagnostic frame after the last evap ramp
 
@@ -163,6 +176,9 @@ class Cooling():
             self.ramp_down_painting()
 
         if squeeze and ramp_down_painting and do_tweezer_evap_2:
+            # UNTESTED since 2026-10-21: the squeeze now starts from the new evap-2 end (PID2 0.20 V, was 4.0 V)
+            # and hands back to PID1 through the old _squeezer calibration (tweezer.py, "needs recalibration").
+            # Validate with a no-atom PD run (like pid2_handoff.py) before trusting squeeze data.
             self.ttl.pd_scope_trig.pulse(1.e-6)
             self.tweezer_squeeze(cubic_ramp_squeeze)
 

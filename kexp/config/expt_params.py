@@ -126,8 +126,10 @@ class ExptParams(ExptParamsWaxx):
         self.t_lf_tweezer_1064_rampdown2 = 450.e-3   
         self.t_lf_tweezer_1064_rampdown3 = .5
         self.t_hf_tweezer_1064_ramp = 0.19 # 0.16 # .285
-        self.t_hf_tweezer_1064_rampdown = 550.e-3 # 200.e-3 
-        self.t_hf_tweezer_1064_rampdown2 = 300.e-3   
+        # self.t_hf_tweezer_1064_rampdown = 550.e-3 # 200.e-3
+        self.t_hf_tweezer_1064_rampdown = 0.2 #87461, 2026-10-20
+        # self.t_hf_tweezer_1064_rampdown2 = 300.e-3
+        self.t_hf_tweezer_1064_rampdown2 = 0.1 #87461, 2026-10-20
         self.t_tweezer_1064_adiabatic_stretch_ramp = .322
         self.t_tweezer_single_move = 4.e-3
         self.t_tweezer_movement_dt = 10.e-6
@@ -316,9 +318,17 @@ class ExptParams(ExptParamsWaxx):
         self.v_pd_lf_tweezer_1064_rampdown3_end = 2.
 
         self.v_pd_hf_tweezer_1064_ramp_end = 8.4
-        self.v_pd_hf_tweezer_1064_rampdown_end = 0.16
-        self.v_pd_hf_tweezer_1064_rampdown2_end = 4. # 2.2
+        # self.v_pd_hf_tweezer_1064_rampdown_end = 0.16
+        self.v_pd_hf_tweezer_1064_rampdown_end = 0.08 #87461, 2026-10-20
+        # self.v_pd_hf_tweezer_1064_rampdown2_end = 4. # 2.2
+        self.v_pd_hf_tweezer_1064_rampdown2_end = 0.20 # PID2 units, absolute #87461/87466, 2026-10-20
         self.n_tweezer_ramp_steps = 200
+        # HF tweezer evap 1 painting law: paint_frac = (P/P_max)**e (0.3333 = constant trap frequency)
+        self.paint_amp_exponent_hf_tweezer = 1.0 #87461 (e 0.85-1 best), 2026-10-20
+        # HF evap 2: PID2 start = this x tweezer_vpd1_to_vpd2(evap-1 end) (bias low: integral2 preload at AO2's peak)
+        self.fraction_hf_tweezer_evap2_start = 0.95 #87461, 2026-10-20
+        # HF evap 2: 1. = painting held at its evap-1 end value; 0. = constant-trap-frequency law in PID2 units
+        self.do_hold_painting_hf_tweezer_evap2 = 1. #87461, 2026-10-20
 
         self.v_tweezer_paint_rampdown_end1 = -4.985
         self.v_tweezer_paint_rampdown_end2 = -6.5
@@ -336,11 +346,12 @@ class ExptParams(ExptParamsWaxx):
         self.frequency_aod_center = 75.e6
 
         self.frequency_tweezer_list = [75.e6]
-        self.amp_tweezer_list = [.18] 
+        self.amp_tweezer_list = [.5] 
 
         self.v_lf_tweezer_paint_amp_max = .5
         # self.v_hf_tweezer_paint_amp_max = -1.94 # -1.7
-        self.v_hf_tweezer_paint_amp_max = 3.25 # 2.0
+        # self.v_hf_tweezer_paint_amp_max = 3.25 # 2.0
+        self.v_hf_tweezer_paint_amp_max = 2.5 #87465, 2026-10-20
 
 
         self.v_paint_amp_end = -5.444444
@@ -439,7 +450,8 @@ class ExptParams(ExptParamsWaxx):
         self.i_hf_lightsheet_evap2_current = 193.3
 
         self.i_hf_tweezer_load_current = 192.7 # 193.4
-        self.i_hf_tweezer_evap1_current = 193.75
+        # self.i_hf_tweezer_evap1_current = 193.75
+        self.i_hf_tweezer_evap1_current = 193.0 #87461, 2026-10-20
         self.i_hf_tweezer_evap2_current = 194.14 # 193.
 
         self.i_non_inter = 176.

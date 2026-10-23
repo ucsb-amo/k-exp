@@ -18,6 +18,7 @@ from kexp.config.camera_id import cameras
 from kexp.config.ip import PATHS, server_talk
 from kexp.config.data_vault import DataVault
 from kexp.control.cameras.diagnostic_images import diagnostic_images as make_diagnostic_images
+from kexp.control.cameras.camera_stream import connect_camera_streams
 
 from kexp.util.artiq.async_print import aprint
 
@@ -80,6 +81,9 @@ class Base(Expt, Devices, Cooling, Image, Cameras, Control, Clients):
 
         
         self.ds = DataSaver(*PATHS, server_talk=server_talk)
+        # the params file and base classes, now that ds knows where they are
+        # (waxx Expt: source texts are read at the start, saved at END)
+        self._snapshot_source_texts()
 
         self.run_info.save_on_underflow = int(save_on_underflow)
 
@@ -90,13 +94,23 @@ class Base(Expt, Devices, Cooling, Image, Cameras, Control, Clients):
         # called in Cooling.mot, cmot_d1, gm, prepare_hf/lf_tweezers). On by default. They go to liveOD during
         # the run whatever save_data is: liveOD keeps the latest of each and
         # broadcasts them, and writes them only into a run that saves. A run
-        # that suppresses liveOD has nowhere to send them.
+        # that suppresses liveOD has nowhere to send them. Built here without
+        # a connection; the claim connects the cameras (claim_hardware).
         self.diagnostic_images = bool(diagnostic_images) and not bool(suppress_live_od)
         self.diag = make_diagnostic_images(self, enabled=self.diagnostic_images)
 
         # Resolved above: in when acquiring with the APD, out when a camera
         # grabs frames, None (stage left alone) when acquiring nothing.
-        self.pdxc.set_apd_stage(apd_stage)
+        self._apd_stage = apd_stage
+        from waxx.util.device_state import queue_gate
+        if not queue_gate.is_warm():
+            # A cold process (direct artiq_run, ar_direct, run_lock, a cold
+            # queue launch) moves the stage here, as it always did: an
+            # experiment that never calls finish_prepare (a stage or camera
+            # tool) still gets it. The claim's stage step then finds it there
+            # ("already <state>"). A warm-launched process must touch no
+            # hardware before the queue's GO: its claim moves it.
+            self.pdxc.set_apd_stage(apd_stage)
 
         # Warm-up dry run. The first shot of a run is typically ~25% low in
         # atom number (measured 2026-09-08, runs 78510-78570): a seconds-scale
@@ -120,18 +134,18 @@ class Base(Expt, Devices, Cooling, Image, Cameras, Control, Clients):
         To be called at the end of prepare.
         """
 
+        # (a cold run claims inside: stage, SLM, wavemeter, cameras, liveOD
+        # start, device-state stamp, announce -- see claim_hardware and
+        # claim_after_start; a warm-launched one after its compile)
+
         # where each diagnostic frame is taken, as this run takes it (t_stage
-        # from the params and scan as prepare left them)
+        # from the params and scan as prepare left them; before the compile:
+        # in_stage is read by the kernel). The record is written again by
+        # claim_hardware once the cameras are connected ("taken").
         self.diag.resolve_stages(self.params, self.scan_xvars)
         self._extra_file_texts["diagnostic_images"] = json.dumps(self.diag.record())
 
         self.finish_prepare_wax(N_repeats=N_repeats,shuffle=shuffle)
-
-        # What the hardware was said to be at as this run starts (hazards
-        # printed loudly, the whole report saved with the run's data).  The
-        # monitor experiment is not a run.
-        if hasattr(self, 'monitor') and not getattr(self, '_is_monitor', False):
-            self._stamp_device_state()
 
         # self.configure_imaging_system(polmod_ao_bool=self._polmod_config)
         self.dds.stash_defaults()
@@ -140,10 +154,48 @@ class Base(Expt, Devices, Cooling, Image, Cameras, Control, Clients):
             self.tweezer.add_tweezer_list()
         self.tweezer.save_trap_list()
 
-    def pre_init_run(self):
-        """Just before INIT_RUN (waxx Expt.finish_prepare_wax): an SLM reinit
-        that is due -- or already running -- is done now, between runs, and
-        this run waits for it (waxx SLM.reinit_if_due). The SLM server never
+    def claim_hardware(self):
+        """The run's claim, machine part (waxx Expt.claim; before the liveOD
+        start, so raising here stops the run before it has a run id). In
+        order: the APD pickoff stage to the position Base.__init__ resolved
+        (a cold process already moved it in Base.__init__: "already
+        <state>", no move), a due SLM reinit, the wavemeter connection (exclusive), the camera
+        streams' connections and their containers' real shapes. Sets no
+        attribute a kernel reads: a warm-launched run claims after its
+        compile."""
+        self.pdxc.set_apd_stage(self._apd_stage)
+        self._slm_reinit_at_start()
+        self._fzw.connect()
+        connect_camera_streams(self)
+        self.diag.report_connected()
+        # the record as the run takes it: a camera that failed to connect
+        # takes nothing (its edges still fire; nothing is stored). Each
+        # image's exposure delay is the compiled one here; the kernel takes
+        # the claim's at its start, and exposure_delays_loaded rewrites this.
+        self._extra_file_texts["diagnostic_images"] = json.dumps(self.diag.record())
+
+    def exposure_delays_loaded(self):
+        """waxx hook (inside init_kernel's / scan()'s RPC): the kernel has the
+        exposure delays the claim decided; the diagnostic_images record now
+        says so (value used, its source, the pre-compile value)."""
+        diag = getattr(self, 'diag', None)
+        if diag is not None:
+            self._extra_file_texts["diagnostic_images"] = json.dumps(diag.record())
+
+    def claim_after_start(self):
+        """The run's claim, after the liveOD start and BEFORE the monitor
+        announcement (which marks the state untrusted -- after it, the stamp
+        would record this run's own announcement as the trust it starts
+        from): what the hardware was said to be at as this run starts
+        (hazards printed loudly, the whole report saved with the run's
+        data). The monitor experiment is not a run."""
+        if hasattr(self, 'monitor') and not getattr(self, '_is_monitor', False):
+            self._stamp_device_state()
+
+    def _slm_reinit_at_start(self):
+        """In the claim, just before the liveOD start: an SLM reinit that is
+        due -- or already running -- is done now, between runs, and this run
+        waits for it (waxx SLM.reinit_if_due). The SLM server never
         re-initialises by itself, and the monitor server asks for it only
         while the machine is idle, which back-to-back runs or a run loop may
         never leave it; no reinit ever starts during a run. A run on the Andor
@@ -204,13 +256,18 @@ class Base(Expt, Devices, Cooling, Image, Cameras, Control, Clients):
                     init_ry = True,
                     force_dds_init = True):
         """
-        force_dds_init: run the full AD9910 init on every channel. By default
-        (False) channels that still hold their PLL / SYNC setup from an earlier
-        run are skipped, which saves ~1.5 s per run -- see Devices.init_all_dds
-        for the checks. Pass True after touching the Urukul clocking or SYNC
+        force_dds_init: run the full AD9910 init on every channel. The default
+        is True (since k-exp 68d8dcb8, 2026-09-22): every run pays the full init
+        (~1.4 s). With False, channels that still hold their PLL / SYNC setup
+        from an earlier run are skipped (see Devices.init_all_dds for the
+        checks); that fast path stays off until the Raman relative-phase check
+        has validated it. Keep True after touching the Urukul clocking or SYNC
         wiring, or whenever DDS phase coherence is in doubt.
         """
 
+        # the camera streams' exposure delays as the run's claim measured them
+        # (one RPC; before the reset, so its wall time costs no slack)
+        self.load_exposure_delays()
         self.core.reset()
 
         if self.setup_camera:
@@ -220,9 +277,10 @@ class Base(Expt, Devices, Cooling, Image, Cameras, Control, Clients):
         if setup_slm:
             self.setup_slm(self.run_info.imaging_type)
         if run_id:
-            # the host already printed the run id at finish_prepare
+            # the host already printed the run id at its claim; an RPC, as
+            # the run id is set after a warm-launched run's compile
             if self._verbosity >= 2:   # console.VERBOSE
-                print(self._ridstr)
+                self._print_run_id()
         if setup_awg:
             self._setup_awg = setup_awg
             self.tweezer.awg_init()

@@ -62,14 +62,69 @@ def _composite_kwargs(dds, dac) -> dict:
     return kwargs
 
 
+#: liveOD belongs on kong (the run cameras are there; experiments connect to
+#: whichever liveOD beacons): Start liveOD refuses on any other PC.
+LIVE_OD_HOST_IP = "192.168.1.76"
+
+
+def live_od_bat() -> str:
+    """kexp's liveOD launcher, ``kexp/_bat/live_od.bat``."""
+    from pathlib import Path  # noqa: PLC0415
+    import kexp  # noqa: PLC0415
+    return str(Path(kexp.__file__).resolve().parent / "_bat" / "live_od.bat")
+
+
+def live_od_host_refusal(resolve=None):
+    """A ``refusal()`` for Start liveOD: "" on kong, why not elsewhere.  The
+    PC's lab IP is looked up once (``resolve() -> ip | None``; default the
+    dashboard's ``host_config.resolve_host_ip``)."""
+    cache: dict = {}
+
+    def refusal() -> str:
+        if "ip" not in cache:
+            try:
+                if resolve is None:
+                    from waxx.util.dashboard.host_config import resolve_host_ip  # noqa: PLC0415
+                    cache["ip"] = resolve_host_ip()
+                else:
+                    cache["ip"] = resolve()
+            except Exception:                         # noqa: BLE001
+                cache["ip"] = None
+        ip = cache["ip"]
+        if ip == LIVE_OD_HOST_IP:
+            return ""
+        return (f"liveOD runs on kong ({LIVE_OD_HOST_IP}); this PC is "
+                f"{ip or 'not on the lab subnet'}. Start it there.")
+    return refusal
+
+
+def _live_od_kwargs() -> dict:
+    """Start liveOD for the Monitor panel: the launcher and the kong-only
+    refusal.  A missing launcher costs the button only."""
+    import logging  # noqa: PLC0415
+    import os  # noqa: PLC0415
+    try:
+        bat = live_od_bat()
+    except Exception:
+        logging.getLogger(__name__).exception("No liveOD launcher: the Monitor panel has no "
+                                              "Start liveOD button.")
+        return {}
+    if not os.path.isfile(bat):
+        logging.getLogger(__name__).warning("No liveOD launcher at %s: the Monitor panel has "
+                                            "no Start liveOD button.", bat)
+        return {}
+    return {"live_od_bat": bat, "live_od_refusal": live_od_host_refusal()}
+
+
 class MonitorPanel(WidgetPanelBase):
     """The Server Dashboard's monitor panel (registry id ``monitor``): the
     headless monitor server's run queue, state and monitor-experiment button,
-    over the network (waxx ``MonitorServerPanel``).  It used to embed a
-    whole ``MonitorServerGUI`` -- a second monitor server in the dashboard's
-    own process; nothing used that, and the dashboard runs the server
-    headless.  ``panel_factory`` builds the body (tests pass one over a fake
-    client)."""
+    over the network (waxx ``MonitorServerPanel``), with Start liveOD running
+    ``kexp/_bat/live_od.bat`` (:func:`_live_od_kwargs`; on kong only).  It used
+    to embed a whole ``MonitorServerGUI`` -- a second monitor server in the
+    dashboard's own process; nothing used that, and the dashboard runs the
+    server headless.  ``panel_factory`` builds the body (tests pass one over a
+    fake client)."""
 
     def __init__(self, parent=None, panel_factory=None):
         super().__init__(parent)
@@ -78,7 +133,8 @@ class MonitorPanel(WidgetPanelBase):
             from waxx.util.guis.monitor_panel import MonitorServerPanel  # noqa: PLC0415
             from waxx.util.guis.run_queue_panel import panel_settings  # noqa: PLC0415
             # the queue table's columns and filter are remembered on this PC
-            panel_factory = lambda: MonitorServerPanel(settings=panel_settings())  # noqa: E731
+            panel_factory = lambda: MonitorServerPanel(  # noqa: E731
+                settings=panel_settings(), **_live_od_kwargs())
         self._panel = panel_factory()
         layout = QVBoxLayout(self)
         layout.setContentsMargins(0, 0, 0, 0)

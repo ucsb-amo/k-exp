@@ -10,25 +10,35 @@ camera waits for edges on its trigger line (the entry's ``trigger_ttl`` /
 ``trigger_source`` in kexp.config.camera_id) and ``trigger(j)`` exposes
 frame ``j`` at the cursor. See waxx.control.cameras.camera_stream_client.
 
-A camera that is this run's acquisition camera, or (triggered) is wired to
-the run camera's trigger line, gets a placeholder (DummyCameraStreamClient);
-so does one that cannot be set up when ``on_error='dummy'`` (the default,
-``'raise'``, fails prepare() instead). Triggered streams whose cameras share
-a trigger line are made siblings. A camera on liveOD's bar is leased from
-liveOD.
+Nothing here touches the network: the stream objects (what the kernel
+sees: class, trigger line, exposure-delay cell) are built from the config,
+and their containers registered with a provisional shape. The cameras are
+connected by the run's claim (kexp Base.claim_hardware ->
+``connect_camera_streams``), in parallel -- for a warm-launched run after
+the kernel was compiled; the probe frame then gives the containers their
+shape. A triggered stream's exposure delay is the one its camera reports at
+the claim, with this run's settings; the kernel takes it at its start
+(init_kernel / scan -> waxx Scanner.load_exposure_delays).
 
-``camera_streams(expt, specs)`` sets several cameras up at once, in
-parallel (the diagnostic frame's bind uses it).
+A camera that is this run's acquisition camera, or (triggered) is wired to
+the run camera's trigger line, gets a placeholder (DummyCameraStreamClient).
+A camera that cannot be connected with ``on_error='dummy'`` becomes a dead
+stream (no frames, its kernel calls counted, a placeholder record); the
+default, ``'raise'``, stops the run in its claim instead, before it has a
+run id. Triggered streams whose cameras share a trigger line are made
+siblings. A camera on liveOD's bar is leased from liveOD.
+
+``camera_streams(expt, specs)`` builds several streams at once
+(the diagnostic frame's bind uses it).
 """
 
 import logging
-from concurrent.futures import ThreadPoolExecutor
 from types import SimpleNamespace
 
 from beacon.camera.directory import query_string
 from waxx.control.cameras.camera_stream_client import (
     CameraStreamClient, DummyCameraStreamClient, TriggeredCameraStreamClient,
-    link_trigger_line)
+    connect_streams, link_trigger_line)
 from waxx.util import console
 
 from kexp.config.camera_id import cameras, camera_trigger_ttl, CameraParams
@@ -69,19 +79,16 @@ def camera_streams(expt, specs):
     """Several streams at once: ``specs`` is a list of dicts of
     ``camera_stream``'s arguments (``camera``, ``key`` and its keywords).
 
-    The cameras are set up in parallel -- one camera's round trips and probe
-    frames do not wait for another's. Everything that touches the experiment
-    happens before that or after it, in ``specs`` order, as ``camera_stream``
-    called once per spec does it: the checks, then per spec its containers,
-    its place in ``expt.camera_streams``, its trigger-line siblings, or its
-    placeholder / failure. With ``on_error='raise'`` a failing spec raises
-    after the streams before it are registered, and the cameras of the specs
-    after it that were set up are put back as they were found. Returns the
+    No network (see the module docstring): per spec, in ``specs`` order, the
+    checks, then its stream object, its containers (provisional shape), its
+    place in ``expt.camera_streams``, its trigger-line siblings -- or its
+    placeholder / failure. A spec that fails to build with
+    ``on_error='raise'`` raises after the streams before it are registered.
+    The run's claim connects them (``connect_camera_streams``). Returns the
     streams in ``specs`` order."""
     _quiet_directory_in_experiment()
     taken = set()
     plans = [_plan(expt, dict(s), taken) for s in specs]
-    _set_up(plans)
 
     out = []
     for i, p in enumerate(plans):
@@ -89,6 +96,9 @@ def camera_streams(expt, specs):
             out.append(_placeholder(expt, p, p.placeholder))
             continue
         error = p.error
+        if error is None:
+            _build(p)
+            error = p.error
         if error is None:
             siblings = ([s for s in expt.camera_streams if getattr(s, 'ttl', None) is p.ttl]
                         if p.triggered else [])
@@ -99,9 +109,6 @@ def camera_streams(expt, specs):
                 error = e
         if error is not None:
             if p.on_error == 'raise':
-                for q in plans[i + 1:]:
-                    if q.stream is not None:
-                        q.stream.abandon()
                 raise error
             print(f"[camera_stream:{p.name}] !! {p.serial} could not be set up ({error!r}); "
                   f"no such frames this run")
@@ -117,9 +124,17 @@ def camera_streams(expt, specs):
     return out
 
 
+def connect_camera_streams(expt):
+    """The run's claim: connect every camera stream of ``expt`` built
+    without a connection, in parallel (waxx connect_streams: activate each
+    that connected, mark dead / raise per its on_error). Before the liveOD
+    start payload is built: the containers get their real shapes here."""
+    return connect_streams(list(getattr(expt, 'camera_streams', ())))
+
+
 def _plan(expt, spec, taken):
     """What one spec will be: a placeholder, a failure, or a constructor to
-    run (``ctor``). Raises for a bad mode / on_error or a camera already
+    run (``ctor``; it builds the stream without a connection). Raises for a bad mode / on_error or a camera already
     streaming this run, as camera_stream always has."""
     camera = spec.pop('camera')
     key = spec.pop('key')
@@ -159,7 +174,7 @@ def _plan(expt, spec, taken):
             p.ctor = lambda: CameraStreamClient(
                 expt, serial, key, exposure_time=exposure_time, gain=gain,
                 t_snap_lead=t_snap_lead, live_od_client=live_od_client,
-                defer_register=True, **kw)
+                defer_register=True, connect=False, on_error=on_error, **kw)
         else:
             entry = camera if isinstance(camera, CameraParams) else _entry_by_serial(serial)
             if entry is None:
@@ -182,7 +197,7 @@ def _plan(expt, spec, taken):
                 exposure_delay_from_camera=getattr(entry, 'exposure_delay_from_camera', True),
                 t_trigger=entry.t_camera_trigger,
                 exposure_time=exposure_time, gain=gain, live_od_client=live_od_client,
-                defer_register=True, **kw)
+                defer_register=True, connect=False, on_error=on_error, **kw)
     except Exception as e:
         if on_error == 'raise':
             raise
@@ -193,31 +208,11 @@ def _plan(expt, spec, taken):
 
 
 def _build(p):
+    """Build the plan's stream object (no network: connect=False)."""
     try:
         p.stream = p.ctor()
     except Exception as e:
         p.error = e
-
-
-def _set_up(plans):
-    """Run every plan's constructor, in parallel when there are several."""
-    todo = [p for p in plans if p.ctor is not None]
-    if len(todo) <= 1:
-        for p in todo:
-            _build(p)
-        return
-    pool = ThreadPoolExecutor(max_workers=len(todo), thread_name_prefix="camera_stream_setup")
-    try:
-        for f in [pool.submit(_build, p) for p in todo]:
-            f.result()
-    except BaseException:
-        # interrupted: let the setups in flight finish, then put their cameras back
-        pool.shutdown(wait=True)
-        for p in todo:
-            if p.stream is not None:
-                p.stream.abandon()
-        raise
-    pool.shutdown(wait=True)
 
 
 def _placeholder(expt, p, reason):

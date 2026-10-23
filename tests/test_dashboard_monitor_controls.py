@@ -121,3 +121,42 @@ def test_monitor_panel_hosts_the_network_panel_and_cleans_it_up(qapp):
     panel.cleanup()
     assert not inner.timer.isActive()
     panel.deleteLater()
+
+
+def test_monitor_panel_offers_start_live_od_from_kexps_bat(qapp, monkeypatch):
+    """2026-10-21: the Monitor panel's Start liveOD runs kexp/_bat/live_od.bat
+    (passed in from kexp; waxx knows no path).  Nothing is pressed, the real
+    launcher is replaced by a failure, the beacon probe by a fake (the real
+    registry would bind UDP 50099), QSettings by None (the registry)."""
+    import os
+    from waxx.util.guis import live_od_launch as lol
+    from waxx.util.guis import run_queue_panel as rqp
+    from kexp.util.guis.device_state_gui import monitor_panel as kmp
+
+    monkeypatch.setattr(rqp, "panel_settings", lambda: None)
+    monkeypatch.setattr(lol, "beacon_probe", lambda: ("absent", "no liveOD beacon (test)"))
+    monkeypatch.setattr(lol, "start_bat", lambda *a, **k: pytest.fail("the real launcher ran"))
+    monkeypatch.setattr(kmp, "live_od_host_refusal", lambda resolve=None: (lambda: ""))
+    panel = kmp.MonitorPanel()
+    try:
+        button = panel._panel.state_panel.live_od_button
+        assert button is not None and button.isEnabled()
+        assert button.bat == kmp.live_od_bat() and os.path.isfile(button.bat)
+        assert button.bat.replace("\\", "/").endswith("kexp/_bat/live_od.bat")
+    finally:
+        panel.cleanup()
+        panel.deleteLater()
+
+
+def test_start_live_od_refuses_any_pc_but_kong():
+    from kexp.util.guis.device_state_gui import monitor_panel as kmp
+    asked = []
+
+    def resolve():
+        asked.append(1)
+        return "192.168.1.9"
+    refusal = kmp.live_od_host_refusal(resolve)
+    assert "kong (192.168.1.76)" in refusal() and "192.168.1.9" in refusal()
+    assert asked == [1]                                   # looked up once
+    assert kmp.live_od_host_refusal(lambda: kmp.LIVE_OD_HOST_IP)() == ""
+    assert "not on the lab subnet" in kmp.live_od_host_refusal(lambda: None)()
