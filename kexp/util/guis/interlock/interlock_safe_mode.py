@@ -2,8 +2,8 @@
 
 This module documents and centralizes the constants and contract for the
 interlock's "safe mode" — entered when the server cannot trust its own
-inputs (bad COM port, unreachable relay at startup, configuration mismatch
-per IT15 in the plan).
+inputs (unreachable relay at startup, configuration mismatch per IT15 in
+the plan).
 
 **Safety-critical behavior in safe mode**
 
@@ -18,6 +18,12 @@ per IT15 in the plan).
    so the dashboard surfaces the condition prominently.
 5. Safe mode is **terminal**: exit requires restarting the server with the
    underlying configuration problem fixed.
+
+A COM port that does not enumerate at startup is no longer a safe-mode
+reason: the magnets are killed once the same way, the server keeps running
+and its COM link keeps retrying the port, and Enable stays refused until a
+good PLC frame arrives (``InterlockService.start``).  ``REASON_BAD_COM_PORT``
+names that condition in the log and the status message.
 
 The hardware PLC interlock remains the primary safety system at all times.
 Safe mode is the software backstop against silent failure of the software

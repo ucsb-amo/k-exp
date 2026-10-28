@@ -80,7 +80,7 @@ class ExptParams(ExptParamsWaxx):
         self.phase_slm_mask = 0.49 * np.pi #83725, 2026-09-29
         self.px_slm_grating_position_x = 994
         self.px_slm_grating_position_y = 824
-        self.px_slm_phase_mask_position_x = 1021
+        self.px_slm_phase_mask_position_x = 1129
         self.px_slm_phase_mask_position_y = 830
         # Cooling timing
         self.t_tof = 20.e-6
@@ -194,7 +194,8 @@ class ExptParams(ExptParamsWaxx):
         # self.t_raman_pi_pulse = 3.7650e-06 #86101, 2026-10-10 theta re-run Rabi step (code-96), user-approved
         # self.t_raman_pi_pulse = 3.3964e-06 #86166, 2026-10-10  # recal at new Raman lock 41.440 GHz: rate pi 1/(2f), f 147.21 +/- 0.63 kHz (pooled), -9.8 % accepted under the one-off 20 % window
         # self.t_raman_pi_pulse = 3.2481e-06 #86240, 2026-10-11  # recal at new Raman lock 41.440 GHz: rate pi 1/(2f), f 153.94 +/- 0.83 kHz (pooled), -4.4 % (accepted, 8 % window)
-        self.t_raman_pi_pulse = 3.4130e-06 #86490, 2026-10-11  # recal at new Raman lock 41.440 GHz: rate pi 1/(2f), f 146.50 +/- 0.70 kHz (pooled), +5.1 % (accepted, 8 % window)
+        # self.t_raman_pi_pulse = 3.4130e-06 #86490, 2026-10-11  # recal at new Raman lock 41.440 GHz: rate pi 1/(2f), f 146.50 +/- 0.70 kHz (pooled), +5.1 % (accepted, 8 % window)
+        self.t_raman_pi_pulse = 3.7918e-06 #88769, 2026-10-26  # Raman lock 44.90 GHz: rate pi 1/(2f), f 131.86 +/- 0.76 kHz (pooled), +11.1 % (lock move; +2.6 % vs 1/Delta), user-approved
          
         # DAC controlled AO amplitudes
         self.amp_d1_3d_c = 0.3
@@ -348,7 +349,10 @@ class ExptParams(ExptParamsWaxx):
         self.v_tweezer_paint_rampdown_end1 = -4.985
         self.v_tweezer_paint_rampdown_end2 = -6.5
         # INVALID since PD2 move 2026-10-22: 9.99 > PD2 saturation 9.5 V on new map #87842; recalibrate before use
-        self.v_pd_tweezer_squeeze_rampup_handoff_lp = 9.99 # 0.155 on vpd1
+        # self.v_pd_tweezer_squeeze_rampup_handoff_lp = 9.99 # 0.155 on vpd1
+        # PID2 V: PID1 (upstream, at the evap-1 end 0.08 V) caps PID2 at ~3.5 V; 3.3 V is held and hands back to PID1 0.077 V
+        # bumplessly (+3.5 % at 0-2 ms, +0.4 % at 10-15 ms; lower H bumps up to +173 %). No atom test yet.
+        self.v_pd_tweezer_squeeze_rampup_handoff_lp = 3.3 #88152, 2026-10-23
         self.v_pd_hf_tweezer_squeeze_power = .444
 
         self.n_tweezers = 2
@@ -421,7 +425,11 @@ class ExptParams(ExptParamsWaxx):
         # self.frequency_raman_transition = 119.463671e6 #85507, 2026-10-08  # Ramsey 13 x 5, night recalibration, shared resonance +/- 28 Hz (+40 Hz from #85471)
         # self.frequency_raman_transition = 119.463664e6 #85548, 2026-10-09  # Ramsey 13 x 5, sensing-day, shared resonance +/- 24 Hz (-7 Hz)
         # self.frequency_raman_transition = 119.463760e6 #86167, 2026-10-10  # recal at new Raman lock 41.440 GHz: Ramsey 13 x 5, shared resonance +/- 27 Hz (+96 Hz)
-        self.frequency_raman_transition = 119.463567e6 #86241, 2026-10-11  # recal at new Raman lock 41.440 GHz: Ramsey 13 x 5, shared resonance +/- 22 Hz (-193 Hz)
+        # self.frequency_raman_transition = 119.463567e6 #86241, 2026-10-11  # recal at new Raman lock 41.440 GHz: Ramsey 13 x 5, shared resonance +/- 22 Hz (-193 Hz)
+        # self.frequency_raman_transition = 119.463901e6 #88263, 2026-10-24  # Raman lock now 44.87 GHz: Ramsey 13 x 5 (t_pi/2 from #88261 override), shared resonance +/- 65 Hz (+334 Hz)
+        # self.frequency_raman_transition = 119.463640e6 #88776, 2026-10-26  # Raman lock 44.89 GHz: Ramsey 13 x 5 (t_pi #88769), shared resonance +/- 58 Hz (-261 Hz)
+        # self.frequency_raman_transition = 119.463680e6 #88848, 2026-10-26  # Ramsey 13 x 5, +/- 56 Hz (+40 Hz): closing bracket of the simcheck re-measure = the FB/NA campaign's Ramsey A (frozen for the campaign)
+        self.frequency_raman_transition = 119.463497e6 #89320, 2026-10-27  # Raman relocked to ~46.09 GHz: Ramsey 13 x 5, +/- 53 Hz (-183 Hz) = Ramsey A of the post-relock FB/NA segment (frozen for the segment)
         # self.frequency_raman_transition = 119.3977e6 # 176.5 A
 
         self.frequency_raman_transition_nf_1m1_20 = 460.7e6 # 1.5 G 1,-1 to 2,0

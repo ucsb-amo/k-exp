@@ -30,7 +30,11 @@ Safety invariants (must always hold; see plan §"Safety invariants")
    persists in hardware; restart never auto-enables).
 2. PLC "I TRIPPED" → ``_trip()`` within 1 s.
 3. PLC silence > ``stale_threshold_s`` → ``_trip()``.
-4. COM5 unplugged → counts as "data stopped".
+4. COM5 unplugged → counts as "data stopped" (so does the COM link held
+   by a person's Disconnect, in error, or reconnecting).
+4a. COM5 missing at startup → magnets killed once; the COM link keeps
+   retrying the port; Enable is refused until a good PLC frame arrives.
+   A reconnect never enables the magnets or resets the interlock.
 5. Relay unreachable when trip needed → retry forever, ``CRITICAL`` every 10
    attempts.  PLC hardware interlock is backstop.
 6. Reset has no effect if PLC still reports trip.
@@ -60,6 +64,7 @@ from typing import Callable, Optional
 import serial
 import serial.tools.list_ports
 
+from waxx.util.comms_server.com_link import ComLink, ComLinkRefused
 from waxx.util.daily_csv import DailyCsvLog
 from kexp.util.guis.interlock import interlock_safe_mode as _sm
 
@@ -155,7 +160,6 @@ class InterlockService:
         self._last_reset_monotonic: float = 0.0
         self._safe_mode_reason: Optional[str] = None
         self._consecutive_stale_windows = 0
-        self._reconnect_attempts = 0
         self._has_emailed_for_current_outage = False
 
         # Monotonic timers (IT8 - clock-jump immunity).
@@ -164,13 +168,18 @@ class InterlockService:
         self._service_started_monotonic = time.monotonic()
         self._warmup_active = True
 
-        # Serial.  Opened lazily on the poll thread.
-        self._serial: Optional[serial.Serial] = None
-        self._serial_lock = threading.Lock()
-        # Read-only bookkeeping for get_snapshot()["com"]; plain attribute
-        # writes on the poll thread, never read under a lock.
-        self._com_last_error: Optional[str] = None
-        self._com_last_rx_monotonic: Optional[float] = None
+        # Serial.  Owned by self._link (created at the end of __init__), which
+        # opens it on its own thread and reopens it on its backoff.  The link
+        # holds _serial_lock (re-entrant: the link's io_lock) while it opens
+        # or closes the port, so a close never lands mid-read.
+        self._serial_lock = threading.RLock()
+        # False while the port did not enumerate at startup and has not been
+        # opened since (snapshot "com"["config_valid"]).
+        self._com_config_valid = True
+        # Beacon forwarding: the link reports its state to this service
+        # (set_com_state); the TCP server, attached later, beacons it.
+        self._beacon_server = None
+        self._com_beacon_state: Optional[tuple[str, Optional[str]]] = None
 
         # Relay lock.
         self._relay_lock = threading.Lock()
@@ -211,6 +220,27 @@ class InterlockService:
                 config.history_dir, _HISTORY_HEADER,
                 name="ilock-history", logger=_LOG,
             )
+
+        # The PLC COM link (last: it reports its first state at once).
+        self._link = _PLCLink(self)
+
+    # --- COM link state -> beacon -------------------------------------
+
+    def set_com_state(self, state: str, port: Optional[str] = None) -> None:
+        """The link's state changes land here (ComLink ``server``); they are
+        forwarded to the TCP server's beacon once it is attached."""
+        self._com_beacon_state = (state, port)
+        server = self._beacon_server
+        if server is not None:
+            server.set_com_state(state, port)
+
+    def attach_beacon_server(self, server) -> None:
+        """Advertise the COM link's state in *server*'s beacon
+        (``NetServer.set_com_state``) from now on, starting with the current one."""
+        self._beacon_server = server
+        current = self._com_beacon_state
+        if current is not None:
+            server.set_com_state(*current)
 
     # --- mutex (Windows only; degrades gracefully on other OSes) -----
 
@@ -257,16 +287,26 @@ class InterlockService:
     def validate_config(self) -> Optional[str]:
         """Return None if config valid; else a short reason string.
 
-        Causes the caller to enter safe mode if the result is non-None.
+        Causes the caller to enter safe mode if the result is non-None.  A COM
+        port that does not enumerate is not a safe-mode reason any more
+        (see :meth:`com_port_missing_reason` and :meth:`start`).
         """
-        ports = {p.device for p in serial.tools.list_ports.comports()}
-        if self._cfg.com_port not in ports:
-            return f"{_sm.REASON_BAD_COM_PORT}: {self._cfg.com_port} not in {sorted(ports)}"
         try:
             with self._relay_lock:
                 _ = self._relay.read_magnet_status()
         except Exception as exc:
             return f"{_sm.REASON_RELAY_UNREACHABLE_AT_BOOT}: {exc!r}"
+        return None
+
+    def com_port_missing_reason(self) -> Optional[str]:
+        """None if the configured COM port enumerates; else a short reason
+        (also when the port list cannot be read: the stricter answer)."""
+        try:
+            ports = {p.device for p in serial.tools.list_ports.comports()}
+        except Exception as exc:
+            return f"{_sm.REASON_BAD_COM_PORT}: port list unreadable ({exc!r})"
+        if self._cfg.com_port not in ports:
+            return f"{_sm.REASON_BAD_COM_PORT}: {self._cfg.com_port} not in {sorted(ports)}"
         return None
 
     def enter_safe_mode(self, reason: str) -> None:
@@ -284,28 +324,52 @@ class InterlockService:
         except Exception:
             _LOG.exception("Safe-mode magnet kill: FAILED — hardware interlock is sole defense")
 
+    def _kill_magnets_without_com(self, reason: str) -> None:
+        """COM port missing at startup: drop the magnets once, exactly as safe
+        mode did, but keep running -- the COM link keeps retrying the port.
+        Enable stays refused until a good PLC frame arrives (warmup)."""
+        _LOG.critical("COM port missing at startup (%s): killing magnets once; the COM "
+                      "link keeps retrying, and Enable is refused until PLC data flows", reason)
+        try:
+            with self._relay_lock:
+                self._relay.kill_magnets()
+            _LOG.critical("Startup magnet kill (no COM port): success")
+        except Exception:
+            _LOG.exception("Startup magnet kill (no COM port): FAILED — hardware interlock "
+                           "is sole defense")
+        self._next_snapshot_probe_monotonic = 0.0
+
     # --- start / stop -----------------------------------------------
 
     def start(self) -> bool:
-        """Begin polling.  Returns True on success."""
+        """Begin polling.  Returns True on success.  Never waits for the COM
+        port: the link opens it in the background."""
         if not self.acquire_singleton_mutex():
             return False
         # IT15: validate config before doing anything else.
+        com_missing = self.com_port_missing_reason()
+        if com_missing is not None:
+            self._com_config_valid = False
         bad = self.validate_config()
         if bad is not None:
+            if com_missing is not None:
+                bad = f"{bad}; {com_missing}"
             self.enter_safe_mode(bad)
             # Even in safe mode, run the watchdog + heartbeat so observers see life.
             self._start_watchdog_and_heartbeat()
             return True  # service is "running" but in safe mode
 
-        # Preserve current magnet state (IT10) — do NOT auto-enable.
-        try:
-            with self._relay_lock:
-                state = self._relay.read_magnet_status()
-            self._note_magnet_status(state)
-            _LOG.info("Startup: current relay magnet-enabled state preserved as %s", state)
-        except Exception:
-            _LOG.exception("Could not read initial relay state; continuing")
+        if com_missing is not None:
+            self._kill_magnets_without_com(com_missing)
+        else:
+            # Preserve current magnet state (IT10) — do NOT auto-enable.
+            try:
+                with self._relay_lock:
+                    state = self._relay.read_magnet_status()
+                self._note_magnet_status(state)
+                _LOG.info("Startup: current relay magnet-enabled state preserved as %s", state)
+            except Exception:
+                _LOG.exception("Could not read initial relay state; continuing")
 
         # Treat the warmup window (IT11): require fresh PLC data within
         # warmup_seconds, else trip.  Mark warmup active.
@@ -314,12 +378,15 @@ class InterlockService:
             self._last_valid_data_monotonic = time.monotonic()
             self._state = _sm.STATE_WARMUP
             self._message = f"warmup ({self._cfg.warmup_seconds:.0f}s)"
+            if com_missing is not None:
+                self._message += f"; {self._cfg.com_port} missing at startup, magnets killed"
 
         self._stop_event.clear()
         self._poll_thread = threading.Thread(
             target=self._poll_loop, name="ilock-poll", daemon=True
         )
         self._poll_thread.start()
+        self._link.start()
         self._start_watchdog_and_heartbeat()
         if self._history is not None:
             self._history.start(self._cfg.history_flush_interval_s)
@@ -353,7 +420,7 @@ class InterlockService:
             self._email_executor.shutdown(wait=False, cancel_futures=True)
         except Exception:
             pass
-        self._close_serial()
+        self._link.stop()
         self.release_singleton_mutex()
         _LOG.info("InterlockService stopped")
 
@@ -373,8 +440,9 @@ class InterlockService:
             message = self._message
             warmup = self._warmup_active
             last_data_age = now - self._last_valid_data_monotonic
-            reconnect_attempts = self._reconnect_attempts
             safe_reason = self._safe_mode_reason
+        com = self._com_snapshot()
+        reconnect_attempts = com["reconnect_attempts"]
         # Read magnet state best-effort; never block trip path.  If the relay
         # is busy (a kill in progress) report the last value actually read,
         # with its age, instead of queueing behind it -- queueing made the
@@ -406,7 +474,7 @@ class InterlockService:
         read_at = self._magnets_read_monotonic
         magnets_age = round(time.monotonic() - read_at, 2) if read_at is not None else None
         return {
-            "com": self._com_snapshot(reconnect_attempts, safe_reason),
+            "com": com,
             "state": state,                    # ok | tripped | warmup | safe_mode | unknown
             "message": message,
             "safe_mode_reason": safe_reason,
@@ -422,38 +490,18 @@ class InterlockService:
             "plc_tripped": sample.plc_tripped if sample else False,
         }
 
-    def _com_snapshot(self, reconnect_attempts: int, safe_reason: Optional[str]) -> dict:
-        """Serial-link summary in ``SerialSnapshot.as_dict()`` shape.
+    def _com_snapshot(self) -> dict:
+        """Serial-link summary: ``ComLink.snapshot()`` (``SerialSnapshot``
+        shape plus ``held``).
 
-        Lock-free on purpose: it must never queue behind the poll thread's
-        ``_serial_lock`` (held during a blocking read) and never affects the
-        trip path.  ``status``: port object present and open -> connected;
-        last open/read failed -> error; otherwise disconnected.
+        Never queues behind the poll thread's ``_serial_lock`` (held during a
+        blocking read) and never affects the trip path.  ``config_valid`` is
+        False while the port did not enumerate at startup and has not been
+        opened since.
         """
-        ser = self._serial
-        try:
-            is_open = bool(ser is not None and ser.is_open)
-        except Exception:
-            is_open = False
-        last_error = self._com_last_error
-        if is_open:
-            status = "connected"
-        elif last_error is not None:
-            status = "error"
-        else:
-            status = "disconnected"
-        last_rx = self._com_last_rx_monotonic
-        return {
-            "port": self._cfg.com_port,
-            "baud": int(self._cfg.com_baud),
-            "status": status,
-            "last_error": last_error,
-            "last_rx_seconds_ago": (
-                None if last_rx is None else round(time.monotonic() - last_rx, 3)
-            ),
-            "reconnect_attempts": int(reconnect_attempts),
-            "config_valid": safe_reason is None or _sm.REASON_BAD_COM_PORT not in safe_reason,
-        }
+        com = self._link.snapshot()
+        com["config_valid"] = bool(self._com_config_valid)
+        return com
 
     # ------------------------------------------------------------------
     # RPC entry points (call from server thread; no locks held across these)
@@ -477,9 +525,10 @@ class InterlockService:
         # Send 'O' over serial.
         try:
             with self._serial_lock:
-                if self._serial is None or not self._serial.is_open:
-                    raise IOError("serial port not open")
-                self._serial.write(b"O")
+                ser = self._link.device
+                if ser is None or not ser.is_open:
+                    raise IOError(f"serial port not open ({self._link.state})")
+                ser.write(b"O")
             _LOG.info("reset_interlock issued by %s (wrote 'O' to PLC)", client_addr)
             with self._state_lock:
                 self._has_emailed_for_current_outage = False
@@ -489,12 +538,16 @@ class InterlockService:
             return {"status": "error", "message": repr(exc)}
 
     def enable_magnets(self, client_addr: str = "?") -> dict:
-        """IT10: explicit RPC; refused in safe mode or while tripped."""
+        """IT10: explicit RPC; refused in safe mode, while tripped, or before
+        the first good PLC frame since startup (warmup)."""
         with self._state_lock:
             if self._state == _sm.STATE_SAFE_MODE:
                 return {"status": "refused", "reason": "safe_mode"}
             if self._state == _sm.STATE_TRIPPED:
                 return {"status": "refused", "reason": "tripped"}
+            if self._warmup_active:
+                return {"status": "refused", "reason": "no_plc_data",
+                        "message": "no good PLC frame received since startup"}
             last_plc_tripped = bool(self._last_sample and self._last_sample.plc_tripped)
         if last_plc_tripped:
             return {"status": "refused", "reason": "plc_still_tripped"}
@@ -520,48 +573,94 @@ class InterlockService:
             _LOG.exception("disable_magnets failed")
             return {"status": "error", "message": repr(exc)}
 
+    def com_connect(self, client_addr: str = "?") -> dict:
+        """Dashboard Connect: release a held COM port and open it now.
+
+        Touches nothing else: the interlock state, the trip latch and the
+        magnets stay exactly as they are (data resumes on the next frame)."""
+        with self._state_lock:
+            if self._state == _sm.STATE_SAFE_MODE:
+                _LOG.warning("COM connect refused (safe mode) from %s", client_addr)
+                return {"status": "refused", "reason": "safe_mode",
+                        "message": f"safe mode: {self._safe_mode_reason or ''}"}
+        self._link.connect()
+        _LOG.warning("COM connect requested by %s (%s)", client_addr, self._cfg.com_port)
+        return {"status": "ok", "message": f"connecting {self._cfg.com_port}"}
+
+    def com_disconnect(self, client_addr: str = "?") -> dict:
+        """Dashboard Disconnect: close the COM port and hold it closed.
+
+        Refused unless the relay reads the magnets disabled
+        (``_com_disconnect_refusal``).  While held there is no PLC data, so
+        the staleness check trips the interlock after ``stale_threshold_s``."""
+        try:
+            self._link.disconnect(hold=True)
+        except ComLinkRefused as exc:
+            _LOG.warning("COM disconnect refused from %s: %s", client_addr, exc)
+            return {"status": "refused", "reason": "disconnect_refused", "message": str(exc)}
+        except Exception as exc:
+            _LOG.exception("COM disconnect failed")
+            return {"status": "error", "message": repr(exc)}
+        _LOG.warning("COM port %s disconnected and HELD by %s: no PLC data until Connect; "
+                     "the interlock trips after %.0f s without data",
+                     self._cfg.com_port, client_addr, self._cfg.stale_threshold_s)
+        return {"status": "ok", "message": f"{self._cfg.com_port} disconnected and held"}
+
+    def _com_disconnect_refusal(self) -> Optional[str]:
+        """Why the COM port may not be disconnected now, or None.
+
+        The authority on "magnets enabled" is the relay's magnet-inhibit
+        channel (``EthernetRelay.read_magnet_status``) -- the PLC stream
+        carries no magnet state -- so it is read fresh here.  When it cannot
+        be read, the disconnect is refused too (the stricter answer)."""
+        if not self._relay_lock.acquire(timeout=_SNAPSHOT_RELAY_TIMEOUT_S):
+            return ("magnet state unknown (relay busy; a magnet kill may be in progress): "
+                    "cannot confirm the magnets are disabled, so the interlock's COM port "
+                    "stays connected")
+        try:
+            enabled = bool(self._relay.read_magnet_status(
+                retries=_SNAPSHOT_RELAY_RETRIES, timeout=_SNAPSHOT_RELAY_TIMEOUT_S))
+        except Exception as exc:
+            return (f"magnet state unknown (relay read failed: {exc!r}): cannot confirm the "
+                    "magnets are disabled, so the interlock's COM port stays connected")
+        finally:
+            self._relay_lock.release()
+        self._note_magnet_status(enabled)
+        if enabled:
+            return ("magnets are enabled: disable them before disconnecting the "
+                    "interlock's COM port")
+        return None
+
+    def _on_com_connected(self) -> None:
+        """The link opened the port (first time or reconnect).  Bookkeeping
+        only: never enables the magnets, never resets the interlock, never
+        refreshes the staleness clock (only a good PLC frame does)."""
+        self._com_config_valid = True
+
     # ------------------------------------------------------------------
     # Internal: poll loop
     # ------------------------------------------------------------------
 
-    def _open_serial(self) -> None:
-        with self._serial_lock:
-            if self._serial is not None and self._serial.is_open:
-                return
-            _COM_LOG.info("Open attempt: port=%s baud=%s", self._cfg.com_port, self._cfg.com_baud)
-            t0 = time.monotonic()
-            try:
-                self._serial = serial.Serial(
-                    port=self._cfg.com_port,
-                    baudrate=self._cfg.com_baud,
-                    timeout=self._cfg.com_timeout_s,
-                )
-                _COM_LOG.info("Open success: port=%s elapsed_ms=%d",
-                              self._cfg.com_port, int(1000 * (time.monotonic() - t0)))
-                self._com_last_error = None
-            except Exception as exc:
-                _COM_LOG.error("Open failure: port=%s exc=%r", self._cfg.com_port, exc)
-                self._serial = None
-                self._com_last_error = f"{type(exc).__name__}: {exc}"
-                raise
-
-    def _close_serial(self) -> None:
-        with self._serial_lock:
-            if self._serial is None:
-                return
-            try:
-                self._serial.close()
-            except Exception:
-                _COM_LOG.exception("close raised (ignored)")
-            self._serial = None
+    def _open_serial(self) -> serial.Serial:
+        """Open the PLC port (the link's ``_open``; runs on the link's thread
+        with ``_serial_lock`` held).  Raises on failure; the link retries."""
+        _COM_LOG.info("Open attempt: port=%s baud=%s", self._cfg.com_port, self._cfg.com_baud)
+        t0 = time.monotonic()
+        try:
+            ser = serial.Serial(
+                port=self._cfg.com_port,
+                baudrate=self._cfg.com_baud,
+                timeout=self._cfg.com_timeout_s,
+            )
+        except Exception as exc:
+            _COM_LOG.error("Open failure: port=%s exc=%r", self._cfg.com_port, exc)
+            raise
+        _COM_LOG.info("Open success: port=%s elapsed_ms=%d",
+                      self._cfg.com_port, int(1000 * (time.monotonic() - t0)))
+        return ser
 
     def _poll_loop(self) -> None:
-        # Open serial on this thread (transparency rule).
-        try:
-            self._open_serial()
-        except Exception:
-            _LOG.warning("Initial serial open failed; entering reconnect loop")
-
+        # The COM port is opened (and reopened) by self._link on its own thread.
         while not self._stop_event.is_set():
             self._last_loop_iteration_monotonic = time.monotonic()
             try:
@@ -574,24 +673,30 @@ class InterlockService:
     def _poll_once(self) -> None:
         # Read up to 200 bytes (mirrors original code).
         buffer = b""
-        with self._serial_lock:
-            ser = self._serial
-            if ser is None or not ser.is_open:
-                # Try to reopen.
-                pass
-            else:
-                try:
-                    buffer = ser.read(200)
-                except Exception as exc:
-                    _COM_LOG.error("read failure: %r", exc)
-                    self._serial = None  # force reopen
-                    self._com_last_error = f"{type(exc).__name__}: {exc}"
+        read_exc: Optional[BaseException] = None
+        if self._link.device is None:
+            # Port not open (connecting / error / held): the link reopens it on
+            # its own thread.  Wait as long as a silent read would, so the
+            # loop keeps its timing, then count this cycle as "no data".
+            self._stop_event.wait(self._cfg.com_timeout_s)
+        else:
+            with self._serial_lock:
+                ser = self._link.device   # re-read: a close may have landed
+                if ser is not None:
+                    try:
+                        if not ser.is_open:
+                            raise IOError("serial port closed")
+                        buffer = ser.read(200)
+                    except Exception as exc:
+                        _COM_LOG.error("read failure: %r", exc)
+                        read_exc = exc
+        if read_exc is not None:
+            self._link.report_error(read_exc, where="read")   # closes; link reopens
         if buffer:
-            self._com_last_rx_monotonic = time.monotonic()
+            self._link.note_rx()
         if not buffer:
-            # No data this cycle — check stale and try reopen.
+            # No data this cycle — check stale (the link handles reopening).
             self._check_stale()
-            self._try_reopen_if_needed()
             return
 
         sample = self._parse_plc_buffer(buffer)
@@ -676,24 +781,6 @@ class InterlockService:
         # _trip() will queue a single "K-Interlock Tripped" email containing
         # the stale-data reason; do not send a separate "PLC silence" email.
         self._trip(reason=f"no valid PLC data for {age:.1f}s")
-
-    def _try_reopen_if_needed(self) -> None:
-        with self._serial_lock:
-            if self._serial is not None and self._serial.is_open:
-                return
-        # Backoff schedule: 1, 2, 5, 10, 30, 30, ... seconds.
-        backoffs = (1.0, 2.0, 5.0, 10.0, 30.0)
-        delay = backoffs[min(self._reconnect_attempts, len(backoffs) - 1)]
-        self._reconnect_attempts += 1
-        _COM_LOG.warning("Reconnect attempt %d in %.1fs", self._reconnect_attempts, delay)
-        if self._stop_event.wait(delay):
-            return
-        try:
-            self._open_serial()
-            _COM_LOG.info("Reconnect success after %d attempts", self._reconnect_attempts)
-            self._reconnect_attempts = 0
-        except Exception:
-            pass  # Already logged in _open_serial.
 
     # ------------------------------------------------------------------
     # Trip path
@@ -846,6 +933,37 @@ class InterlockService:
                     ])
         except Exception:
             _LOG.exception("CSV flush failed (continuing)")
+
+
+class _PLCLink(ComLink):
+    """The PLC's COM port, owned by an :class:`InterlockService`.
+
+    Opens with the service's ``_open_serial``; holds the service's
+    ``_serial_lock`` while it opens/closes; beacons through the service
+    (``set_com_state``); refuses a disconnect while the magnets may be on.
+    Reconnect backoff 1, 2, 5, 10, then every 30 s (``ComLink.BACKOFF_S``).
+    """
+
+    def __init__(self, service: "InterlockService"):
+        cfg = service._cfg
+        super().__init__(
+            cfg.com_port, baud=int(cfg.com_baud), server=service,
+            name=f"interlock {cfg.com_port}", io_lock=service._serial_lock,
+            logger=_COM_LOG,
+        )
+        self._service = service
+
+    def _open(self):
+        return self._service._open_serial()
+
+    def _close(self, device) -> None:
+        device.close()
+
+    def _on_connected(self, device) -> None:
+        self._service._on_com_connected()
+
+    def _disconnect_refusal(self) -> Optional[str]:
+        return self._service._com_disconnect_refusal()
 
 
 def _history_row(s: _Sample) -> list:

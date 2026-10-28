@@ -245,6 +245,23 @@ SERVER_SPECS: list[ServerSpec] = [
 ]
 
 
+def _tpi_wait_for_args(specs: list[ServerSpec]) -> list[str]:
+    """``--wait-for COM=server_id`` for every serial-device server above: the
+    TPI server (which probes FTDI FT230X ports, the PDXC's included) waits for
+    them to open their ports before its first scan, then remembers those ports
+    as not a TPI instead of probing them."""
+    args: list[str] = []
+    for s in specs:
+        if s.com_label and s.server_id:
+            args += ["--wait-for", f"{s.com_label}={s.server_id}"]
+    return args
+
+
+_tpi_spec = next(s for s in SERVER_SPECS if s.id == "tpi")
+_tpi_spec.server_cmd.extend(_tpi_wait_for_args(SERVER_SPECS))
+del _tpi_spec
+
+
 def get_spec(server_id: str) -> Optional[ServerSpec]:
     for s in SERVER_SPECS:
         if s.id == server_id:

@@ -104,5 +104,22 @@ class InterlockClient(NetClient):
     def flush_csv(self) -> dict:
         return self._send_json("FLUSH_CSV")
 
+    def com_connect(self) -> tuple[bool, str]:
+        """Release a held PLC COM port and open it now: ``(ok, message)``.
+        Raises on network failure."""
+        return self._com_reply(self._send_json("COM_CONNECT"))
+
+    def com_disconnect(self) -> tuple[bool, str]:
+        """Close the PLC COM port and hold it closed: ``(ok, message)``.  The
+        server refuses while the magnets are (or may be) enabled; the message
+        says why.  Raises on network failure."""
+        return self._com_reply(self._send_json("COM_DISCONNECT"))
+
+    @staticmethod
+    def _com_reply(reply: dict) -> tuple[bool, str]:
+        ok = reply.get("status") == "ok"
+        message = reply.get("message") or reply.get("reason") or ("" if ok else str(reply.get("status")))
+        return ok, str(message)
+
 
 __all__ = ["InterlockClient"]

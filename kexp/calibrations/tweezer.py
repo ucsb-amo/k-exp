@@ -21,8 +21,13 @@ vpd2_per_vpd1_slope = 68.882 # +/- 0.063 V/V #87842+87843, 2026-10-22
 v_pd2_y_intercept = -2.0245 # +/- 0.0054 V #87842+87843, 2026-10-22
 
 # needs recalibration
-vpd2_per_vpd1_slope_squeezer =  70.20864948083167
-v_pd2_y_intercept_squeezer =  -.9167412763522654
+# vpd2_per_vpd1_slope_squeezer =  70.20864948083167
+# v_pd2_y_intercept_squeezer =  -.9167412763522654
+# 2026-10-23: squeeze hand-back (PID2 -> PID1) measured on the new PD2, no atoms (S1 #88152): the hand-back PID1 setpoint
+# from the measured PD2 and from the main map agree, so the squeezer pair = the main map. Bumpless only when the
+# hand-back setpoint ~ PID1's upstream level (H ~3.3 V at evap-1 end 0.08 V: +3.5 % at 0-2 ms, +0.4 % at 10-15 ms).
+vpd2_per_vpd1_slope_squeezer = 68.882 # +/- 0.063 V/V, = main map #88152 (#87842+87843), 2026-10-23
+v_pd2_y_intercept_squeezer = -2.0245 # +/- 0.0054 V, = main map #88152 (#87842+87843), 2026-10-23
 
 @portable(flags={"fast-math"})
 def tweezer_vpd1_to_vpd2(vpd_pid1) -> TFloat:

@@ -40,7 +40,7 @@ class hf_monitored_rabi(EnvExperiment, Base):
     @kernel
     def scan_kernel(self):
 
-        self.slm.write_phase_mask_kernel(phase=0,dimension=0)
+        self.slm.write_phase_mask_kernel(phase=self.p.phase_slm_mask)
         
         self.set_imaging_detuning(frequency_detuned = self.p.frequency_detuned_hf_f1m1)
         self.imaging.set_power(self.p.amp_imaging)

@@ -165,7 +165,7 @@ class diagnostic_frame(diagnostic_frame_waxx):
         self.img_mot_beams_z = self.image(cameras.z_basler, t_offset=5.e-3,
                                           exposure_time=19.e-6, gain=0., roi=[660, 300, 1260, 900],
                                           label='MOT beams')
-        self.img_gm_beams_z = self.image(cameras.z_basler, t_offset=0.25e-3,
+        self.img_gm_beams_z = self.image(cameras.z_basler, t_offset=0.,
                                          exposure_time=19.e-6, gain=0., roi=[660, 300, 1260, 900],
                                          label='GM beams')
 

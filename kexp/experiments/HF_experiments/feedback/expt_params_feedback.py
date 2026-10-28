@@ -65,7 +65,8 @@ class ExptParams(expt_params_kexp):
         # self.frequency_lightshift = 3.777e+04  # Hz, +/- 1.1e+03, absorption Ramsey phase jump (reference phase pi assumed), imaging amp 0.2, t_pulse 5 us, fringe amp 703 on offset 1738, night recal #85508, 2026-10-08
         # self.frequency_lightshift = 3.205e+04  # Hz, +/- 8.8e+02, absorption Ramsey phase jump (reference phase pi assumed), imaging amp 0.2, t_pulse 5 us, sensing-day recal #85549, 2026-10-09
         # self.frequency_lightshift = 3.920e+04  # Hz, +/- 9.7e+02, absorption Ramsey phase jump (reference phase pi assumed), imaging amp 0.2, t_pulse 5 us, recal at new Raman lock 41.440 GHz #86168, 2026-10-10
-        self.frequency_lightshift = 3.681e+04  # Hz, +/- 1.7e+03, absorption Ramsey phase jump (reference phase pi assumed), imaging amp 0.2, t_pulse 5 us, recal at new Raman lock 41.440 GHz #86242, 2026-10-11
+        # self.frequency_lightshift = 3.681e+04  # Hz, +/- 1.7e+03, absorption Ramsey phase jump (reference phase pi assumed), imaging amp 0.2, t_pulse 5 us, recal at new Raman lock 41.440 GHz #86242, 2026-10-11
+        self.frequency_lightshift = 2.62e+04  # Hz, +/- 2.3e+03, Ramsey phase jump with MEASURED reference (with_imaging 0/1), pooled #88783 (28.1 +/- 3.0) + #88784 (23.5 +/- 3.6), chi2 0.96/1, imaging amp 0.2, t_pulse 5 us, Raman lock 44.89 GHz, user-approved, 2026-10-26
                 
         # calibration run 78309 (S_z endpoints from 'fit', deg-2 S_z response fit)
         self.t_img_pulse = 5e-06  # s
@@ -141,7 +142,12 @@ class ExptParams(expt_params_kexp):
         # self.v_apd_all_up = -0.07608 #85550, 2026-10-09  # sensing-day APD recal (procedure), apd_state_mapping 85550 --sz-source params --degree 1 (Rabi frequency from the joint calibration, linear)
         # self.v_apd_all_up = -0.07702 #85560, 2026-10-09  # sensing-day APD recal (procedure), apd_state_mapping 85560 --sz-source params --degree 1 (Rabi frequency from the joint calibration, linear)
         # self.v_apd_all_up = -0.10422 #86244, 2026-10-11  # recal at new Raman lock 41.440 GHz (procedure), apd_state_mapping 86244 --sz-source params --degree 1 (Rabi frequency from the joint calibration, linear)
-        self.v_apd_all_up = -0.10008 #86491, 2026-10-11  # recal at new Raman lock 41.440 GHz (procedure), apd_state_mapping 86491 --sz-source params --degree 1 (Rabi frequency from the joint calibration, linear)
+        # self.v_apd_all_up = -0.10008 #86491, 2026-10-11  # recal at new Raman lock 41.440 GHz (procedure), apd_state_mapping 86491 --sz-source params --degree 1 (Rabi frequency from the joint calibration, linear)
+        # self.v_apd_all_up = -0.13187 #88792, 2026-10-26  # superseded the same day: 88792 alone was a post-hoc pick (see the pooled line)
+        # self.v_apd_all_up = -0.13449 #88850,88852, 2026-10-26  # pre-campaign recal 0 (apd_state_3pt x2, pooled per the retry rule), +/- 0.0009 V with run scatter; contrast 21.6 mV (C0 0.775 fitted at 34.2 mV -> FLAGGED unmatched)
+        # self.v_apd_all_up = -0.13838 #89322,89323, 2026-10-27  # post-relock resume gate (Amendment 5: consecutive pair 89322+89323 agree, p >= 0.36; 89321 +19.6 mV excluded by a rule chosen after seeing it), apd_state_mapping --sz-source params --degree 1 (curvature 3.4 sigma, linear per prereg), +/- 0.0011 V; contrast 35.72 +/- 1.88 mV (C0 matched)
+        self.v_apd_all_up = -0.14217 #89332, 2026-10-27  # campaign recal R1 (apd_state_3pt.py), apd_state_mapping 89332 --sz-source params --degree 1: S_z=+1 of the degree-1 single-shot fit, +/- 0.0017 V (+/- 0.0017 with run-to-run scatter)
+        # self.v_apd_all_up = -0.13357 #88792,88794, 2026-10-26  # Raman lock 44.91 GHz (procedure step 4 + retry), apd_state_mapping 88792 88794 --sz-source params --degree 1 (t_pi #88769), +/- 0.0017 V with run scatter; 88794 linear-map chi2_red 3.48 flagged (88792: 1.07)
         # self.v_apd_all_down = -0.20248 #83201-83202, 2026-09-27  # +/- 0.0017 V with run-to-run scatter
         # self.v_apd_all_down = -0.20441 #83217, 2026-09-27  # overnight auto-recal (user-approved), apd_state_mapping 83217
         # self.v_apd_all_down = -0.20229 #83227, 2026-09-27  # overnight auto-recal (user-approved), apd_state_mapping 83227 --degree 1 (linear fallback, user-approved: curvature resolved, midpoint outside 0.35-0.65)
@@ -193,7 +199,12 @@ class ExptParams(expt_params_kexp):
         # self.v_apd_all_down = -0.15807 #85550, 2026-10-09  # sensing-day APD recal (procedure), apd_state_mapping 85550 --sz-source params --degree 1 (Rabi frequency from the joint calibration, linear)
         # self.v_apd_all_down = -0.15643 #85560, 2026-10-09  # sensing-day APD recal (procedure), apd_state_mapping 85560 --sz-source params --degree 1 (Rabi frequency from the joint calibration, linear)
         # self.v_apd_all_down = -0.14113 #86244, 2026-10-11  # recal at new Raman lock 41.440 GHz (procedure), apd_state_mapping 86244 --sz-source params --degree 1 (Rabi frequency from the joint calibration, linear)
-        self.v_apd_all_down = -0.13935 #86491, 2026-10-11  # recal at new Raman lock 41.440 GHz (procedure), apd_state_mapping 86491 --sz-source params --degree 1 (Rabi frequency from the joint calibration, linear)
+        # self.v_apd_all_down = -0.13935 #86491, 2026-10-11  # recal at new Raman lock 41.440 GHz (procedure), apd_state_mapping 86491 --sz-source params --degree 1 (Rabi frequency from the joint calibration, linear)
+        # self.v_apd_all_down = -0.16821 #88792, 2026-10-26  # superseded the same day: 88792 alone was a post-hoc pick (see the pooled line)
+        # self.v_apd_all_down = -0.15614 #88850,88852, 2026-10-26  # pre-campaign recal 0 (apd_state_3pt x2, pooled), +/- 0.0012 V with run scatter
+        # self.v_apd_all_down = -0.17410 #89322,89323, 2026-10-27  # post-relock resume gate (Amendment 5: consecutive pair 89322+89323 agree, p >= 0.36; 89321 +19.6 mV excluded by a rule chosen after seeing it), apd_state_mapping --sz-source params --degree 1 (curvature 3.4 sigma, linear per prereg), +/- 0.0012 V
+        self.v_apd_all_down = -0.17337 #89332, 2026-10-27  # campaign recal R1 (apd_state_3pt.py), apd_state_mapping 89332 --sz-source params --degree 1: S_z=-1 of the degree-1 single-shot fit, +/- 0.0018 V (+/- 0.0018 with run-to-run scatter)
+        # self.v_apd_all_down = -0.16778 #88792,88794, 2026-10-26  # Raman lock 44.91 GHz (procedure step 4 + retry), apd_state_mapping 88792 88794 --sz-source params --degree 1, +/- 0.0010 V with run scatter; contrast 34.20 +/- 2.16 mV
         # self.n_photons_per_shot = 851.73 #83201-83202, 2026-09-27  # scope integral, up minus down per pulse, +/- 25 (SRS gain chain from the notebook, not measured in the run)
         # self.n_photons_per_shot = 1119.22 #83217, 2026-09-27  # overnight auto-recal (user-approved), apd_state_mapping 83217
         # self.n_photons_per_shot = 910.13 #83227, 2026-09-27  # overnight auto-recal (user-approved), apd_state_mapping 83227 --degree 1 (linear fallback, user-approved: curvature resolved, midpoint outside 0.35-0.65)
@@ -245,7 +256,12 @@ class ExptParams(expt_params_kexp):
         # self.n_photons_per_shot = 1171.28 #85550, 2026-10-09  # sensing-day APD recal (procedure), apd_state_mapping 85550 --sz-source params --degree 1 (Rabi frequency from the joint calibration, linear)
         # self.n_photons_per_shot = 1133.37 #85560, 2026-10-09  # sensing-day APD recal (procedure), apd_state_mapping 85560 --sz-source params --degree 1 (Rabi frequency from the joint calibration, linear)
         # self.n_photons_per_shot = 520.72 #86244, 2026-10-11  # recal at new Raman lock 41.440 GHz (procedure), apd_state_mapping 86244 --sz-source params --degree 1 (Rabi frequency from the joint calibration, linear)
-        self.n_photons_per_shot = 584.01 #86491, 2026-10-11  # recal at new Raman lock 41.440 GHz (procedure), apd_state_mapping 86491 --sz-source params --degree 1 (Rabi frequency from the joint calibration, linear)
+        # self.n_photons_per_shot = 584.01 #86491, 2026-10-11  # recal at new Raman lock 41.440 GHz (procedure), apd_state_mapping 86491 --sz-source params --degree 1 (Rabi frequency from the joint calibration, linear)
+        # self.n_photons_per_shot = 540.41 #88792, 2026-10-26  # superseded the same day: 88792 alone was a post-hoc pick (see the pooled line)
+        # self.n_photons_per_shot = 295.09 #88850,88852, 2026-10-26  # pre-campaign recal 0, scope integral up minus down per pulse, +/- 23
+        # self.n_photons_per_shot = 492.78 #89322,89323, 2026-10-27  # post-relock resume gate (Amendment 5: consecutive pair 89322+89323 agree, p >= 0.36; 89321 +19.6 mV excluded by a rule chosen after seeing it), apd_state_mapping --sz-source params --degree 1 (curvature 3.4 sigma, linear per prereg), scope integral up minus down per pulse, +/- 30
+        self.n_photons_per_shot = 465.02 #89332, 2026-10-27  # campaign recal R1 (apd_state_3pt.py), apd_state_mapping 89332 --sz-source params --degree 1: scope integral, up minus down per pulse, +/- 50 (SRS gain etc. from the notebook, not from the run)
+        # self.n_photons_per_shot = 492.22 #88792,88794, 2026-10-26  # Raman lock 44.91 GHz (procedure step 4 + retry), apd_state_mapping 88792 88794 --sz-source params --degree 1, scope integral up minus down per pulse, +/- 29
         # self.std_n_photons_per_shot = 150.36 #83201-83202, 2026-09-27  # n * sigma_V / v_range = 851.7 * 8.53 mV / 48.31 mV (within-run, up: the larger endpoint noise)
         # self.std_n_photons_per_shot = 178.11 #83217, 2026-09-27  # overnight auto-recal (user-approved), apd_state_mapping 83217
         # self.std_n_photons_per_shot = 183.07 #83227, 2026-09-27  # overnight auto-recal (user-approved), apd_state_mapping 83227 --degree 1 (linear fallback, user-approved: curvature resolved, midpoint outside 0.35-0.65)
@@ -296,7 +312,12 @@ class ExptParams(expt_params_kexp):
         # self.std_n_photons_per_shot = 162.77 #85550, 2026-10-09  # sensing-day APD recal (procedure), apd_state_mapping 85550 --sz-source params --degree 1 (Rabi frequency from the joint calibration, linear)
         # self.std_n_photons_per_shot = 165.63 #85560, 2026-10-09  # sensing-day APD recal (procedure), apd_state_mapping 85560 --sz-source params --degree 1 (Rabi frequency from the joint calibration, linear)
         # self.std_n_photons_per_shot = 146.52 #86244, 2026-10-11  # recal at new Raman lock 41.440 GHz (procedure), apd_state_mapping 86244 --sz-source params --degree 1 (Rabi frequency from the joint calibration, linear)
-        self.std_n_photons_per_shot = 208.55 #86491, 2026-10-11  # recal at new Raman lock 41.440 GHz (procedure), apd_state_mapping 86491 --sz-source params --degree 1 (Rabi frequency from the joint calibration, linear)
+        # self.std_n_photons_per_shot = 208.55 #86491, 2026-10-11  # recal at new Raman lock 41.440 GHz (procedure), apd_state_mapping 86491 --sz-source params --degree 1 (Rabi frequency from the joint calibration, linear)
+        # self.std_n_photons_per_shot = 134.81 #88792, 2026-10-26  # superseded the same day: 88792 alone was a post-hoc pick (see the pooled line)
+        # self.std_n_photons_per_shot = 108.80 #88850,88852, 2026-10-26  # pre-campaign recal 0: 295.1 * 7.98 mV / 21.65 mV (pooled, down)
+        # self.std_n_photons_per_shot = 113.57 #89322,89323, 2026-10-27  # post-relock resume gate (Amendment 5: consecutive pair 89322+89323 agree, p >= 0.36; 89321 +19.6 mV excluded by a rule chosen after seeing it), apd_state_mapping --sz-source params --degree 1 (curvature 3.4 sigma, linear per prereg): 492.8 * 8.23 mV / 35.72 mV (pooled, up)
+        self.std_n_photons_per_shot = 141.42 #89332, 2026-10-27  # campaign recal R1 (apd_state_3pt.py), apd_state_mapping 89332 --sz-source params --degree 1: n_photons_per_shot * sigma_V / v_range = 465 * 9.49 mV / 31.20 mV (within-run, up)
+        # self.std_n_photons_per_shot = 133.83 #88792,88794, 2026-10-26  # Raman lock 44.91 GHz (procedure step 4 + retry), apd_state_mapping 88792 88794: 492.2 * 9.30 mV / 34.20 mV (pooled, up)
         # self.feedback_measurement_midpoint_fraction = 0.5 #83201-83202, 2026-09-27  # linear map (quadratic term not resolved)
         # self.feedback_measurement_midpoint_fraction = 0.5000 #83217, 2026-09-27  # overnight auto-recal (user-approved), apd_state_mapping 83217
         # self.feedback_measurement_midpoint_fraction = 0.5000 #83227, 2026-09-27  # overnight auto-recal (user-approved), apd_state_mapping 83227 --degree 1 (linear fallback, user-approved: curvature resolved, midpoint outside 0.35-0.65)
@@ -348,7 +369,8 @@ class ExptParams(expt_params_kexp):
         # self.feedback_measurement_midpoint_fraction = 0.5000 #85550, 2026-10-09  # sensing-day APD recal (procedure), apd_state_mapping 85550 --sz-source params --degree 1 (Rabi frequency from the joint calibration, linear)
         # self.feedback_measurement_midpoint_fraction = 0.5000 #85560, 2026-10-09  # sensing-day APD recal (procedure), apd_state_mapping 85560 --sz-source params --degree 1 (Rabi frequency from the joint calibration, linear)
         # self.feedback_measurement_midpoint_fraction = 0.5000 #86244, 2026-10-11  # recal at new Raman lock 41.440 GHz (procedure), apd_state_mapping 86244 --sz-source params --degree 1 (Rabi frequency from the joint calibration, linear)
-        self.feedback_measurement_midpoint_fraction = 0.5000 #86491, 2026-10-11  # recal at new Raman lock 41.440 GHz (procedure), apd_state_mapping 86491 --sz-source params --degree 1 (Rabi frequency from the joint calibration, linear)
+        # self.feedback_measurement_midpoint_fraction = 0.5000 #86491, 2026-10-11  # recal at new Raman lock 41.440 GHz (procedure), apd_state_mapping 86491 --sz-source params --degree 1 (Rabi frequency from the joint calibration, linear)
+        self.feedback_measurement_midpoint_fraction = 0.5000 #88792,88794, 2026-10-26  # Raman lock 44.91 GHz (procedure step 4 + retry), linear map (degree 1), unchanged
 
         # run 76228 | multi-parameter grid fit result
         # self.back_action_coherence = 0.7925
@@ -365,7 +387,8 @@ class ExptParams(expt_params_kexp):
         # self.back_action_coherence = 0.7562  # +/- 0.0206 #83474, 2026-09-28
         # run 83889 | RabiJointPosterior (f_rabi free), nuisances verdict PASS, new integrator window
         # self.back_action_coherence = 0.7215  # +/- 0.0282 #83889, 2026-09-30
-        self.back_action_coherence = 0.739 #86509-86520, 2026-10-11  # M1-p2 read model (theta11 86179-86181), adopted by the pre-registered A/B (VERDICT_AB.md, D -0.083 +/- 0.024)
+        # self.back_action_coherence = 0.739 #86509-86520, 2026-10-11  # M1-p2 read model (theta11 86179-86181), adopted by the pre-registered A/B (VERDICT_AB.md, D -0.083 +/- 0.024)
+        self.back_action_coherence = 0.775 #88845-88847, 2026-10-26  # open-loop simcheck re-measure (SIMCHECK_PREREG.md sha c3448752, fit_remeasure.py 489c70c0): C0 under the live model, APD scale fixed at map #88792,88794 (34.21 mV), +/- 0.006, Raman lock 44.89 GHz, f_LS 26.2 kHz
 
         # State-dependent read model (2026-10-11, EXPLORATORY; kexp.base.feedback.READ_TWIST_SIGN):
         # the read's z twist per unit s_z (rad) and the coherence slope per unit s_z, both at the
@@ -373,12 +396,14 @@ class ExptParams(expt_params_kexp):
         # dphi = -1.432 + 0.869 s_z rad, R = 0.738 + 0.193 s_z -- not applied until the simulation
         # check says it helps and the user says go.
         # self.read_twist_per_sz = 0.0
-        self.read_twist_per_sz = 0.869 #86509-86520, 2026-10-11  # M1-p2 twist (theta11 86179-86181), adopted by the pre-registered A/B (VERDICT_AB.md)
+        # self.read_twist_per_sz = 0.869 #86509-86520, 2026-10-11  # M1-p2 twist (theta11 86179-86181), adopted by the pre-registered A/B (VERDICT_AB.md)
+        self.read_twist_per_sz = 1.350 #88845-88847, 2026-10-26  # open-loop simcheck re-measure (SIMCHECK_PREREG.md sha c3448752): twist per unit s_z, +/- 0.063, Raman lock 44.89 GHz, f_LS 26.2 kHz
         self.back_action_coherence_slope = 0.0
         # the read's constant z angle (rad), the kernel's alpha_z_lightshift, set on its own
         # (theta11: 1.432); NaN = from frequency_lightshift (omega_ls * t_img_pulse), as before
         # self.read_alpha_lightshift = float("nan")
-        self.read_alpha_lightshift = 1.432 #86509-86520, 2026-10-11  # M1-p2 constant read angle (theta11 86179-86181), adopted by the pre-registered A/B (VERDICT_AB.md)
+        # self.read_alpha_lightshift = 1.432 #86509-86520, 2026-10-11  # M1-p2 constant read angle (theta11 86179-86181), adopted by the pre-registered A/B (VERDICT_AB.md)
+        self.read_alpha_lightshift = 1.191 #88845-88847, 2026-10-26  # open-loop simcheck re-measure (SIMCHECK_PREREG.md sha c3448752): constant read angle (rad), +/- 0.039 total (stat 0.014, f_res 0.034), Raman lock 44.89 GHz, f_LS 26.2 kHz
         # Per-shot A/B of two read models (pre-registered A/B, 2026-10-11): scan it,
         # self.xvar('feedback_read_model', np.array([0., 1.])); each shot then uses model 0 =
         # the three values above, or model 1 = the read_model1_* set below. -1 = not

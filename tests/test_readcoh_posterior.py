@@ -277,11 +277,12 @@ M1_AS_MODEL1 = dict(read_model1_alpha_lightshift=1.432, read_model1_twist_per_sz
 
 
 def test_shipped_defaults_are_m1():
-    """Adopted 2026-10-11 (#86509-86520, the pre-registered A/B); catches an accidental revert."""
+    """The shipped read model has the M1 form (twist + constant read angle, no coherence slope); catches an accidental
+    revert. Values: re-measured 2026-10-26 (#88845-88847, simcheck re-measure); M1-p2 (#86509-86520) before that."""
     p = _shipped_params()
-    assert p.read_alpha_lightshift == 1.432
-    assert p.read_twist_per_sz == 0.869
-    assert p.back_action_coherence == 0.739
+    assert p.read_alpha_lightshift == 1.191
+    assert p.read_twist_per_sz == 1.350
+    assert p.back_action_coherence == 0.775
     assert p.back_action_coherence_slope == 0.0
     fb = Feedback(expt_params=copy.deepcopy(p))
     assert fb.read_twist_on and fb.read_alpha_lightshift_on and not fb.read_coherence_slope_on
