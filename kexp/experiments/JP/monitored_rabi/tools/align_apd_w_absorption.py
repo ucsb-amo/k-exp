@@ -31,6 +31,7 @@ class hf_monitored_rabi(EnvExperiment, Base):
 
         self.p.make_atoms = 1.
         self.adjust('make_atoms',0.,1.,1)
+        self.adjust('amp_imaging',0.,2.,1)
 
         self.data.apd = self.data.add_data_container(1)
         

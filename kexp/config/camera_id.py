@@ -189,8 +189,8 @@ class diagnostic_frame(diagnostic_frame_waxx):
         # above 5% of the full-power peak, padded 30 px (user OK'd the ROI change, 2026-10-19)
         # end of the tweezer ramp-up
         self.img_tweezer_load_x = self.image(cameras.x_basler, t_offset=0.,
-                                             exposure_time=100.e-6, gain=8.,
-                                             roi=[631, 95, 1099, 988], #87302, 2026-10-19
+                                             exposure_time=100.e-6, gain=1.,
+                                             roi=[1134, 158, 1599, 1150], #87302, 2026-10-19
                                              label='tweezer load', show=None)
         # end of the last tweezer evap
         self.img_tweezer_evap_x = self.image(cameras.x_basler, t_offset=1.e-3,

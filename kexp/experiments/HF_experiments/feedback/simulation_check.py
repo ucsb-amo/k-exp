@@ -16,13 +16,14 @@ class simulation_check(EnvExperiment, FeedbackExpt):
 
         FeedbackExpt.__init__(self,
                       save_data=True,
-                      save_on_underflow=True)
+                      save_on_underflow=True,
+                      recalibrate=False)
         
         self.p.update_raman_frequency_bool = 0
         self.p.include_photon_noise = 1
 
-        self.p.N_repeats = 11
-        self.p.N_pulses = 17 # number of steps of evolution
+        self.p.N_repeats = 13
+        self.p.N_pulses = 11 # number of steps of evolution
         
         ### parameters
 

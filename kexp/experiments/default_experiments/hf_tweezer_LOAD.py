@@ -16,8 +16,10 @@ class mag_trap(EnvExperiment, Base):
         Base.__init__(self,
                       save_data=False,
                       camera_select=cameras.andor,
-                      imaging_type=img_types.ABSORPTION, warmup_shots=0,
-                      diagnostic_images=True)
+                      imaging_type=img_types.ABSORPTION, warmup_shots=1,
+                      diagnostic_images=True,
+                      mot_preload=True)
+
 
         # Adjust.__init__(self)
         
@@ -69,10 +71,10 @@ class mag_trap(EnvExperiment, Base):
         # self.xvar('t_hf_tweezer_1064_ramp', np.linspace(0.05,0.15, 5))
         # self.p.t_hf_tweezer_1064_ramp = 0.125
 
-        # self.xvar('i_hf_tweezer_load_current',np.linspace(192.2,193.8,11))
+        # self.xvar('i_hf_tweezer_load_current',np.linspace(190.,193.,21))
         # self.p.i_hf_tweezer_load_current = 192.7
 
-        # self.xvar('v_hf_tweezer_paint_amp_max', np.linspace(0., 3., 2))
+        # self.xvar('v_hf_tweezer_paint_amp_max', np.linspace(-3., 4.99, 11))
 
         # self.adjust('v_hf_tweezer_paint_amp_max',-5.,5.)
         # self.adjust('t_tweezer_hold',0.,20.e-3,5.e-3)

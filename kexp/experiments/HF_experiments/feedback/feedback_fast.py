@@ -18,11 +18,17 @@ class feedback(EnvExperiment, FeedbackExpt):
         
         self.p.update_raman_frequency_bool = 1
         self.p.include_photon_noise = 1
+
+        self.p.N_repeats = 11
         
         ### parameters
 
-        self.p.feedback_fractional_initial_offset = 2.
-        # self.xvar('feedback_fractional_initial_offset', np.linspace(0,4.,5))
+        # self.p.feedback_fractional_initial_offset = 
+        # hspan = self.p.feedback_guess_span_Omega
+        # span = 2 * hspan
+        # dgrid = span / self.p.feedback_grid_size
+        # dscan = 3*dgrid
+        # self.xvar('feedback_fractional_initial_offset', np.arange(-hspan,hspan+dgrid,dscan))
 
         self.finish_prepare()
 

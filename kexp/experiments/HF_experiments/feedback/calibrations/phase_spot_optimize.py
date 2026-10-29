@@ -17,7 +17,7 @@ class phase_spot(EnvExperiment, Base):
                       imaging_type=img_types.DISPERSIVE)
         
         # self.xvar('amp_imaging',np.linspace(0.1,1.,10))
-        self.p.amp_imaging = 0.3
+        self.p.amp_imaging = 0.25
         self.p.t_imaging_pulse = 5.e-6
 
         # f = 1.e6
@@ -27,15 +27,15 @@ class phase_spot(EnvExperiment, Base):
         # self.p.frequency_detuned_hf_midpoint = -5.0e6
 
         # self.xvar('phase_slm_mask', 0.387097 * np.pi + np.linspace(-0.2, 0.2, 5) * np.pi)
-        self.xvar('phase_slm_mask', np.linspace(0.0,2.1,31) * np.pi)
+        # self.xvar('phase_slm_mask', np.linspace(0.26,0.34,11) * np.pi)
         # self.p.phase_slm_mask = 0.387097 * np.pi
 
-        # self.xvar('dimension_slm_mask',np.linspace(15.e-6,250.e-6,10))
-        # self.p.dimension_slm_mask = 20.e-6
+        self.xvar('dimension_slm_mask',np.linspace(5.e-6,20.e-6,10))
+        self.p.dimension_slm_mask = 20.e-6
         
         self.p.t_raman_pulse = self.p.t_raman_pi_pulse
         
-        self.p.N_repeats = 4
+        self.p.N_repeats = 7
 
         # apd slots: 0 = up, 1 = down, 2 = none (dark), 3 = superposition
         self.data.apd = self.data.add_data_container(4)

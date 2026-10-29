@@ -12,13 +12,14 @@ class hf_raman(EnvExperiment, Base):
         Base.__init__(self,setup_camera=True,
                       camera_select=cameras.andor,
                       imaging_type=img_types.ABSORPTION,
-                      warmup_shots=3)
+                      warmup_shots=1,mot_preload=True)
         
         self.xvar('t_raman_pulse', np.arange(0.,30.,0.5)*1.e-6)
         self.p.t_raman_pulse = 0.
         self.p.t_tweezer_hold = 100.e-3
         self.p.t_tof = 1.5e-3
-        self.p.N_repeats = 1
+        self.p.N_repeats = 3
+        # self.xvar('t_tweezer_hold',np.linspace(0.,0.8,6))
 
 
         self.finish_prepare(shuffle=True)
@@ -27,7 +28,7 @@ class hf_raman(EnvExperiment, Base):
     def scan_kernel(self):
 
         self.set_imaging_detuning(frequency_detuned=self.p.frequency_detuned_hf_f1m1)
-        self.imaging.set_power(self.camera_params.amp_imaging)
+        # self.imaging.set_power(self.camera_params.amp_imaging)
 
         self.prepare_hf_tweezers()
         self.prep_raman()
@@ -35,7 +36,7 @@ class hf_raman(EnvExperiment, Base):
 
         self.raman.pulse(self.p.t_raman_pulse)
 
-        delay(10.e-3)
+        # delay(10.e-3)
 
         self.ttl.raman_shutter.off()
 

@@ -11,9 +11,10 @@ from kexp.util.artiq.async_print import aprint
 class hf_monitored_rabi(EnvExperiment, Base):
 
     def prepare(self):
-        Base.__init__(self,camera_select=cameras.apd,
+        Base.__init__(self,camera_select=cameras.andor,
                       save_data=False,
-                      imaging_type=img_types.ABSORPTION)
+                      imaging_type=img_types.ABSORPTION,
+                      mot_preload=True)
         
         self.p.t_imaging_pulse = 20.e-6
         
@@ -29,11 +30,13 @@ class hf_monitored_rabi(EnvExperiment, Base):
         
         self.p.N_repeats = 1
 
+        self.p.phase_slm_mask = 0.
+
         self.p.make_atoms = 1.
         self.adjust('make_atoms',0.,1.,1)
 
         self.data.apd = self.data.add_data_container(1)
-        # Adjust.__init__(self)
+        Adjust.__init__(self)
         
         self.finish_prepare(shuffle=False)
 

@@ -74,14 +74,13 @@ class ExptParams(ExptParamsWaxx):
         self.detune_d2_2d_r_imaging = -4.4
 
         # SLM settings
-        self.dimension_slm_mask = 40.e-6 
-        # self.phase_slm_mask = 0.387097 * np.pi
-        # self.phase_slm_mask = 0.57142857 * np.pi
-        self.phase_slm_mask = 0.49 * np.pi #83725, 2026-09-29
+        self.dimension_slm_mask = 14.e-6 # this parameter has a bug -- it is actually writing "20 px", which ends up being 160um diameter (8 um per px)
+        self.phase_slm_mask = 0.323077 * np.pi  # 89420
         self.px_slm_grating_position_x = 994
         self.px_slm_grating_position_y = 824
         self.px_slm_phase_mask_position_x = 1129
         self.px_slm_phase_mask_position_y = 830
+
         # Cooling timing
         self.t_tof = 20.e-6
         self.t_discharge_igbt = 2.e-3
@@ -89,7 +88,7 @@ class ExptParams(ExptParamsWaxx):
         self.t_mot_kill = 1.
         self.t_2D_mot_load_delay = 1.
         # self.t_mot_load = 1.0
-        self.t_mot_load = 0.5 #88059-88061 (MOT 0.5 vs 1.0 at hold 1.2: N 1.16x, N/s 1.32x; user's choice), 2026-10-23
+        self.t_mot_load = 1.0
         
         self.t_d2cmot = 50.e-3
         self.t_d1cmot = 10.e-3
@@ -126,10 +125,10 @@ class ExptParams(ExptParamsWaxx):
         self.t_lightsheet_rampup = 75.e-3
         self.t_lf_lightsheet_rampdown = 1.13
         # self.t_hf_lightsheet_rampdown = 1.1
-        self.t_hf_lightsheet_rampdown = 0.15
+        self.t_hf_lightsheet_rampdown = 0.3
         self.t_hf_lightsheet_rampdown2 = .74
         self.t_lf_lightsheet_rampdown2 = .02
-        self.t_lightsheet_rampdown3 = 62e-3
+        self.t_lightsheet_rampdown3 = 200.e-3
         self.t_lightsheet_load = 10.e-3
         self.t_lightsheet_hold = 200.e-3
         
@@ -179,23 +178,7 @@ class ExptParams(ExptParamsWaxx):
 
         self.t_feshbach_field_ramp_special = 20.e-3
 
-        # self.t_raman_pi_pulse = 6.8222e-06 #84525, 2026-10-01
-        # self.t_raman_pi_pulse = 6.7885e-06 #84965, 2026-10-02
-        # self.t_raman_pi_pulse = 5.6102e-06 #85151, 2026-10-06
-        # self.t_raman_pi_pulse = 5.5257e-06 #85159, 2026-10-06
-        # self.t_raman_pi_pulse = 4.9248e-06 #85248, 2026-10-07
-        # self.t_raman_pi_pulse = 3.8081e-06 #85284, 2026-10-07
-        # self.t_raman_pi_pulse = 3.8588e-06 #85314, 2026-10-07
-        # self.t_raman_pi_pulse = 3.7870e-06 #85342, 2026-10-07
-        # self.t_raman_pi_pulse = 3.7892e-06 #85409, 2026-10-07
-        # self.t_raman_pi_pulse = 3.8805e-06 #85470, 2026-10-08
-        # self.t_raman_pi_pulse = 3.7785e-06 #85505, 2026-10-08  # night recal: rate pi 1/(2f), f 132.33 +/- 0.94 kHz (pooled)
-        # self.t_raman_pi_pulse = 3.8831e-06 #85547, 2026-10-09  # sensing-day recal: rate pi 1/(2f), f 128.76 +/- 0.60 kHz (pooled)
-        # self.t_raman_pi_pulse = 3.7650e-06 #86101, 2026-10-10 theta re-run Rabi step (code-96), user-approved
-        # self.t_raman_pi_pulse = 3.3964e-06 #86166, 2026-10-10  # recal at new Raman lock 41.440 GHz: rate pi 1/(2f), f 147.21 +/- 0.63 kHz (pooled), -9.8 % accepted under the one-off 20 % window
-        # self.t_raman_pi_pulse = 3.2481e-06 #86240, 2026-10-11  # recal at new Raman lock 41.440 GHz: rate pi 1/(2f), f 153.94 +/- 0.83 kHz (pooled), -4.4 % (accepted, 8 % window)
-        # self.t_raman_pi_pulse = 3.4130e-06 #86490, 2026-10-11  # recal at new Raman lock 41.440 GHz: rate pi 1/(2f), f 146.50 +/- 0.70 kHz (pooled), +5.1 % (accepted, 8 % window)
-        self.t_raman_pi_pulse = 3.7918e-06 #88769, 2026-10-26  # Raman lock 44.90 GHz: rate pi 1/(2f), f 131.86 +/- 0.76 kHz (pooled), +11.1 % (lock move; +2.6 % vs 1/Delta), user-approved
+        self.t_raman_pi_pulse = 3.9229e-06 #89418, 2026-10-28
          
         # DAC controlled AO amplitudes
         self.amp_d1_3d_c = 0.3
@@ -333,11 +316,8 @@ class ExptParams(ExptParamsWaxx):
         self.v_pd_lf_tweezer_1064_rampdown3_end = 2.
 
         self.v_pd_hf_tweezer_1064_ramp_end = 8.4
-        # self.v_pd_hf_tweezer_1064_rampdown_end = 0.16
-        self.v_pd_hf_tweezer_1064_rampdown_end = 0.08 #87461, 2026-10-20
-        # self.v_pd_hf_tweezer_1064_rampdown2_end = 4. # 2.2
-        # self.v_pd_hf_tweezer_1064_rampdown2_end = 0.20 # PID2 units, absolute #87461/87466, 2026-10-20
-        self.v_pd_hf_tweezer_1064_rampdown2_end = 0.604 # PID2 units, absolute: the 0.20 V point on the new PD2 (+/- 0.007) #87842+87843, 2026-10-22
+        self.v_pd_hf_tweezer_1064_rampdown_end = 0.16 #87461, 2026-10-20
+        self.v_pd_hf_tweezer_1064_rampdown2_end = 0.9
         self.n_tweezer_ramp_steps = 200
         # HF tweezer evap 1 painting law: paint_frac = (P/P_max)**e (0.3333 = constant trap frequency)
         self.paint_amp_exponent_hf_tweezer = 1.0 #87461 (e 0.85-1 best), 2026-10-20

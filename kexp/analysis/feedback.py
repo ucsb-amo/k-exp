@@ -3034,7 +3034,7 @@ class FeedbackReplay(FeedbackReplayCore):
         ax.set_xlabel("pulse index")
         ax.set_ylabel("detuning / Omega")
         ymin, ymax = ax.get_ylim()
-        ax.set_ylim(min(float(ymin), -1.0), max(float(ymax), 1.0))
+        # ax.set_ylim(min(float(ymin), -1.0), max(float(ymax), 1.0))
         ax.grid(alpha=0.25)
         ax.legend(handles=legend_handles, loc="best")
         return fig, ax
