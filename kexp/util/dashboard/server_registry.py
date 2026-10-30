@@ -30,6 +30,7 @@ from kexp.config.ip import (
     MAGNETOMETER_COM,
     INTERLOCK_COM,
     PDXC_COM,
+    RAMAN_FP_LOCK_COM,
 )
 
 
@@ -154,6 +155,27 @@ SERVER_SPECS: list[ServerSpec] = [
         graceful_stop_timeout_s=3.0,
         warm_imports=["pyqtgraph", "numpy", "beacon.basler.cameras_gui"],
         default_dock_area="right",
+    ),
+    ServerSpec(
+        id="raman_fp_lock",
+        label="Raman FP lock",
+        icon="🔐",
+        # Owns the lock Quarto's COM port: a terminal cannot open it while
+        # this runs (the panel has a console).  Not in kong's autostart.
+        body_factory=_lazy_panel("kexp.util.guis.lasers.raman_fp_lock.raman_fp_lock_panel",
+                                 "RamanFPLockPanel"),
+        server_cmd=[_PY, "-m", "kexp.util.guis.lasers.raman_fp_lock.raman_fp_lock_server"],
+        cwd=_REPO,
+        server_id="raman_fp_lock",
+        client_factory=_lazy_client("waxx.util.guis.fp_lock.fp_lock_client", "FPLockClient",
+                                    server_id="raman_fp_lock", discovery_timeout=3.0,
+                                    timeout=1.5),
+        com_label=RAMAN_FP_LOCK_COM,
+        graceful_stop_timeout_s=3.0,   # puts the firmware's table printout back on stop
+        warm_imports=["pyqtgraph", "waxx.util.guis.fp_lock.fp_lock_panel"],
+        default_dock_area="right",
+        default_placement="tab",
+        tab_group="diag",
     ),
     ServerSpec(
         id="keysight",

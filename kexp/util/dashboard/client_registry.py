@@ -90,6 +90,17 @@ CLIENT_SPECS: list[ClientSpec] = [
         default_dock_area="right",
     ),
     ClientSpec(
+        id="raman_fp_lock",
+        label="Raman FP lock",
+        icon="🔐",
+        body_factory=_lazy_panel("kexp.util.guis.lasers.raman_fp_lock.raman_fp_lock_panel",
+                                 "RamanFPLockPanel"),
+        warm_imports=["pyqtgraph", "waxx.util.guis.fp_lock.fp_lock_panel"],
+        default_dock_area="right",
+        default_placement="tab",
+        tab_group="lock",
+    ),
+    ClientSpec(
         id="basler",
         label="Camera Viewer",
         icon="📷",

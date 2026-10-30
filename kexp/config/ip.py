@@ -106,6 +106,11 @@ MAGNETOMETER_REFERENCE_CSV_PATH = _safe_join(DATA_DIR, 'magnetometer_reference.c
 # Daily field-log CSVs written by the magnetometer server (one reading per second).
 MAGNETOMETER_LOG_DIR = _safe_join(DATA_DIR, 'magnetometer_data')
 
+### Raman FP-cavity peak-separation lock (qNimble Quarto, pid_frequency_stabilize_Raman_v2)
+RAMAN_FP_LOCK_COM = 'COM35'
+# Daily CSVs of every lock status line, written by the lock server.
+RAMAN_FP_LOCK_LOG_DIR = _safe_join(DATA_DIR, 'raman_fp_lock_logs')
+
 ### Diagnostic viewer: saved reference mean counts of the diagnostic camera frames
 DIAGNOSTIC_REFERENCE_CSV_PATH = _safe_join(DATA_DIR, 'diagnostic_reference.csv')
 
