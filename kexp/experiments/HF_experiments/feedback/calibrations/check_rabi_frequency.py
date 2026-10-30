@@ -18,7 +18,7 @@ class hf_raman(EnvExperiment, Base):
         self.p.t_raman_pulse = 0.
         self.p.t_tweezer_hold = 100.e-3
         self.p.t_tof = 1.5e-3
-        self.p.N_repeats = 3
+        self.p.N_repeats = 1
         # self.xvar('t_tweezer_hold',np.linspace(0.,0.8,6))
 
 

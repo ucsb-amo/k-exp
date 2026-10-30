@@ -62,19 +62,34 @@ class ExptParams(expt_params_kexp):
         # img amp 0.2, pulse time 5.0e-06 s
         # self.frequency_lightshift = 4.061e+04  # Hz, +/- 1.5e+03 Hz, imaging amp 0.2 #80654
         # run 83203 | RabiJointPosterior (apd_joint_calibration, f free, t0 127 ns), nuisances verdict PASS
-        self.frequency_lightshift = 2.384e+04  # Hz, +/- 1.6e+03 Hz, imaging amp 0.2, t_pulse 5 us #89424
+        # self.frequency_lightshift = 2.384e+04  # Hz, +/- 1.6e+03 Hz, imaging amp 0.2, t_pulse 5 us #89424
+        self.frequency_lightshift = 2.337e+04  # Hz, +/- 1.5e+03 Hz, imaging amp 0.2, t_pulse 5 us #89769, 2026-10-29
                 
         # calibration run 89425 (S_z endpoints from 'fit', deg-2 S_z response fit)
         self.t_img_pulse = 5e-06  # s
         self.amp_imaging = 0.2
-        self.v_apd_all_up = -0.12456
-        self.v_apd_all_down = -0.16908
-        self.n_photons_per_shot = 691.7
+        # APD readout calibration, runs 89442 (sigma_z), python -m kexp.analysis.apd_state_mapping
+        # (retry of the suspicious 89440: agrees within 0.6 / 1.8 mV, contrast +6 %)
+        # APD readout calibration, run 89746 (sigma_z 7 pt, t_pi #89744), python -m kexp.analysis.apd_state_mapping --degree 1
+        # (curvature resolved in 89746: deg-2 midpoint 0.691 +/- 0.055, 3.5 sigma; degree 1 kept per the standing procedure)
+        # self.v_apd_all_up = -0.12456
+        # self.v_apd_all_up = -0.12918 #89442, 2026-10-29  # S_z=+1 of the degree-1 single-shot fit, +/- 0.0013 V
+        self.v_apd_all_up = -0.13232 #89746, 2026-10-29  # S_z=+1 of the degree-1 single-shot fit, +/- 0.0013 V
+        # self.v_apd_all_down = -0.16908
+        # self.v_apd_all_down = -0.16948 #89442, 2026-10-29  # S_z=-1 of the degree-1 single-shot fit, +/- 0.0013 V
+        self.v_apd_all_down = -0.16677 #89746, 2026-10-29  # S_z=-1 of the degree-1 single-shot fit, +/- 0.0014 V
+        # self.n_photons_per_shot = 691.7
+        # self.n_photons_per_shot = 614.32 #89442, 2026-10-29  # scope integral, up minus down per pulse, +/- 30
+        self.n_photons_per_shot = 538.19 #89746, 2026-10-29  # scope integral, up minus down per pulse, +/- 33
         # self.std_n_photons_up = 132
         # self.std_n_photons_down = 97.663
         # self.std_n_photons_per_shot = 114.83 # avg of up/down
-        self.std_n_photons_per_shot = 97.663 # using down std
-        self.feedback_measurement_midpoint_fraction = 0.50278
+        # self.std_n_photons_per_shot = 97.663 # using down std
+        # self.std_n_photons_per_shot = 131.75 #89442, 2026-10-29  # 614.3 * 8.64 mV / 40.30 mV (within-run, up = the larger)
+        self.std_n_photons_per_shot = 141.53 #89746, 2026-10-29  # 538.2 * 9.06 mV / 34.45 mV (within-run, down = the larger)
+        # self.feedback_measurement_midpoint_fraction = 0.50278
+        # self.feedback_measurement_midpoint_fraction = 0.5 #89442, 2026-10-29  # linear map (quadratic term not resolved)
+        self.feedback_measurement_midpoint_fraction = 0.5 #89746, 2026-10-29  # linear map (degree 1 by procedure; deg-2 midpoint 0.691 +/- 0.055 NOT used)
 
         self.back_action_coherence = 0.8445 #88845-88847, 2026-10-26  # open-loop simcheck re-measure (SIMCHECK_PREREG.md sha c3448752, fit_remeasure.py 489c70c0): C0 under the live model, APD scale fixed at map #88792,88794 (34.21 mV), +/- 0.006, Raman lock 44.89 GHz, f_LS 26.2 kHz
 
@@ -84,9 +99,11 @@ class ExptParams(expt_params_kexp):
         # dphi = -1.432 + 0.869 s_z rad, R = 0.738 + 0.193 s_z -- not applied until the simulation
         # check says it helps and the user says go.
 
-        self.read_twist_per_sz = 1.350 #88845-88847, 2026-10-26  # open-loop simcheck re-measure (SIMCHECK_PREREG.md sha c3448752): twist per unit s_z, +/- 0.063, Raman lock 44.89 GHz, f_LS 26.2 kHz
+        self.read_twist_per_sz = 0.976 #89437, 2026-10-28  # check_twist Ramsey phase vs s_z, +/- 0.111 (chi2_red 1.67, 3 dof, errors scaled), Raman lock 46.055 GHz (SD 2.8 MHz); contrast/sin(theta) not flat; reference assumed pi
+        # self.read_twist_per_sz = 1.350 #88845-88847, 2026-10-26  # open-loop simcheck re-measure (SIMCHECK_PREREG.md sha c3448752): twist per unit s_z, +/- 0.063, Raman lock 44.89 GHz, f_LS 26.2 kHz
         self.back_action_coherence_slope = 0.0
-        self.read_alpha_lightshift = 1.191 #88845-88847, 2026-10-26
+        self.read_alpha_lightshift = 0.948 #89437, 2026-10-28  # same fit, +/- 0.046; intercept carries the reference phase and Raman detuning
+        # self.read_alpha_lightshift = 1.191 #88845-88847, 2026-10-26
         self.feedback_read_model = -1.0
         # read model 1 (theta11's M1-p2); used only on shots with feedback_read_model = 1
         self.read_model1_alpha_lightshift = 1.432
