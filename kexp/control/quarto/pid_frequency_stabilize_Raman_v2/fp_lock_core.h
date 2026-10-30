@@ -31,9 +31,9 @@ struct Settings {
   double lock = 1;       // 1 = lock on; anything else = off, output 0 V
   double vth = 3.0;      // V, peak threshold
   double hys = 0.2;      // V, a peak ends when v < vth - hys
-  int32_t nmin = 3;      // samples above vth for a peak to count (4 x 3 us = 12 us)
+  int32_t nmin = 3;      // samples above vth for a peak to count (x the sketch's UPDATE_US)
   double tmin = 1.5;     // ms, peaks closer than this to the first are ignored
-  double setp = 6.4;    // ms, separation setpointd
+  double setp = 6.4;    // ms, separation setpoint
   double win = 1.0;      // ms, |err| >= win rejects the sweep
   int32_t nbad = 5;      // rejected sweeps in a row: LOCKED -> HOLD
   int32_t ngood = 10;    // good sweeps in a row: HOLD -> LOCKED
