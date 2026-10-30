@@ -67,7 +67,7 @@ class _StubScope:
         return lambda *a, **k: None
 
 
-def _build(monkeypatch, tmp_path, cal_enabled=1):
+def _build(monkeypatch, tmp_path, cal_enabled=1, mot_preload=False):
     from waxx.base import monitor as wmon
     import kexp.base.clients as kclients
     import kexp.config.wavemeter_id as wavemeter_id
@@ -98,8 +98,11 @@ def _build(monkeypatch, tmp_path, cal_enabled=1):
     from artiq.language.environment import ProcessArgumentManager
     from artiq.tools import file_import, get_experiment
 
-    path = tmp_path / f"subscan_compile_{cal_enabled}.py"
-    path.write_text(EXPT.replace("CAL_ENABLED", str(cal_enabled)))
+    path = tmp_path / f"subscan_compile_{cal_enabled}_{int(mot_preload)}.py"
+    text = EXPT.replace("CAL_ENABLED", str(cal_enabled))
+    if mot_preload:
+        text = text.replace("suppress_live_od=True)", "suppress_live_od=True, mot_preload=True)")
+    path.write_text(text)
     device_mgr = DeviceManager(DeviceDB(os.environ["db"]))
     module = file_import(str(path), prefix="compile_test_")
     cls = get_experiment(module)
@@ -127,6 +130,21 @@ def test_the_sub_scan_is_declared_and_the_run_compiles(monkeypatch, tmp_path):
         assert exp._subscan_enabled and not sub.enabled and exp._subscan_due() is False
         assert "cal_scan_disabled" in exp._extra_file_texts
         assert exp.readout_cal is not None and exp.readout_cal.start["values"]["v_apd_all_up"] == exp.p.v_apd_all_up
+        _compile(cls, exp)
+    finally:
+        device_mgr.close_devices()
+
+
+def test_the_sub_scan_with_the_mot_preload_compiles(monkeypatch, tmp_path):
+    """2026-10-28: points start pre-loaded and a completed point re-arms the
+    pre-load; each point's pre-load record is added to the sub-scan."""
+    import json
+    cls, exp, device_mgr = _build(monkeypatch, tmp_path, cal_enabled=1, mot_preload=True)
+    try:
+        assert exp.mot_preload is True
+        assert "cal_mot_preload" in exp.data.keys
+        assert exp.cal.data.mot_preload._run_data.shape == (exp.cal.N, 2)
+        assert "sub_scan" in json.loads(exp._extra_file_texts["mot_preload"])
         _compile(cls, exp)
     finally:
         device_mgr.close_devices()
