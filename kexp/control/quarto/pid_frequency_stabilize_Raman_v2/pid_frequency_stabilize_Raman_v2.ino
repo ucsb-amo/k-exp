@@ -5,7 +5,9 @@
 //
 // Serial commands (send a name alone to read it, "name value" to set it):
 //   lock       1 = on; anything else = off, output 0 V
-//   setp       ms, separation setpoint
+//   hold       1 = gate on win and pause in HOLD (default); 0 = use every
+//              pair and never pause
+//   setp      ms, separation setpoint
 //   vth hys    V, peak threshold; a peak ends below vth - hys
 //   nmin       samples (UPDATE_US each) above vth for a peak to count
 //   tmin       ms, peaks closer than this to the first are ignored
@@ -18,11 +20,13 @@
 //   read only: sep, integ, state (0 off, 1 hold, 2 locked), tfirst, h1, h2,
 //              bad (rejected sweeps) = bad_none + bad_one + bad_win,
 //              unlocks, sats (times at the rail)
+//   clear      zero the integral and the output (0 V), keep the state
 //   help       lists all of the above with their current values
 // Printed every ~10 sweeps. fmt 1: a table with a header every 20 rows and a
 // "##" line when the state or a counter changes. fmt 0: CSV
 //   sep, er, feedback, state, tfirst, h1, h2, bad, unlocks, sats, saturated,
-//   bad_none, bad_one, bad_win
+//   bad_none, bad_one, bad_win, integ, period
+// (the dashboard's FP lock server reads this; columns are only ever appended)
 // The table's "why" column is the main reason sweeps were skipped since the
 // previous row: none = no peak, 1pk = first peak only, win = pair outside win.
 #include "qCommand.h"
@@ -50,6 +54,7 @@ void setup() {
   Serial.begin(115200);
   qC.addCommand("ping",ping);
   qC.addCommand("help",help);
+  qC.addCommand("clear",clearIntegral);
 
   configureADC(1, 1, 0, BIPOLAR_10V, getADC1);
 
@@ -66,6 +71,7 @@ void setup() {
   qC.assignVariable("p1", &lk.s.p1);
   qC.assignVariable("i1", &lk.s.i1);
   qC.assignVariable("lock", &lk.s.lock);
+  qC.assignVariable("hold", &lk.s.hold);
   qC.assignVariable("fmt", &fmt);
   qC.assignVariable("integ", &lk.integral, true);
   qC.assignVariable("state", &lk.state, true);
@@ -78,6 +84,7 @@ void setup() {
   qC.assignVariable("bad_win", &lk.nBadWin, true);
   qC.assignVariable("unlocks", &lk.nUnlock, true);
   qC.assignVariable("sats", &lk.nSat, true);
+  qC.assignVariable("period", &lk.period, true);
 
   writeDAC(1, 0);
   enableInterruptTrigger(1, BOTH_EDGES, hold1);
@@ -90,6 +97,18 @@ void ping(qCommand& qC, Stream& S)
   Serial.println(cal2.cal_d);
 }
 
+// Zero the integral and the output (0 V) without changing the state; the lock
+// restarts from 0 V at its next pair. The DAC is written with the update timer
+// stopped so it cannot be overwritten by a stale value.
+void clearIntegral(qCommand& qC, Stream& S)
+{
+  noInterrupts();
+  lk.clearOutput();
+  writeDAC(1, 0);
+  interrupts();
+  S.println("integral and output cleared (0 V); state unchanged");
+}
+
 const char* stateName(int32_t s) {
   return s == fplock::LOCKED ? "LOCKED" : (s == fplock::HOLD ? "HOLD" : "OFF");
 }
@@ -100,6 +119,8 @@ void help(qCommand& qC, Stream& S)
   S.println("FP peak-separation lock. Send a name to read it, 'name value' to set it.");
   S.println("settings (current value):");
   S.printf("  lock   %10g          1 = on; anything else = off (0 V, integral cleared)\n", s.lock);
+  S.printf("  hold   %10ld          1 = skip bad sweeps and pause in HOLD; 0 = use every pair, never pause\n",
+           (long)s.hold);
   S.printf("  setp   %10.3f ms       separation setpoint\n", s.setp);
   S.printf("  p1     %10.4g V/ms     proportional: feedback = g1*p1*err + integ\n", s.p1);
   S.printf("  i1     %10.4g V/ms     integral, each sweep: integ += g1*i1*err\n", s.i1);
@@ -113,10 +134,10 @@ void help(qCommand& qC, Stream& S)
   S.printf("  tmin   %10.3f ms       ignore peaks closer than this to the first\n", s.tmin);
   S.printf("  fmt    %10ld          printout: 1 = table, 0 = CSV, 2 = paused\n", (long)fmt);
   S.printf("  (output limit +/-%.2f V, fixed in the code)\n", s.rail);
-  S.println("read only: sep integ state tfirst h1 h2 bad unlocks sats");
+  S.println("read only: sep integ state tfirst h1 h2 bad unlocks sats period");
   S.println("  bad = bad_none (no peak) + bad_one (first peak only) + bad_win (pair, |err| >= win)");
   S.println("states: OFF = lock off | HOLD = output frozen, waiting for good sweeps | LOCKED");
-  S.println("other: ping (board label), help");
+  S.println("clear: zero the integral and the output (0 V), keep the state; ping (board label); help");
 }
 
 // The main reason sweeps were skipped since the previous row:
@@ -144,11 +165,12 @@ void printRow(const fplock::Lock& k, const char* why) {
 }
 
 void printCsv(const fplock::Lock& k) {
-  Serial.printf("%.3f, %.3f, %.4f, %ld, %.3f, %.3f, %.3f, %lu, %lu, %lu, %ld, %lu, %lu, %lu\n",
+  Serial.printf("%.3f, %.3f, %.4f, %ld, %.3f, %.3f, %.3f, %lu, %lu, %lu, %ld, %lu, %lu, %lu, "
+                "%.4f, %.3f\n",
                 k.sep, k.err, k.feedback, (long)k.state, k.tFirst, k.h1, k.h2,
                 (unsigned long)k.nBad, (unsigned long)k.nUnlock, (unsigned long)k.nSat,
                 (long)k.saturated, (unsigned long)k.nBadNone, (unsigned long)k.nBadOne,
-                (unsigned long)k.nBadWin);
+                (unsigned long)k.nBadWin, k.integral, k.period);
 }
 
 // a "##" line when the state changes or a counter jumps between two printouts

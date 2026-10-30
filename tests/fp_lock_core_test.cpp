@@ -41,7 +41,7 @@ struct Sim {
   // defaults in fp_lock_core.h (setp, vth, nmin, ...) cannot change them.
   explicit Sim(uint32_t t0 = 1000) : tUs(t0) {
     fplock::Settings& s = lk.s;
-    s.lock = 1;
+    s.lock = 1;  s.hold = 1;
     s.vth = 4.0;  s.hys = 0.2;  s.nmin = 3;  s.tmin = 2.0;
     s.setp = 10.0;  s.win = 1.0;  s.nbad = 5;  s.ngood = 10;
     s.g1 = 1.0;  s.p1 = 0.0;  s.i1 = -0.01;  s.rail = 1.5;
@@ -279,6 +279,55 @@ static void test_bad_reasons() {
   }
 }
 
+// hold = 0: no window gate, never HOLD
+static void test_hold_off() {
+  {   // 3 ms off (outside win = 1 ms): gated never locks, ungated pulls in
+    Sim a; a.sep0 = 13.0; a.run(400);
+    CHECK(a.lk.state == fplock::HOLD && a.lk.feedback == 0, "gated: state %d fb %.3f", a.lk.state, a.lk.feedback);
+    Sim b; b.sep0 = 13.0; b.lk.s.hold = 0; b.run(600);
+    CHECK(b.lk.state == fplock::LOCKED, "ungated: state %d", b.lk.state);
+    CHECK(std::fabs(b.lk.err) < 0.05, "ungated: err %.3f ms", b.lk.err);
+    CHECK(b.lk.nBad == 0 && b.lk.nUnlock == 0, "ungated: bad %u unlocks %u", b.lk.nBad, b.lk.nUnlock);
+  }
+  {   // never leaves LOCKED, even with a wrong pairing; no peaks leave the output alone
+    Sim s; s.lk.s.hold = 0; s.run(300);
+    s.hA = 2.0;   // laser A below vth: wrong pairing
+    s.run(30);
+    CHECK(s.lk.state == fplock::LOCKED && s.lk.nUnlock == 0, "wrong pairing: state %d unlocks %u",
+          s.lk.state, s.lk.nUnlock);
+    s.hA = 8.0; s.run(5);
+    s.lk.s.vth = 20.0;   // no peaks at all
+    const double fb = s.lk.feedback;
+    s.run(30);
+    CHECK(s.lk.state == fplock::LOCKED && s.lk.feedback == fb, "no peaks: state %d fb %.4f -> %.4f",
+          s.lk.state, fb, s.lk.feedback);
+    CHECK(s.lk.nBadNone >= 25, "no peaks: nBadNone %u", s.lk.nBadNone);
+  }
+  {   // switching hold off while paused: locks at the next pair, without an output jump
+    Sim s; s.sep0 = 13.0; s.run(20);
+    CHECK(s.lk.state == fplock::HOLD, "state %d before the switch", s.lk.state);
+    const double fb = s.lk.feedback;
+    s.lk.s.hold = 0;
+    s.run(1);
+    CHECK(s.lk.state == fplock::LOCKED, "state %d after the switch", s.lk.state);
+    CHECK(std::fabs(s.lk.feedback - fb) < 0.05, "output jumped %.4f -> %.4f", fb, s.lk.feedback);
+  }
+}
+
+// clearOutput zeroes the integral and the output, keeps the state, and the lock restarts
+static void test_clear_output() {
+  Sim s; s.sep0 = 10.5; s.run(400);
+  CHECK(s.lk.state == fplock::LOCKED && s.lk.integral != 0, "state %d integ %.4f", s.lk.state, s.lk.integral);
+  const uint32_t bad = s.lk.nBad;
+  s.lk.clearOutput();
+  CHECK(s.lk.feedback == 0 && s.lk.integral == 0 && s.lk.state == fplock::LOCKED && s.lk.nBad == bad,
+        "fb %.4f integ %.4f state %d", s.lk.feedback, s.lk.integral, s.lk.state);
+  s.run(1);
+  CHECK(s.lk.state == fplock::LOCKED && std::fabs(s.lk.feedback) < 0.05, "restart: state %d fb %.4f", s.lk.state, s.lk.feedback);
+  s.run(400);
+  CHECK(std::fabs(s.lk.err) < 0.01, "re-locked err %.4f ms", s.lk.err);
+}
+
 int main() {
   test_centroid_accuracy();
   test_noise_and_height();
@@ -291,6 +340,8 @@ int main() {
   test_gain_meaning();
   test_no_windup();
   test_bad_reasons();
+  test_hold_off();
+  test_clear_output();
   std::printf(failures ? "%d FAILED\n" : "all passed\n", failures);
   return failures ? 1 : 0;
 }

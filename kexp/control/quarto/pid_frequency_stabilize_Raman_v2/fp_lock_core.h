@@ -18,6 +18,10 @@
 //    proportional: the old default p1 = -0.01 is the new i1 = -0.01. No
 //    derivative term. The output and the integral are clamped at +/-rail and
 //    stay there (the old code snapped to 0 V)
+//  - hold = 0 turns the gate and the pause off: every pair is used whatever
+//    its error and the state never leaves LOCKED (sweeps with no pair still
+//    cannot move the output). Only the +/-rail clamp then limits a wrong
+//    pairing.
 //  - integer microsecond timestamps with unsigned differences (micros() wrap)
 #pragma once
 #include <stdint.h>
@@ -29,18 +33,19 @@ enum State : int32_t { OFF = 0, HOLD = 1, LOCKED = 2 };
 
 struct Settings {
   double lock = 1;       // 1 = lock on; anything else = off, output 0 V
+  int32_t hold = 1;      // 1 = gate on win and pause in HOLD; 0 = use every pair, never HOLD
   double vth = 3.0;      // V, peak threshold
   double hys = 0.2;      // V, a peak ends when v < vth - hys
   int32_t nmin = 3;      // samples above vth for a peak to count (x the sketch's UPDATE_US)
   double tmin = 1.5;     // ms, peaks closer than this to the first are ignored
-  double setp = 6.4;    // ms, separation setpoint
-  double win = 1.0;      // ms, |err| >= win rejects the sweep
+  double setp = 5.5;     // ms, separation setpoint
+  double win = 15.0;      // ms, |err| >= win rejects the sweep
   int32_t nbad = 5;      // rejected sweeps in a row: LOCKED -> HOLD
   int32_t ngood = 10;    // good sweeps in a row: HOLD -> LOCKED
   double g1 = 1.0;       // overall gain
-  double p1 = 0.0;       // V/ms, proportional
+  double p1 = -0.01;       // V/ms, proportional
   double i1 = -0.01;     // V/ms per sweep, integral (the old p1 did this)
-  double rail = 1.5;     // V, output and integral clamp
+  double rail = 8.0;     // V, output and integral clamp
 };
 
 class Lock {
@@ -61,6 +66,14 @@ public:
   // nBad split by reason: no peak found / only one peak (no second at least
   // tmin later) / pair found but |err| >= win. They sum to nBad.
   uint32_t nBadNone = 0, nBadOne = 0, nBadWin = 0;
+
+  // Zero the integral and the output; the state and the sweep counters are kept.
+  // The caller writes the 0 V to the DAC.
+  void clearOutput() {
+    integral = 0;
+    feedback = 0;
+    saturated = 0;
+  }
 
   // One ADC sample. Returns true when the DAC output should be rewritten.
   bool step(uint32_t tUs, double v, bool trig) {
@@ -157,13 +170,13 @@ private:
   bool onMeasurement() {
     err = sep - s.setp;
     if (state == OFF) return false;
-    if (!(fabs(err) < s.win)) {
+    if (s.hold && !(fabs(err) < s.win)) {
       reject(&nBadWin);
       return false;
     }
     badRun = 0;
     if (state == HOLD) {
-      if (++goodRun < s.ngood) return false;
+      if (s.hold && ++goodRun < s.ngood) return false;
       state = LOCKED;
       // bumpless: the first output after HOLD equals the held output
       integral = feedback - s.g1 * s.p1 * err;
@@ -188,7 +201,7 @@ private:
     nBad++;
     (*reasonCount)++;
     goodRun = 0;
-    if (state == LOCKED && ++badRun >= s.nbad) {
+    if (s.hold && state == LOCKED && ++badRun >= s.nbad) {
       state = HOLD;
       nUnlock++;
       badRun = 0;
