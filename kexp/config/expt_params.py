@@ -115,7 +115,8 @@ class ExptParams(ExptParamsWaxx):
         # pre-load run takes it at the end of the shot (coils off), not at the
         # shot's start.
         self.do_mot_preload = 0
-        self.t_mot_load_total = 0.
+        # self.t_mot_load_total = 0.
+        self.t_mot_load_total = 1.0 #90212+90213, 2026-10-30  # four-knob bundle: N x1.53/1.50, width same, period 4.62 -> 4.47 s (mot_preload runs only)
         self.t_mot_load_min = 0.1
         
         self.t_pump_to_F1 = 150.e-6
@@ -125,10 +126,12 @@ class ExptParams(ExptParamsWaxx):
         self.t_lightsheet_rampup = 75.e-3
         self.t_lf_lightsheet_rampdown = 1.13
         # self.t_hf_lightsheet_rampdown = 1.1
-        self.t_hf_lightsheet_rampdown = 0.3
+        # self.t_hf_lightsheet_rampdown = 0.3
+        self.t_hf_lightsheet_rampdown = 0.45 #90212+90213, 2026-10-30  # four-knob bundle, see t_mot_load_total
         self.t_hf_lightsheet_rampdown2 = .74
         self.t_lf_lightsheet_rampdown2 = .02
-        self.t_lightsheet_rampdown3 = 200.e-3
+        # self.t_lightsheet_rampdown3 = 200.e-3
+        self.t_lightsheet_rampdown3 = 0.1 #90212+90213, 2026-10-30  # four-knob bundle, see t_mot_load_total
         self.t_lightsheet_load = 10.e-3
         self.t_lightsheet_hold = 200.e-3
         
@@ -142,7 +145,8 @@ class ExptParams(ExptParamsWaxx):
         # self.t_hf_tweezer_1064_rampdown = 550.e-3 # 200.e-3
         self.t_hf_tweezer_1064_rampdown = 0.2 #87461, 2026-10-20
         # self.t_hf_tweezer_1064_rampdown2 = 300.e-3
-        self.t_hf_tweezer_1064_rampdown2 = 0.1 #87461, 2026-10-20
+        # self.t_hf_tweezer_1064_rampdown2 = 0.1 #87461, 2026-10-20
+        self.t_hf_tweezer_1064_rampdown2 = 0.2 #90212+90213, 2026-10-30  # four-knob bundle, see t_mot_load_total
         self.t_tweezer_1064_adiabatic_stretch_ramp = .322
         self.t_tweezer_single_move = 4.e-3
         self.t_tweezer_movement_dt = 10.e-6
