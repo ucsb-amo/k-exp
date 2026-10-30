@@ -110,7 +110,7 @@ AUTO_LAYOUT_HINTS: dict[str, dict] = {
     "magnetometer":      {"tier": "status",   "family": "diag",      "min": (360, 240),  "pref": (600, 360)},
     "bristol":           {"tier": "status",   "family": "diag",      "min": (360, 240),  "pref": (600, 360)},
     "keysight":          {"tier": "status",   "family": "diag",      "min": (400, 260),  "pref": (700, 380)},
-    "raman_fp_lock":     {"tier": "status",   "family": "diag",      "min": (460, 360),  "pref": (700, 640)},
+    "raman_fp_lock":     {"tier": "status",   "family": "diag",      "min": (360, 240),  "pref": (440, 320)},
     "_running_servers":  {"tier": "status",   "family": "framework", "min": (340, 220),  "pref": (460, 360)},
     "_log":              {"tier": "status",   "family": "framework", "min": (420, 160),  "pref": (900, 300)},
     "pdxc":              {"tier": "rare",     "family": "control",   "min": (320, 240),  "pref": (420, 320)},
