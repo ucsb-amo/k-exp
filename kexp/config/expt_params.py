@@ -184,7 +184,9 @@ class ExptParams(ExptParamsWaxx):
 
         # self.t_raman_pi_pulse = 3.9229e-06 #89418, 2026-10-28
         # self.t_raman_pi_pulse = 3.8413e-06 #89744, 2026-10-29
-        self.t_raman_pi_pulse = 3.4753e-06 #89767, 2026-10-29
+        # self.t_raman_pi_pulse = 3.4753e-06 #89767, 2026-10-29
+        # self.t_raman_pi_pulse = 3.6616e-06 #89933, 2026-10-29
+        self.t_raman_pi_pulse = 3.6235e-06 #90199, 2026-10-30
          
         # DAC controlled AO amplitudes
         self.amp_d1_3d_c = 0.3
@@ -402,7 +404,9 @@ class ExptParams(ExptParamsWaxx):
 
         self.frequency_raman_transition_1m1_2m2 = 147.2593e6 #76037 2026-8-20
         # self.frequency_raman_transition = 119.4636e6 #89435
-        self.frequency_raman_transition = 119.46388e6 #89768, 2026-10-29  # Ramsey 13 x 5, +/- 73 Hz, Raman lock 43.17 GHz
+        # self.frequency_raman_transition = 119.46388e6 #89768, 2026-10-29  # Ramsey 13 x 5, +/- 73 Hz, Raman lock 43.17 GHz
+        # self.frequency_raman_transition = 119.463528e6 #89967, 2026-10-29  # Ramsey 13 x 5, +/- 130 Hz (-347 Hz vs #89934 at 20:33), Raman lock 45.98 GHz
+        self.frequency_raman_transition = 119.463801e6 #90200, 2026-10-30  # Ramsey 13 x 5, +/- 46 Hz, Raman lock 45.95 GHz
 
         self.frequency_raman_transition_nf_1m1_20 = 460.7e6 # 1.5 G 1,-1 to 2,0
         self.frequency_raman_transition_nf_1m1_2m2 = 458.4e6 # 1.5 G 1,-1 to 2,-2
