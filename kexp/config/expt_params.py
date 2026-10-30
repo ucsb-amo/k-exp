@@ -178,7 +178,9 @@ class ExptParams(ExptParamsWaxx):
 
         self.t_feshbach_field_ramp_special = 20.e-3
 
-        self.t_raman_pi_pulse = 3.9229e-06 #89418, 2026-10-28
+        # self.t_raman_pi_pulse = 3.9229e-06 #89418, 2026-10-28
+        # self.t_raman_pi_pulse = 3.8413e-06 #89744, 2026-10-29
+        self.t_raman_pi_pulse = 3.4753e-06 #89767, 2026-10-29
          
         # DAC controlled AO amplitudes
         self.amp_d1_3d_c = 0.3
@@ -395,22 +397,8 @@ class ExptParams(ExptParamsWaxx):
         # self.frequency_raman_transition = 41.25e6 # 57 G 1,-1 to 1,0
 
         self.frequency_raman_transition_1m1_2m2 = 147.2593e6 #76037 2026-8-20
-        # self.frequency_raman_transition = 147.2593e6 # 62500, 520 G 1-1 to 2-2
-        # self.frequency_raman_transition = 119.4639e6 #80650
-        # self.frequency_raman_transition = 119.463914e6 #85247, 2026-10-07  # Ramsey 13 detunings x 5 t_ramsey, shared resonance +/- 34 Hz (+14 Hz from #80650)
-        # self.frequency_raman_transition = 119.463741e6 #85285, 2026-10-07  # Ramsey 13 x 5 after Raman lock change, shared resonance +/- 25 Hz (-173 Hz from #85247)
-        # self.frequency_raman_transition = 119.463653e6 #85343, 2026-10-07  # Ramsey 13 x 5 after the Raman frequency-stabilization session, shared resonance +/- 32 Hz (-88 Hz from #85285)
-        # self.frequency_raman_transition = 119.463592e6 #85410, 2026-10-07  # Ramsey 13 x 5, evening recalibration, shared resonance +/- 33 Hz (-62 Hz from #85343)
-        # self.frequency_raman_transition = 119.463631e6 #85471, 2026-10-08  # Ramsey 13 x 5, morning recalibration, shared resonance +/- 23 Hz (+39 Hz from #85410)
-        # self.frequency_raman_transition = 119.463671e6 #85507, 2026-10-08  # Ramsey 13 x 5, night recalibration, shared resonance +/- 28 Hz (+40 Hz from #85471)
-        # self.frequency_raman_transition = 119.463664e6 #85548, 2026-10-09  # Ramsey 13 x 5, sensing-day, shared resonance +/- 24 Hz (-7 Hz)
-        # self.frequency_raman_transition = 119.463760e6 #86167, 2026-10-10  # recal at new Raman lock 41.440 GHz: Ramsey 13 x 5, shared resonance +/- 27 Hz (+96 Hz)
-        # self.frequency_raman_transition = 119.463567e6 #86241, 2026-10-11  # recal at new Raman lock 41.440 GHz: Ramsey 13 x 5, shared resonance +/- 22 Hz (-193 Hz)
-        # self.frequency_raman_transition = 119.463901e6 #88263, 2026-10-24  # Raman lock now 44.87 GHz: Ramsey 13 x 5 (t_pi/2 from #88261 override), shared resonance +/- 65 Hz (+334 Hz)
-        # self.frequency_raman_transition = 119.463640e6 #88776, 2026-10-26  # Raman lock 44.89 GHz: Ramsey 13 x 5 (t_pi #88769), shared resonance +/- 58 Hz (-261 Hz)
-        # self.frequency_raman_transition = 119.463680e6 #88848, 2026-10-26  # Ramsey 13 x 5, +/- 56 Hz (+40 Hz): closing bracket of the simcheck re-measure = the FB/NA campaign's Ramsey A (frozen for the campaign)
-        self.frequency_raman_transition = 119.463497e6 #89320, 2026-10-27  # Raman relocked to ~46.09 GHz: Ramsey 13 x 5, +/- 53 Hz (-183 Hz) = Ramsey A of the post-relock FB/NA segment (frozen for the segment)
-        # self.frequency_raman_transition = 119.3977e6 # 176.5 A
+        # self.frequency_raman_transition = 119.4636e6 #89435
+        self.frequency_raman_transition = 119.46388e6 #89768, 2026-10-29  # Ramsey 13 x 5, +/- 73 Hz, Raman lock 43.17 GHz
 
         self.frequency_raman_transition_nf_1m1_20 = 460.7e6 # 1.5 G 1,-1 to 2,0
         self.frequency_raman_transition_nf_1m1_2m2 = 458.4e6 # 1.5 G 1,-1 to 2,-2
