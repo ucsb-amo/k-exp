@@ -16,7 +16,14 @@ Commands:
     ENABLE_MAGNETS        -> {"status": ...}
     DISABLE_MAGNETS       -> {"status": ...}
     FLUSH_CSV             -> {"status": "ok"}
-    SHUTDOWN              -> {"status": "ok"}; then the process exits exactly as
+    COM_DISCONNECT        -> {"status": "ok"|"refused"|"error", "message": ...}; closes
+                             the PLC COM port and holds it closed.  Refused unless
+                             the relay reads the magnets disabled.  No data while
+                             held: the interlock trips after stale_threshold_s.
+    COM_CONNECT           -> {"status": "ok"|"refused", "message": ...}; releases the
+                             hold and opens the port now.  Never enables the magnets
+                             or resets the interlock.
+    SHUTDOWN             -> {"status": "ok"}; then the process exits exactly as
                              on SIGINT/SIGTERM (main loop stop_event -> tcp.stop()
                              -> service.stop()).  Touches no relay/interlock state.
 
@@ -54,7 +61,7 @@ LOGGER = logging.getLogger("kexp.dashboard.server.interlock.runner")
 from beacon.discovery.server import NetServer  # noqa: E402
 
 from kexp import EthernetRelay  # noqa: E402
-from kexp.config.ip import INTERLOCK_EMAIL_CREDENTIALS_FILEPATH  # noqa: E402
+from kexp.config.ip import INTERLOCK_COM, INTERLOCK_EMAIL_CREDENTIALS_FILEPATH  # noqa: E402
 from kexp.util.guis.interlock import interlock_safe_mode as _sm  # noqa: E402
 from kexp.util.guis.interlock.interlock_service import (  # noqa: E402
     InterlockConfig, InterlockService,
@@ -219,6 +226,10 @@ class InterlockTCPServer(NetServer):
             if cmd == "FLUSH_CSV":
                 self._service.flush_csv()
                 return json.dumps({"status": "ok"})
+            if cmd == "COM_DISCONNECT":
+                return json.dumps(self._service.com_disconnect(client_addr))
+            if cmd == "COM_CONNECT":
+                return json.dumps(self._service.com_connect(client_addr))
             if cmd == "SHUTDOWN":
                 return json.dumps(self._request_shutdown(client_addr))
             return json.dumps({"status": "error", "message": f"unknown command: {cmd}"})
@@ -272,7 +283,7 @@ def main() -> int:
     heartbeat_path = os.path.join(data_dir, "_logs", "interlock_heartbeat.txt") if data_dir else ""
 
     cfg = InterlockConfig(
-        com_port="COM5",
+        com_port=INTERLOCK_COM,
         com_baud=9600,
         stale_threshold_s=15.0,
         warmup_seconds=20.0,
@@ -300,6 +311,7 @@ def main() -> int:
     stop_event = threading.Event()
 
     tcp = InterlockTCPServer(service, on_shutdown_request=stop_event.set)
+    service.attach_beacon_server(tcp)   # the COM link's state goes in the beacon
     tcp.start()
 
     def _sig(_signum, _frame):

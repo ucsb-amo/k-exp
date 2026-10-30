@@ -25,7 +25,7 @@ class SLM_spot_scanner(EnvExperiment, Base):
         # self.xvar('dumdum',[0]*3)
         # self.p.slm_mask = 'spot'
         self.p.phase_slm_mask = np.pi
-        # self.p.dimension_slm_mask = 20.e-6
+        self.p.dimension_slm_mask = 20.e-6
         # self.p.px_slm_phase_mask_position_x = 1040
         # self.p.px_slm_phase_mask_position_y = 821
         # self.camera_params.exposure_time = 100.e-6s
@@ -40,12 +40,13 @@ class SLM_spot_scanner(EnvExperiment, Base):
         self.dds.push.off()
 
         self.imaging.set_power(self.p.amp_imaging)
-        self.slm.write_phase_mask_kernel()
+        self.slm.write_phase_mask_kernel(parallel=False)
+        # delay(500.e-3)
 
         self.light_image()
 
         delay(self.camera_params.t_light_only_image_delay+0.01)
-        self.slm.write_phase_mask_kernel(0.,0.)
+        self.slm.write_phase_mask_kernel(0.,0.,parallel=False)
         self.light_image()
 
         self.close_imaging_shutters()

@@ -9,7 +9,32 @@ class DataVault(DataVaultWax):
 
         self.post_shot_absorption = self.add_data_container(4)
 
+        # |B| (G) from the HMR magnetometer at shot start (Control.
+        # read_magnetometer), 0. = not read. On by default;
+        # Base(read_magnetometer_per_shot=False) skips it (data.b then 0. every
+        # shot), recorded as p.do_read_magnetometer_per_shot. The Zabbix log
+        # (waxa.climate) has the field too. On the shot-deadtime branch the
+        # read comes ~0.15 s sooner after the outer-coil discharge than on main
+        # and reads ~0.55 mG low with ~0.5 mG shot scatter (a transient that
+        # is gone 0.3 s later; 88052-88057, 88062-88065, 88071-88074). The
+        # HMR server's samples are ~0.16 s apart.
         self.b = self.add_data_container(1)
+
+        # MOT pre-load bookkeeping (Base(mot_preload=...), 2026-10-23), every
+        # shot: [0] the pre-load time (s, RTIO timeline): from the MOT being
+        # switched on at the end of the previous shot (or warm-up) to the
+        # start of this shot's in-shot MOT load in mot(); 0. = no pre-load.
+        # [1] the in-shot MOT load mot() used (s). [2] pre-load runs with the
+        # per-shot field read on (they read data.b at the END of the shot,
+        # coils off, the server's latest sample): the sample's time after the
+        # end of the outer coil's discharge (s; negative = before it; NaN =
+        # the read failed; Control.read_magnetometer_after_coil_reset);
+        # -1. = no such read (no pre-load: data.b read at the shot's start).
+        # data.b of a pre-load run (read 0.01-0.19 s after the discharge, SD
+        # ~4x the shot-start read's, 2026-10-23) is NOT comparable with data.b
+        # of a run without the pre-load.
+        # [0] and [1] stay -1. in a shot that never called mot().
+        self.mot_preload = self.add_data_container(3)
 
         # Outer-coil current at the first camera trigger of each shot (A),
         # written once per shot by Image.record_imaging_conditions. Analysis

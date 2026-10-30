@@ -121,7 +121,10 @@ class diagnostic_frame(diagnostic_frame_waxx):
             entry's absorption exposure / gain, and the full frame (stored downsampled
             ``no_roi_downsample`` x). Optional: ``t_stage`` (s or an ExptParams name) -- the length
             of the stage it sits in, an image with |t_offset| longer is not taken; ``label`` and
-            ``show`` ('image' | 'counts' | None) for the diagnostic viewer.
+            ``show`` ('image' | 'counts' | None) for the diagnostic viewer; ``max_exposure_time``
+            (s) -- the longest exposure its timing allows: during a run an operator may override
+            an image's gain from the Camera Viewer (that image shown alone with Frames, then
+            Override...), and its exposure only up to this (none given: gain only).
 
     A camera's frame index is the order its images are assigned here: assign them in the
     order the sequence takes them. New image: one line here and its trigger() call in the
@@ -162,7 +165,7 @@ class diagnostic_frame(diagnostic_frame_waxx):
         self.img_mot_beams_z = self.image(cameras.z_basler, t_offset=5.e-3,
                                           exposure_time=19.e-6, gain=0., roi=[660, 300, 1260, 900],
                                           label='MOT beams')
-        self.img_gm_beams_z = self.image(cameras.z_basler, t_offset=0.25e-3,
+        self.img_gm_beams_z = self.image(cameras.z_basler, t_offset=0.,
                                          exposure_time=19.e-6, gain=0., roi=[660, 300, 1260, 900],
                                          label='GM beams')
 
@@ -186,8 +189,8 @@ class diagnostic_frame(diagnostic_frame_waxx):
         # above 5% of the full-power peak, padded 30 px (user OK'd the ROI change, 2026-10-19)
         # end of the tweezer ramp-up
         self.img_tweezer_load_x = self.image(cameras.x_basler, t_offset=0.,
-                                             exposure_time=100.e-6, gain=8.,
-                                             roi=[631, 95, 1099, 988], #87302, 2026-10-19
+                                             exposure_time=100.e-6, gain=1.,
+                                             roi=[1134, 158, 1599, 1150], #87302, 2026-10-19
                                              label='tweezer load', show=None)
         # end of the last tweezer evap
         self.img_tweezer_evap_x = self.image(cameras.x_basler, t_offset=1.e-3,

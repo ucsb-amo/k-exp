@@ -13,12 +13,21 @@ from artiq.experiment import TFloat, TArray, portable, rpc
 
 # PID1 setpoint -> PID2 SETPOINT (not the Sampler PD2 reading): 87438 PD2 = 21.361(7) s1 - 0.6212(16) V (paint on,
 # settled + tracking shots) divided through by 87439's PD2 = 0.99037(102) s2 - 4.1(14) mV while PID2 holds.
-vpd2_per_vpd1_slope = 21.5684 # +/- 0.023 V/V #87438+87439, 2026-10-20
-v_pd2_y_intercept = -0.623155 # +/- 0.0025 V #87438+87439, 2026-10-20
+# vpd2_per_vpd1_slope = 21.5684 # +/- 0.023 V/V #87438+87439, 2026-10-20
+# v_pd2_y_intercept = -0.623155 # +/- 0.0025 V #87438+87439, 2026-10-20
+# 2026-10-22: PID2 photodiode adjusted by the user (gain x3.2, PD2 saturates at PID1 ~0.163 V). 87842 PD2 =
+# 68.75(6) s1 - 2.029(5) V (paint on) divided through by 87843's PD2 = 0.99815(14) s2 - 8.08(24) mV while PID2 holds.
+vpd2_per_vpd1_slope = 68.882 # +/- 0.063 V/V #87842+87843, 2026-10-22
+v_pd2_y_intercept = -2.0245 # +/- 0.0054 V #87842+87843, 2026-10-22
 
 # needs recalibration
-vpd2_per_vpd1_slope_squeezer =  70.20864948083167
-v_pd2_y_intercept_squeezer =  -.9167412763522654
+# vpd2_per_vpd1_slope_squeezer =  70.20864948083167
+# v_pd2_y_intercept_squeezer =  -.9167412763522654
+# 2026-10-23: squeeze hand-back (PID2 -> PID1) measured on the new PD2, no atoms (S1 #88152): the hand-back PID1 setpoint
+# from the measured PD2 and from the main map agree, so the squeezer pair = the main map. Bumpless only when the
+# hand-back setpoint ~ PID1's upstream level (H ~3.3 V at evap-1 end 0.08 V: +3.5 % at 0-2 ms, +0.4 % at 10-15 ms).
+vpd2_per_vpd1_slope_squeezer = 68.882 # +/- 0.063 V/V, = main map #88152 (#87842+87843), 2026-10-23
+v_pd2_y_intercept_squeezer = -2.0245 # +/- 0.0054 V, = main map #88152 (#87842+87843), 2026-10-23
 
 @portable(flags={"fast-math"})
 def tweezer_vpd1_to_vpd2(vpd_pid1) -> TFloat:

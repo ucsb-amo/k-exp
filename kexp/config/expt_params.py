@@ -74,20 +74,20 @@ class ExptParams(ExptParamsWaxx):
         self.detune_d2_2d_r_imaging = -4.4
 
         # SLM settings
-        self.dimension_slm_mask = 40.e-6 
-        # self.phase_slm_mask = 0.387097 * np.pi
-        # self.phase_slm_mask = 0.57142857 * np.pi
-        self.phase_slm_mask = 0.49 * np.pi #83725, 2026-09-29
+        self.dimension_slm_mask = 14.e-6 # this parameter has a bug -- it is actually writing "20 px", which ends up being 160um diameter (8 um per px)
+        self.phase_slm_mask = 0.323077 * np.pi  # 89420
         self.px_slm_grating_position_x = 994
         self.px_slm_grating_position_y = 824
-        self.px_slm_phase_mask_position_x = 1021
+        self.px_slm_phase_mask_position_x = 1129
         self.px_slm_phase_mask_position_y = 830
+
         # Cooling timing
         self.t_tof = 20.e-6
         self.t_discharge_igbt = 2.e-3
         
         self.t_mot_kill = 1.
         self.t_2D_mot_load_delay = 1.
+        # self.t_mot_load = 1.0
         self.t_mot_load = 1.0
         
         self.t_d2cmot = 50.e-3
@@ -104,6 +104,19 @@ class ExptParams(ExptParamsWaxx):
         # frame sits is on its DiagnosticImage in kexp.config.camera_id
         # (the t_diag_* params until 2026-10-19).
         self.t_2dmot_prephase = 150.e-3
+
+        # MOT pre-load (Base(mot_preload=True), off by default): the MOT is
+        # switched on at the end of each shot and loads through the gap to the
+        # next shot's mot(). do_mot_preload records whether the run used it
+        # (set by Base.__init__; not an xvar). t_mot_load_total > 0 makes the
+        # in-shot load max(t_mot_load_min, t_mot_load_total - pre-load time)
+        # instead of t_mot_load; 0 keeps t_mot_load. Both durations land in
+        # data.mot_preload every shot. With the per-shot field read on, a
+        # pre-load run takes it at the end of the shot (coils off), not at the
+        # shot's start.
+        self.do_mot_preload = 0
+        self.t_mot_load_total = 0.
+        self.t_mot_load_min = 0.1
         
         self.t_pump_to_F1 = 150.e-6
         self.t_optical_pumping = 200.e-6
@@ -112,10 +125,10 @@ class ExptParams(ExptParamsWaxx):
         self.t_lightsheet_rampup = 75.e-3
         self.t_lf_lightsheet_rampdown = 1.13
         # self.t_hf_lightsheet_rampdown = 1.1
-        self.t_hf_lightsheet_rampdown = 0.15
+        self.t_hf_lightsheet_rampdown = 0.3
         self.t_hf_lightsheet_rampdown2 = .74
         self.t_lf_lightsheet_rampdown2 = .02
-        self.t_lightsheet_rampdown3 = 62e-3
+        self.t_lightsheet_rampdown3 = 200.e-3
         self.t_lightsheet_load = 10.e-3
         self.t_lightsheet_hold = 200.e-3
         
@@ -147,7 +160,7 @@ class ExptParams(ExptParamsWaxx):
         self.t_mot_reload = 2.
         self.t_bias_off_wait = 20.e-3
         
-        self.t_recover = 100.e-3
+        # self.t_recover = 100.e-3 # removed 2026-10-21 (user): no delay between shots; it guarded scope reads, which cannot outlast the re-arm (both blocking kernel RPCs)
         self.t_magtrap_delay = 1.e-3
         self.t_pre_lightsheet_rampup_delay = 0.e-3
         self.t_magtrap = 1.2
@@ -165,22 +178,7 @@ class ExptParams(ExptParamsWaxx):
 
         self.t_feshbach_field_ramp_special = 20.e-3
 
-        # self.t_raman_pi_pulse = 6.8222e-06 #84525, 2026-10-01
-        # self.t_raman_pi_pulse = 6.7885e-06 #84965, 2026-10-02
-        # self.t_raman_pi_pulse = 5.6102e-06 #85151, 2026-10-06
-        # self.t_raman_pi_pulse = 5.5257e-06 #85159, 2026-10-06
-        # self.t_raman_pi_pulse = 4.9248e-06 #85248, 2026-10-07
-        # self.t_raman_pi_pulse = 3.8081e-06 #85284, 2026-10-07
-        # self.t_raman_pi_pulse = 3.8588e-06 #85314, 2026-10-07
-        # self.t_raman_pi_pulse = 3.7870e-06 #85342, 2026-10-07
-        # self.t_raman_pi_pulse = 3.7892e-06 #85409, 2026-10-07
-        # self.t_raman_pi_pulse = 3.8805e-06 #85470, 2026-10-08
-        # self.t_raman_pi_pulse = 3.7785e-06 #85505, 2026-10-08  # night recal: rate pi 1/(2f), f 132.33 +/- 0.94 kHz (pooled)
-        # self.t_raman_pi_pulse = 3.8831e-06 #85547, 2026-10-09  # sensing-day recal: rate pi 1/(2f), f 128.76 +/- 0.60 kHz (pooled)
-        # self.t_raman_pi_pulse = 3.7650e-06 #86101, 2026-10-10 theta re-run Rabi step (code-96), user-approved
-        # self.t_raman_pi_pulse = 3.3964e-06 #86166, 2026-10-10  # recal at new Raman lock 41.440 GHz: rate pi 1/(2f), f 147.21 +/- 0.63 kHz (pooled), -9.8 % accepted under the one-off 20 % window
-        # self.t_raman_pi_pulse = 3.2481e-06 #86240, 2026-10-11  # recal at new Raman lock 41.440 GHz: rate pi 1/(2f), f 153.94 +/- 0.83 kHz (pooled), -4.4 % (accepted, 8 % window)
-        self.t_raman_pi_pulse = 3.4130e-06 #86490, 2026-10-11  # recal at new Raman lock 41.440 GHz: rate pi 1/(2f), f 146.50 +/- 0.70 kHz (pooled), +5.1 % (accepted, 8 % window)
+        self.t_raman_pi_pulse = 3.9229e-06 #89418, 2026-10-28
          
         # DAC controlled AO amplitudes
         self.amp_d1_3d_c = 0.3
@@ -318,10 +316,8 @@ class ExptParams(ExptParamsWaxx):
         self.v_pd_lf_tweezer_1064_rampdown3_end = 2.
 
         self.v_pd_hf_tweezer_1064_ramp_end = 8.4
-        # self.v_pd_hf_tweezer_1064_rampdown_end = 0.16
-        self.v_pd_hf_tweezer_1064_rampdown_end = 0.08 #87461, 2026-10-20
-        # self.v_pd_hf_tweezer_1064_rampdown2_end = 4. # 2.2
-        self.v_pd_hf_tweezer_1064_rampdown2_end = 0.20 # PID2 units, absolute #87461/87466, 2026-10-20
+        self.v_pd_hf_tweezer_1064_rampdown_end = 0.16 #87461, 2026-10-20
+        self.v_pd_hf_tweezer_1064_rampdown2_end = 0.9
         self.n_tweezer_ramp_steps = 200
         # HF tweezer evap 1 painting law: paint_frac = (P/P_max)**e (0.3333 = constant trap frequency)
         self.paint_amp_exponent_hf_tweezer = 1.0 #87461 (e 0.85-1 best), 2026-10-20
@@ -332,7 +328,11 @@ class ExptParams(ExptParamsWaxx):
 
         self.v_tweezer_paint_rampdown_end1 = -4.985
         self.v_tweezer_paint_rampdown_end2 = -6.5
-        self.v_pd_tweezer_squeeze_rampup_handoff_lp = 9.99 # 0.155 on vpd1
+        # INVALID since PD2 move 2026-10-22: 9.99 > PD2 saturation 9.5 V on new map #87842; recalibrate before use
+        # self.v_pd_tweezer_squeeze_rampup_handoff_lp = 9.99 # 0.155 on vpd1
+        # PID2 V: PID1 (upstream, at the evap-1 end 0.08 V) caps PID2 at ~3.5 V; 3.3 V is held and hands back to PID1 0.077 V
+        # bumplessly (+3.5 % at 0-2 ms, +0.4 % at 10-15 ms; lower H bumps up to +173 %). No atom test yet.
+        self.v_pd_tweezer_squeeze_rampup_handoff_lp = 3.3 #88152, 2026-10-23
         self.v_pd_hf_tweezer_squeeze_power = .444
 
         self.n_tweezers = 2
@@ -351,7 +351,7 @@ class ExptParams(ExptParamsWaxx):
         self.v_lf_tweezer_paint_amp_max = .5
         # self.v_hf_tweezer_paint_amp_max = -1.94 # -1.7
         # self.v_hf_tweezer_paint_amp_max = 3.25 # 2.0
-        self.v_hf_tweezer_paint_amp_max = 2.5 #87465, 2026-10-20
+        self.v_hf_tweezer_paint_amp_max = 4.99 #87465, 2026-10-20
 
 
         self.v_paint_amp_end = -5.444444
@@ -405,7 +405,11 @@ class ExptParams(ExptParamsWaxx):
         # self.frequency_raman_transition = 119.463671e6 #85507, 2026-10-08  # Ramsey 13 x 5, night recalibration, shared resonance +/- 28 Hz (+40 Hz from #85471)
         # self.frequency_raman_transition = 119.463664e6 #85548, 2026-10-09  # Ramsey 13 x 5, sensing-day, shared resonance +/- 24 Hz (-7 Hz)
         # self.frequency_raman_transition = 119.463760e6 #86167, 2026-10-10  # recal at new Raman lock 41.440 GHz: Ramsey 13 x 5, shared resonance +/- 27 Hz (+96 Hz)
-        self.frequency_raman_transition = 119.463567e6 #86241, 2026-10-11  # recal at new Raman lock 41.440 GHz: Ramsey 13 x 5, shared resonance +/- 22 Hz (-193 Hz)
+        # self.frequency_raman_transition = 119.463567e6 #86241, 2026-10-11  # recal at new Raman lock 41.440 GHz: Ramsey 13 x 5, shared resonance +/- 22 Hz (-193 Hz)
+        # self.frequency_raman_transition = 119.463901e6 #88263, 2026-10-24  # Raman lock now 44.87 GHz: Ramsey 13 x 5 (t_pi/2 from #88261 override), shared resonance +/- 65 Hz (+334 Hz)
+        # self.frequency_raman_transition = 119.463640e6 #88776, 2026-10-26  # Raman lock 44.89 GHz: Ramsey 13 x 5 (t_pi #88769), shared resonance +/- 58 Hz (-261 Hz)
+        # self.frequency_raman_transition = 119.463680e6 #88848, 2026-10-26  # Ramsey 13 x 5, +/- 56 Hz (+40 Hz): closing bracket of the simcheck re-measure = the FB/NA campaign's Ramsey A (frozen for the campaign)
+        self.frequency_raman_transition = 119.463497e6 #89320, 2026-10-27  # Raman relocked to ~46.09 GHz: Ramsey 13 x 5, +/- 53 Hz (-183 Hz) = Ramsey A of the post-relock FB/NA segment (frozen for the segment)
         # self.frequency_raman_transition = 119.3977e6 # 176.5 A
 
         self.frequency_raman_transition_nf_1m1_20 = 460.7e6 # 1.5 G 1,-1 to 2,0

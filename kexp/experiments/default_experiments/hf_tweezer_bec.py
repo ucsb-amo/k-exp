@@ -12,24 +12,40 @@ class hf_bec(EnvExperiment, Base):
                       save_data=False,
                       camera_select=cameras.andor,
                       imaging_type=img_types.ABSORPTION,
-                      warmup_shots=0)
+                      diagnostic_images=True,
+                      warmup_shots=1,
+                      mot_preload=True)
 
-        self.p.t_mot_load = 1.0
+        # self.p.t_mot_load = 1.0
+        # self.p.v_pd_hf_tweezer_1064_rampdown2_end
         # self.p.t_tweezer_hold = 100.e-3
-        self.p.t_tweezer_hold = 20.e-3 #87461 (20 ms gave +20-40 % vs 100 ms), 2026-10-20
+        # self.p.t_tweezer_hold = 900.e-3 #87461 (20 ms gave +20-40 % vs 100 ms), 2026-10-20
 
-        # self.xvar('t_tof',np.linspace(0.,4000.,13)*1.e-6)
-        self.p.t_tof = 1.e-3
-        # self.p.t_tof = 20.e-6
+        # self.xvar('t_tof',np.linspace(150.,2500.,7)*1.e-6)
+        # self.xvar('v_hf_tweezer_paint_amp_max',np.linspace(-2.,4.99,9))
+        # self.xvar('v_pd_hf_tweezer_1064_rampdown2_end',np.linspace(0.5,0.8,8))
+        # self.p.v_pd_hf_tweezer_1064_rampdown2_end = 0.47 # 0.5
+        # self.xvar('i_hf_lightsheet_evap2_current', np.linspace(190, 198, 7))
 
-        self.data.apd = self.data.add_data_container(1)
+        # self.p.t_hf_lightsheet_rampdown = 300.e-3
+        # self.p.v_pd_hf_tweezer_1064_rampdown_end = 0.16
+        # self.p.t_lightsheet_rampdown3 = 200.e-3
+        # self.p.v_pd_hf_tweezer_1064_rampdown2_end = 0.9
+        # self.p.v_hf_tweezer_paint_amp_max = 4.9
 
+        # self.p.t_tof = 4.e-3
+        # self.p.t_tof = 2000.e-6
+
+        # self.data.apd = self.data.add_data_container(1)
+        # self.xvar('t_tweezer_hold',np.linspace(0.,0.8,6))
         self.p.N_repeats = 1000
         # self.xvar('beans',np.linspace(1,1000,1000))
 
-        Adjust.__init__(self)
+        # self.p.amp_tweezer_list = [0.5]
 
         self.scanning()
+
+        Adjust.__init__(self)
         self.finish_prepare(shuffle=True)
 
 
@@ -40,11 +56,11 @@ class hf_bec(EnvExperiment, Base):
 
         # self.xvar('v_pd_hf_tweezer_1064_rampdown2_end',np.linspace(4.0,8.,4))
 
-        # self.xvar('v_hf_tweezer_paint_amp_max',np.linspace(0.,4.9,7))
+        # self.xvar('v_hf_tweezer_paint_amp_max',np.linspace(2.0,4.9,7))
         # self.p.v_hf_tweezer_paint_amp_max = 3.25
 
 
-        # self.xvar('t_tof',np.linspace(100.e-6,3000.e-6,9))
+        # self.xvar('t_tof',np.linspace(800.e-6,2000.e-6,5))
         # self.p.i_hf_tweezer_evap1_current= 193.75
         # self.xvar('i_hf_tweezer_evap1_current',np.linspace(192.,194.,9))
         
@@ -63,7 +79,7 @@ class hf_bec(EnvExperiment, Base):
         self.set_imaging_detuning(frequency_detuned=self.p.frequency_detuned_hf_f1m1)
 
         # self.prepare_hf_tweezers(do_tweezer_evap_2=False)
-        self.prepare_hf_tweezers(do_tweezer_evap_2=True) # 2026-10-21: evap 2 (PID2) on, operating point #87461
+        self.prepare_hf_tweezers()
          
         delay(self.p.t_tweezer_hold)
         

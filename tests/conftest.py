@@ -55,3 +55,11 @@ class _OfflineCameraDirectory:
 def _no_shared_camera_directory(monkeypatch):
     import waxx.control.cameras.camera_stream_client as csc
     monkeypatch.setattr(csc, "shared_camera_directory", _OfflineCameraDirectory)
+
+
+@pytest.fixture(autouse=True)
+def _no_beacon_is_ever_broadcast(monkeypatch):
+    """kong runs the real servers: a test server that beaconed its id
+    (interlock, ...) could take requests meant for the real one."""
+    from beacon.discovery import server as dserver
+    monkeypatch.setattr(dserver.NetServer, "_start_beacon", lambda self: None)

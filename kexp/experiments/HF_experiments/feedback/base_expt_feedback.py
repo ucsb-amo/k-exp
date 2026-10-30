@@ -13,7 +13,10 @@ class FeedbackExpt(Base, Feedback, RandomRamanPulseTimes):
     def __init__(self,
                  save_data=True,
                  suppress_live_od=False,
-                 save_on_underflow=True):
+                 save_on_underflow=True,
+                 recalibrate=True,
+                mot_preload=False):
+        
         self.data = DataVault(self)
         self.p = ExptParamsFeedback()
         Base.__init__(self,
@@ -24,7 +27,9 @@ class FeedbackExpt(Base, Feedback, RandomRamanPulseTimes):
                     expt_params=self.p,
                     data_vault=self.data,
                     suppress_live_od=suppress_live_od,
-                    save_on_underflow=save_on_underflow)
+                    save_on_underflow=save_on_underflow,
+                    mot_preload=mot_preload)
+        self.p.cal_enabled = recalibrate
         
     def finish_prepare(self, shuffle=True):
 

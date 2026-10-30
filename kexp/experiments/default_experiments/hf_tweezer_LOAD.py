@@ -14,15 +14,20 @@ class mag_trap(EnvExperiment, Base):
 
     def prepare(self):
         Base.__init__(self,
-                      save_data=True,
+                      save_data=False,
                       camera_select=cameras.andor,
-                      imaging_type=img_types.ABSORPTION, warmup_shots=0,
-                      diagnostic_images=True)
+                      imaging_type=img_types.ABSORPTION, warmup_shots=1,
+                      diagnostic_images=True,
+                      mot_preload=True)
+
 
         # Adjust.__init__(self)
         
         # self.p.do_cubic_tweezer_ramp = 1
         # self.xvar('do_cubic_tweezer_ramp',[0,1])
+        # self.p.t_imaging_pulse = 500.e-6
+        # self.camera_params.exposure_time = self.p.t_imaging_pulse
+        # self.camera_params.amp_imaging = 2.5
 
         self.p.t_tof = 50.e-6
         
@@ -66,22 +71,32 @@ class mag_trap(EnvExperiment, Base):
         # self.xvar('t_hf_tweezer_1064_ramp', np.linspace(0.05,0.15, 5))
         # self.p.t_hf_tweezer_1064_ramp = 0.125
 
-        # self.xvar('i_hf_tweezer_load_current',np.linspace(192.2,193.8,11))
+        # self.xvar('i_hf_tweezer_load_current',np.linspace(190.,193.,21))
         # self.p.i_hf_tweezer_load_current = 192.7
 
-        # self.xvar('v_hf_tweezer_paint_amp_max', np.linspace(0., 3., 2))
+        # self.xvar('v_hf_tweezer_paint_amp_max', np.linspace(-3., 4.99, 11))
 
         # self.adjust('v_hf_tweezer_paint_amp_max',-5.,5.)
         # self.adjust('t_tweezer_hold',0.,20.e-3,5.e-3)
 
         # self.xvar('t_lightsheet_rampdown3',np.linspace(0.,175.,11)*1.e-3)
         
-
-        Adjust.__init__(self)
         # self.adjust('t_tweezer_hold',0.,100.e-3)
         self.p.N_repeats = 1000
-        self.p.t_mot_load = 1.
+        # self.p.t_mot_load = 1.
+            
+        # self.p.v_lightsheet_dump = 0.
+        # self.adjust('v_lightsheet_dump',min_val=0.,max_val=1.)
 
+        # self.p.t_lightsheet_dump = 0.
+        # self.adjust('t_lightsheet_dump',min_val=0.,max_val=100.e-3)
+
+        # self.p.v_pd_hf_lightsheet_rampdown2_end = 0.4
+        # self.p.t_tweezer_hold = 300.e-3
+        # self.p.v_hf_tweezer_paint_amp_max = 4.9
+        # self.p.t_lightsheet_dump = 100.e-3
+
+        Adjust.__init__(self)
         self.finish_prepare(shuffle=True)
 
     @kernel
@@ -138,8 +153,6 @@ class mag_trap(EnvExperiment, Base):
             self.lightsheet.exponential_ramp(t=self.p.t_lightsheet_rampdown3,
                                              v_end=self.p.v_pd_hf_lightsheet_rampdown2_end
             )
-                                    # v_start=self.p.v_pd_hf_lightsheet_rampdown2_end,
-                                    # v_end=0.)
 
         self.diag.img_tweezer_load_x.trigger()
 
@@ -180,9 +193,8 @@ class mag_trap(EnvExperiment, Base):
         self.tweezer.off()
 
         delay(self.p.t_tof)
+        
         self.abs_image()
-
-        self.outer_coil.off()
 
     @kernel
     def run(self):

@@ -38,6 +38,10 @@ T_OPX_TRIGGER_PULSE = 1.e-6
 MAGNETOMETER_MAX_FAILS = 4
 
 class Control():
+    # set by reset_coils (end of the outer coil's discharge, RTIO mu); a class
+    # default so the kernel attribute exists before the first reset
+    _t_outer_coil_reset_end_mu = np.int64(0)
+
     def __init__(self):
         # just to get syntax highlighting, placeholders
         self.core = DummyCore()
@@ -115,7 +119,7 @@ class Control():
         self.tweezer.keep_ao2_on()
 
     @kernel
-    def reset_coils(self):
+    def reset_coils(self, trust_cached_state=False):
         """
         Reset the inner, outer, and 2D coils to their default state.
         This includes stopping any PID control, turning off the coils,
@@ -123,16 +127,35 @@ class Control():
 
         This is typically called at the end of an experiment to ensure
         that the coils are in a safe state for the next experiment.
+
+        trust_cached_state: True only when the kernel's cached coil state is
+        known to be the hardware's -- after a shot that returned normally
+        (Scanner.shot_completed, cleanup_scan_kernel). A coil whose cache
+        then says it carries no current (igbt_magnet.cached_off: IGBT open,
+        0 A, PID off) gets off_from_off() -- set points zeroed again, the
+        same wait before the same discharge() -- instead of stop_pid + off(),
+        whose ramps go from 0 A to 0 A (~150 ms inner, ~200 ms outer). Never
+        True after an exception: an underflow drops events, so a coil the
+        cache calls off may still carry current.
         """
-    
+
         # igbt_magnet.off() already ends with discharge() -- do not add a
         # second discharge() here, it costs ~130 ms per coil for nothing.
-        self.outer_coil.stop_pid()
-        delay(50.e-3)
-        self.outer_coil.off()
+        if trust_cached_state and self.outer_coil.cached_off():
+            self.outer_coil.off_from_off()
+        else:
+            self.outer_coil.stop_pid()
+            delay(50.e-3)
+            self.outer_coil.off()
+        # end of the outer coil's discharge (IGBT open again), for the
+        # end-of-shot field read's recorded delay (MOT pre-load runs)
+        self._t_outer_coil_reset_end_mu = now_mu()
 
-        self.inner_coil.stop_pid()
-        self.inner_coil.off()
+        if trust_cached_state and self.inner_coil.cached_off():
+            self.inner_coil.off_from_off()
+        else:
+            self.inner_coil.stop_pid()
+            self.inner_coil.off()
 
     @kernel
     def arm_scopes(self):
@@ -176,6 +199,57 @@ class Control():
         else:
             self._magnetometer_fails = 0
         return b
+
+    @kernel
+    def read_magnetometer_after_coil_reset(self):
+        """The per-shot field read of a MOT pre-load run (Base.
+        cleanup_scan_kernel, after reset_coils and background_field, before
+        the MOT goes back on). Waits for the timeline (as read_magnetometer
+        does), then ONE request for the magnetometer server's latest sample,
+        no wait for a newer one. data.b gets |B| (0. = not read, as
+        read_magnetometer) and data.mot_preload[2] the sample's delay after
+        the outer coil's discharge ended (reset_coils stamps that time; s,
+        negative = the sample predates it; NaN = no timed sample)."""
+        self.core.wait_until_mu(now_mu())
+        t_since_outer = self.core.mu_to_seconds(now_mu() - self._t_outer_coil_reset_end_mu)
+        r = self._read_magnetometer_after(t_since_outer)
+        self.data.b.put_data(r[0])
+        self.data.mot_preload.put_data(r[1], 2)
+        self.core.break_realtime()
+
+    def _read_magnetometer_after(self, t_since_outer) -> TList(TFloat):
+        """Host side of read_magnetometer_after_coil_reset: [|B| G, delay s].
+
+        Called when the timeline has reached the read (the kernel waited), so
+        the outer coil's discharge ended t_since_outer before now, on this
+        PC's clock. The magnetometer server (on kong with the Server
+        Dashboard; its sample times 't' are its time.time()) polls the
+        HMR2300 every ~0.12 s; one GET returns the latest sample. A failed
+        read: [0., NaN]; after MAGNETOMETER_MAX_FAILS failures in a row the
+        run stops reading, as _read_magnetometer does. Never raises."""
+        import time
+        nan = float("nan")
+        if self._magnetometer_skipped:
+            return [0., nan]
+        t_end_outer = time.time() - float(t_since_outer)
+        get = getattr(self.magnetometer, "_get_field", None)
+        if get is None:
+            # a client without timed samples (the offline stub): the plain read
+            return [self._read_magnetometer(), nan]
+        reply = None
+        try:
+            reply = get(timeout=0.5)
+        except Exception as e:
+            print(f"[magnetometer] end-of-shot read failed ({e!r}); data.b records 0.")
+        if not (reply and reply.get("ok") and "t" in reply and "Btot" in reply):
+            self._magnetometer_fails += 1
+            if self._magnetometer_fails >= MAGNETOMETER_MAX_FAILS:
+                self._magnetometer_skipped = True
+                print(f"[magnetometer] {self._magnetometer_fails} failed reads in a row: "
+                      "skipping the read for the rest of this run; data.b records 0. (not read).")
+            return [0., nan]
+        self._magnetometer_fails = 0
+        return [float(reply["Btot"]), float(reply["t"]) - t_end_outer]
 
     @kernel
     def read_raman_wavemeter(self):

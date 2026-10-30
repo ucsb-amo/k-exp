@@ -36,7 +36,10 @@ class Base(Expt, Devices, Cooling, Image, Cameras, Control, Clients):
                  override_apd_stage=None,
                  warmup_shots=0,
                  verbosity=None,
-                 diagnostic_images=True):
+                 diagnostic_images=True,
+                 fast_coil_reset=True,
+                 read_magnetometer_per_shot=True,
+                 mot_preload=False):
 
         # camera_select picks the detector and setup_camera says whether to
         # acquire with it: liveOD frames for a camera, the pickoff stage in
@@ -69,7 +72,37 @@ class Base(Expt, Devices, Cooling, Image, Cameras, Control, Clients):
         # __init__s are not chained, so it is set here). Reset each shot in
         # init_scan_kernel.
         self._imaging_conditions_recorded = False
-        
+        # cleanup_scan_kernel's short coil reset for a coil already off after
+        # a normal shot (Control.reset_coils); False = the full reset always.
+        self.fast_coil_reset = bool(fast_coil_reset)
+        # The per-shot magnetometer read at shot start (Control.read_magnetometer:
+        # a wait for the timeline + one RPC). ON by default (as always; the
+        # 297f045e default of off was reverted the same day at the user's
+        # word); False skips it and data.b holds 0. (= not read) every shot.
+        # Recorded as p.do_read_magnetometer_per_shot.
+        self.read_magnetometer_per_shot = bool(read_magnetometer_per_shot)
+        # MOT pre-load (off by default; 2026-10-23): the MOT is switched on at
+        # the end of each shot (cleanup_scan_kernel) and after each warm-up,
+        # and loads through the gap to the next shot's mot(). With the per-shot
+        # magnetometer read on, that one read moves from the shot's start (the
+        # MOT is on there) to the end of the shot, coils reset, before the MOT
+        # goes on (the latest sample; its delay after the outer-coil discharge
+        # is recorded). Recorded as p.do_mot_preload and the root text
+        # 'mot_preload'.
+        # Tested 2026-10-23 (runs 88092-88098, hf_bec, total MOT 0.5 s, hold
+        # 1.2 s; outputs/2026-10-23_07-38_mot_preload/RESULTS.md): same cloud
+        # within +/-15 % (N 0.979, 90 % CI 0.93-1.03; width 0.989), period
+        # -0.156 s; throughput gain NOT resolved (N per second 1.02, CI
+        # 0.94-1.11). Caveats: data.b in this mode is ~4x noisier and read a
+        # variable 0.01-0.19 s after the outer discharge -- not comparable with
+        # the default mode's shot-start read; the inner coil supply ramps for
+        # ~0.2 s, so the ~0.16 s pre-load runs at a reduced, rising gradient
+        # (12.7-14.5 A median at 0.05-0.15 s vs 21 A); the benefit at this MOT
+        # power is unresolved.
+        self.mot_preload = bool(mot_preload)
+        self._mot_preloaded = False
+        self._t_mot_preload_on_mu = np.int64(0)
+
         self.prepare_devices(expt_params=self.params)
 
         _img_config = self.choose_camera(imaging_type, camera_select)
@@ -114,6 +147,8 @@ class Base(Expt, Devices, Cooling, Image, Cameras, Control, Clients):
         # N imaging-free preparations (Cooling.warmup_kernel) before the first
         # real shot, invisible to the camera, DataSaver and liveOD.
         self.params.N_warmup_shots = int(warmup_shots)
+        self.params.do_read_magnetometer_per_shot = int(self.read_magnetometer_per_shot)
+        self.params.do_mot_preload = int(self.mot_preload)
         if self.params.N_warmup_shots <= 0:
             console.info("[warmup] none: first shot likely ~25% low "
                          "(Base(warmup_shots=2) to fix).")
@@ -140,6 +175,7 @@ class Base(Expt, Devices, Cooling, Image, Cameras, Control, Clients):
         # claim_hardware once the cameras are connected ("taken").
         self.diag.resolve_stages(self.params, self.scan_xvars)
         self._extra_file_texts["diagnostic_images"] = json.dumps(self.diag.record())
+        self._check_mot_preload()
 
         self.finish_prepare_wax(N_repeats=N_repeats,shuffle=shuffle)
 
@@ -149,6 +185,66 @@ class Base(Expt, Devices, Cooling, Image, Cameras, Control, Clients):
         if self.tweezer.traps == []:
             self.tweezer.add_tweezer_list()
         self.tweezer.save_trap_list()
+
+    def _check_mot_preload(self):
+        """finish_prepare: the MOT pre-load is a run-level setting made by
+        Base(mot_preload=...). Refuses (before any run id) a run that set
+        p.do_mot_preload by hand to a different value, scans it, or combines
+        the pre-load with an interleaved sub-scan (its points would start
+        from a pre-loaded MOT and break the per-shot bookkeeping). Records
+        what the pre-load does in the run file's root text 'mot_preload'."""
+        if 'do_mot_preload' in self.xvarnames:
+            raise ValueError("do_mot_preload cannot be scanned: the pre-load is set for "
+                             "the whole run with Base(mot_preload=...).")
+        if int(self.params.do_mot_preload) != int(self.mot_preload):
+            raise ValueError(f"p.do_mot_preload = {self.params.do_mot_preload} but "
+                             f"Base(mot_preload={self.mot_preload}): set it with the "
+                             f"Base argument, not the parameter.")
+        # (add_sub_scan registers self._subscan in prepare; _subscan_enabled is
+        # decided later, in finish_prepare_wax)
+        if self.mot_preload:
+            # The MOT goes on before SHOT_COMPLETE and stays on between shots:
+            # only safe with a scan loop that runs cleanup_abort_kernel on any
+            # exception out of a cleanup or between shots (waxx 2852e9b+).
+            from waxx.base import scanner as _scanner
+            if not getattr(_scanner, "SAFE_STATE_ON_EVERY_CLEANUP_FAILURE", False):
+                raise ValueError("Base(mot_preload=True) needs a waxx scan loop with "
+                                 "SAFE_STATE_ON_EVERY_CLEANUP_FAILURE (jep/mot-preload wax); "
+                                 f"the loaded one ({_scanner.__file__}) lacks it.")
+        if self.mot_preload and getattr(self, '_subscan', None) is not None:
+            raise ValueError("Base(mot_preload=True) with an interleaved sub-scan is "
+                             "not supported.")
+        record = {"enabled": self.mot_preload}
+        if self.mot_preload:
+            record.update({
+                "what": "MOT (2D beams + push + 2D coil, 3D beams, inner coil at i_mot, "
+                        "MOT shims; default parameters) switched on at the end of each "
+                        "data shot that returned normally -- after the coil reset and "
+                        "the shims / 2D coil to 0 (and the field read, when on), before "
+                        "the shot-complete message -- and after each warm-up shot; it "
+                        "loads until the next shot's mot().",
+                "data_b": ("read once per shot at the END of the shot (coils reset, shims "
+                           "and 2D coil at 0, before the MOT goes on): the magnetometer "
+                           "server's latest sample, no wait; its delay after the end of the "
+                           "outer-coil discharge is data.mot_preload[2] (negative = taken "
+                           "before that end). Stored in that shot's slot. Runs without the "
+                           "pre-load read it at the shot's start.")
+                          if self.read_magnetometer_per_shot else
+                          "not read (read_magnetometer_per_shot=False): 0. every shot",
+                "data_mot_preload": "[pre-load s, in-shot MOT load s, magnetometer sample "
+                                    "delay after the outer-coil discharge s (-1 = no read)] "
+                                    "per shot",
+                "t_mot_load_total": float(self.params.t_mot_load_total),
+                "t_mot_load_min": float(self.params.t_mot_load_min),
+                "end_of_run": "post_scan switches the pre-loaded MOT's light and 2D coil "
+                              "current off and turns the inner coil off (background_field).",
+                "on_error": "cleanup_abort_kernel: coils reset (full path), MOT light and "
+                            "2D coil current off, 1064 off.",
+            })
+        self._extra_file_texts["mot_preload"] = json.dumps(record)
+        if self.mot_preload:
+            console.info("[mot preload] ON: the MOT loads from the end of each shot; "
+                         "data.b is read at the end of the shot.")
 
     def claim_hardware(self):
         """The run's claim, machine part (waxx Expt.claim; before the liveOD
@@ -329,14 +425,32 @@ class Base(Expt, Devices, Cooling, Image, Cameras, Control, Clients):
         # Fresh RTIO state at the start of every shot. Wait first: reset()
         # drops every output event not yet played, and after the warm-up
         # shots the coil ramp-down from cleanup_warmup_kernel is still on the
-        # timeline (nothing drains it). The wait also keeps t_recover.
+        # timeline (nothing drains it).
         self.core.wait_until_mu(now_mu())
         self.core.reset()
 
         self.arm_scopes()
 
-        self.background_field()
-        self.read_magnetometer()
+        # this shot's MOT bookkeeping until mot() / the end-of-shot read fill
+        # it (kexp.config.data_vault)
+        self.data.mot_preload.put_data(-1., 0)
+        self.data.mot_preload.put_data(-1., 1)
+        self.data.mot_preload.put_data(-1., 2)
+        if not self._mot_preloaded:
+            # coils / shims / 2D current to 0 (with a pre-loaded MOT on they
+            # stay as the pre-load set them)
+            self.background_field()
+        if not self.mot_preload:
+            if self.read_magnetometer_per_shot:
+                self.read_magnetometer()
+            else:
+                # not read (Base(read_magnetometer_per_shot=False)): the "not read"
+                # value, written explicitly so the file never depends on a fill
+                self.data.b.put_data(0.)
+        elif not self.read_magnetometer_per_shot:
+            self.data.b.put_data(0.)
+        # (a pre-load run with the read on reads it at the end of the shot,
+        # cleanup_scan_kernel, coils reset, before the MOT goes on)
         self.read_raman_wavemeter()
         # arm the once-per-shot capture of the outer-coil current at imaging
         self._imaging_conditions_recorded = False
@@ -406,8 +520,10 @@ class Base(Expt, Devices, Cooling, Image, Cameras, Control, Clients):
 
             self.warmup_kernel()
             self.cleanup_warmup_kernel()
+            if self.mot_preload:
+                # the next warm-up / the first data shot start pre-loaded too
+                self.mot_preload_on()
 
-            delay(self.p.t_recover)
             self.core.break_realtime()
         self.diag.active = self.diag.enabled
 
@@ -440,6 +556,11 @@ class Base(Expt, Devices, Cooling, Image, Cameras, Control, Clients):
         A failure there is printed and swallowed: the original exception is
         the one that must reach the host."""
         self.cleanup_warmup_kernel()
+        if self.mot_preload:
+            # a pre-loaded MOT's light and 2D coil current off as well (the
+            # inner coil was just reset with the others)
+            self.core.break_realtime()
+            self.mot_preload_off()
         try:
             self.core.break_realtime()
             self.raman.clean_up_fast_frequency_update()
@@ -484,14 +605,40 @@ class Base(Expt, Devices, Cooling, Image, Cameras, Control, Clients):
     @kernel
     def cleanup_scan_kernel(self):
 
-        self.cleanup_image_count()
+        # cleanup_image_count can raise -- ValueError on a wrong PWA count
+        # (Scanner runs this cleanup inside its RTIOUnderflow handler, and a
+        # shot that underflowed before its image has 0 PWA), or an
+        # RTIOUnderflow in the light/dark reference frames -- and nothing
+        # below would run (no cleanup runs after it). So on any exception the
+        # high-power outputs are made safe first (full coil reset: the cache
+        # is not trusted), then the exception is re-raised unchanged.
+        try:
+            self.cleanup_image_count()
+        except:
+            self.core.break_realtime()
+            self.reset_coils(trust_cached_state=False)
+            self.lightsheet.off()
+            self.tweezer.off()
+            self.ttl.quantum_machines_raman_rf_handoff_ttl.off()
+            self.imaging.off()
+            self.raman.off()
+            self.ttl.raman_shutter.off()
+            self.core.break_realtime()
+            raise
 
         self.core.break_realtime()
         self.ttl.raman_shutter.off()
-        self.raman.clean_up_fast_frequency_update()
 
         self.core.break_realtime()
-        self.reset_coils()
+        # The coils and every high-power output come first, the raman DDS
+        # restore after them (2026-10-23): with the restore first, an
+        # exception there skipped the rest and left the outer coil at its HF
+        # current with the PID on (no cleanup runs after that exception).
+        # The cached coil state is trusted only after a shot that returned
+        # normally (not after an underflow): see Control.reset_coils.
+        # (jep/mot-preload: the scan loop also runs cleanup_abort_kernel on
+        # any exception out of this cleanup.)
+        self.reset_coils(trust_cached_state=self.shot_completed and self.fast_coil_reset)
         self.lightsheet.off()
         # PID2 AO stays on between shots (left alone if PID2 is enabled)
         self.tweezer.keep_ao2_on()
@@ -510,9 +657,37 @@ class Base(Expt, Devices, Cooling, Image, Cameras, Control, Clients):
         self.imaging.off()
         self.raman.off()
 
+        # DDS register writes only (profile mode, fast-update state): needs
+        # neither the coils nor any RF on.
+        self.core.break_realtime()
+        self.raman.clean_up_fast_frequency_update()
+
         self.core.break_realtime()
         self.ry_405.lock_status()
         self.ry_980.lock_status()
+
+        # A first use of the imaging path after a parallel SLM write that
+        # came too close to real time to be checked then is checked now --
+        # after the coils are safe, before the shot is recorded (raises if
+        # the mask was not settled; the shot is then not recorded).
+        self.slm.end_of_shot(self.shot_completed)
+        self.core.break_realtime()
+
+        if self.mot_preload:
+            # Coils reset above; shims and 2D coil to 0 (background_field,
+            # 10 ms). With the per-shot field read on, it is taken HERE, the
+            # run's one read per shot (not at the next shot's start, where the
+            # pre-loaded MOT is on): the latest sample, no wait; its delay after
+            # the outer coil's discharge goes to data.mot_preload[2]. Then the
+            # MOT goes on, before the shot-complete message (an Abort raised
+            # there gets cleanup_abort_kernel from the scan loop, which also
+            # switches the pre-loaded MOT off), and only after a shot that
+            # returned normally (an underflow ends the run).
+            self.background_field()
+            if self.read_magnetometer_per_shot:
+                self.read_magnetometer_after_coil_reset()
+            if self.shot_completed:
+                self.mot_preload_on()
 
         self.cleanup_scan_kernel_wax()
 
@@ -524,6 +699,12 @@ class Base(Expt, Devices, Cooling, Image, Cameras, Control, Clients):
             self.ry_980.sweep_to(reset=True)
         self.tweezer.reset_awg()
         self.core.break_realtime()
+        if self.mot_preload:
+            # the last shot's pre-load: light and 2D current off here, the
+            # inner coil off (ramped, discharged) in background_field below,
+            # so the run ends as one without the pre-load does
+            self.mot_preload_off()
+            self.core.break_realtime()
         self.background_field()
         
 
