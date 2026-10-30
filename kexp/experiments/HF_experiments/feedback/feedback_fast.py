@@ -23,12 +23,12 @@ class feedback(EnvExperiment, FeedbackExpt):
         
         ### parameters
 
-        # self.p.feedback_fractional_initial_offset = 
-        # hspan = self.p.feedback_guess_span_Omega
-        # span = 2 * hspan
-        # dgrid = span / self.p.feedback_grid_size
-        # dscan = 3*dgrid
-        # self.xvar('feedback_fractional_initial_offset', np.arange(-hspan,hspan+dgrid,dscan))
+        # hypothesis grid (feedback_grid_convention 2; defaults in expt_params_feedback):
+        # full width in Hz, initial offset as a fraction of the largest allowed (-1..1),
+        # grid shift in grid steps (-1/2..1/2)
+        # self.p.frequency_feedback_grid_full_span = 12.75e3
+        # self.xvar('feedback_fractional_initial_offset', np.linspace(-1., 1., 8))
+        # self.xvar('feedback_grid_shift', np.linspace(-0.5, 0.5, 5))
 
         self.finish_prepare()
 

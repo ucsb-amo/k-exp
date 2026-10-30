@@ -35,7 +35,7 @@ class SubScanCompile(EnvExperiment, FeedbackExpt):
         self.p.cal_every_n_shots = 2
         self.p.N_pulses = 3
         self.p.N_repeats = 1
-        self.xvar('feedback_fractional_initial_offset', np.array([0., 1., 2.]))
+        self.xvar('feedback_fractional_initial_offset', np.array([0., 0.5, 1.]))
         self.finish_prepare(shuffle=False)
 
     @kernel

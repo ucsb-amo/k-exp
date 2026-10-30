@@ -33,7 +33,7 @@ class ReadcohCompile(EnvExperiment, BASECLASS):
         self.p.back_action_coherence_slope = SLOPE
         self.p.read_alpha_lightshift = ALS
         self.p.back_action_coherence = COH
-        self.xvar('feedback_fractional_initial_offset', np.array([0., 1., 2.]))
+        self.xvar('feedback_fractional_initial_offset', np.array([0., 0.5, 1.]))
         self.finish_prepare(shuffle=False)
 
     @kernel
@@ -83,7 +83,7 @@ def test_compiles_with_two_read_models_interleaved_per_shot(monkeypatch, tmp_pat
     src = (EXPT.replace("MODULE", module).replace("BASECLASS", base)
            .replace("TWIST", "0.0").replace("SLOPE", "0.0").replace("ALS", 'float("nan")')
            .replace("COH", "0.7215")
-           .replace("self.xvar('feedback_fractional_initial_offset', np.array([0., 1., 2.]))",
+           .replace("self.xvar('feedback_fractional_initial_offset', np.array([0., 0.5, 1.]))",
                     "self.p.read_model1_alpha_lightshift = 1.432\n"
                     "        self.p.read_model1_twist_per_sz = 0.869\n"
                     "        self.p.read_model1_coherence = 0.739\n"

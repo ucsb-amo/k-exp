@@ -9,6 +9,7 @@ from numpy import int64
 import sys as _sys, os as _os
 _sys.path.insert(0, _os.path.dirname(_os.path.abspath(__file__)))
 from base_expt_feedback_grid import FeedbackExptGrid as FeedbackExpt  # session copy: alt gaps + grid from the pulse period (DESIGN_grid_rule.md)
+from kexp.base.feedback import feedback_offset_frac  # offsets in grid steps (feedback_grid_convention 2)
 
 class feedback(EnvExperiment, FeedbackExpt):
 
@@ -34,10 +35,8 @@ class feedback(EnvExperiment, FeedbackExpt):
         self.p.feedback_remesh_threshold_Omega = 1.0
         self.p.n_initial_shots_before_remesh = 2
 
-        step = self.grid_step_Omega()
-        self.p.feedback_fractional_initial_offset = 2.
-        # session copy: initial offsets on grid points (step * k); 5 points x 1 repeat for the run-only test
-        self.xvar('feedback_fractional_initial_offset', step * np.array([-6., -3., 0., 3., 6.]))
+        # session copy: initial offsets on grid points (k steps); 5 points x 1 repeat for the run-only test
+        self.xvar('feedback_fractional_initial_offset', feedback_offset_frac(np.array([-6., -3., 0., 3., 6.]), self.p.feedback_grid_size))
         self.p.N_repeats = 1
 
         self.p.N_warmup_shots = 3

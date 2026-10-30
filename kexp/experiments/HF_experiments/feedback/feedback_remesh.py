@@ -21,12 +21,17 @@ class feedback_remesh(EnvExperiment, FeedbackExpt):
         
         ### parameters
 
-        self.p.feedback_fractional_initial_offset = 2.
-        # self.xvar('feedback_fractional_initial_offset', np.linspace(-4.,4.,5))
-        
-        self.p.N_repeats = 5
+        # hypothesis grid: the params defaults (feedback_grid_convention 2)
+        # self.p.frequency_feedback_grid_full_span = 1274.6e3 # 10 Omega at t_pi 3.9229 us, the old +-5 Omega
+        # self.p.feedback_guess_span_Omega = 5. # convention 1
 
-        self.p.feedback_guess_span_Omega = 5.
+        # initial offset as a fraction of the largest allowed: the old 2. Omega was 4 of a
+        # largest 9.5 steps on the 21-point +-5 Omega grid
+        self.p.feedback_fractional_initial_offset = 4. / 9.5
+        # self.xvar('feedback_fractional_initial_offset',
+        #           np.array([-8., -4., 0., 4., 8.]) / 9.5) # was linspace(-4.,4.,5) Omega
+
+        self.p.N_repeats = 5
 
         self.p.feedback_remesh_threshold_Omega = 0.5
         # self.xvar('feedback_remesh_threshold_Omega', np.linspace(0.0,0.825,7))

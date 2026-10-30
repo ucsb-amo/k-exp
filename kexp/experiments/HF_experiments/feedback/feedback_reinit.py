@@ -50,13 +50,20 @@ class feedback_reinit(EnvExperiment, FeedbackExpt):
 
         ### parameters
 
-        self.p.feedback_fractional_initial_offset = 2.
-        self.xvar('feedback_fractional_initial_offset', np.linspace(-2.5, 2.5, 11))
+        # Hypothesis grid: the params defaults (feedback_grid_convention 2, kexp.base.feedback)
+        # self.p.frequency_feedback_grid_full_span = 637.3e3 # 5 Omega at t_pi 3.9229 us, the old +-2.5 Omega
+        # self.p.feedback_guess_span_Omega = 2.5 # convention 1
+
+        # Initial offsets as fractions of the largest allowed (feedback_fractional_initial_offset,
+        # -1..1): the old -2.5 .. 2.5 Omega every 0.5 on the 21-point +-2.5 Omega grid were
+        # -10 .. 10 steps every 2 of a largest allowed 9.5, the ends moved in to 9.5 (user,
+        # 2026-10-28), kept as fractions so they fit any grid size
+        offset_frac = np.array([-9.5, -8., -6., -4., -2., 0., 2., 4., 6., 8., 9.5]) / 9.5
+        self.p.feedback_fractional_initial_offset = 8. / 9.5 # was 2. Omega; the xvar sets it
+        self.xvar('feedback_fractional_initial_offset', offset_frac)
 
         self.p.N_repeats = 5
         self.p.N_pulses = 17
-
-        self.p.feedback_guess_span_Omega = 2.5 # 21 points x 0.25 Omega, as FB_scan
 
         ### reinitialisation
         self.p.feedback_reinit_std_threshold_Omega = 0.5

@@ -2,6 +2,7 @@ from artiq.experiment import *
 from artiq.language import now_mu, delay, delay_mu, TFloat, TArray, TTuple, TInt32, at_mu, parallel
 from kexp import Base, img_types, cameras, aprint
 from kexp.base import Feedback, RandomRamanPulseTimes
+from kexp.base.feedback import check_feedback_grid_params
 from kexp.calibrations.imaging import integrator_calibration
 import numpy as np
 from numpy import int64
@@ -15,6 +16,7 @@ class FeedbackExpt(Base, Feedback, RandomRamanPulseTimes):
                  suppress_live_od=False,
                  save_on_underflow=True,
                  recalibrate=True,
+                 warmup_shots=3,
                 mot_preload=False):
         
         self.data = DataVault(self)
@@ -28,6 +30,7 @@ class FeedbackExpt(Base, Feedback, RandomRamanPulseTimes):
                     data_vault=self.data,
                     suppress_live_od=suppress_live_od,
                     save_on_underflow=save_on_underflow,
+                    warmup_shots=warmup_shots,
                     mot_preload=mot_preload)
         self.p.cal_enabled = recalibrate
         
@@ -52,6 +55,13 @@ class FeedbackExpt(Base, Feedback, RandomRamanPulseTimes):
         # the pre-shot (read, resonant pi, read) leaves the spin all down, and the
         # model must start where the atoms are; Feedback.__init__ reads this
         self.p.feedback_initial_sz = -1.0 if self.p.preshot_contrast else 1.0
+
+        # the hypothesis grid (kexp.base.feedback, 'hypothesis grid'): refused out of
+        # range or set the wrong way before a run id is used; then the derived
+        # Omega-unit values are brought up to date with what prepare() set, before
+        # Feedback.__init__ builds the grid from them
+        check_feedback_grid_params(self.p, self.scan_xvars)
+        self.p.compute_feedback_grid()
 
         Feedback.__init__(self)
 
@@ -317,7 +327,10 @@ class FeedbackExpt(Base, Feedback, RandomRamanPulseTimes):
 
             # time of result of pulse i
             self.data.t.put_data(t + t_pulse + self.p.t_img_pulse, i)
-            # result of pulse i
+            # result of pulse i: the model S_z of grid point zidx (the snapped point at
+            # prepare time). With p.feedback_grid_shift != 0 (convention 2) no point is on
+            # resonance and this is the point feedback_grid_shift steps from it; the
+            # replay's s_z_rr propagates exact resonance on its own
             self.data.s_z.put_data(self.state_z[self.zidx], i)
 
             t_step += dT

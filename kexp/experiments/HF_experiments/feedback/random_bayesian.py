@@ -3,28 +3,15 @@ from artiq.language import now_mu, delay, delay_mu, TFloat, TArray, TTuple, at_m
 from kexp import Base, img_types, cameras
 import numpy as np
 
+from kexp.base.feedback import feedback_grid_convention, feedback_hypothesis_grid
 from kexp.experiments.HF_experiments.feedback.base_expt_feedback import FeedbackExpt
-
-
-def hypothesis_grid_omega(offset, span, f_res, t_pi, m, center_exact=1):
-    """Host numpy mirror of Feedback._initialize_frequency_grid (kexp/base/feedback.py),
-    term for term: centre = offset (center_exact 1) or round(offset) (0);
-    w_j = omega_res + Omega * (centre - span * (-1 + 2 j / (m - 1))), then shifted so
-    the first grid point nearest resonance sits exactly on it. Returns (grid, zidx).
-    Kept here because feedback_grid_omega exists only on the OPX branch."""
-    Omega = np.pi / t_pi
-    omega_res = 2.0 * np.pi * f_res
-    centre = offset if center_exact else float(round(offset))
-    t = -1.0 + np.arange(m, dtype=np.float64) * (2.0 / (m - 1))
-    grid = omega_res + Omega * (centre - span * t)
-    zidx = int(np.argmin(np.abs(grid - omega_res)))
-    return grid + (omega_res - grid[zidx]), zidx
 
 
 class feedback_random_bayesian(EnvExperiment, FeedbackExpt):
     """Non-adaptive Bayesian: pulse 0 drives the initial offset, exactly where the
     adaptive loop starts (reset_initial_omega_from_params: omega_res + Omega *
-    feedback_fractional_initial_offset). Pulses 1..N_pulses-1 drive hypothesis-grid
+    feedback_initial_offset_Omega, derived from feedback_fractional_initial_offset).
+    Pulses 1..N_pulses-1 drive hypothesis-grid
     points whose INDICES are drawn per shot without replacement, in random order,
     from every grid index except the one nearest pulse 0 (the grid centre when the
     offset is a whole number of grid steps from resonance, so pulse 0 is that grid
@@ -32,8 +19,8 @@ class feedback_random_bayesian(EnvExperiment, FeedbackExpt):
     (update_raman_frequency_bool = 0, so the drive never follows the posterior).
 
     The counterpart of feedback_fast for adaptive-vs-non-adaptive comparisons:
-    same grid (feedback_grid_size, feedback_guess_span_Omega, the initial offset
-    placing it), same first pulse, same number of pulses, same pulse durations
+    same grid (feedback_grid_size, frequency_feedback_grid_full_span, the initial
+    offset and grid shift placing it), same first pulse, same number of pulses, same pulse durations
     (the t_raman_pulse_seed draw), same readout. Only the choice of drive
     frequency after pulse 0 differs. The drive of every pulse is saved per shot
     in data.omega_raman.
@@ -51,8 +38,13 @@ class feedback_random_bayesian(EnvExperiment, FeedbackExpt):
         self.p.update_raman_frequency_bool = 0
         self.p.include_photon_noise = 1
 
-        self.p.feedback_fractional_initial_offset = 2.
-        # self.xvar('feedback_fractional_initial_offset', np.linspace(-2.5, 2.5, 11))
+        # initial offset as a fraction of the largest allowed (feedback_grid_convention 2):
+        # the old 2. Omega was 8 of a largest 9.5 steps on the 21-point +-2.5 Omega grid
+        self.p.feedback_fractional_initial_offset = 8. / 9.5
+        # the old linspace(-2.5, 2.5, 11) Omega, the ends moved in to the largest allowed
+        # (user, 2026-10-28)
+        # self.xvar('feedback_fractional_initial_offset',
+        #           np.array([-9.5, -8., -6., -4., -2., 0., 2., 4., 6., 8., 9.5]) / 9.5)
 
         self.p.pulse_list_seed = 0
 
@@ -66,8 +58,8 @@ class feedback_random_bayesian(EnvExperiment, FeedbackExpt):
         Called every shot from scan_kernel, after the scanner has written this
         shot's xvar values into the host params, so the offset read here is the
         current one. The grid is rebuilt from those params exactly as
-        Feedback._initialize_frequency_grid builds it (hypothesis_grid_omega above
-        is its numpy mirror, snap to resonance and grid-centre rule included):
+        Feedback._initialize_frequency_grid builds it (feedback_hypothesis_grid,
+        its host copy: snap, tie rule and grid shift included):
         scan_kernel calls this BEFORE initialize_feedback(), so
         p.omega_guess_list may still hold the previous shot's grid when the
         initial offset is scanned.
@@ -77,12 +69,16 @@ class feedback_random_bayesian(EnvExperiment, FeedbackExpt):
         if n > m:
             raise ValueError(f"N_pulses = {n} exceeds feedback_grid_size = {m}: "
                              "cannot draw that many distinct grid points.")
-        offset = float(np.ravel(self.p.feedback_fractional_initial_offset)[0])
+        # this shot's Omega-unit offset and span (compute_derived ran with its xvars)
+        offset = float(np.ravel(self.p.feedback_initial_offset_Omega)[0])
         span = float(np.ravel(self.p.feedback_guess_span_Omega)[0])
         f_res = float(np.ravel(self.p.frequency_raman_transition)[0])
         t_pi = float(np.ravel(self.p.t_raman_pi_pulse)[0])
-        center_exact = int(getattr(self.p, "feedback_grid_center_exact_offset", 0))
-        omega_grid, _ = hypothesis_grid_omega(offset, span, f_res, t_pi, m, center_exact)
+        omega_grid, _, _ = feedback_hypothesis_grid(
+            2.0 * np.pi * f_res, np.pi / t_pi, span, m, offset,
+            grid_shift=float(np.ravel(self.p.feedback_grid_shift)[0]),
+            convention=feedback_grid_convention(self.p),
+            center_exact=int(getattr(self.p, "feedback_grid_center_exact_offset", 0)))
         # the adaptive loop's first drive (Feedback.reset_initial_omega_from_params)
         omega_first = 2.0 * np.pi * f_res + (np.pi / t_pi) * offset
         idx_first = int(np.argmin(np.abs(omega_grid - omega_first)))

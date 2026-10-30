@@ -9,6 +9,7 @@ from numpy import int64
 import sys as _sys, os as _os
 _sys.path.insert(0, _os.path.dirname(_os.path.abspath(__file__)))
 from base_expt_feedback_grid import FeedbackExptGrid as FeedbackExpt  # session copy: alt gaps + grid from the pulse period (DESIGN_grid_rule.md)
+from kexp.base.feedback import feedback_offset_frac  # offsets in grid steps (feedback_grid_convention 2)
 
 class feedback(EnvExperiment, FeedbackExpt):
 
@@ -31,10 +32,10 @@ class feedback(EnvExperiment, FeedbackExpt):
         self.p.t_gap_cycle_extra_us = np.array([0., 15.])     # ALT2 gaps; 15 us from the X sweep for the rule grid (q_short 1.82; REPORT Addendum 5)
         self.p.feedback_remesh_threshold_Omega = 0.0          # remesh off in the data cycle
 
-        step = self.grid_step_Omega()
-        self.p.feedback_fractional_initial_offset = 2.
-        # session copy: initial offsets on grid points, step * k, k = -7..7 (15 values, within the span)
-        self.xvar('feedback_fractional_initial_offset', step * np.arange(-7., 8.))
+        # session copy: initial offsets on grid points, k = -7..7 steps (15 values); the ends moved in
+        # from 7 to the largest allowed 6.5 steps (convention 2 keeps resonance off the edge points;
+        # user, 2026-10-28)
+        self.xvar('feedback_fractional_initial_offset', feedback_offset_frac(np.r_[-6.5, np.arange(-6., 7.), 6.5], self.p.feedback_grid_size))
         self.p.N_repeats = 13                                 # 15 x 13 = 195 shots
 
         self.p.N_warmup_shots = 20

@@ -2,6 +2,7 @@ from artiq.experiment import *
 from artiq.language import now_mu, delay, delay_mu, TFloat, TArray, TTuple, at_mu, parallel
 from kexp import Base, img_types, cameras
 from kexp.base import Feedback
+from kexp.base.feedback import feedback_grid_convention, feedback_hypothesis_grid, feedback_offset_frac
 from kexp.calibrations.imaging import integrator_calibration
 import numpy as np
 from numpy import int64
@@ -72,26 +73,26 @@ class feedback_deterministic_bayesian(EnvExperiment, FeedbackExpt):
         
         ### parameters
 
-        # Hypothesis grid. feedback_guess_span_Omega is a HALF-width: the grid
-        # runs from offset-span to offset+span, so span = 3 gives a 6*Omega-wide
-        # grid and, at 21 points, a step of 0.3*Omega.
+        # Hypothesis grid (feedback_grid_convention 2, kexp.base.feedback): 21 points over
+        # the default full width (frequency_feedback_grid_full_span)
         self.p.feedback_grid_size = 21
-        self.p.feedback_guess_span_Omega = 2.0
+        # self.p.frequency_feedback_grid_full_span = 509.8e3 # 4 Omega at t_pi 3.9229 us, the old +-2 Omega
+        # self.p.feedback_guess_span_Omega = 2.0 # convention 1
 
-        # Slide the grid across resonance, one grid step per point. The kernel
-        # snaps the grid so its nearest point lands exactly on resonance
-        # (_initialize_frequency_grid), so an offset of k grid steps does not
-        # move the grid frequencies off resonance -- it moves WHICH INDEX is the
-        # resonant one. Over -span..+span in 21 steps the resonance index walks
-        # 0, 1, ... 20: from the grid edge, through the centre, to the far edge.
-        # That is the thing being scanned -- how the posterior behaves when the
-        # truth sits at the edge of the prior rather than its middle.
-        # 5 offsets over the full grid width. At span 2 / 21 points the grid step
-        # is 0.2 Omega, so these land the resonance on grid indices 0, 5, 10, 15,
-        # 20 -- edge, quarter, centre, quarter, edge.
+        # Slide the grid across resonance. The kernel snaps the grid so its
+        # nearest point lands exactly on resonance (_initialize_frequency_grid),
+        # so an offset of k grid steps does not move the grid frequencies off
+        # resonance -- it moves WHICH INDEX is the resonant one. That is the
+        # thing being scanned -- how the posterior behaves when the truth sits
+        # near the edge of the prior rather than its middle.
+        # The offset is the fraction of the largest allowed, (m - 2) / 2 = 9.5
+        # steps. Offsets of -9.5, -5, 0, 5, 9.5 steps land resonance on grid
+        # indices 1, 5, 10, 15, 19. Before 2026-10-28 the ends were 10 steps,
+        # resonance on the edge points 0 and 20; convention 2 keeps resonance off
+        # the edge points, so the ends moved in half a step (user, 2026-10-28).
+        offset_steps = np.array([-9.5, -5., 0., 5., 9.5])
         self.xvar('feedback_fractional_initial_offset',
-                  np.linspace(-self.p.feedback_guess_span_Omega,
-                              self.p.feedback_guess_span_Omega, 5))
+                  feedback_offset_frac(offset_steps, self.p.feedback_grid_size))
 
         self.finish_prepare()
 
@@ -112,22 +113,24 @@ class feedback_deterministic_bayesian(EnvExperiment, FeedbackExpt):
         reading the stale list would drive shot N at shot N-1's frequencies --
         silently, and in exactly the quantity being scanned.
 
-        The construction below mirrors Feedback._initialize_frequency_grid,
-        snap included. Keep the two in sync if that function changes.
+        The construction is feedback_hypothesis_grid, the host copy of
+        Feedback._initialize_frequency_grid (snap, tie rule and grid shift
+        included), from this shot's derived Omega-unit span and offset.
         '''
         m = int(self.p.feedback_grid_size)
         Omega = np.pi / float(self.p.t_raman_pi_pulse)
         omega_res = 2.0 * np.pi * float(np.ravel(self.p.frequency_raman_transition)[0])
         span = float(np.ravel(self.p.feedback_guess_span_Omega)[0])
         # During prepare this may still be the whole xvar array; per shot the
-        # scan machinery has already plugged in that shot's scalar.
-        offset = float(np.ravel(self.p.feedback_fractional_initial_offset)[0])
+        # scan machinery has already plugged in that shot's scalar (and
+        # compute_derived its Omega-unit offset).
+        offset = float(np.ravel(self.p.feedback_initial_offset_Omega)[0])
+        shift = float(np.ravel(self.p.feedback_grid_shift)[0])
 
-        t = np.linspace(-1.0, 1.0, m)
-        omega_grid = omega_res + Omega * (offset - span * t)
-        # Shift so the nearest grid point lands exactly on resonance.
-        best_idx = int(np.argmin(np.abs(omega_grid - omega_res)))
-        omega_grid = omega_grid + (omega_res - omega_grid[best_idx])
+        omega_grid, _, _ = feedback_hypothesis_grid(
+            omega_res, Omega, span, m, offset, grid_shift=shift,
+            convention=feedback_grid_convention(self.p),
+            center_exact=int(self.p.feedback_grid_center_exact_offset))
 
         # Monotonic sweep of the grid. maximin_grid_order (below) was tried as an
         # alternative -- centre-out, to decorrelate pulse index from drive

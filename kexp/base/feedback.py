@@ -530,9 +530,14 @@ class Feedback:
     @portable(flags={"fast-math"})
     def reset_initial_omega_from_params(self):
         """Refresh initial control omega from current (possibly scanned) params."""
+        # initial drive - resonance in Omega: the base parameter itself in
+        # convention 1, derived from it in convention 2 ('hypothesis grid' below)
+        offset_Omega = self.p.feedback_fractional_initial_offset
+        if self.grid_convention >= 2:
+            offset_Omega = self.p.feedback_initial_offset_Omega
         self.omega_raman = (
             2.0 * np.pi * self.p.frequency_raman_transition
-            + self.Omega * self.p.feedback_fractional_initial_offset
+            + self.Omega * offset_Omega
         )
         return self.omega_raman
 
@@ -545,6 +550,18 @@ class Feedback:
         # a run file without the parameter is such a run, so replay of it
         # keeps its grid. New runs get 1 from expt_params_feedback.
         self.grid_center_exact = int(getattr(self.p, "feedback_grid_center_exact_offset", 0))
+        # 1 / 2: which parameters define the grid ('hypothesis grid', module level);
+        # 1 when the params do not say, so every older run replays as it ran. The
+        # kernel reads the Omega-unit offset of either convention, so both names
+        # must exist; the convention-2 ones a convention-1 params class lacks are
+        # added here (unused there).
+        self.grid_convention = feedback_grid_convention(self.p)
+        if not hasattr(self.p, "feedback_initial_offset_Omega"):
+            self.p.feedback_initial_offset_Omega = float(
+                np.ravel(self.p.feedback_fractional_initial_offset)[0])
+        if not hasattr(self.p, "feedback_grid_shift"):
+            self.p.feedback_grid_shift = 0.0
+        self.p.feedback_resonance_grid_index_frac = 0.0
         # S_z every hypothesis (and the replay's true spin) starts from: +1 (all up)
         # unless the run prepared all down with the pre-shot pi pulse
         # (p.preshot_contrast -> feedback_initial_sz = -1, 2026-09-28). Run files
@@ -705,9 +722,17 @@ class Feedback:
         # old placement on round(offset) (half-to-even), kept only so runs taken
         # with it replay as they ran: for a fractional offset it left the grid
         # centre away from the initial drive (0.5 -> 0).
-        grid_center = float(self.p.feedback_fractional_initial_offset)
-        if self.grid_center_exact == 0:
-            grid_center = float(round(self.p.feedback_fractional_initial_offset))
+        # Convention 2 ('hypothesis grid', module level) always centres on the
+        # exact (derived) offset, breaks an exact tie toward the grid centre so
+        # resonance stays off the edge points, and then moves the whole grid by
+        # p.feedback_grid_shift steps. feedback_hypothesis_grid is the host copy.
+        convention = self.grid_convention
+        if convention >= 2:
+            grid_center = self.p.feedback_initial_offset_Omega
+        else:
+            grid_center = float(self.p.feedback_fractional_initial_offset)
+            if self.grid_center_exact == 0:
+                grid_center = float(round(self.p.feedback_fractional_initial_offset))
         span = self.p.feedback_guess_span_Omega
         m = self.m
         Omega = self.Omega
@@ -715,6 +740,9 @@ class Feedback:
         # Build grid: omega[i] = omega_res + Omega*(center - span*linspace(-1,1,m)[i])
         # linspace(-1,1,m)[i] = -1 + i * 2/(m-1)
         scale = 2.0 / (m - 1)
+        step = Omega * span * scale
+        tie_tol = 1.0e-6 * step
+        centre_idx = 0.5 * (m - 1)
         best_idx = 0
         best_dist = 1.0e12
         i = 0
@@ -725,13 +753,27 @@ class Feedback:
             dist = omega - omega_resonance
             if dist < 0.0:
                 dist = -dist
-            if dist < best_dist:
+            if convention >= 2:
+                if dist < best_dist - tie_tol:
+                    best_dist = dist
+                    best_idx = i
+                elif dist <= best_dist + tie_tol:
+                    if abs(float(i) - centre_idx) < abs(float(best_idx) - centre_idx):
+                        best_dist = dist
+                        best_idx = i
+            elif dist < best_dist:
                 best_dist = dist
                 best_idx = i
             i += 1
 
-        # Shift so the nearest grid point lands exactly on resonance
+        # Shift so the nearest grid point lands exactly on resonance (and, in
+        # convention 2, then by feedback_grid_shift steps: up in frequency for
+        # > 0, which moves resonance to fractional index best_idx + shift)
         omega_shift = omega_resonance - self.omega_guess_list[best_idx]
+        resonance_index = float(best_idx)
+        if convention >= 2:
+            omega_shift = omega_shift + self.p.feedback_grid_shift * step
+            resonance_index = resonance_index + self.p.feedback_grid_shift
         i = 0
         while i < m:
             omega = self.omega_guess_list[i] + omega_shift
@@ -741,6 +783,7 @@ class Feedback:
 
         self.p.omega_guess_list = self.omega_guess_list
         self.p.feedback_resonance_grid_index = best_idx
+        self.p.feedback_resonance_grid_index_frac = resonance_index
         self.omega_raman = self.reset_initial_omega_from_params()
 
         self.feedback_remesh_threshold_omega = self.p.feedback_remesh_threshold_Omega * self.Omega
@@ -1357,6 +1400,150 @@ class Feedback:
         uy = (Omega * inv_norm_H) * np.sin(phase)
         uz = delta_omega * inv_norm_H
         return np.array([ux, uy, uz], dtype=np.float64)
+
+### hypothesis grid (p.feedback_grid_convention)
+#
+# Convention 1 -- every run before 2026-10-28, and any run file without
+# feedback_grid_convention: the base parameters are feedback_guess_span_Omega
+# (the grid HALF-width, in Omega = pi / t_pi) and feedback_fractional_initial_offset
+# (initial drive - resonance, in Omega).
+#
+# Convention 2 (2026-10-28, user) -- the base parameters are
+#   frequency_feedback_grid_full_span  F (Hz): the full grid width; step d = F / (m - 1)
+#   feedback_fractional_initial_offset u in [-1, 1]: initial drive - resonance
+#       = u * (F/2 - d/2) (> 0: drive above resonance). F/2 - d/2 is the largest
+#       offset that keeps resonance off the two edge points, so the shift below
+#       can never push it off the grid.
+#   feedback_grid_shift s in [-1/2, 1/2]: the grid is first centred as near the
+#       initial drive as it can be with one point exactly on resonance (an exact
+#       tie goes to the point nearer the grid centre), then moved by s * d (up in
+#       frequency for s > 0). Resonance then sits at fractional grid index j0 + s.
+# Both conventions feed the kernel the same two Omega-unit numbers,
+# feedback_guess_span_Omega and feedback_initial_offset_Omega; under convention 2
+# they are derived (ExptParams.compute_feedback_grid in expt_params_feedback) and
+# setting them by hand is refused (check_feedback_grid_params).
+
+FEEDBACK_GRID_CONVENTION = 2
+
+
+def feedback_grid_convention(p):
+    """The run's grid convention: 1 when the params do not say (older runs)."""
+    return int(np.ravel(getattr(p, "feedback_grid_convention", 1))[0])
+
+
+def feedback_grid_derived(full_span_hz, grid_size, t_raman_pi_pulse, initial_offset_frac):
+    """Convention 2 -> (feedback_guess_span_Omega, feedback_initial_offset_Omega).
+
+    Omega in Hz is 1 / (2 t_pi), so the half-width F/2 is F t_pi in Omega, and
+    the initial offset u (F/2 - d/2) = u (F/2) (m - 2) / (m - 1) is
+    u F t_pi (m - 2) / (m - 1) in Omega. Elementwise on arrays (scanned values);
+    scalars in, floats out.
+    """
+    m = int(grid_size)
+    span_Omega = np.asarray(full_span_hz, dtype=float) * np.asarray(t_raman_pi_pulse, dtype=float)
+    offset_Omega = np.asarray(initial_offset_frac, dtype=float) * span_Omega * (m - 2) / (m - 1)
+    if np.ndim(span_Omega) == 0:
+        span_Omega = float(span_Omega)
+    if np.ndim(offset_Omega) == 0:
+        offset_Omega = float(offset_Omega)
+    return span_Omega, offset_Omega
+
+
+def feedback_offset_frac(steps, grid_size):
+    """Convention 2: feedback_fractional_initial_offset for an initial drive `steps`
+    grid steps above resonance (< 0: below). The largest allowed is (m - 2) / 2
+    steps (= full span / 2 - half a step), u = +-1."""
+    return np.asarray(steps, dtype=float) / ((int(grid_size) - 2) / 2.0)
+
+
+def feedback_hypothesis_grid(omega_resonance, Omega, span_Omega, grid_size, center_Omega,
+                             grid_shift=0.0, convention=1, center_exact=1):
+    """The grid Feedback._initialize_frequency_grid builds, on the host.
+
+    Returns (omega_grid, best_idx, resonance_index): the grid (rad/s, DESCENDING
+    in frequency, as the kernel stores it), the index snapped onto resonance
+    before any shift, and resonance's fractional index after it (best_idx +
+    grid_shift; = best_idx in convention 1). Convention 1 is exactly what replay
+    has done since 2026-09-27, including np.round (half to even) for a centre
+    on round(offset) -- the kernel rounds half away from zero, a known
+    difference at half-integer offsets of convention-1 runs that predate
+    feedback_grid_center_exact_offset.
+    """
+    m = int(grid_size)
+    center = float(center_Omega)
+    if convention < 2 and not int(center_exact):
+        center = float(np.round(center))
+    grid = omega_resonance + Omega * (center - span_Omega * np.linspace(-1.0, 1.0, m))
+    dist = np.abs(grid - omega_resonance)
+    if convention < 2:
+        best_idx = int(np.argmin(dist))
+    else:
+        # the kernel's loop: a nearer point wins; within tie_tol, the one nearer the centre
+        step = abs(Omega * span_Omega * 2.0 / (m - 1))
+        tie_tol = 1.0e-6 * step
+        centre_idx = 0.5 * (m - 1)
+        best_idx, best_dist = 0, 1.0e12
+        for i in range(m):
+            if dist[i] < best_dist - tie_tol:
+                best_idx, best_dist = i, dist[i]
+            elif dist[i] <= best_dist + tie_tol and abs(i - centre_idx) < abs(best_idx - centre_idx):
+                best_idx, best_dist = i, dist[i]
+    grid = grid + (omega_resonance - grid[best_idx])
+    resonance_index = float(best_idx)
+    if convention >= 2:
+        grid = grid + float(grid_shift) * Omega * span_Omega * 2.0 / (m - 1)
+        resonance_index += float(grid_shift)
+    return grid, best_idx, resonance_index
+
+
+def check_feedback_grid_params(p, xvars=()):
+    """Refuse (ValueError) a hypothesis grid that is out of range or set the
+    wrong way, before a run id is used. ``xvars``: the scan's xvar objects; a
+    scanned parameter is checked at every one of its values."""
+    scanned = {str(x.key): np.ravel(np.asarray(x.values, dtype=float)) for x in xvars}
+
+    def values(key, default):
+        if key in scanned:
+            return scanned[key]
+        return np.ravel(np.asarray(getattr(p, key, default), dtype=float))
+
+    conv = values("feedback_grid_convention", 1.)
+    if conv.size != 1 or conv[0] not in (1., 2.):
+        raise ValueError(f"feedback_grid_convention must be one fixed value, 1 or 2; got {conv}")
+    shift = values("feedback_grid_shift", 0.)
+    if int(conv[0]) < 2:
+        if np.any(shift != 0.):
+            raise ValueError("feedback_grid_shift is a feedback_grid_convention 2 parameter; "
+                             f"convention 1 has no grid shift (got {shift})")
+        return
+    problems = []
+    m = values("feedback_grid_size", 0.)
+    if m.size != 1 or m[0] < 3:
+        problems.append(f"feedback_grid_size must be one fixed value >= 3 (got {m}): with fewer "
+                        "points resonance would sit on an edge point")
+    span = values("frequency_feedback_grid_full_span", np.nan)
+    if not (np.all(np.isfinite(span)) and np.all(span > 0.)):
+        problems.append(f"frequency_feedback_grid_full_span must be finite and > 0 Hz (got {span})")
+    u = values("feedback_fractional_initial_offset", np.nan)
+    if not (np.all(np.isfinite(u)) and np.all(np.abs(u) <= 1. + 1.e-12)):
+        problems.append("feedback_fractional_initial_offset is the fraction of the largest allowed "
+                        f"initial offset (full span / 2 - one half step) and must lie in [-1, 1] (got {u})")
+    if not (np.all(np.isfinite(shift)) and np.all(np.abs(shift) <= 0.5 + 1.e-12)):
+        problems.append(f"feedback_grid_shift is in grid steps and must lie in [-1/2, 1/2] (got {shift})")
+    if "feedback_guess_span_Omega" in scanned or "feedback_initial_offset_Omega" in scanned:
+        problems.append("feedback_guess_span_Omega / feedback_initial_offset_Omega are derived under "
+                        "feedback_grid_convention 2; scan frequency_feedback_grid_full_span / "
+                        "feedback_fractional_initial_offset instead")
+    derived = getattr(p, "_feedback_guess_span_Omega_derived", None)
+    if derived is not None and np.any(np.ravel(p.feedback_guess_span_Omega) != np.ravel(derived)):
+        problems.append(
+            f"feedback_guess_span_Omega was set by hand ({p.feedback_guess_span_Omega}), but under "
+            "feedback_grid_convention 2 it is derived from frequency_feedback_grid_full_span (Hz) and "
+            "would be overwritten. Set the full span in Hz, or set feedback_grid_convention = 1 for "
+            "the old meaning of feedback_guess_span_Omega and feedback_fractional_initial_offset (Omega)")
+    if problems:
+        raise ValueError("hypothesis grid (feedback_grid_convention 2) refused:\n  - "
+                         + "\n  - ".join(problems))
 
 ### randomized raman pulse times
 #

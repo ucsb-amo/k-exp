@@ -14,20 +14,29 @@ class ExptParams(expt_params_kexp):
         self.update_raman_frequency_bool = 0
         self.include_photon_noise = 1
 
-        self.feedback_grid_size = 21
+        # self.feedback_grid_size = 21
+        self.feedback_grid_size = 11 # user, 2026-10-28
         self.N_pulses = 17
         self.N_repeats = 5
 
-        Omega = 1/(2*self.p.t_raman_pi_pulse)
-
+        ### hypothesis grid (kexp.base.feedback, 'hypothesis grid'; user, 2026-10-28)
+        # Convention 2: the grid's full width in Hz; the initial drive - resonance as
+        # a fraction of the largest allowed offset (full span / 2 - half a step;
+        # -1..1, > 0 = drive above resonance); the grid shift in grid steps
+        # (-1/2..1/2, > 0 = grid up in frequency, resonance off grid by that much).
+        # feedback_guess_span_Omega and feedback_initial_offset_Omega are derived
+        # (compute_feedback_grid); setting them by hand is refused. Run files without
+        # feedback_grid_convention are convention 1 (span and offset in Omega).
+        self.feedback_grid_convention = 2
+        # self.frequency_feedback_grid_full_span = 12.75e3 # 0.1 Omega at t_pi 3.9229 us (#89418): the old 0.05 Omega half-width
+        self.frequency_feedback_grid_full_span = 12.e3 # user, 2026-10-28 (with feedback_grid_size 11: step 1.2 kHz)
         self.feedback_fractional_initial_offset = 0.0
-        # Centre the hypothesis grid on the exact initial offset, so any real
-        # offset works (2026-09-27). 0 = the old placement on round(offset);
-        # run files without this key were taken with that, and replay honours it.
+        self.feedback_grid_shift = 0.0
+        # Convention 1 only: centre the hypothesis grid on the exact initial offset
+        # (1, 2026-09-27) or on round(offset) (0, as run files without this key).
+        # Convention 2 always centres on the exact offset.
         self.feedback_grid_center_exact_offset = 0.
-        # 21 hypotheses at 0.25 Omega: feedback_guess_span_Omega is the grid
-        # HALF-width, so the step is 2 * 2.5 / 20.
-        self.feedback_guess_span_Omega = 0.1 / 2
+        # self.feedback_guess_span_Omega = 0.1 / 2 # convention 1: grid HALF-width in Omega
 
         # Threshold for adaptive remesh: if posterior std < threshold * Omega,
         # halve the grid span and re-centre on omega_raman.  0.0 = disabled.
@@ -180,5 +189,32 @@ class ExptParams(expt_params_kexp):
         self.cal_apply = 0
         # the sub-scan's point parameters (set per point by the scan loop)
         self.cal_readout_mode = 0.
+
+        self.compute_feedback_grid()
+
+    def compute_feedback_grid(self):
+        """The kernel's Omega-unit grid parameters from the base ones (run by
+        compute_derived: every shot, and with the scanned arrays at the end of
+        the run). Convention 2: feedback_guess_span_Omega and
+        feedback_initial_offset_Omega from frequency_feedback_grid_full_span,
+        feedback_grid_size, t_raman_pi_pulse and feedback_fractional_initial_offset.
+        Convention 1: the offset is already in Omega and is copied."""
+        if not hasattr(self, "feedback_grid_convention"):
+            return # expt_params_kexp.__init__ runs compute_derived before these exist
+        from kexp.base.feedback import feedback_grid_derived
+        if int(np.ravel(self.feedback_grid_convention)[0]) < 2:
+            self.feedback_initial_offset_Omega = self.feedback_fractional_initial_offset
+            return
+        try:
+            span_Omega, offset_Omega = feedback_grid_derived(
+                self.frequency_feedback_grid_full_span, self.feedback_grid_size,
+                self.t_raman_pi_pulse, self.feedback_fractional_initial_offset)
+        except ValueError:
+            # two scanned base parameters whose arrays do not broadcast (the end of a
+            # 2-D scan): no one derived array describes the shots -- NaN, not a stale value
+            span_Omega, offset_Omega = np.nan, np.nan
+        self.feedback_guess_span_Omega = span_Omega
+        self._feedback_guess_span_Omega_derived = span_Omega
+        self.feedback_initial_offset_Omega = offset_Omega
 
 

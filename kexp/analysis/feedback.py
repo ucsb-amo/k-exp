@@ -10,7 +10,8 @@ import matplotlib.colors as mcolors
 import matplotlib.pyplot as plt
 import numpy as np
 
-from kexp.base.feedback import Feedback, _feedback_kwargs_from_atomdata
+from kexp.base.feedback import (Feedback, _feedback_kwargs_from_atomdata, feedback_grid_convention,
+                                feedback_grid_derived, feedback_hypothesis_grid)
 
 
 DEFAULT_OMEGA_GROUP_TOLERANCE_RAD_S = 2.0 * np.pi * 100.0
@@ -141,6 +142,8 @@ class FeedbackReplayCore(Feedback):
         "feedback_fractional_grid_center_offset": "fractional_grid_center_offset",
         "feedback_fractional_initial_offset": "fractional_initial_offset",
         "feedback_guess_span_Omega": "guess_span_Omega",
+        "frequency_feedback_grid_full_span": "full_span_hz",
+        "feedback_grid_shift": "grid_shift",
         "N_photons_per_shot": "n_photons_per_shot",
         "std_n_photons_per_shot": "std_n_photons_per_shot",
         "v_apd_all_up": "v_apd_all_up",
@@ -345,6 +348,21 @@ class FeedbackReplayCore(Feedback):
         if kwargs.get("guess_span_Omega") is not None:
             p.feedback_guess_span_Omega = float(kwargs["guess_span_Omega"])
 
+        if kwargs.get("full_span_hz") is not None:
+            p.frequency_feedback_grid_full_span = float(kwargs["full_span_hz"])
+
+        if kwargs.get("grid_shift") is not None:
+            p.feedback_grid_shift = float(kwargs["grid_shift"])
+
+        # Convention 2: the grid is fixed in Hz, so its Omega-unit numbers follow
+        # the replay's t_pi (an override of t_raman_pi_pulse rescales Omega, not
+        # the grid the experiment ran on)
+        if feedback_grid_convention(p) >= 2:
+            p.feedback_guess_span_Omega, p.feedback_initial_offset_Omega = feedback_grid_derived(
+                float(p.frequency_feedback_grid_full_span), int(p.feedback_grid_size),
+                float(p.t_raman_pi_pulse), float(p.feedback_fractional_initial_offset))
+            self._span_Omega_written = float(p.feedback_guess_span_Omega)
+
         if kwargs.get("n_photons_per_shot") is not None:
             n_photons = float(kwargs["n_photons_per_shot"])
             p.n_photons_per_shot = n_photons
@@ -457,6 +475,20 @@ class FeedbackReplayCore(Feedback):
             fallback=-5.0,
         )
 
+        # Convention 2 (kexp.base.feedback, 'hypothesis grid'): the grid shift,
+        # kept raw like the offset (per shot from the xvars when scanned), and the
+        # full span, which replay takes as one value for the run
+        self._grid_shift_source = getattr(p, "feedback_grid_shift", 0.0)
+        kwargs["grid_shift"] = self._scalar_from_maybe_array(
+            self._grid_shift_source, name="feedback_grid_shift", fallback=0.0)
+        if feedback_grid_convention(p) >= 2:
+            full_span = np.unique(np.ravel(np.asarray(p.frequency_feedback_grid_full_span, dtype=float)))
+            if full_span.size != 1:
+                raise ValueError(
+                    "frequency_feedback_grid_full_span varies shot to shot "
+                    f"({full_span}): replay takes one grid width per run")
+            kwargs["full_span_hz"] = float(full_span[0])
+
         return kwargs
 
     def _scalar_from_maybe_array(self, value, *, name: str, fallback: float) -> float:
@@ -531,13 +563,21 @@ class FeedbackReplayCore(Feedback):
             raise ValueError("feedback_fractional_initial_offset must be finite.")
 
         if values.size == 1:
-            return np.full((n_repeat,), float(values[0]), dtype=float)
-
-        if values.size != int(n_repeat):
+            values = np.full((n_repeat,), float(values[0]), dtype=float)
+        elif values.size != int(n_repeat):
             raise ValueError(
                 "feedback_fractional_initial_offset must be scalar or length N_repeat. "
                 f"Got length {values.size} for N_repeat={n_repeat}."
             )
+
+        # Always in Omega, what _grid_for_offset and the initial drive take: in
+        # convention 2 the parameter is the fraction u of the largest allowed
+        # offset, converted here with the replay's grid (kexp.base.feedback,
+        # 'hypothesis grid')
+        if feedback_grid_convention(self.p) >= 2:
+            _, values = feedback_grid_derived(
+                float(self.p.frequency_feedback_grid_full_span), int(self.p.feedback_grid_size),
+                float(self.p.t_raman_pi_pulse), values)
 
         return np.asarray(values, dtype=float)
 
@@ -729,21 +769,83 @@ class FeedbackReplayCore(Feedback):
         elif "t_raman_pulse_ideal" in user_p_overrides:
             kwargs.pop("t_raman_pulse_offset", None)
 
+        # Convention 2 derives the Omega-unit span from the grid width in Hz
+        # (_apply_feedback_kwargs_to_params), which would silently undo this override
+        if "guess_span_Omega" in user_p_overrides and feedback_grid_convention(self.p) >= 2:
+            if float(user_p_overrides["guess_span_Omega"]) != getattr(self, "_span_Omega_written", None):
+                raise ValueError(
+                    "feedback_guess_span_Omega is derived in a feedback_grid_convention 2 run; "
+                    "override frequency_feedback_grid_full_span (Hz) instead")
+            del user_p_overrides["guess_span_Omega"] # the value this replay derived itself
+
         kwargs.update(user_p_overrides)
 
         self._apply_feedback_kwargs_to_params(kwargs)
         Feedback.__init__(self)  # computes omega_guess_list from formula
 
-        omega_res = float(self._omega_resonance_rad_s)
-        zidx = int(np.argmin(np.abs(self.omega_guess_list - omega_res)))
+        # the index _initialize_frequency_grid snapped onto resonance (before any
+        # convention-2 shift); in convention 1 the argmin it replaced, exactly
+        zidx = int(self.p.feedback_resonance_grid_index)
 
         return self.omega_guess_list.copy(), int(zidx)
+
+    def _grid_shift_scalar(self) -> float:
+        """The run's one grid shift, for callers that do not pass a shot's own.
+        Refuses a run whose shift varies shot to shot (scanned), unless an
+        override on self.p sets one for every shot."""
+        raw = np.ravel(np.asarray(getattr(self, "_grid_shift_source", 0.0), dtype=float))
+        current = float(np.ravel(getattr(self.p, "feedback_grid_shift", 0.0))[0])
+        if np.unique(raw).size > 1 and np.isclose(current, raw[0]):
+            raise ValueError(
+                f"feedback_grid_shift varies shot to shot ({np.unique(raw)}): pass the shot's "
+                "grid_shift (_resolve_grid_shift_r) to _grid_for_offset")
+        return current
+
+    def _grid_and_resonance_index(
+        self,
+        fractional_initial_offset: float,
+        grid_shift: Optional[float] = None,
+    ) -> Tuple[np.ndarray, int, float]:
+        """(grid, index snapped onto resonance, resonance's fractional index) for
+        one shot: kexp.base.feedback.feedback_hypothesis_grid, the host copy of
+        the kernel's construction. ``fractional_initial_offset`` is in Omega (what
+        _resolve_fractional_initial_offset_r returns, in either convention)."""
+        if grid_shift is None:
+            grid_shift = self._grid_shift_scalar()
+        return feedback_hypothesis_grid(
+            float(self._omega_resonance_rad_s), float(self.Omega),
+            float(self.p.feedback_guess_span_Omega), int(self.m),
+            float(fractional_initial_offset), grid_shift=float(grid_shift),
+            convention=feedback_grid_convention(self.p),
+            center_exact=int(getattr(self.p, "feedback_grid_center_exact_offset", 0)))
+
+    def _resolve_grid_shift_r(self, n_repeat: int) -> np.ndarray:
+        """Each shot's feedback_grid_shift (grid steps; 0 in convention 1): an
+        override set on self.p for every shot; otherwise the run's own -- per
+        shot from its xvars when scanned, else its one value."""
+        raw = np.ravel(np.asarray(getattr(self, "_grid_shift_source", 0.0), dtype=float))
+        current = float(np.ravel(getattr(self.p, "feedback_grid_shift", 0.0))[0])
+        if raw.size and np.isclose(current, raw[0]):
+            per_shot = self._xvar_per_shot("feedback_grid_shift", n_repeat)
+            if per_shot is not None:
+                return np.asarray(per_shot, dtype=float)
+            if np.unique(raw).size > 1:
+                raise ValueError(
+                    f"feedback_grid_shift holds {raw.size} values but is not one of the run's "
+                    "xvars: which shot used which shift is unknown")
+        return np.full((int(n_repeat),), current, dtype=float)
 
     def _grid_for_offset(
         self,
         fractional_initial_offset: float,
+        grid_shift: Optional[float] = None,
     ) -> Tuple[np.ndarray, int]:
         """Recompute hypothesis grid and resonance index for a given initial offset.
+
+        ``fractional_initial_offset`` is in Omega; ``grid_shift`` (convention 2,
+        grid steps) is the run's one value when not given. The index returned is
+        the point snapped onto resonance BEFORE the shift; resonance's fractional
+        index after it is _grid_and_resonance_index's third value.
 
         The grid formula mirrors ``_initialize_frequency_grid``:
             grid[j] = omega_res + Omega * (center - span * linspace(-1,1,m)[j])
@@ -762,18 +864,7 @@ class FeedbackReplayCore(Feedback):
         grid contains no zero-detuning point at all, and the resonance bin that
         ``compute_posterior_peak_metrics`` scores against is not the resonance.
         """
-        omega_res = float(self._omega_resonance_rad_s)
-        Omega = float(self.Omega)
-        m = int(self.m)
-        span = float(self.p.feedback_guess_span_Omega)
-        if int(getattr(self.p, "feedback_grid_center_exact_offset", 0)):
-            center = float(fractional_initial_offset)
-        else:
-            center = float(np.round(float(fractional_initial_offset)))
-        grid = omega_res + Omega * (center - span * np.linspace(-1.0, 1.0, m))
-        zidx = int(np.argmin(np.abs(grid - omega_res)))
-        # Snap, exactly as the kernel does, so grid[zidx] == omega_res bit-for-bit.
-        grid = grid + (omega_res - grid[zidx])
+        grid, zidx, _ = self._grid_and_resonance_index(fractional_initial_offset, grid_shift)
         return grid, zidx
 
     def _resolve_timing(
@@ -1292,6 +1383,7 @@ class FeedbackReplayCore(Feedback):
         n_repeat, n_step = np.asarray(self._apd_rr_cached, dtype=float).shape
         fractional_initial_offset_r = self._resolve_fractional_initial_offset_r(
             n_repeat=n_repeat)
+        grid_shift_r = self._resolve_grid_shift_r(n_repeat)
 
         self._reinitialize_feedback()
         timing = self._resolve_timing()
@@ -1331,7 +1423,8 @@ class FeedbackReplayCore(Feedback):
         read_model_r = (self._resolve_read_model_r(n_repeat) if self.read_model_per_shot
                         else None)
         for r in range(n_repeat):
-            grid_r, _ = self._grid_for_offset(float(fractional_initial_offset_r[r]))
+            grid_r, _ = self._grid_for_offset(float(fractional_initial_offset_r[r]),
+                                              float(grid_shift_r[r]))
             self.omega_guess_list = grid_r
             self.omega_sq_list = grid_r * grid_r
             if read_model_r is not None:
@@ -1466,6 +1559,7 @@ class FeedbackReplayCore(Feedback):
         t_raman_pulse_rr: np.ndarray,
         dT_rr_mu: np.ndarray,
         fractional_initial_offset_r: np.ndarray,
+        grid_shift_r: np.ndarray,
         omega_measured_rr: Optional[np.ndarray],
         control_omega_source: str,
         timing: Dict[str, float],
@@ -1490,9 +1584,16 @@ class FeedbackReplayCore(Feedback):
         """
         # Rebuild hypothesis grid for this shot's initial offset — each xvar
         # value has a different grid center (round(initial_offset) in Omega units).
-        grid_r, zidx = self._grid_for_offset(float(fractional_initial_offset_r[r]))
+        grid_r, zidx = self._grid_for_offset(float(fractional_initial_offset_r[r]),
+                                             float(grid_shift_r[r]))
         self.omega_guess_list = grid_r
         self.omega_sq_list = grid_r * grid_r
+        # Convention 2 with a grid shift: no hypothesis sits on resonance, so the
+        # resonance track is propagated on its own (_step_resonance_track, the
+        # model of one more grid point exactly on resonance; it never enters P0).
+        # Without a shift it is the hypothesis at zidx, exactly as before.
+        off_grid = float(grid_shift_r[r]) != 0.0
+        res_x, res_y, res_z = 0.0, 0.0, float(self.initial_sz)
 
         # this shot's read model, as the kernel's initialize_feedback selects it
         if self.read_model_per_shot:
@@ -1574,6 +1675,10 @@ class FeedbackReplayCore(Feedback):
             self.t_raman_pulse_ideal_current = float(dt_ideal_s[i])
 
             omega_prev = self.omega_raman
+            if off_grid:
+                # before generate_posterior: the same drive, Omega and pulse times
+                res_x, res_y, res_z = self._step_resonance_track(
+                    res_x, res_y, res_z, t_in, phase_tracker)
             omega_new, _, omega_std = self.generate_posterior(
                 k_val,
                 t_in,
@@ -1586,7 +1691,11 @@ class FeedbackReplayCore(Feedback):
             self.omega_raman = float(omega_new)
             self.Omega = float(omega_std)
 
-            s_z_rr[r, i] = float(self.state_z[zidx])
+            if not off_grid:
+                res_x = float(self.state_x[zidx])
+                res_y = float(self.state_y[zidx])
+                res_z = float(self.state_z[zidx])
+            s_z_rr[r, i] = res_z
             P0_rr[r, i, :] = self.P0
             omega_control_rr[r, i] = omega_ctrl
             omega_recomputed_rr[r, i] = float(self.omega_raman)
@@ -1595,9 +1704,64 @@ class FeedbackReplayCore(Feedback):
             k_rr[r, i] = k_val
 
             if return_full_state and state_rr is not None:
-                state_rr[r, i, 0] = float(self.state_x[zidx])
-                state_rr[r, i, 1] = float(self.state_y[zidx])
-                state_rr[r, i, 2] = float(self.state_z[zidx])
+                state_rr[r, i, 0] = res_x
+                state_rr[r, i, 1] = res_y
+                state_rr[r, i, 2] = res_z
+
+    def _step_resonance_track(
+        self,
+        sx: float,
+        sy: float,
+        sz: float,
+        t: float,
+        phase_raman_pulse_start: float,
+    ) -> Tuple[float, float, float]:
+        """One pulse and read of the model's spin at exactly resonance -- what
+        generate_posterior does to each grid point, for one more point at
+        omega_res: the same drive (self.omega_raman), Omega, pulse times, LUT
+        trig, read model and back-action. Call it before generate_posterior.
+        Off-grid runs only (convention 2, feedback_grid_shift != 0); with the
+        point on the grid it reproduces state[zidx] to the LUT's rounding."""
+        omega = float(self._omega_resonance_rad_s)
+        Omega = float(self.Omega)
+        delta_omega = float(self.omega_raman) - omega
+        dt_eff = self.t_raman_pulse_current
+        dt_ideal = self.t_raman_pulse_ideal_current
+
+        norm_H = np.sqrt(Omega * Omega + delta_omega * delta_omega)
+        if norm_H > 0.0:
+            Omega_over_H = Omega / norm_H
+            u_z = delta_omega / norm_H
+            (sin_H, cos_H) = self.sincos_lut_interp(-dt_ideal * norm_H)
+        else:
+            Omega_over_H, u_z, sin_H, cos_H = 0.0, 0.0, 0.0, 1.0
+        (sin_wt, cos_wt) = self.sincos_lut_interp(phase_raman_pulse_start - omega * t)
+        u_x = Omega_over_H * cos_wt
+        u_y = Omega_over_H * sin_wt
+        omc = 1.0 - cos_H
+
+        hx = ((cos_H + omc * u_x * u_x) * sx + (omc * u_x * u_y - sin_H * u_z) * sy
+              + (omc * u_x * u_z + sin_H * u_y) * sz)
+        hy = ((omc * u_x * u_y + sin_H * u_z) * sx + (cos_H + omc * u_y * u_y) * sy
+              + (omc * u_y * u_z - sin_H * u_x) * sz)
+        hz = ((omc * u_x * u_z - sin_H * u_y) * sx + (omc * u_y * u_z + sin_H * u_x) * sy
+              + (cos_H + omc * u_z * u_z) * sz)
+
+        alpha_z_lightshift = self.omega_z_lightshift * self.p.t_img_pulse
+        if self.read_alpha_lightshift_on:
+            alpha_z_lightshift = self.read_alpha_lightshift
+        (sin_z, cos_z) = self.sincos_lut_interp(dt_eff * (omega - float(self.omega_raman))
+                                                - alpha_z_lightshift)
+        nx = cos_z * hx + sin_z * hy
+        ny = -sin_z * hx + cos_z * hy
+        if self.read_twist_on:
+            d_twist = self.read_twist * hz
+            cos_d = 1.0 - d_twist * d_twist * 0.5
+            nx, ny = cos_d * nx + d_twist * ny, -d_twist * nx + cos_d * ny
+        coherence = self.back_action_coherence
+        if self.read_coherence_slope_on:
+            coherence = min(max(coherence + self.read_coherence_slope * hz, 0.0), 1.0)
+        return float(nx * coherence), float(ny * coherence), float(hz)
 
 
     def _run_sequence(
@@ -1632,6 +1796,7 @@ class FeedbackReplayCore(Feedback):
         apd_rr = self._resolve_apd_rr(apd_override_rr=apd_override_rr)
         n_repeat, n_step = apd_rr.shape
         fractional_initial_offset_r = self._resolve_fractional_initial_offset_r(n_repeat=n_repeat)
+        grid_shift_r = self._resolve_grid_shift_r(n_repeat)
 
         omega_guess_list, zidx = self._reinitialize_feedback()
 
@@ -1679,7 +1844,7 @@ class FeedbackReplayCore(Feedback):
         for r in range(n_repeat):
             self._run_shot_into_buffers(
                 r, n_step, apd_rr, t_raman_pulse_rr, dT_rr_mu,
-                fractional_initial_offset_r, omega_measured_rr, control_omega_source, timing,
+                fractional_initial_offset_r, grid_shift_r, omega_measured_rr, control_omega_source, timing,
                 include_photon_noise, update_raman_frequency, update_rabi_frequency,
                 return_full_state, zidx,
                 s_z_rr, P0_rr, omega_control_rr, omega_recomputed_rr, t_input_rr, t_s_z_rr, k_rr, state_rr,
@@ -1800,14 +1965,34 @@ class FeedbackReplay(FeedbackReplayCore):
         ``feedback_fractional_initial_offset`` and writes ``P0_rr[r]`` against it.
         For a run that scans the initial offset the two disagree, so the index has
         to be recomputed shot by shot.
+
+        FRACTIONAL (float): a convention-2 run with a grid shift has resonance
+        between grid points, at the snapped index + feedback_grid_shift (it
+        moves the grid up in frequency, and the grid is stored descending).
+        Without a shift every value is a whole number, the index as before.
         """
         n_repeat = int(result.P0_rr.shape[0])
         offset_r = self._resolve_fractional_initial_offset_r(n_repeat=n_repeat)
-        if np.all(offset_r == offset_r[0]):
-            return np.full(n_repeat, int(result.zidx), dtype=int)
+        shift_r = self._resolve_grid_shift_r(n_repeat)
         return np.asarray(
-            [self._grid_for_offset(float(o))[1] for o in offset_r], dtype=int
-        )
+            [self._grid_and_resonance_index(float(o), float(s))[2]
+             for o, s in zip(offset_r, shift_r)], dtype=float)
+
+    @staticmethod
+    def _p_at_resonance(P0: np.ndarray, true_idx: np.ndarray) -> np.ndarray:
+        """Each shot's posterior mass in the grid cell that holds resonance: the
+        point at round(true_idx); on a cell boundary (resonance exactly half way
+        between two points, feedback_grid_shift = +-1/2) the mean of the two.
+        With resonance on a point, exactly P0 there."""
+        rows = np.arange(P0.shape[0])
+        lo = np.floor(true_idx + 1.0e-9).astype(int)
+        frac = true_idx - lo
+        at_point = P0[rows, np.clip(np.rint(true_idx).astype(int), 0, P0.shape[1] - 1)]
+        boundary = np.isclose(frac, 0.5, atol=1.0e-9)
+        if np.any(boundary):
+            hi = np.clip(lo + 1, 0, P0.shape[1] - 1)
+            at_point = np.where(boundary, 0.5 * (P0[rows, lo] + P0[rows, hi]), at_point)
+        return at_point
 
     def check_posterior_peak_preconditions(
         self,
@@ -1936,7 +2121,10 @@ class FeedbackReplay(FeedbackReplayCore):
         index. Nothing is re-simulated: the replay already ran the real
         ``generate_posterior``. ``_initialize_frequency_grid`` shifts the grid so
         one hypothesis lands exactly on resonance, so "peaks at resonance" is
-        exactly ``argmax(P0) == true_idx``.
+        exactly ``argmax(P0) == true_idx``. A convention-2 run with a grid shift
+        has resonance between points (``true_idx`` fractional): there the hit is
+        the peak at the nearest point (both at a shift of +-1/2), and ``p_true``
+        the mass in the cell holding resonance (_p_at_resonance).
 
         Scoring is deliberately split in two. ``hit_rate`` is the literal question,
         but it is an integer count over shots, so as a function of any model
@@ -1983,7 +2171,11 @@ class FeedbackReplay(FeedbackReplayCore):
         # not converged; report them rather than letting them pass as neutral.
         flat_fraction = float(np.mean(max_prob < 1.15 / m))
 
-        hit = np.abs(argmax_idx - true_idx) <= int(tolerance_bins)
+        # A hit: the peak within tolerance_bins of the point(s) nearest resonance.
+        # With resonance on a point this is |peak - true_idx| <= tolerance_bins, as
+        # before; off grid (feedback_grid_shift) it is within tolerance_bins + 1/2,
+        # so at a shift of +-1/2 both neighbours count.
+        hit = np.abs(argmax_idx - true_idx) <= int(tolerance_bins) + 0.5 + 1.0e-9
         hit_rate = float(np.mean(hit))
 
         sigma = max(float(sigma_bins), 1.0e-12)
@@ -2003,7 +2195,7 @@ class FeedbackReplay(FeedbackReplayCore):
         # Proper scoring rule: log P0 at the true hypothesis. Uniform scores
         # exactly -log(m); confidently wrong is punished without bound, so there
         # is no hedging optimum. Clipped only to keep -inf out of the mean.
-        p_true = P0_final[np.arange(n_repeat), true_idx]
+        p_true = self._p_at_resonance(P0_final, true_idx)
         log_score_r = np.log(np.clip(p_true, 1.0e-300, None))
         log_score = float(np.mean(log_score_r))
 
@@ -2067,8 +2259,10 @@ class FeedbackReplay(FeedbackReplayCore):
         Omega = float(self.Omega)
 
         offset_r = self._resolve_fractional_initial_offset_r(n_repeat=n_repeat)
+        shift_r = self._resolve_grid_shift_r(n_repeat)
         grids = np.asarray(
-            [self._grid_for_offset(float(o))[0] for o in offset_r], dtype=float)
+            [self._grid_for_offset(float(o), float(s))[0] for o, s in zip(offset_r, shift_r)],
+            dtype=float)
         detuning_r = (grids - omega_res) / Omega
 
         n_common = int(n_grid) if n_grid else max(4 * m, 201)
@@ -6389,7 +6583,8 @@ class FeedbackPosteriorPeakOptimizer(FeedbackReplayOptimizer):
             best_result.P0_rr[:, self.step_index, :], dtype=float)
         true_idx = self.replay._true_resonance_indices(best_result)
         peak_offset = np.argmax(P0_final, axis=1) - true_idx
-        lo, hi = int(peak_offset.min()), int(peak_offset.max())
+        # whole steps, or fractional off grid (feedback_grid_shift): bins cover both
+        lo, hi = int(np.floor(peak_offset.min())), int(np.ceil(peak_offset.max()))
         edges = np.arange(lo - 0.5, hi + 1.5, 1.0)
         axs[2].hist(peak_offset, bins=edges, color="C0", alpha=0.75)
         axs[2].axvline(0.0, color="red", ls="--", lw=1.2, alpha=0.8, label="resonance bin")

@@ -9,6 +9,7 @@ from numpy import int64
 import sys as _sys, os as _os
 _sys.path.insert(0, _os.path.dirname(_os.path.abspath(__file__)))
 from base_expt_feedback_bimodal import FeedbackExptBimodal as FeedbackExpt  # session copy: grid rule + alt gaps + bimodality drive rule (REPORT Addendum 8)
+from kexp.base.feedback import feedback_offset_frac  # offsets in grid steps (feedback_grid_convention 2)
 
 class feedback(EnvExperiment, FeedbackExpt):
 
@@ -33,10 +34,10 @@ class feedback(EnvExperiment, FeedbackExpt):
         self.p.bimodal_mode_ratio = 0.5                       # second mode >= half the max -> drive the mean
         self.p.bimodal_min_separation = 2
 
-        step = self.grid_step_Omega()
-        self.p.feedback_fractional_initial_offset = 2.
-        # session copy: initial offsets on grid points, step * k, k = -7..7 (15 values, within the span)
-        self.xvar('feedback_fractional_initial_offset', step * np.arange(-7., 8.))
+        # session copy: initial offsets on grid points, k = -7..7 steps (15 values); the ends moved in
+        # from 7 to the largest allowed 6.5 steps (convention 2 keeps resonance off the edge points;
+        # user, 2026-10-28)
+        self.xvar('feedback_fractional_initial_offset', feedback_offset_frac(np.r_[-6.5, np.arange(-6., 7.), 6.5], self.p.feedback_grid_size))
         self.p.N_repeats = 13                                 # 15 x 13 = 195 shots
 
         self.p.N_warmup_shots = 20
