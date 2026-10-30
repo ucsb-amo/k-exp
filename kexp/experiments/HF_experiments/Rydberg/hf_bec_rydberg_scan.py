@@ -18,7 +18,7 @@ class hf_bec(EnvExperiment, Base):
 
         # self.xvar('do_405_pulse',[0,1])
         self.p.do_405_pulse = 1
-        # self.xvar('do_980_pulse',[0,1])
+        self.xvar('do_980_pulse',[0,1])
         self.p.do_980_pulse = 1
         self.p.amp_dds_405 = 0.06
 #   
@@ -26,8 +26,8 @@ class hf_bec(EnvExperiment, Base):
          # self.xvar('compress',[0,1])
         self.p.compress = 0
 
-        self.xvar('frequency_eo_980', np.arange(428.,444.,0.7)*1.e6)
-        self.p.frequency_eo_980 = 418.9e6
+        # self.xvar('frequency_eo_980', np.arange(418.,421.,0.7)*1.e6)
+        self.p.frequency_eo_980 = 419.4e6
         # self.xvar('frequency_eo_980', 418.1e6 + 1e6*np.linspace(-1,1,3))
 
         # self.xvar('t_tweezer_paint_rampdown',np.linspace(0.0,10.,5)*1.e-3)
@@ -40,7 +40,7 @@ class hf_bec(EnvExperiment, Base):
         self.p.v_pd_ry_405 = 0.45
         self.p.v_pd_ry_980 = 2.8
 
-        self.p.N_repeats = 4
+        self.p.N_repeats = 3
         self.finish_prepare(shuffle=True)
 
         if self.p.do_405_pulse == 1:

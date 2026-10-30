@@ -9,7 +9,7 @@ from kexp.calibrations.imaging import high_field_imaging_detuning
 class hf_bec(EnvExperiment, Base):
 
     def prepare(self):
-        Base.__init__(self,setup_camera=True,save_data=False,
+        Base.__init__(self,setup_camera=True,save_data=True,
                       camera_select=cameras.andor,
                       imaging_type=img_types.ABSORPTION)
 
@@ -19,26 +19,26 @@ class hf_bec(EnvExperiment, Base):
         # self.xvar('do_405_pulse',[0,1])
         self.p.do_405_pulse = 1
         # self.xvar('do_980_pulse',[0,1])
-        self.p.do_980_pulse = 0
+        self.p.do_980_pulse = 1
         self.p.amp_dds_405 = 0.06
 #
 
          # self.xvar('compress',[0,1])
         self.p.compress = 0
 
-        # self.xvar('frequency_eo_980', np.arange(422.,424.,0.1)*1.e6)
-        self.p.frequency_eo_980 = 422.7e6
+        self.xvar('frequency_eo_980', np.arange(417.5,421.5,0.05)*1.e6)
+        self.p.frequency_eo_980 = 418.7e6
         # self.xvar('frequency_eo_980', 418.1e6 + 1e6*np.linspace(-1,1,3))
 
         # self.xvar('t_tweezer_paint_rampdown',np.linspace(0.0,10.,5)*1.e-3)
 
         # self.xvar('t_tweezer_hold', np.linspace(0.0, 800.0, 7) * 1.e-3)
-        self.p.t_tweezer_hold = 312.e-3
+        self.p.t_tweezer_hold = 512.e-3
         self.p.amp_imaging = .1
 
         # self.p.v_pd_hf_tweezer_1064_rampdown3_end=3.5
         self.p.hf_imaging_detuning = -568.e6
-        self.p.v_pd_ry_405 = 0.6
+        self.p.v_pd_ry_405 = 0.4
         self.p.v_pd_ry_980 = 2.8
 
         self.adjust('t_tof', min_val=20.e-6, max_val=3000.e-6, step=10.e-6)
@@ -49,7 +49,7 @@ class hf_bec(EnvExperiment, Base):
         self.adjust('v_pd_ry_980', min_val=0., max_val=9.9, step=0.05)
         self.adjust('t_tweezer_hold',min_val=0.,max_val=1.5,step=0.1)
 
-        self.p.N_repeats = 1000
+        self.p.N_repeats = 6
         self.finish_prepare(shuffle=True)
 
         if self.p.do_405_pulse == 1:
@@ -72,8 +72,8 @@ class hf_bec(EnvExperiment, Base):
 
         if self.p.compress:
             self.p.t_tof = 450.e-6
-        # if self.p.do_980_pulse == 1:
-        #     self.ry_980.sweep_to(self.p.frequency_eo_980)
+        if self.p.do_980_pulse == 1:
+            self.ry_980.sweep_to(self.p.frequency_eo_980)
 
         # self.ry_980.set_power(9.9)
 
