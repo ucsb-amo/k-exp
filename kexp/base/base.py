@@ -487,7 +487,6 @@ class Base(Expt, Devices, Cooling, Image, Cameras, Control, Clients):
         self.core.reset()
         
         self.reset_devices()
-
         self.reset_tweezers(two_d_tweezers)
         
     @kernel
