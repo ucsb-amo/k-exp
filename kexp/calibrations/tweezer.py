@@ -57,10 +57,16 @@ F_CE_MIN = 70.e6
 F_NCE_MAX = 82.e6
 F_NCE_MIN = 76.e6
 
-X_TO_F_OFFSET_CE = 0.0013388522 #87558-87562, 2026-10-21
-X_TO_F_OFFSET_NCE = -0.0014003160 #87558-87562, 2026-10-21
-X_PER_F_CE = -1.8347e-11 # +/- 0.097e-11 m/Hz #87558-87562, 2026-10-21
-X_PER_F_NCE = 1.8347e-11 # +/- 0.097e-11 m/Hz #87558-87562, 2026-10-21
+# X_TO_F_OFFSET_CE = 0.0013388522 #87558-87562, 2026-10-21
+# X_TO_F_OFFSET_NCE = -0.0014003160 #87558-87562, 2026-10-21
+# X_PER_F_CE = -1.8347e-11 # +/- 0.097e-11 m/Hz #87558-87562, 2026-10-21
+# X_PER_F_NCE = 1.8347e-11 # +/- 0.097e-11 m/Hz #87558-87562, 2026-10-21
+# Slope measured at 75.0-75.8 MHz, between the two branches, on the Andor at 0.976 um/px. Offsets scaled with the slope,
+# so every x = 0 frequency and every commanded tone is unchanged; only the um scale moves.
+X_TO_F_OFFSET_CE = 0.0013388522 * (1.620 / 1.8347) #90586-90589, 2026-10-31
+X_TO_F_OFFSET_NCE = -0.0014003160 * (1.620 / 1.8347) #90586-90589, 2026-10-31
+X_PER_F_CE = -1.620e-11 # +/- 0.034e-11 m/Hz #90586-90589, 2026-10-31
+X_PER_F_NCE = 1.620e-11 # +/- 0.034e-11 m/Hz #90586-90589, 2026-10-31
 
 from waxx.control.tweezer.tweezer_xmesh import tweezer_xmesh as mesh
 tweezer_xmesh = mesh(F_CE_MAX,F_CE_MIN,F_NCE_MAX,F_NCE_MIN,X_TO_F_OFFSET_CE,X_TO_F_OFFSET_NCE,X_PER_F_CE,X_PER_F_NCE)
