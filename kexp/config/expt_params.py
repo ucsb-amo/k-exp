@@ -75,7 +75,9 @@ class ExptParams(ExptParamsWaxx):
 
         # SLM settings
         self.dimension_slm_mask = 14.e-6 # this parameter has a bug -- it is actually writing "20 px", which ends up being 160um diameter (8 um per px)
-        self.phase_slm_mask = 0.323077 * np.pi  # 89420
+        # self.phase_slm_mask = 0.323077 * np.pi  # 89420
+        # self.phase_slm_mask = 0.5 * np.pi  #90243, 2026-10-30  # contrast 56 mV vs 35 at the old value, middle of the 0.425-0.575 pi plateau (user)
+        self.phase_slm_mask = 0.4125 * np.pi  #90249, 2026-10-30  # fine scan, pre-registered rule (user): best balance about the midpoint with read 1 >= 2/3 of reads 2-5; unconstrained pick 0.5375 pi
         self.px_slm_grating_position_x = 994
         self.px_slm_grating_position_y = 824
         self.px_slm_phase_mask_position_x = 1129
@@ -186,7 +188,8 @@ class ExptParams(ExptParamsWaxx):
         # self.t_raman_pi_pulse = 3.8413e-06 #89744, 2026-10-29
         # self.t_raman_pi_pulse = 3.4753e-06 #89767, 2026-10-29
         # self.t_raman_pi_pulse = 3.6616e-06 #89933, 2026-10-29
-        self.t_raman_pi_pulse = 3.6235e-06 #90199, 2026-10-30
+        # self.t_raman_pi_pulse = 3.6235e-06 #90199, 2026-10-30
+        self.t_raman_pi_pulse = 3.7045e-06 #90236, 2026-10-30
          
         # DAC controlled AO amplitudes
         self.amp_d1_3d_c = 0.3
@@ -406,7 +409,8 @@ class ExptParams(ExptParamsWaxx):
         # self.frequency_raman_transition = 119.4636e6 #89435
         # self.frequency_raman_transition = 119.46388e6 #89768, 2026-10-29  # Ramsey 13 x 5, +/- 73 Hz, Raman lock 43.17 GHz
         # self.frequency_raman_transition = 119.463528e6 #89967, 2026-10-29  # Ramsey 13 x 5, +/- 130 Hz (-347 Hz vs #89934 at 20:33), Raman lock 45.98 GHz
-        self.frequency_raman_transition = 119.463801e6 #90200, 2026-10-30  # Ramsey 13 x 5, +/- 46 Hz, Raman lock 45.95 GHz
+        # self.frequency_raman_transition = 119.463801e6 #90200, 2026-10-30  # Ramsey 13 x 5, +/- 46 Hz, Raman lock 45.95 GHz
+        self.frequency_raman_transition = 119.463504e6 #90240, 2026-10-30  # Ramsey 13 x 5, +/- 68 Hz (-297 Hz vs #90200), Raman lock 45.95 GHz
 
         self.frequency_raman_transition_nf_1m1_20 = 460.7e6 # 1.5 G 1,-1 to 2,0
         self.frequency_raman_transition_nf_1m1_2m2 = 458.4e6 # 1.5 G 1,-1 to 2,-2

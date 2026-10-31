@@ -61,7 +61,8 @@ class ExptParams(expt_params_kexp):
         # self.frequency_lightshift = 2.384e+04  # Hz, +/- 1.6e+03 Hz, imaging amp 0.2, t_pulse 5 us #89424
         # self.frequency_lightshift = 2.337e+04  # Hz, +/- 1.5e+03 Hz, imaging amp 0.2, t_pulse 5 us #89769, 2026-10-29
         # self.frequency_lightshift = 2.465e+04  # Hz, +/- 3.6e+03 Hz, imaging amp 0.2, t_pulse 5 us #89935, 2026-10-29
-        self.frequency_lightshift = 2.375e+04  # Hz, +/- 1.8e+03 Hz, imaging amp 0.2, t_pulse 5 us #90201, 2026-10-30
+        # self.frequency_lightshift = 2.375e+04  # Hz, +/- 1.8e+03 Hz, imaging amp 0.2, t_pulse 5 us #90201, 2026-10-30
+        self.frequency_lightshift = 2.195e+04  # Hz, +/- 1.1e+03 Hz, imaging amp 0.2, t_pulse 5 us #90242, 2026-10-30
                 
         # calibration run 89425 (S_z endpoints from 'fit', deg-2 S_z response fit)
         self.t_img_pulse = 5e-06  # s
