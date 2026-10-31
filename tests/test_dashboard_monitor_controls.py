@@ -69,18 +69,18 @@ def test_the_header_follows_the_supervisor_and_asks_before_stop_and_restart(wire
     assert header._stop_btn.isEnabled()
     sup.state_changed.emit(SupervisorState.IDLE)
     assert header._start_btn.isEnabled() and not header._stop_btn.isEnabled()
-    header._start_btn.click()
+    header._start_btn.trigger()
     assert sup.calls == ["start"]
     sup.state_changed.emit(SupervisorState.RUNNING)
     answer[0] = box.StandardButton.No
-    header._stop_btn.click()
-    header._restart_btn.click()
+    header._stop_btn.trigger()
+    header._restart_btn.trigger()
     assert sup.calls == ["start"]                           # both declined
     assert "killed at once" in answers[0] and "does not start the monitor" in answers[1]
     assert "Monitor panel's Monitor tab" in answers[1]
     answer[0] = box.StandardButton.Yes
-    header._stop_btn.click()
-    header._restart_btn.click()
+    header._stop_btn.trigger()
+    header._restart_btn.trigger()
     assert sup.calls == ["start", "stop", "restart"]
 
 
