@@ -70,8 +70,8 @@ MONITOR_EXPT_PATH = _safe_join(EXPT_PACKAGE_DIR, 'experiments', 'tools', 'monito
 RESET_STATE_EXPT_PATH = _safe_join(EXPT_PACKAGE_DIR, 'experiments', 'tools', 'mot_observe.py')
 # Run back to back by the monitor server from the Device Control GUI's Composite
 # tab (waxx.util.device_state.run_loop): key -> (card title, experiment file).
-# Only these files can be looped -- plus, for 'expt_loop' (Sequences tab, file
-# chosen at Start), any .py file under kexp/experiments except the monitor.
+# Only these files can be looped -- plus, for 'expt_loop' (the Monitor panel's
+# Loops, file chosen at Start), any .py file under kexp/experiments except the monitor.
 AUTO_TOF_EXPT_PATH = _safe_join(EXPT_PACKAGE_DIR, 'experiments', 'tools', 'auto_tof.py')
 EXPT_LOOP_ROOT = _safe_join(EXPT_PACKAGE_DIR, 'experiments')
 # The BEC TOF loop's scan, set from its card (⚙; waxx.util.device_state.loop_scan):
