@@ -22,8 +22,9 @@ def test_registry_and_layout_entries():
     for table in (dashboard_layout.SERVER_PLACEMENT, dashboard_layout.CLIENT_PLACEMENT,
                   dashboard_layout.AUTO_LAYOUT_HINTS):
         assert "raman_fp_lock" in table
-    # not autostarted anywhere: starting it takes the port from a person's terminal
-    assert all("raman_fp_lock" not in ids for ids in dashboard_hosts.HOST_AUTOSTART_SERVERS.values())
+    # autostarted on kong only (the PC the lock Quarto is plugged into)
+    assert "raman_fp_lock" in dashboard_hosts.HOST_AUTOSTART_SERVERS["192.168.1.76"]
+    assert "raman_fp_lock" not in dashboard_hosts.HOST_AUTOSTART_SERVERS["*"]
     # the TPI server is told about the port (it waits only for TPI-like ports)
     tpi = server_registry.get_spec("tpi")
     assert f"{RAMAN_FP_LOCK_COM}=raman_fp_lock" in tpi.server_cmd
