@@ -106,6 +106,9 @@ MAGNETOMETER_REFERENCE_CSV_PATH = _safe_join(DATA_DIR, 'magnetometer_reference.c
 # Daily field-log CSVs written by the magnetometer server (one reading per second).
 MAGNETOMETER_LOG_DIR = _safe_join(DATA_DIR, 'magnetometer_data')
 
+# Daily CSVs of the Bristol wavemeter (1 row/s: unix_s, frequency_thz, std_hz, n), written by its server.
+BRISTOL_LOG_DIR = _safe_join(DATA_DIR, 'bristol_wavemeter_logs')
+
 ### Raman FP-cavity peak-separation lock (qNimble Quarto, pid_frequency_stabilize_Raman_v2)
 RAMAN_FP_LOCK_COM = 'COM35'
 # Daily CSVs of every lock status line, written by the lock server.
