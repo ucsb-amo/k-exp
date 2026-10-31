@@ -75,34 +75,6 @@ def test_compiles_with_the_read_model_on(monkeypatch, tmp_path, path, cal_enable
         device_mgr.close_devices()
 
 
-@pytest.mark.parametrize("path", ["standard", "fast"])
-def test_compiles_with_two_read_models_interleaved_per_shot(monkeypatch, tmp_path, path):
-    """The pre-registered A/B: p.feedback_read_model scanned over {0, 1}, the M1 set
-    in read_model1_*; select_read_model runs at the start of every shot."""
-    module, base = PATHS[path]
-    src = (EXPT.replace("MODULE", module).replace("BASECLASS", base)
-           .replace("TWIST", "0.0").replace("SLOPE", "0.0").replace("ALS", 'float("nan")')
-           .replace("COH", "0.7215")
-           .replace("self.xvar('feedback_fractional_initial_offset', np.array([0., 0.5, 1.]))",
-                    "self.p.read_model1_alpha_lightshift = 1.432\n"
-                    "        self.p.read_model1_twist_per_sz = 0.869\n"
-                    "        self.p.read_model1_coherence = 0.739\n"
-                    "        self.p.read_model1_coherence_slope = 0.0\n"
-                    "        self.xvar('feedback_read_model', np.array([0., 1., 1., 0.]))"))
-    orig = subscan.EXPT
-    monkeypatch.setattr(subscan, "EXPT", src)
-    try:
-        cls, exp, device_mgr = subscan._build(monkeypatch, tmp_path, cal_enabled=0)
-    finally:
-        monkeypatch.setattr(subscan, "EXPT", orig)
-    try:
-        assert exp.read_model_per_shot and exp.rm1_twist == 0.869 and exp.rm1_alpha_lightshift == 1.432
-        assert exp.rm1_coherence == 0.739 and not exp.rm0_twist_on and exp.rm0_coherence == 0.7215
-        subscan._compile(cls, exp)
-    finally:
-        device_mgr.close_devices()
-
-
 def test_compiles_with_the_read_model_off(monkeypatch, tmp_path):
     cls, exp, device_mgr = _build(monkeypatch, tmp_path, "standard", 0.0, 0.0, 'float("nan")', 0.7215)
     try:

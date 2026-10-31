@@ -1,10 +1,5 @@
 from artiq.experiment import *
-from artiq.language import now_mu, delay, delay_mu, TFloat, TArray, TTuple, at_mu, parallel
-from kexp import Base, img_types, cameras, aprint
-from kexp.base import Feedback
-from kexp.calibrations.imaging import integrator_calibration
 import numpy as np
-from numpy import int64
 
 from kexp.experiments.HF_experiments.feedback.base_expt_feedback import FeedbackExpt
 
@@ -50,11 +45,7 @@ class feedback_remesh(EnvExperiment, FeedbackExpt):
 
     @kernel
     def per_feedback_loop_end(self, idx):
-        """
-        Store the probabilities and the frequency mesh at each step. Note the
-        use of +1 on the index, this accounts for the first row of each
-        corresponding to before the first shot.
-        """
+        # +1: row 0 holds the prior
         self.data.probabilities.put_data_1d(self.P0, i=idx+1)
         self.data.omega_raman_mesh.put_data_1d(self.omega_guess_list, i=idx+1)
     

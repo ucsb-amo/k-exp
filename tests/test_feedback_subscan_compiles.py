@@ -164,44 +164,20 @@ def test_without_the_sub_scan_the_run_compiles_and_declares_nothing(monkeypatch,
         device_mgr.close_devices()
 
 
-def test_the_guards_refuse_the_apply_path_and_the_preshot_gain(monkeypatch, tmp_path):
+def test_the_guard_refuses_the_apply_path(monkeypatch, tmp_path):
     from kexp.experiments.HF_experiments.feedback.base_expt_feedback import FeedbackExpt
     e = SimpleNamespace(p=SimpleNamespace(cal_apply=1))
     with pytest.raises(NotImplementedError):
         FeedbackExpt._declare_readout_calibration(e)
-    e = SimpleNamespace(p=SimpleNamespace(cal_apply=0, preshot_endpoint_gain=0.5))
-    with pytest.raises(ValueError, match="mutually exclusive"):
-        FeedbackExpt._declare_readout_calibration(e)
-
-
-def test_with_cal_enabled_0_the_preshot_gain_and_apd_map_are_not_refused():
-    # cal_enabled = 0 must prepare a run that uses either readout path as before
-    from kexp.experiments.HF_experiments.feedback.base_expt_feedback import FeedbackExpt
-
-    class _Reached(Exception):
-        pass
-
-    def _add_sub_scan(*a, **k):
-        raise _Reached
-
-    for p in (SimpleNamespace(cal_enabled=0, cal_apply=0, preshot_endpoint_gain=0.5,
-                              feedback_apd_map_enabled=False),
-              SimpleNamespace(cal_enabled=0, cal_apply=0, preshot_endpoint_gain=0.,
-                              feedback_apd_map_enabled=True)):
-        p.cal_readout_modes = [0., 1.]
-        p.t_raman_pi_pulse, p.t_raman_pulse_offset = 1e-6, 0.
-        p.cal_every_n_shots, p.cal_alternate = 20, 1
-        e = SimpleNamespace(p=p, add_sub_scan=_add_sub_scan, CAL_READS_PARAMS=())
-        with pytest.raises(_Reached):          # past the guards, into the declaration
-            FeedbackExpt._declare_readout_calibration(e)
-        p.cal_enabled = 1
-        with pytest.raises(ValueError):
-            FeedbackExpt._declare_readout_calibration(e)
 
 
 def test_calibration_kernel_triggers_no_camera_and_no_scope():
     from kexp.experiments.HF_experiments.feedback.base_expt_feedback import FeedbackExpt
-    src = inspect.getsource(FeedbackExpt.calibration_kernel) + inspect.getsource(FeedbackExpt.calibration_read)
-    body = "\n".join(l for l in src.splitlines() if not l.strip().startswith(("#", '"""')) )
+    src = "\n".join(inspect.getsource(fn) for fn in (
+        FeedbackExpt.calibration_kernel, FeedbackExpt.calibration_read, FeedbackExpt.readout_events,
+        FeedbackExpt.readout_pulse, FeedbackExpt.readout_prepare_sample))
+    src = re.sub(r'""".*?"""', "", src, flags=re.S)
+    body = "\n".join(l for l in src.splitlines() if not l.strip().startswith("#"))
+    assert "self.readout_events()" in body and "self.integrator.begin_integrate" in body
     for token in ("abs_image", "trigger_camera", "pd_scope_trig", "self.diag.", "camera_trigger", "self.data."):
-        assert not re.search(re.escape(token) + r"\w*\(", body.split('"""')[-1]), token
+        assert not re.search(re.escape(token) + r"\w*\(", body), token

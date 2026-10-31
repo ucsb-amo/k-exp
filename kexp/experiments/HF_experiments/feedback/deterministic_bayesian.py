@@ -1,41 +1,16 @@
 from artiq.experiment import *
-from artiq.language import now_mu, delay, delay_mu, TFloat, TArray, TTuple, at_mu, parallel
-from kexp import Base, img_types, cameras
-from kexp.base import Feedback
+from artiq.language import TFloat, TArray
 from kexp.base.feedback import feedback_grid_convention, feedback_hypothesis_grid, feedback_offset_frac
-from kexp.calibrations.imaging import integrator_calibration
 import numpy as np
-from numpy import int64
-
-from kexp.util.artiq.async_print import aprint
 
 from kexp.experiments.HF_experiments.feedback.base_expt_feedback import FeedbackExpt
 
 
 def maximin_grid_order(m, n_pulses):
-    """Order in which to visit grid indices: centre first, then farthest-from-visited.
+    """Order in which to visit grid indices: centre first, then farthest-from-visited (greedy maximin).
 
-    A greedy maximin ("farthest point") sequence. Pulse 1 sits at the grid
-    centre; every later pulse goes to the unvisited index whose MINIMUM distance
-    to all already-visited indices is largest.
-
-    WHY NOT JUST SWEEP THE GRID IN ORDER.  The obvious schedule --
-    rint(linspace(0, m-1, N_pulses)) -- walks the grid monotonically, which
-    makes pulse index and drive frequency 99.9% correlated (0.093 for this
-    ordering).  Measurement back-action damps the transverse Bloch component
-    every cycle, so early pulses carry far more information than late ones; with
-    a monotonic sweep that puts all the informative pulses at one end of the
-    grid, and the posterior inherits a bias toward that end no matter where
-    resonance actually is.  Spreading the early pulses across the whole grid
-    removes the confound.
-
-    Ties are broken deterministically, and symmetrically in the sense that the
-    sequence alternates sides of the grid rather than favouring one:
-      1. prefer the candidate farthest from the MOST RECENTLY visited index;
-      2. then one on the opposite side of the centre from the last index;
-      3. then the lower index, purely so the result is reproducible.
-    For m = 21, N_pulses = 17 this gives detunings
-    0, +3, -3, +1.5, -1.5, +2.4, -2.4, +0.9, -0.9, ... in units of the span.
+    Ties go to the candidate farthest from the last index, then opposite the centre from it, then
+    the lower index. Worse than the sweep in get_new_pulse_list (see the comment there).
 
     Returns an int array of length min(n_pulses, m); indices never repeat.
     """
@@ -79,17 +54,9 @@ class feedback_deterministic_bayesian(EnvExperiment, FeedbackExpt):
         # self.p.frequency_feedback_grid_full_span = 509.8e3 # 4 Omega at t_pi 3.9229 us, the old +-2 Omega
         # self.p.feedback_guess_span_Omega = 2.0 # convention 1
 
-        # Slide the grid across resonance. The kernel snaps the grid so its
-        # nearest point lands exactly on resonance (_initialize_frequency_grid),
-        # so an offset of k grid steps does not move the grid frequencies off
-        # resonance -- it moves WHICH INDEX is the resonant one. That is the
-        # thing being scanned -- how the posterior behaves when the truth sits
-        # near the edge of the prior rather than its middle.
-        # The offset is the fraction of the largest allowed, (m - 2) / 2 = 9.5
-        # steps. Offsets of -9.5, -5, 0, 5, 9.5 steps land resonance on grid
-        # indices 1, 5, 10, 15, 19. Before 2026-10-28 the ends were 10 steps,
-        # resonance on the edge points 0 and 20; convention 2 keeps resonance off
-        # the edge points, so the ends moved in half a step (user, 2026-10-28).
+        # Slide the grid across resonance: the kernel snaps a point onto resonance, so an offset of k
+        # steps moves WHICH INDEX is resonant, testing the truth near the edge of the prior. As a
+        # fraction of the largest allowed, (m - 2) / 2 = 9.5 steps: resonance on indices 1, 5, 10, 15, 19.
         offset_steps = np.array([-9.5, -5., 0., 5., 9.5])
         self.xvar('feedback_fractional_initial_offset',
                   feedback_offset_frac(offset_steps, self.p.feedback_grid_size))
@@ -98,32 +65,17 @@ class feedback_deterministic_bayesian(EnvExperiment, FeedbackExpt):
 
     @rpc
     def get_new_pulse_list(self, seed=0) -> TArray(TFloat):
-        '''linearly spaced (rounded to grid)
+        '''N_pulses points swept monotonically across the grid; seed is unused.
 
-        seed is accepted to match the base-class signature but is unused: this
-        experiment's pulse list is fully deterministic (grid-indexed), so
-        p.pulse_list_seed has no effect here.
-
-        The grid is REBUILT here from the current params rather than read off
-        p.omega_guess_list. That is not redundancy -- scan_kernel calls this
-        BEFORE initialize_feedback(), so p.omega_guess_list still holds the
-        PREVIOUS shot's grid at this point. That does not matter while the grid
-        is constant across shots, but this experiment scans
-        feedback_fractional_initial_offset, which moves the grid every shot, and
-        reading the stale list would drive shot N at shot N-1's frequencies --
-        silently, and in exactly the quantity being scanned.
-
-        The construction is feedback_hypothesis_grid, the host copy of
-        Feedback._initialize_frequency_grid (snap, tie rule and grid shift
-        included), from this shot's derived Omega-unit span and offset.
+        The grid is rebuilt here (feedback_hypothesis_grid, the host copy of
+        Feedback._initialize_frequency_grid): scan_kernel calls this before initialize_feedback(),
+        so p.omega_guess_list still holds the previous shot's grid, and this experiment scans it.
         '''
         m = int(self.p.feedback_grid_size)
         Omega = np.pi / float(self.p.t_raman_pi_pulse)
         omega_res = 2.0 * np.pi * float(np.ravel(self.p.frequency_raman_transition)[0])
         span = float(np.ravel(self.p.feedback_guess_span_Omega)[0])
-        # During prepare this may still be the whole xvar array; per shot the
-        # scan machinery has already plugged in that shot's scalar (and
-        # compute_derived its Omega-unit offset).
+        # the whole xvar array during prepare, this shot's scalar afterwards
         offset = float(np.ravel(self.p.feedback_initial_offset_Omega)[0])
         shift = float(np.ravel(self.p.feedback_grid_shift)[0])
 
@@ -132,20 +84,11 @@ class feedback_deterministic_bayesian(EnvExperiment, FeedbackExpt):
             convention=feedback_grid_convention(self.p),
             center_exact=int(self.p.feedback_grid_center_exact_offset))
 
-        # Monotonic sweep of the grid. maximin_grid_order (below) was tried as an
-        # alternative -- centre-out, to decorrelate pulse index from drive
-        # frequency, since back-action makes early pulses dominate. On synthetic
-        # known-truth data at 17 pulses it is consistently WORSE: hit rate
-        # 0.205 +/- 0.012 against 0.256 +/- 0.008 for this sweep over 4 noise
-        # seeds, and it introduces a -0.15 to -0.21 bias slope where the sweep
-        # has none. It spends pulses 2 and 3 at +/-span, where the contrast is
-        # only 1/(1+span^2), so the two least-damped pulses land on the least
-        # informative detunings. Keep the sweep unless that is re-measured.
+        # Monotonic sweep. maximin_grid_order was worse on synthetic data at 17 pulses (hit rate 0.205 +/-
+        # 0.012 against 0.256 +/- 0.008 over 4 noise seeds, -0.15 to -0.21 bias slope): re-measure first.
         sample_idx = np.rint(np.linspace(0, m - 1, self.p.N_pulses))
         sample_idx = np.clip(sample_idx, 0, m - 1).astype(int)
         self.p.omega_pulse_list = omega_grid[sample_idx]
-        # Callers assign the return value (scan_kernel does so every shot);
-        # returning None here would null out the list we just built.
         return self.p.omega_pulse_list
 
     @kernel
@@ -154,11 +97,7 @@ class feedback_deterministic_bayesian(EnvExperiment, FeedbackExpt):
 
     @kernel
     def per_feedback_loop_end(self, idx):
-        """
-        Store the probabilities and the frequency mesh at each step. Note the
-        use of +1 on the index, this accounts for the first row of each
-        corresponding to before the first shot.
-        """
+        # +1: row 0 holds the prior
         self.data.probabilities.put_data_1d(self.P0, i=idx+1)
     
     @kernel

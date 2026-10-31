@@ -1,11 +1,9 @@
 from artiq.experiment import *
-from artiq.language import now_mu, delay, delay_mu, TFloat, TArray, TTuple, TInt32, at_mu, parallel
-from kexp import Base, img_types, cameras, aprint
+from artiq.language import now_mu, delay, TFloat, TArray, at_mu
+from kexp import Base, img_types, cameras
 from kexp.base import Feedback, RandomRamanPulseTimes
 from kexp.base.feedback import check_feedback_grid_params
-from kexp.calibrations.imaging import integrator_calibration
 import numpy as np
-from numpy import int64
 
 from kexp.experiments.HF_experiments.feedback.expt_params_feedback import ExptParams as ExptParamsFeedback
 from kexp.experiments.HF_experiments.feedback.data_vault_feedback import DataVault
@@ -50,16 +48,7 @@ class FeedbackExpt(Base, Feedback, RandomRamanPulseTimes):
 
         ### setup data containers
 
-        self.idx = 0
-
-        # the pre-shot (read, resonant pi, read) leaves the spin all down, and the
-        # model must start where the atoms are; Feedback.__init__ reads this
-        self.p.feedback_initial_sz = -1.0 if self.p.preshot_contrast else 1.0
-
-        # the hypothesis grid (kexp.base.feedback, 'hypothesis grid'): refused out of
-        # range or set the wrong way before a run id is used; then the derived
-        # Omega-unit values are brought up to date with what prepare() set, before
-        # Feedback.__init__ builds the grid from them
+        # refuse a bad grid before a run id is used, then derive its Omega-unit values
         check_feedback_grid_params(self.p, self.scan_xvars)
         self.p.compute_feedback_grid()
 
@@ -70,32 +59,17 @@ class FeedbackExpt(Base, Feedback, RandomRamanPulseTimes):
 
         self.p.omega_pulse_list = self.get_new_pulse_list(seed=self.p.pulse_list_seed)
 
-        ### randomized raman pulse-time list
-        # draw once so the list attribute has its compile-time shape/dtype
+        # draw once so the list has its compile-time shape
         self.p.t_raman_pulse_list = self.get_new_t_raman_pulse_list(
             seed=self.resolve_t_raman_pulse_seed())
 
-
         self.data.feedback_data_containers(self.p)
-        # [APD read of the prepared state (all up), APD read after a resonant pi pulse
-        # (all down)] per shot when p.preshot_contrast; stays 0 otherwise
-        self.data.preshot_apd = self.data.add_data_container(2)
-        # [v_apd_all_up, v_apd_all_down, N_photons_per_shot] the posterior used this
-        # shot, and 1/0 = per-shot estimate updated / guarded (p.preshot_endpoint_gain
-        # > 0; stays 0 with the gain off); written on pre-shot shots only
-        self.data.preshot_endpoints = self.data.add_data_container(4)
         # populate first row of probabilities with pre-pulse lists
         self.data.probabilities.shot_data[0, :] = self.P0
         self.data.omega_raman_mesh.shot_data[0, :] = self.omega_guess_list
 
-        # the interleaved readout calibration (p.cal_enabled): a sub-scan of
-        # up / down readout points between the data shots, recorded raw and
-        # evaluated on the host (ReadoutCalibrationRecord); phase 1 never
-        # changes the kernel's constants
-        # The sub-scan object always exists (calibration_kernel names
-        # self.cal, and the compiler type-checks it whether or not a point is
-        # ever taken); with cal_enabled = 0 it is turned off before the run
-        # is prepared: no points, no containers in the file, no record.
+        # interleaved readout calibration: raw up/down points between data shots, evaluated on
+        # the host. self.cal must exist for the compiler; cal_enabled = 0 turns it off here.
         self.readout_cal = None
         self._declare_readout_calibration()
         if not int(self.p.cal_enabled):
@@ -109,7 +83,7 @@ class FeedbackExpt(Base, Feedback, RandomRamanPulseTimes):
     CAL_READS_PARAMS = ("amp_imaging", "t_img_pulse", "frequency_detuned_hf_midpoint",
                         "phase_slm_mask", "dimension_slm_mask", "slm_mask_every_shot",
                         "t_raman_pi_pulse", "t_raman_pulse_offset", "frequency_raman_transition",
-                        "fraction_power_raman", "t_preshot_gap", "t_tweezer_hold",
+                        "fraction_power_raman", "cal_t_raman_to_read", "t_tweezer_hold",
                         "t_between_pulses_mu", "cal_t_between_reads_mu", "cal_n_reads")
 
     def _declare_readout_calibration(self):
@@ -118,15 +92,6 @@ class FeedbackExpt(Base, Feedback, RandomRamanPulseTimes):
         if int(p.cal_apply) != 0:
             raise NotImplementedError("cal_apply != 0: the in-run apply path is not built "
                                       "(phase 1 records and evaluates only)")
-        # only with the sub-scan on: with cal_enabled = 0 a run that uses the
-        # preshot gain or the APD map is prepared exactly as before
-        if int(getattr(p, "cal_enabled", 1)):
-            if float(np.ravel(p.preshot_endpoint_gain)[0]) > 0.:
-                raise ValueError("cal_enabled with preshot_endpoint_gain > 0: the two readout "
-                                 "paths are mutually exclusive")
-            if bool(p.feedback_apd_map_enabled):
-                raise ValueError("cal_enabled with feedback_apd_map_enabled: the calibration "
-                                 "reads raw volts, the map would not describe them")
         modes = [float(m) for m in np.atleast_1d(p.cal_readout_modes)]
         if not modes or any(m not in (0., 1.) for m in modes):
             raise ValueError(f"cal_readout_modes must be a list of 0 / 1, got {modes}")
@@ -134,10 +99,9 @@ class FeedbackExpt(Base, Feedback, RandomRamanPulseTimes):
         self.cal = self.add_sub_scan("cal", every_n_shots=int(p.cal_every_n_shots), at_start=True,
                                      alternate=bool(int(p.cal_alternate)),
                                      reads_params=self.CAL_READS_PARAMS,
-                                     require_push=bool(getattr(self, "_cal_require_push", True)))
-        # one event = one pair (up, down); the readout mode cycles event by
-        # event (a 2-D sub-scan xvar), and the pair order reverses every other
-        # cycle, so each mode sees both orders
+                                     require_push=True)
+        # one event = one pair (up, down); the mode cycles event by event, the pair order every
+        # other cycle, so each mode sees both orders
         self.cal.xvar("t_raman_pulse", np.array([0., t_down]))
         self.cal.xvar("cal_readout_mode", np.array([[m, m] for m in modes]))
         self.cal.data.apd = self.cal.add_data_container(int(p.cal_n_reads))
@@ -156,13 +120,10 @@ class FeedbackExpt(Base, Feedback, RandomRamanPulseTimes):
 
         self.core.wait_until_mu(now_mu())
         self.p.omega_pulse_list = self.get_new_pulse_list(seed=self.p.pulse_list_seed)
-        # pulse-time list is a function of the seed (p.t_raman_pulse_seed, or a
-        # fresh per-shot draw when that is 0); record both for this shot
         t_raman_pulse_seed = self.resolve_t_raman_pulse_seed()
         self.p.t_raman_pulse_list = self.get_new_t_raman_pulse_list(seed=t_raman_pulse_seed)
         self.data.t_raman_pulse_seed.put_data(float(t_raman_pulse_seed))
         self.data.t_raman_pulse.put_data_1d(self.p.t_raman_pulse_list)
-        self.omega_raman = self.p.omega_pulse_list[0]
         self.core.break_realtime()
 
         self.integrator.init()
@@ -172,52 +133,16 @@ class FeedbackExpt(Base, Feedback, RandomRamanPulseTimes):
         
         self.set_imaging_detuning(frequency_detuned=self.p.frequency_detuned_hf_midpoint)
         # self.slm.write_phase_mask_kernel(phase=self.p.phase_slm_mask, verbose=False)
-        # p.slm_mask_every_shot = 1: rewrite the phase-dot mask every shot, as the
-        # phase_spot scans do. 2026-09-28 (runs 83472 / 83473): with the mask
-        # written only at init_kernel the APD up-down contrast fell from ~32 to
-        # ~14 mV within ~2 min of a run; rewritten every shot it held ~28 mV.
+        # init-only mask: APD contrast fell 32 -> 14 mV in ~2 min; per shot it held ~28 mV (83472/83473)
         if self.p.slm_mask_every_shot:
             self.slm.write_phase_mask_kernel(phase=self.p.phase_slm_mask, dimension=self.p.dimension_slm_mask)
         self.imaging.set_power(self.p.amp_imaging)
 
-        # squeeze=False (user, 2026-09-27): the APD-state and joint calibrations
-        # (apd_voltage_vs_state_2, apd_joint_calibration) prepare unsqueezed
-        # tweezers, and with squeeze=True the on-resonance simulation check
-        # (83204) did not match the calibrated readout.
+        # unsqueezed, as the APD calibrations prepare; squeezed failed the on-resonance sim check (83204)
         # self.prepare_hf_tweezers(squeeze=True)
         self.prepare_hf_tweezers(squeeze=False)
-        if self.p.preshot_contrast:
-            # pre-shot contrast (user, 2026-09-28): read the prepared state (all up),
-            # resonant pi pulse (commanded length = rate pi time + turn-on offset),
-            # read again (all down). measure_integrated_v re-arms t_apd_slack after
-            # each blocking read. Then the drive moves to the initial feedback
-            # frequency; the model starts all down (p.feedback_initial_sz = -1).
-            self.prep_raman(frequency_transition=self.p.frequency_raman_transition,
-                            phase_mode=0)
-            v_preshot_up = self.imaging.measure_integrated_v(self.p.t_img_pulse)
-            self.data.preshot_apd.put_data(v_preshot_up, 0)
-            delay(self.p.t_preshot_gap)
-            self.raman.pulse(self.p.t_raman_pi_pulse + self.p.t_raman_pulse_offset)
-            delay(self.p.t_preshot_gap)
-            v_preshot_down = self.imaging.measure_integrated_v(self.p.t_img_pulse)
-            self.data.preshot_apd.put_data(v_preshot_down, 1)
-            # p.preshot_endpoint_gain > 0: this shot's endpoints from the pre-shot
-            # reads, smoothed over shots (Feedback.update_shot_endpoints); the
-            # endpoints the posterior uses are recorded every pre-shot shot
-            if self.preshot_endpoint_gain > 0.:
-                self.data.preshot_endpoints.put_data(
-                    float(self.update_shot_endpoints(v_preshot_up, v_preshot_down)), 3)
-            self.data.preshot_endpoints.put_data(self.v_apd_all_up, 0)
-            self.data.preshot_endpoints.put_data(self.v_apd_all_down, 1)
-            self.data.preshot_endpoints.put_data(self.N_photons_per_shot, 2)
-            # the blocking reads leave ~t_apd_slack of slack: re-arm before the DDS
-            # retune (83515 underflowed here without it); the spin sits at the pole
-            self.core.break_realtime()
-            self.raman.set(frequency_transition=self.omega_raman/(2*np.pi))
-            delay(self.p.t_preshot_gap)
-        else:
-            self.prep_raman(frequency_transition=self.omega_raman/(2*np.pi),
-                            phase_mode=0)
+        self.prep_raman(frequency_transition=self.omega_raman/(2*np.pi),
+                        phase_mode=0)
 
         t_pulse_start_mu = now_mu() + 500000
 
@@ -240,7 +165,6 @@ class FeedbackExpt(Base, Feedback, RandomRamanPulseTimes):
         self.abs_image()
 
         self.core.wait_until_mu(now_mu())
-        self.reset_initial_omega_from_params()
         delay(30.e-3)
 
     @kernel
@@ -257,8 +181,6 @@ class FeedbackExpt(Base, Feedback, RandomRamanPulseTimes):
         t_start_mu = t_start_mu & ~7
         t_step = t_start_mu
 
-        # mask the difference, not the constant, so the timestamp stays 8-aligned
-        # even if the 10000 is later changed to a non-multiple of 8
         at_mu((t_start_mu - 10000) & ~7)
 
         self.raman.set_frequency_fast(f)
@@ -267,14 +189,7 @@ class FeedbackExpt(Base, Feedback, RandomRamanPulseTimes):
         
         dT = self.p.t_between_pulses_mu
 
-        # Fixed turn-on delay between the programmed and ideal pulse times;
-        # applied to each drawn pulse time below.
-        # Use the explicit turn-on latency: the derived difference
-        # (t_raman_pulse - t_raman_pulse_ideal) is only correct while both times
-        # are scalars, and this experiment may scan t_raman_pulse.
-        # ExptParamsFeedback always defines t_raman_pulse_offset, so no fallback
-        # is needed here -- and none is possible: getattr() and truthiness casts
-        # on floats are outside the compiled kernel subset.
+        # the explicit offset: t_raman_pulse - t_raman_pulse_ideal is wrong when t_raman_pulse is scanned
         t_turn_on_delay = self.p.t_raman_pulse_offset
 
         at_mu(t_start_mu)
@@ -284,7 +199,7 @@ class FeedbackExpt(Base, Feedback, RandomRamanPulseTimes):
             self.per_feedback_loop_top(idx=i)
             f = self.omega_raman / (2*np.pi)
 
-            # pulse i time (drawn per shot; see get_new_t_raman_pulse_list)
+            # pulse i time
             t_pulse = self.p.t_raman_pulse_list[i]
             self.t_raman_pulse_current = t_pulse
             self.t_raman_pulse_ideal_current = t_pulse - t_turn_on_delay
@@ -312,11 +227,7 @@ class FeedbackExpt(Base, Feedback, RandomRamanPulseTimes):
             if i > (self.p.n_initial_shots_before_remesh-1):
                 self.maybe_remesh(self._posterior_std, omega_center=omega_posterior_mean)
 
-            # Gap between the start of pulse i and pulse i+1: budgets pulse i's
-            # drawn duration plus imaging, calculation slack, and the next
-            # pulse's frequency-set pretrigger, so the period floats with the
-            # drawn pulse times. The analysis reconstructs this per step from
-            # the saved data.t_raman_pulse (FeedbackReplayCore._compute_dT_rr_mu).
+            # the period floats with the drawn pulse time; replay rebuilds it from data.t_raman_pulse
             dT = self.compute_t_between_pulses_mu(
                 t_calculation_slack_compensation_mu=self.p.t_calculation_slack_compensation_mu,
                 t_raman_pulse=t_pulse,
@@ -327,10 +238,7 @@ class FeedbackExpt(Base, Feedback, RandomRamanPulseTimes):
 
             # time of result of pulse i
             self.data.t.put_data(t + t_pulse + self.p.t_img_pulse, i)
-            # result of pulse i: the model S_z of grid point zidx (the snapped point at
-            # prepare time). With p.feedback_grid_shift != 0 (convention 2) no point is on
-            # resonance and this is the point feedback_grid_shift steps from it; the
-            # replay's s_z_rr propagates exact resonance on its own
+            # model S_z of grid point zidx: exact resonance only with feedback_grid_shift = 0
             self.data.s_z.put_data(self.state_z[self.zidx], i)
 
             t_step += dT
@@ -339,19 +247,35 @@ class FeedbackExpt(Base, Feedback, RandomRamanPulseTimes):
 
         self.per_scan_kernel_end()
 
+    # ---- the readout: every read path is built from these two ------------
+
     @kernel
-    def measurement(self, i):
-        T_CONV_MU = 80
+    def readout_pulse(self):
+        """Integrator gate and imaging pulse; leaves the cursor at the sample time."""
         self.integrator.begin_integrate(reset=False)
         self.imaging.pulse(self.p.t_img_pulse)
         self.integrator.stop_and_settle()
 
+    @kernel
+    def readout_prepare_sample(self):
+        """At the sample time: stage the next fast frequency update and schedule the integrator
+        clear; leaves the cursor at the sample time."""
+        T_CONV_MU = 80
         t0 = now_mu()
         self.raman.stage_ffua()
         # start the clear after the integrator voltage is already in the sampler
         at_mu(t0 + T_CONV_MU)
         self.integrator.clear(t=0)
         at_mu(t0)
+
+    @kernel
+    def readout_events(self):
+        self.readout_pulse()
+        self.readout_prepare_sample()
+
+    @kernel
+    def measurement(self, i):
+        self.readout_events()
         self.data.apd.shot_data[i] = self.integrator.sample()
         v = self.convert_measurement(self.data.apd.shot_data[i])
         return v
@@ -360,35 +284,19 @@ class FeedbackExpt(Base, Feedback, RandomRamanPulseTimes):
 
     @kernel
     def calibration_read(self, i) -> TFloat:
-        """One readout pulse the way this class's data shots read it:
-        measurement()'s integrator timeline, in fast-frequency-update mode,
-        without writing the main scan's apd container. A class with its own
-        read path (the fast-path session copies) overrides this."""
-        T_CONV_MU = 80
-        self.integrator.begin_integrate(reset=False)
-        self.imaging.pulse(self.p.t_img_pulse)
-        self.integrator.stop_and_settle()
-        t0 = now_mu()
-        self.raman.stage_ffua()
-        at_mu(t0 + T_CONV_MU)
-        self.integrator.clear(t=0)
-        at_mu(t0)
+        """measurement() without writing the main scan's apd container. A class with its own read
+        path overrides this."""
+        self.readout_events()
         return self.integrator.sample()
 
     @kernel
     def calibration_kernel(self):
-        """One point of the readout sub-scan: the data shot's preparation,
-        then a raman pulse of p.t_raman_pulse (0 for the prepared state, the
-        pi time for all down) and p.cal_n_reads APD reads -- the data shot's
-        readout (calibration_read, p.cal_readout_mode 0) or the calibration
-        run's (warmup_imaging + integrated_imaging_pulse at
-        cal_t_between_reads_mu, mode 1). Ends with the sub-scan's data sync.
+        """One sub-scan point: the data shot's preparation, a raman pulse of p.t_raman_pulse (0 = all
+        up, pi time = all down), then p.cal_n_reads APD reads: mode 0 calibration_read, mode 1 the
+        calibration run's integrated_imaging_pulse at cal_t_between_reads_mu.
 
-        Triggers no camera and no scope: liveOD and the camera streams count
-        frames per shot, so one extra trigger would shift every later slot
-        (no abs_image, no diag frames -- Base.init_calibration_kernel turned
-        them off -- no pd_scope_trig3). The main scan's containers are never
-        written here."""
+        No camera or scope trigger, no write to the main scan's containers: liveOD and the camera
+        streams count frames per shot, so one extra trigger shifts every later slot."""
         self.integrator.init()
         self.set_imaging_detuning(frequency_detuned=self.p.frequency_detuned_hf_midpoint)
         if self.p.slm_mask_every_shot:
@@ -403,7 +311,7 @@ class FeedbackExpt(Base, Feedback, RandomRamanPulseTimes):
         t_start_mu = now_mu() + 500000
         at_mu(t_start_mu)
         self.raman.pulse(self.p.t_raman_pulse)
-        delay(self.p.t_preshot_gap)
+        delay(self.p.cal_t_raman_to_read)
         if cal_style:
             t = now_mu()
             for i in range(self.p.cal_n_reads):
@@ -430,10 +338,6 @@ class FeedbackExpt(Base, Feedback, RandomRamanPulseTimes):
     def per_scan_kernel_end(self):
         '''runs per scan kernel after everything else'''
         pass
-    
-    @kernel
-    def per_scan_kernel_top(self):
-        '''runs per scan kernel before anything else'''
     
     @kernel
     def per_feedback_loop_top(self, idx):

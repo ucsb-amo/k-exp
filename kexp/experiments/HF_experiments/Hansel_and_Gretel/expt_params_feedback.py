@@ -14,6 +14,7 @@ class ExptParams(expt_params_kexp):
 
         self.feedback_fractional_initial_offset = 0.0
         self.feedback_guess_span_Omega = 8.0
+        self.feedback_map_tie_mean = 1 # user, 2026-10-30; Feedback.map_frequency
 
         # Threshold for adaptive remesh: if posterior std < threshold * Omega,
         # halve the grid span and re-centre on omega_raman.  0.0 = disabled.
@@ -72,12 +73,6 @@ class ExptParams(expt_params_kexp):
         self.back_action_coherence = 0.8067
 
         self.feedback_measurement_midpoint_remap_enabled = True
-
-        # run 66415
-        self.feedback_apd_map_enabled = False
-        self.feedback_apd_map_a = 0.792175653
-        self.feedback_apd_map_b = 0.126581972
-        self.feedback_apd_map_verbose = True
 
         ### timing
         self.t_between_pulses_mu = int64(0)

@@ -1,6 +1,5 @@
 from artiq.experiment import *
-from artiq.language import now_mu, delay, delay_mu, TFloat, TArray, TTuple, at_mu, parallel
-from kexp import Base, img_types, cameras
+from artiq.language import TFloat, TArray
 import numpy as np
 
 from kexp.base.feedback import feedback_grid_convention, feedback_hypothesis_grid
@@ -52,17 +51,11 @@ class feedback_random_bayesian(EnvExperiment, FeedbackExpt):
 
     @rpc
     def get_new_pulse_list(self, seed=0) -> TArray(TFloat):
-        '''Pulse 0 at the initial offset, then N_pulses - 1 distinct grid
-        frequencies in random order (see the class docstring).
+        '''Pulse 0 at the initial offset, then N_pulses - 1 distinct grid frequencies in random order.
 
-        Called every shot from scan_kernel, after the scanner has written this
-        shot's xvar values into the host params, so the offset read here is the
-        current one. The grid is rebuilt from those params exactly as
-        Feedback._initialize_frequency_grid builds it (feedback_hypothesis_grid,
-        its host copy: snap, tie rule and grid shift included):
-        scan_kernel calls this BEFORE initialize_feedback(), so
-        p.omega_guess_list may still hold the previous shot's grid when the
-        initial offset is scanned.
+        The grid is rebuilt here (feedback_hypothesis_grid, the host copy of
+        Feedback._initialize_frequency_grid): scan_kernel calls this before initialize_feedback(),
+        so p.omega_guess_list may still hold the previous shot's grid when the offset is scanned.
         '''
         m = int(self.p.feedback_grid_size)
         n = int(self.p.N_pulses)

@@ -1,44 +1,27 @@
-from artiq.experiment import kernel, portable, rpc, TInt32, TInt64, TTuple, TArray, TFloat
+from artiq.experiment import kernel, portable, rpc, TInt32, TInt64, TArray, TFloat
 import numpy as np
 from numpy import int64
-from kexp.calibrations.imaging import integrator_calibration, imaging_lightshift
 from kexp.util.artiq.async_print import aprint
 
-dv = -1.
-
-#: State-dependent read model (2026-10-11; theta11 86179-86181: the read's z rotation and
-#: coherence depend on s_z at the read -- dphi = a + b s_z, R = R0 + R1 s_z; EXPLORATORY, post hoc).
-#: The kernel adds a twist d = READ_TWIST_SIGN * p.read_twist_per_sz * hz to its z-rotation angle
-#: alpha_z = dt_eff*(omega - omega_raman) - omega_z_lightshift*t_img (hz: the hypothesis' z AFTER the
-#: pulse, at the read), i.e. the same sense as the light-shift term. With theta11's dphi = a + b s_z
-#: and a in the light-shift term's sense (mr0), and hz == s_z (hz = +1: p1 = 1, the bright 'up'
-#: level), read_twist_per_sz = b with this sign = +1. If mr0 finds hz = -s_z, or dphi in the
-#: opposite sense, flip this ONE constant (every copy of the kernel reads it through Feedback).
+#: State-dependent read: the kernel adds d = READ_TWIST_SIGN * p.read_twist_per_sz * hz to its
+#: z-rotation angle alpha_z (hz: the hypothesis' z after the pulse, at the read), the same sense as
+#: the light-shift term. If mr0 finds hz = -s_z, or dphi in the opposite sense, flip this ONE
+#: constant (every copy of the kernel reads it through Feedback).
 READ_TWIST_SIGN = 1.0
 
-#: What select_read_model sets at the start of each shot when two read models are
-#: interleaved per shot (p.feedback_read_model scanned); not kernel invariants then.
-READ_MODEL_ATTRS = ("read_twist", "read_twist_on", "read_coherence_slope",
-                    "read_coherence_slope_on", "read_alpha_lightshift",
-                    "read_alpha_lightshift_on", "back_action_coherence")
-
-class _FeedbackParamStore:
-    """Attribute bag used when Feedback is instantiated outside Base."""
+#: Points within this fraction of the posterior maximum tie (p.feedback_map_tie_mean). Not exact
+#: equality: mirror-image hypotheses came out 3e-14 apart on 2026-10-08, and picked by rounding.
+MAP_TIE_REL_TOL = 1.e-9
 
 
 class Feedback:
-    # N_photons_per_shot, v_apd_all_up, v_apd_all_down and v_range are NOT
-    # invariants: with p.preshot_endpoint_gain > 0 the kernel moves them every
-    # shot (update_shot_endpoints). Their calibration values are the *_cal copies.
     kernel_invariants = {
         "m",
-        "N_photons_per_shot_cal",
+        "N_photons_per_shot",
         "std_n_photons_per_shot",
-        "v_apd_all_up_cal",
-        "v_apd_all_down_cal",
-        "v_range_cal",
-        "preshot_endpoint_gain",
-        "preshot_endpoint_min_range_fraction",
+        "v_apd_all_up",
+        "v_apd_all_down",
+        "v_range",
         "feedback_measurement_midpoint_fraction",
         "feedback_measurement_midpoint_remap_enabled",
         "sin_lut",
@@ -49,17 +32,11 @@ class Feedback:
         "two_pi",
         "pi_half",
         "inv_two_pi",
-        # The state-dependent read model's live values (read_twist, read_twist_on,
-        # read_coherence_slope(_on), read_alpha_lightshift(_on): READ_MODEL_ATTRS)
-        # are NOT invariants: select_read_model writes them per shot in a per-shot
-        # A/B, and ARTIQ refuses any write to an invariant in compiled code. Off,
-        # they cost two attribute loads and two branch tests per grid point.
-        # The two read models of a per-shot A/B (constants for the run):
-        "read_model_per_shot",
-        "rm0_alpha_lightshift", "rm0_alpha_lightshift_on", "rm0_twist", "rm0_twist_on",
-        "rm0_coherence_slope", "rm0_coherence_slope_on", "rm0_coherence",
-        "rm1_alpha_lightshift", "rm1_alpha_lightshift_on", "rm1_twist", "rm1_twist_on",
-        "rm1_coherence_slope", "rm1_coherence_slope_on", "rm1_coherence",
+        "back_action_coherence",
+        "read_twist", "read_twist_on",
+        "read_coherence_slope", "read_coherence_slope_on",
+        "read_alpha_lightshift", "read_alpha_lightshift_on",
+        "map_tie_mean", "map_tie_floor",
     }
 
     def __init__(self, lut_size=4096, expt_params=None):
@@ -84,10 +61,8 @@ class Feedback:
 
         self._flat_prob_counter = 0
 
-        # Counts posterior collapses (all grid points underflowed to zero) that
-        # were reset to uniform in generate_posterior. Unlike _flat_prob_counter
-        # this is NOT reset per shot: it accumulates over the whole run, so a
-        # nonzero value at the end means some updates were silently discarded.
+        # posterior collapses reset to uniform in generate_posterior; never reset, so a nonzero
+        # value at the end of a run means updates were discarded
         self._degenerate_posterior_counter = 0
 
     def omega_to_detuning(self, omega_raman):
@@ -95,8 +70,6 @@ class Feedback:
         return (omega_raman - 2.0 * np.pi * self.p.frequency_raman_transition)/self.Omega
 
     def _preallocate_arrays(self):
-        # Cast here, not just in _initialize_timing: this method runs first and
-        # already uses the value as an array shape.
         self.p.feedback_grid_size = int(self.p.feedback_grid_size)
         self.omega_guess_list = np.zeros(self.p.feedback_grid_size, dtype=np.float64)
         self.omega_sq_list = np.zeros(self.p.feedback_grid_size, dtype=np.float64)
@@ -111,38 +84,6 @@ class Feedback:
     @portable(flags={"fast-math"})
     def convert_measurement(self, v_apd):
         return round(self.N_photons_per_shot * (v_apd - self.v_apd_all_down) / self.v_range)
-
-    @portable(flags={"fast-math"})
-    def update_shot_endpoints(self, v_up_read, v_down_read) -> TInt32:
-        """Per-shot APD endpoints from the pre-shot reads (p.preshot_endpoint_gain = K > 0).
-
-        Each endpoint follows v <- v + K*(read - v), starting at the calibration
-        every run (K = 1: this shot's reads alone; K = 0: never called). The photon
-        number is rescaled with the contrast, N = N_cal * range / range_cal, and
-        std_n_photons_per_shot is kept: the APD voltage noise does not scale with
-        the contrast, so the likelihood sigma in volts stays the calibration's
-        (user rule 2026-09-28; std_n 142-146 photons in #83473/#83519/#83520 while
-        N went 432-600). K = 0.15 from the offline test (sim_preshot, 2026-09-28):
-        single pre-shot pairs (~11 mV contrast noise) did worse than the fixed
-        calibration; the smoothed estimate did better when the readout drifted.
-
-        Guard: a new range below preshot_endpoint_min_range_fraction x the
-        calibration range (or of the other sign) is not taken -- the shot keeps the
-        previous estimate -- and _preshot_guarded_counter counts it. Returns 1 when
-        the estimate was updated, 0 when guarded.
-        """
-        k = self.preshot_endpoint_gain
-        new_up = self.v_apd_all_up + k * (v_up_read - self.v_apd_all_up)
-        new_down = self.v_apd_all_down + k * (v_down_read - self.v_apd_all_down)
-        new_range = new_up - new_down
-        if new_range / self.v_range_cal < self.preshot_endpoint_min_range_fraction:
-            self._preshot_guarded_counter += 1
-            return 0
-        self.v_apd_all_up = new_up
-        self.v_apd_all_down = new_down
-        self.v_range = new_range
-        self.N_photons_per_shot = self.N_photons_per_shot_cal * new_range / self.v_range_cal
-        return 1
 
     @portable(flags={"fast-math"})
     def expected_photon_fraction(self, hz):
@@ -232,10 +173,7 @@ class Feedback:
         Omega = self.Omega
         Omega_sq = Omega * Omega
 
-        # Pulse times of the raman pulse being processed. Equal to the scalar
-        # p.t_raman_pulse / p.t_raman_pulse_ideal unless the caller sets them
-        # per pulse (randomized pulse-time lists; see feedback_loop in
-        # base_expt_feedback.py and FeedbackReplayCore._run_shot_into_buffers).
+        # the pulse being processed: randomized pulse-time lists set these per pulse
         dt_eff = self.t_raman_pulse_current
         dt_ideal = self.t_raman_pulse_ideal_current
         dt_z = self.p.t_img_pulse
@@ -325,13 +263,8 @@ class Feedback:
             nx = cos_z * hx + sin_z * hy
             ny = -sin_z * hx + cos_z * hy
 
-            # State-dependent read (2026-10-11; READ_TWIST_SIGN in kexp.base.feedback).
-            # Off (the defaults): exactly the constant model -- the same multiply
-            # by back_action_coherence. On: a twist d = read_twist * hz added to
-            # the z rotation (second order, not renormalised: sin d ~ d,
-            # cos d ~ 1 - d^2/2 -- model M1-p2, no worse than exact trig in the
-            # simulation check), and the coherence
-            # c0 + slope * hz (clipped to [0, 1]); hz is this point's z at the read.
+            # State-dependent read (READ_TWIST_SIGN above): a twist d = read_twist * hz on the z
+            # rotation (second order, not renormalised) and the coherence c0 + slope * hz, clipped.
             if self.read_twist_on:
                 d_twist = self.read_twist * hz
                 cos_d = 1.0 - d_twist * d_twist * 0.5
@@ -352,11 +285,8 @@ class Feedback:
 
             p1 = self.expected_photon_fraction(hz)
             q = 1.0 - p1
-            # Fixed sigma, INTENTIONALLY: the binomial (projection-noise) term
-            # n_photons*p1*q is deliberately left out, so npq is just the fixed
-            # detector-noise variance. This is what makes the posterior tolerant
-            # of unmodelled excess measurement noise. Do not "restore" the term
-            # below without re-deriving the calibration.
+            # Fixed sigma, INTENTIONALLY: the binomial term n_photons*p1*q is left out so the posterior
+            # tolerates unmodelled excess noise. Do not restore it without re-deriving the calibration.
             # npq = n_photons * p1 * q + sigma_sq
             npq = sigma_sq
             num = k - n_photons * p1
@@ -387,14 +317,8 @@ class Feedback:
             j += 1
 
         if P0_total <= 0.0:
-            # Every grid point evaluated to exactly zero -- an exact 0/1 binomial
-            # term, or a fully underflowed Gaussian tail. P0 was already
-            # overwritten with those zeros in the loop above, so returning here
-            # without repairing it would leave the prior identically zero: every
-            # later call in this shot recomputes pj = P0[j]*f = 0, re-enters this
-            # branch, and the feedback silently freezes for the rest of the shot.
-            # Reset to uniform instead -- this update is lost, but the estimator
-            # stays live. The counter makes the event visible after the run.
+            # Every grid point underflowed to zero: reset to uniform, or every later update this shot
+            # stays zero and the feedback freezes. This update is lost; the counter records it.
             uniform = 1.0 / m
             i = 0
             while i < len(P0):
@@ -418,10 +342,6 @@ class Feedback:
             var = 0.0
         std = np.sqrt(var)
 
-        # total = 0.
-        # for i in range(len(P0)):
-        #     total += P0[i]
-
         # Find the frequency at maximum posterior probability
         max_idx = 0
         max_prob = P0[0]
@@ -431,7 +351,7 @@ class Feedback:
                 max_prob = P0[i]
                 max_idx = i
             i += 1
-        omega_max = omega_guess_list[max_idx]
+        omega_max = self.map_frequency(max_idx, max_prob)
         self.max_idx = max_idx
 
         # If distribution is nearly flat (max prob close to uniform), use mean instead of max
@@ -454,7 +374,30 @@ class Feedback:
             std = self.Omega
 
         return omega_raman_out, mn, std
-    
+
+    @portable(flags={"fast-math"})
+    def map_frequency(self, max_idx, max_prob):
+        """The frequency of the posterior maximum P0[max_idx] = max_prob. With
+        p.feedback_map_tie_mean, tied points (kept above map_tie_floor x max_prob) give
+        the mean of their frequencies, so a tie is not settled by grid order, and the
+        drive may land between grid points. Off (run files without the key): the first
+        maximum, as those runs drove. max_idx stays the first maximum either way: it
+        indexes a hypothesis' stored Bloch vector."""
+        omega_guess_list = self.omega_guess_list
+        if not self.map_tie_mean:
+            return omega_guess_list[max_idx]
+        P0 = self.P0
+        floor = self.map_tie_floor * max_prob
+        total = 0.0
+        n_tied = 0
+        i = 0
+        while i < len(P0):
+            if P0[i] >= floor:
+                total += omega_guess_list[i]
+                n_tied += 1
+            i += 1
+        return total / n_tied
+
     @portable(flags={"fast-math"})
     def compute_t_between_pulses_mu(
         self,
@@ -479,8 +422,6 @@ class Feedback:
     def initialize_feedback(self):
         """Warm up posterior runtime once, then reset state/P0 arrays."""
 
-        # this shot's read model (per-shot A/B; nothing unless feedback_read_model is scanned)
-        self.select_read_model(self.p.feedback_read_model)
         self.omega_raman = self.reset_initial_omega_from_params()
 
         self.p.t_between_pulses_mu = self.compute_t_between_pulses_mu(
@@ -542,111 +483,59 @@ class Feedback:
         return self.omega_raman
 
     def _initialize_timing(self):
-        self.p.feedback_grid_size = int(self.p.feedback_grid_size)
         self.m = self.p.feedback_grid_size
         self.Omega = np.pi / self.p.t_raman_pi_pulse
-        # 1: the hypothesis grid is centred on the exact initial offset (any
-        # real value). 0: on round(offset), as every run before 2026-09-27 did;
-        # a run file without the parameter is such a run, so replay of it
-        # keeps its grid. New runs get 1 from expt_params_feedback.
+        # 1: grid centred on the exact initial offset. 0 (and files without the key): on
+        # round(offset), as every run before 2026-09-27
         self.grid_center_exact = int(getattr(self.p, "feedback_grid_center_exact_offset", 0))
-        # 1 / 2: which parameters define the grid ('hypothesis grid', module level);
-        # 1 when the params do not say, so every older run replays as it ran. The
-        # kernel reads the Omega-unit offset of either convention, so both names
-        # must exist; the convention-2 ones a convention-1 params class lacks are
-        # added here (unused there).
+        # 1 or 2 ('hypothesis grid', module level); 1 when the params do not say. The kernel reads the
+        # Omega-unit offset of either convention, so both names must exist.
         self.grid_convention = feedback_grid_convention(self.p)
+        # 1: a tie for the posterior maximum gives the mean of the tied points (map_frequency).
+        # 0 (and files without the key): the first maximum, as every run before 2026-10-30
+        self.map_tie_mean = int(np.ravel(getattr(self.p, "feedback_map_tie_mean", 0))[0])
+        self.map_tie_floor = 1.0 - MAP_TIE_REL_TOL
         if not hasattr(self.p, "feedback_initial_offset_Omega"):
             self.p.feedback_initial_offset_Omega = float(
                 np.ravel(self.p.feedback_fractional_initial_offset)[0])
         if not hasattr(self.p, "feedback_grid_shift"):
             self.p.feedback_grid_shift = 0.0
         self.p.feedback_resonance_grid_index_frac = 0.0
-        # S_z every hypothesis (and the replay's true spin) starts from: +1 (all up)
-        # unless the run prepared all down with the pre-shot pi pulse
-        # (p.preshot_contrast -> feedback_initial_sz = -1, 2026-09-28). Run files
-        # without the key were all-up runs, so replay of them is unchanged.
+        # +1 (all up). Replay only: older run files with feedback_initial_sz = -1 prepared all down with
+        # a pre-shot pi pulse (removed from FeedbackExpt 2026-10-30).
         self.initial_sz = float(np.ravel(getattr(self.p, "feedback_initial_sz", 1.0))[0])
-        # Effective/ideal duration of the raman pulse currently being processed
-        # by generate_posterior. Scalar experiments leave these at the param
-        # values; randomized-pulse-time experiments (and replay) overwrite them
-        # per pulse. NOT kernel invariants for this reason.
+        # the pulse being processed; randomized pulse-time lists overwrite these per pulse
         self.t_raman_pulse_current = float(getattr(self.p, "t_raman_pulse", 0.0))
         self.t_raman_pulse_ideal_current = float(
             getattr(self.p, "t_raman_pulse_ideal", self.t_raman_pulse_current))
 
     def _initialize_lightshift(self):
-        self.p.frequency_lightshift = self._resolve_lightshift_calibration(self.p.amp_imaging, self.p.frequency_lightshift)
+        self.p.frequency_lightshift = float(self.p.frequency_lightshift)
         self.frequency_z_lightshift = self.p.frequency_lightshift
         self.omega_z_lightshift = 2.0 * np.pi * self.frequency_z_lightshift
         self.p.back_action_coherence = float(self.p.back_action_coherence)
         self.back_action_coherence = self.p.back_action_coherence
-        # state-dependent read (READ_TWIST_SIGN above); 0 = off: the loop is the
-        # constant model, bit for bit (params absent in older runs read as 0)
+        # state-dependent read (READ_TWIST_SIGN above); 0 = off; absent in older runs
         self.p.read_twist_per_sz = float(getattr(self.p, "read_twist_per_sz", 0.0))
         self.p.back_action_coherence_slope = float(getattr(self.p, "back_action_coherence_slope", 0.0))
         self.read_twist = READ_TWIST_SIGN * self.p.read_twist_per_sz
         self.read_twist_on = self.read_twist != 0.0
         self.read_coherence_slope = self.p.back_action_coherence_slope
         self.read_coherence_slope_on = self.read_coherence_slope != 0.0
-        # the read's constant z angle (rad, the kernel's alpha_z_lightshift) set on its
-        # own, independent of frequency_lightshift; NaN / absent = omega_z_lightshift * t_img
+        # the read's constant z angle (rad); NaN / absent = omega_z_lightshift * t_img
         a_ls = float(getattr(self.p, "read_alpha_lightshift", float("nan")))
         self.p.read_alpha_lightshift = a_ls
         self.read_alpha_lightshift_on = bool(np.isfinite(a_ls))
         self.read_alpha_lightshift = a_ls if self.read_alpha_lightshift_on else 0.0
-        self._initialize_read_models()
-
-    def _initialize_read_models(self):
-        """Per-shot A/B of two read models (pre-registered A/B, 2026-10-11):
-        p.feedback_read_model scanned over {0, 1} selects, at the start of each
-        shot (select_read_model, from initialize_feedback), model 0 = the fixed
-        values above (read_alpha_lightshift, read_twist_per_sz,
-        back_action_coherence_slope, back_action_coherence) or model 1 = the
-        p.read_model1_* set. Not scanned (-1, the default): every shot uses the
-        fixed values, and nothing changes per shot."""
-        p = self.p
-        if not hasattr(p, "feedback_read_model"):
-            p.feedback_read_model = -1.0      # (the kernel reads it every shot)
-        rm = np.ravel(np.asarray(getattr(p, "feedback_read_model", -1.0), dtype=float))
-        # In an experiment, Feedback.__init__ runs in finish_prepare: a scanned
-        # feedback_read_model is then only in the scan's xvars (p still holds the
-        # default); the replay's p holds the run's per-shot values.
-        for xv in getattr(self, "scan_xvars", None) or []:
-            if getattr(xv, "key", None) == "feedback_read_model":
-                rm = np.concatenate([rm, np.ravel(np.asarray(xv.values, dtype=float))])
-        self.read_model_per_shot = bool(rm.size and np.all(np.isfinite(rm)) and np.any(rm >= 0.0))
-        # model 0: what the fixed params set
-        self.rm0_alpha_lightshift_on = self.read_alpha_lightshift_on
-        self.rm0_alpha_lightshift = self.read_alpha_lightshift
-        self.rm0_twist_on = self.read_twist_on
-        self.rm0_twist = self.read_twist
-        self.rm0_coherence_slope_on = self.read_coherence_slope_on
-        self.rm0_coherence_slope = self.read_coherence_slope
-        self.rm0_coherence = self.back_action_coherence
-        # model 1: the read_model1_* set (defaults: theta11's M1-p2)
-        a1 = float(getattr(p, "read_model1_alpha_lightshift", float("nan")))
-        self.rm1_alpha_lightshift_on = bool(np.isfinite(a1))
-        self.rm1_alpha_lightshift = a1 if self.rm1_alpha_lightshift_on else 0.0
-        self.rm1_twist = READ_TWIST_SIGN * float(getattr(p, "read_model1_twist_per_sz", 0.0))
-        self.rm1_twist_on = self.rm1_twist != 0.0
-        self.rm1_coherence_slope = float(getattr(p, "read_model1_coherence_slope", 0.0))
-        self.rm1_coherence_slope_on = self.rm1_coherence_slope != 0.0
-        self.rm1_coherence = float(getattr(p, "read_model1_coherence", self.back_action_coherence))
         self._check_read_model_hooks()
 
     #: Text every posterior method in use must contain to implement the read model.
     READ_MODEL_TOKENS = ("self.read_twist", "self.read_alpha_lightshift", "self.read_coherence_slope")
 
     def _check_read_model_hooks(self):
-        """With any read model on (fixed params, or a per-shot A/B), refuse a class
-        whose posterior methods do not implement it -- e.g. a session copy of the
-        fast path made before the read model (2026-10-09 sensing chain), or the
-        timing bench's own OverlapPosterior: there model 1 would silently run as
-        model 0. Checked from each method's source text; a method whose source
-        cannot be read is refused too."""
-        on = (self.read_twist_on or self.read_coherence_slope_on or self.read_alpha_lightshift_on
-              or self.read_model_per_shot)
+        """With the read model on, refuse a class whose posterior methods do not implement it (e.g. a
+        session copy made before the read model), checked from each method's source text."""
+        on = self.read_twist_on or self.read_coherence_slope_on or self.read_alpha_lightshift_on
         if not on:
             return
         import inspect
@@ -666,34 +555,11 @@ class Feedback:
             if missing:
                 raise RuntimeError(
                     f"read model on (read_twist_per_sz / read_alpha_lightshift / "
-                    f"back_action_coherence_slope / feedback_read_model), but "
+                    f"back_action_coherence_slope), but "
                     f"{type(self).__name__}.{name} in {where} does not implement it (no "
                     f"{', '.join(missing)}): an older or session copy of the posterior. It would "
                     f"run without the read model, silently. Use the repo's class, or port the "
                     f"read model into this copy.")
-
-    @portable
-    def select_read_model(self, model):
-        """At the start of a shot: model >= 0.5 -> read model 1, else model 0.
-        Does nothing unless p.feedback_read_model is scanned."""
-        if self.read_model_per_shot:
-            if model >= 0.5:
-                self.read_alpha_lightshift_on = self.rm1_alpha_lightshift_on
-                self.read_alpha_lightshift = self.rm1_alpha_lightshift
-                self.read_twist_on = self.rm1_twist_on
-                self.read_twist = self.rm1_twist
-                self.read_coherence_slope_on = self.rm1_coherence_slope_on
-                self.read_coherence_slope = self.rm1_coherence_slope
-                self.back_action_coherence = self.rm1_coherence
-            else:
-                self.read_alpha_lightshift_on = self.rm0_alpha_lightshift_on
-                self.read_alpha_lightshift = self.rm0_alpha_lightshift
-                self.read_twist_on = self.rm0_twist_on
-                self.read_twist = self.rm0_twist
-                self.read_coherence_slope_on = self.rm0_coherence_slope_on
-                self.read_coherence_slope = self.rm0_coherence_slope
-                self.back_action_coherence = self.rm0_coherence
-
 
     @portable
     def re_initalize_spin_vector(self):
@@ -975,20 +841,9 @@ class Feedback:
 
     @portable(flags={"fast-math"})
     def maybe_remesh(self, posterior_std, omega_center):
-        """Halve the grid span and re-centre on omega_center if posterior_std is below
-        feedback_remesh_threshold_omega.  No-op when threshold is 0 (disabled).
-
-        Note that after remesh_to_centered, the call to _initialize_frequency_grid
-
-        Args:
-            posterior_std: the posterior standard deviation (rad/s); remesh fires if
-                          posterior_std < feedback_remesh_threshold_omega.
-            omega_center: the frequency to center the new grid on. Required and
-                          always concrete -- this is @portable, so None cannot
-                          type-check against TFloat. Pass self.omega_raman
-                          explicitly if that is what you want.
-        """
-            
+        """Narrow the grid and re-centre on omega_center once posterior_std has stayed below
+        feedback_remesh_threshold_omega (rad/s). No-op when the threshold is 0. @portable: pass
+        omega_center explicitly."""
         if self.feedback_remesh_threshold_omega > 0.0:
             if posterior_std < (self.feedback_remesh_threshold_omega):
                 self._remesh_counter += 1
@@ -1006,126 +861,42 @@ class Feedback:
                                         interpolate_posterior, interpolate_states,
                                         expand_clipped)
 
-                # Re-select omega_raman from the remeshed posterior:
-                # use the grid point with highest P0, or the mean if the
-                # distribution is too flat (max_prob < 1.15 * uniform).
-                # max_idx = 0
-                # max_prob = self.P0[0]
-                # mn_num = 0.0
-                # mn_den = 0.0
-                # ii = 0
-                # while ii < self.m:
-                #     if self.P0[ii] > max_prob:
-                #         max_prob = self.P0[ii]
-                #         max_idx = ii
-                #     mn_num += self.P0[ii] * self.omega_guess_list[ii]
-                #     mn_den += self.P0[ii]
-                #     ii += 1
-                # if mn_den > 0.0:
-                #     mn_num = mn_num / mn_den
-                # else:
-                #     mn_num = self.omega_raman
-                # uniform_prob = 1.0 / self.m
-                # if max_prob < 1.15 * uniform_prob:
-                #     self.omega_raman = mn_num
-                # else:
-                #     self.omega_raman = self.omega_guess_list[max_idx]
-
-                # self._remesh_counter = 0
-
     def _initialize_measurement_calibrations(self):
-        (
-            n_photons_per_shot,
-            v_apd_all_up,
-            v_apd_all_down,
-            std_n_photons_per_shot,
-        ) = self._resolve_measurement_calibration(
-            amp_imaging=self.p.amp_imaging,
-            t_img_pulse=self.p.t_img_pulse,
-            n_photons_per_shot=self.p.n_photons_per_shot,
-            std_n_photons_per_shot=self.p.std_n_photons_per_shot,
-            v_apd_all_up=self.p.v_apd_all_up,
-            v_apd_all_down=self.p.v_apd_all_down,
-            photon_count_scale=getattr(self.p, "feedback_photon_count_scale", 1.0),
+        p = self.p
+        if np.any(np.ravel(getattr(p, "feedback_apd_map_enabled", False))):
+            # no committed experiment ever set this; a file that did must not replay on raw endpoints
+            raise ValueError("this run file used the APD affine map, removed 2026-10-30: "
+                             "replay it with k-exp 8f98b26e.")
+        p.feedback_measurement_midpoint_remap_enabled = bool(p.feedback_measurement_midpoint_remap_enabled)
+        p.feedback_measurement_midpoint_fraction = self._resolve_measurement_midpoint_fraction(
+            feedback_measurement_midpoint_fraction=p.feedback_measurement_midpoint_fraction,
         )
+        p.N_photons_per_shot = float(p.n_photons_per_shot)
+        p.v_apd_all_up = float(p.v_apd_all_up)
+        p.v_apd_all_down = float(p.v_apd_all_down)
+        p.std_n_photons_per_shot = float(p.std_n_photons_per_shot)
 
-        map_enabled, map_a, map_b, map_verbose = self._resolve_apd_affine_map_settings(
-            feedback_apd_map_enabled=self.p.feedback_apd_map_enabled,
-            feedback_apd_map_a=self.p.feedback_apd_map_a,
-            feedback_apd_map_b=self.p.feedback_apd_map_b,
-            feedback_apd_map_verbose=self.p.feedback_apd_map_verbose,
-        )
-        midpoint_remap_enabled = self._resolve_measurement_midpoint_remap_enabled(
-            feedback_measurement_midpoint_remap_enabled=self.p.feedback_measurement_midpoint_remap_enabled,
-        )
-        midpoint_fraction = self._resolve_measurement_midpoint_fraction(
-            feedback_measurement_midpoint_fraction=self.p.feedback_measurement_midpoint_fraction,
-        )
-        v_apd_all_up_ref = float(v_apd_all_up)
-        v_apd_all_down_ref = float(v_apd_all_down)
-
-        self.p.feedback_measurement_midpoint_remap_enabled = midpoint_remap_enabled
-        self.p.feedback_measurement_midpoint_fraction = midpoint_fraction
-        self.p.feedback_apd_map_enabled = map_enabled
-        self.p.feedback_apd_map_a = map_a
-        self.p.feedback_apd_map_b = map_b
-        self.p.feedback_apd_map_verbose = map_verbose
-        self.p.v_apd_all_up_reference = v_apd_all_up_ref
-        self.p.v_apd_all_down_reference = v_apd_all_down_ref
-
-        if map_enabled:
-            v_apd_all_up, v_apd_all_down = self._apply_apd_affine_map_to_calibration(
-                v_apd_all_up=v_apd_all_up_ref,
-                v_apd_all_down=v_apd_all_down_ref,
-                feedback_apd_map_a=map_a,
-                feedback_apd_map_b=map_b,
-                feedback_apd_map_verbose=map_verbose,
-            )
-
-        self.p.N_photons_per_shot = float(n_photons_per_shot)
-        self.p.v_apd_all_up = float(v_apd_all_up)
-        self.p.v_apd_all_down = float(v_apd_all_down)
-        self.p.std_n_photons_per_shot = float(std_n_photons_per_shot)
-        self.p.v_apd_all_up_feedback = self.p.v_apd_all_up
-        self.p.v_apd_all_down_feedback = self.p.v_apd_all_down
-
-        self.v_apd_all_up = self.p.v_apd_all_up
-        self.v_apd_all_down = self.p.v_apd_all_down
-        self.N_photons_per_shot = self.p.N_photons_per_shot
-        self.std_n_photons_per_shot = self.p.std_n_photons_per_shot
-        self.feedback_measurement_midpoint_remap_enabled = self.p.feedback_measurement_midpoint_remap_enabled
-        self.feedback_measurement_midpoint_fraction = self.p.feedback_measurement_midpoint_fraction
+        self.v_apd_all_up = p.v_apd_all_up
+        self.v_apd_all_down = p.v_apd_all_down
+        self.N_photons_per_shot = p.N_photons_per_shot
+        self.std_n_photons_per_shot = p.std_n_photons_per_shot
+        self.feedback_measurement_midpoint_remap_enabled = p.feedback_measurement_midpoint_remap_enabled
+        self.feedback_measurement_midpoint_fraction = p.feedback_measurement_midpoint_fraction
         self.v_range = self.v_apd_all_up - self.v_apd_all_down
         if abs(self.v_range) < 1.0e-15:
             raise ValueError("APD calibration range is zero; cannot normalize APD.")
-        # Calibration copies: the per-shot endpoint estimate starts here every run
-        # and N_photons_per_shot is rescaled against them (update_shot_endpoints).
+        # Replay of older per-shot-endpoint runs (data.preshot_endpoints) puts these
+        # back after the last shot.
         self.v_apd_all_up_cal = self.v_apd_all_up
         self.v_apd_all_down_cal = self.v_apd_all_down
         self.v_range_cal = self.v_range
         self.N_photons_per_shot_cal = self.N_photons_per_shot
-        self.preshot_endpoint_gain = float(np.ravel(getattr(self.p, "preshot_endpoint_gain", 0.0))[0])
-        self.preshot_endpoint_min_range_fraction = float(
-            np.ravel(getattr(self.p, "preshot_endpoint_min_range_fraction", 0.25))[0])
-        if not (0.0 <= self.preshot_endpoint_gain <= 1.0):
-            raise ValueError(f"preshot_endpoint_gain must be in [0, 1]; got {self.preshot_endpoint_gain}.")
-        if self.preshot_endpoint_gain > 0.0 and map_enabled:
-            raise ValueError("preshot_endpoint_gain > 0 with feedback_apd_map_enabled: the pre-shot reads "
-                             "are raw APD volts, the endpoints are mapped; not supported.")
-        self._preshot_guarded_counter = 0
-        # generate_posterior computes f = sigma/sqrt(npq)*exp(...) with
-        # npq = sigma*sigma when include_photon_noise=1 (the default). A zero or
-        # negative sigma makes that 0/0 -> NaN on every grid point, and because
-        # generate_posterior is @portable the NaN propagates silently through
-        # P0 and omega_raman with no exception. Fail loudly here instead.
+        # sigma <= 0 turns every likelihood into NaN, silently, and @portable never raises: fail here
         if not (self.std_n_photons_per_shot > 0.0):
             raise ValueError(
                 "std_n_photons_per_shot must be positive; got "
                 f"{self.std_n_photons_per_shot}."
             )
-
-    def _resolve_measurement_midpoint_remap_enabled(self, feedback_measurement_midpoint_remap_enabled):
-        return bool(feedback_measurement_midpoint_remap_enabled)
 
     def _resolve_measurement_midpoint_fraction(self, feedback_measurement_midpoint_fraction):
         midpoint_fraction = float(feedback_measurement_midpoint_fraction)
@@ -1157,142 +928,6 @@ class Feedback:
         self.lut_quarter = self.lut_size // 4
         self.inv_two_pi = 1.0 / self.two_pi
         self.sin_lut = np.sin(self.two_pi * np.arange(self.lut_size) / self.lut_size)
-
-    def _resolve_measurement_calibration(
-        self,
-        amp_imaging,
-        t_img_pulse,
-        n_photons_per_shot,
-        std_n_photons_per_shot,
-        v_apd_all_up,
-        v_apd_all_down,
-        photon_count_scale,
-    ):
-        missing_fields = []
-        if n_photons_per_shot is None:
-            missing_fields.append("n_photons_per_shot")
-        if v_apd_all_up is None:
-            missing_fields.append("v_apd_all_up")
-        if v_apd_all_down is None:
-            missing_fields.append("v_apd_all_down")
-        if std_n_photons_per_shot is None:
-            missing_fields.append("std_n_photons_per_shot")
-
-        if len(missing_fields) == 0:
-            # All calibration values provided directly
-            return float(n_photons_per_shot), float(v_apd_all_up), float(v_apd_all_down), float(std_n_photons_per_shot)
-
-        if amp_imaging is None or t_img_pulse is None:
-            raise ValueError(
-                "Missing calibration fields require amp_imaging and t_img_pulse for integrator_calibration fallback."
-            )
-
-        (n_cal, v_up_cal, v_down_cal, std_up_cal, std_down_cal) = integrator_calibration(
-            amp_imaging=float(amp_imaging),
-            t_imaging=float(t_img_pulse),
-        )
-
-        # Keep historical behavior for calibration-derived photon counts.
-        n_cal = float(n_cal) * float(photon_count_scale)
-        std_cal = 0.5 * (float(std_up_cal) + float(std_down_cal)) * float(photon_count_scale)
-
-        used_n_photons = n_cal if n_photons_per_shot is None else n_photons_per_shot
-        used_v_apd_all_up = v_up_cal if v_apd_all_up is None else v_apd_all_up
-        used_v_apd_all_down = v_down_cal if v_apd_all_down is None else v_apd_all_down
-        used_std_n_photons_per_shot = std_cal if std_n_photons_per_shot is None else std_n_photons_per_shot
-
-        if n_photons_per_shot is None:
-            n_photons_per_shot = n_cal
-        if v_apd_all_up is None:
-            v_apd_all_up = v_up_cal
-        if v_apd_all_down is None:
-            v_apd_all_down = v_down_cal
-        if std_n_photons_per_shot is None:
-            std_n_photons_per_shot = std_cal
-
-        print(
-            "\nFeedback: using integrator_calibration:\n"
-            f"(amp_imaging={float(amp_imaging)}, t_img_pulse={float(t_img_pulse)} s) "
-            f"for missing fields: {', '.join(missing_fields)}\n"
-            f"  n_photons_per_shot = {used_n_photons}\n"
-            f"  v_apd_all_up = {used_v_apd_all_up}\n"
-            f"  v_apd_all_down = {used_v_apd_all_down}\n"
-            f"  std_n_photons_per_shot = {used_std_n_photons_per_shot}\n"
-        )
-
-        return float(n_photons_per_shot), float(v_apd_all_up), float(v_apd_all_down), float(std_n_photons_per_shot)
-
-    def _resolve_lightshift_calibration(
-        self,
-        amp_imaging,
-        frequency_z_lightshift,
-    ):
-        if frequency_z_lightshift is not None:
-            return float(frequency_z_lightshift)
-
-        if amp_imaging is None:
-            raise ValueError(
-                "Missing frequency_z_lightshift requires amp_imaging for imaging_lightshift fallback."
-            )
-
-        frequency_z_lightshift = imaging_lightshift(float(amp_imaging))
-
-        print(
-            "\nFeedback: using imaging_lightshift calibration:\n"
-            f"(amp_imaging={float(amp_imaging)}) for missing field: frequency_z_lightshift\n"
-            f"  frequency_z_lightshift = {frequency_z_lightshift}"
-        )
-
-        return float(frequency_z_lightshift)
-
-    def _resolve_apd_affine_map_settings(
-        self, feedback_apd_map_enabled, feedback_apd_map_a, feedback_apd_map_b, feedback_apd_map_verbose
-    ):
-        map_enabled = bool(feedback_apd_map_enabled)
-        map_a = float(feedback_apd_map_a)
-        map_b = float(feedback_apd_map_b)
-        map_verbose = bool(feedback_apd_map_verbose)
-
-        if not np.isfinite(map_a) or not np.isfinite(map_b):
-            raise ValueError("feedback_apd_map_a and feedback_apd_map_b must be finite.")
-        if map_enabled and abs(map_a) < 1.0e-12:
-            raise ValueError("feedback_apd_map_a must be nonzero when feedback_apd_map_enabled is True.")
-
-        return map_enabled, map_a, map_b, map_verbose
-
-    def _apply_apd_affine_map_to_calibration(
-        self,
-        v_apd_all_up,
-        v_apd_all_down,
-        feedback_apd_map_a,
-        feedback_apd_map_b,
-        feedback_apd_map_verbose,
-    ):
-        v_up = float(v_apd_all_up)
-        v_down = float(v_apd_all_down)
-
-        if not np.isfinite(v_up) or not np.isfinite(v_down):
-            raise ValueError("APD calibration values must be finite.")
-
-        v_range = v_up - v_down
-        if abs(v_range) < 1.0e-15:
-            raise ValueError("APD calibration range is zero; cannot apply affine APD map.")
-
-        a_coef = float(feedback_apd_map_a)
-        b_coef = float(feedback_apd_map_b)
-
-        v_down_mapped = v_down + v_range * (a_coef - b_coef - 1.0) / (2.0 * a_coef)
-        v_up_mapped = v_down + v_range * (a_coef + 1.0 - b_coef) / (2.0 * a_coef)
-
-        if bool(feedback_apd_map_verbose):
-            print(
-                "\nFeedback: applying APD affine mapping:\n"
-                f"  y = {a_coef:.6g} * x + {b_coef:.6g}\n"
-                f"  v_apd_all_up/down: ({v_up:.9g}, {v_down:.9g}) -> ({v_up_mapped:.9g}, {v_down_mapped:.9g})\n"
-                "  note: this matches the linear (unclipped) affine map."
-            )
-
-        return float(v_up_mapped), float(v_down_mapped)
 
     @portable(flags={"fast-math"})
     def sincos_lut_interp(self, x):
@@ -1343,14 +978,6 @@ class Feedback:
             b *= b
             e = e // 2
         return result
-
-    def _ensure_repeat_axis0(self, arr, name):
-        x = np.asarray(arr)
-        if x.ndim == 1:
-            return x.reshape(1, -1)
-        if x.ndim == 2:
-            return x
-        raise ValueError(f"{name} must be 1D or 2D with repeats on axis 0, got shape {x.shape}.")
 
     def rotation_axis_rotating_frame(
         self,
@@ -1423,7 +1050,14 @@ class Feedback:
 # they are derived (ExptParams.compute_feedback_grid in expt_params_feedback) and
 # setting them by hand is refused (check_feedback_grid_params).
 
-FEEDBACK_GRID_CONVENTION = 2
+def map_estimate(P, grid, rel_tol=MAP_TIE_REL_TOL):
+    """The posterior maximum of each row of P (..., m), on grid (m,) or (..., m): the grid value,
+    or the mean over points tied within rel_tol (the rule of Feedback.map_frequency), for
+    scoring a posterior. np.argmax alone settles a tie by grid order."""
+    P = np.asarray(P, dtype=float)
+    grid = np.broadcast_to(np.asarray(grid, dtype=float), P.shape)
+    tied = P >= (1.0 - rel_tol) * P.max(axis=-1, keepdims=True)
+    return (grid * tied).sum(axis=-1) / tied.sum(axis=-1)
 
 
 def feedback_grid_convention(p):
@@ -1602,43 +1236,12 @@ def draw_t_raman_pulse_list_blocks(seed, N_pulses, t_raman_pi_pulse,
     draw_t_raman_pulse_list this is a pure function of `seed` and rounds to
     whole ns, so a shot replays exactly.
 
-    WHY BOTH KINDS. The two blocks do different jobs and neither alone is best:
+    Constant pulses sharpen (the angle accumulates) but alias; random pulses break the aliases, and
+    come first because back-action favours early pulses. Best measured: R3 C7 x2, RMSE 73.5 Hz against
+    117.1 Hz all random (N_pulses 20, N_repeats 20, 20-200 kHz grid).
 
-      * CONSTANT pulses sharpen. Every pulse accumulates the same theta, so the
-        rotation angle grows linearly along the block and sensitivity to Omega
-        grows with it -- 15 pulses at 0.95*t_pi reach a Cramer-Rao bound of
-        228 Hz against 763 Hz for a randomized window.
-      * ...and for exactly that reason they alias. A hypothesis differing by a
-        whole extra turn per pulse predicts the same measurements. On their own,
-        constant schedules put ~62 kHz of expected posterior width on a 20-200
-        kHz prior -- the answer is sharp and in the wrong place.
-      * RANDOM pulses break the aliases, because no single Omega offset
-        reproduces a set of unequal rotations.
-
-    Random pulses come FIRST in each block on purpose. Measurement back-action
-    (back_action_coherence ~ 0.76) damps the transverse component every cycle,
-    so early pulses carry most of the information -- a schedule that is constant
-    first and random last cannot break its own aliases (measured: Cramer-Rao
-    202 Hz but 63 kHz of posterior width).
-
-    Measured, N_pulses = 20, N_repeats = 20, full RabiPosterior on a 20-200 kHz
-    grid, RMSE over 3 true frequencies x 25 noise realizations:
-
-        all random                        117.1 Hz
-        R6 -> C14        (1 block)         92.0 Hz
-        R3 C7 R3 C7      (2 blocks)        73.5 Hz   <-- best
-        R2 C5 x3         (3 blocks)        82.6 Hz
-        R2 C3 x4         (4 blocks)        92.8 Hz
-
-    Two alternations is the optimum: fewer wastes the alias-breaking, more
-    fragments the constant blocks and gives up the accumulated-angle sharpening.
-
-    WARNING -- NOT SAFE AT LOW N_repeats. The constant blocks leave a residual
-    alias that noise can push the posterior onto. At N_repeats = 1 every hybrid
-    tested failed (>5 kHz error) on 0.8-6.7% of shots where the all-random
-    schedule failed on 0%. It only becomes the better design once there is
-    enough SNR to suppress that, which at this calibration means roughly
-    N_repeats >= 10. Below that, set t_raman_pulse_block_bool = 0.
+    NOT SAFE AT LOW N_repeats: at N_repeats = 1 every hybrid failed (> 5 kHz) on 0.8-6.7 % of shots
+    where all-random failed on 0 %. Below N_repeats ~ 10, set t_raman_pulse_block_bool = 0.
     """
     t_pi = float(t_raman_pi_pulse)
     n_r = max(int(n_random_per_block), 0)
@@ -1701,10 +1304,7 @@ class RandomRamanPulseTimes:
             self.p.t_raman_pulse_list = np.full(self.p.N_pulses,
                                                 self.p.t_raman_pulse)
             return self.p.t_raman_pulse_list
-        # Alternating random/constant blocks. Off unless a params file opts in,
-        # so the live feedback loop keeps the plain uniform draw it has always
-        # used. See draw_t_raman_pulse_list_blocks for why, and for the
-        # N_repeats floor below which this is the WORSE design.
+        # off unless a params file opts in; see draw_t_raman_pulse_list_blocks
         if getattr(self.p, "t_raman_pulse_block_bool", 0):
             self.p.t_raman_pulse_list = draw_t_raman_pulse_list_blocks(
                 seed=seed,
@@ -1725,47 +1325,6 @@ class RandomRamanPulseTimes:
         return self.p.t_raman_pulse_list
 
 
-def _as_repeat_axis0(arr, name):
-    x = np.asarray(arr)
-    if x.ndim == 1:
-        return x.reshape(1, -1)
-    if x.ndim == 2:
-        return x
-    raise ValueError(f"{name} must be 1D or 2D with repeats on axis 0, got shape {x.shape}.")
-
-
-def _resolve_override_rr(arr, name, n_repeat, n_step):
-    if arr is None:
-        return None
-
-    x = np.asarray(arr)
-    if x.ndim == 1:
-        if x.shape[0] != n_step:
-            raise ValueError(f"{name} override length must match len(pulse_times)={n_step}, got {x.shape[0]}.")
-        return np.tile(x.reshape(1, -1), (n_repeat, 1))
-
-    if x.ndim == 2:
-        if x.shape != (n_repeat, n_step):
-            raise ValueError(
-                f"{name} override must have shape ({n_repeat}, {n_step}), got {x.shape}."
-            )
-        return x
-
-    raise ValueError(f"{name} override must be 1D or 2D, got shape {x.shape}.")
-
-
-def _all_rows_equal(arr):
-    if arr.shape[0] <= 1:
-        return True
-    return bool(np.allclose(arr, arr[0:1, :]))
-
-
-def _require_atomdata_attr(obj, name, path_hint):
-    if not hasattr(obj, name):
-        raise ValueError(f"Missing {path_hint}.{name} required for replay.")
-    return getattr(obj, name)
-
-
 def _feedback_kwargs_from_atomdata(ad):
     p = getattr(ad, "p", None)
     if p is None:
@@ -1776,12 +1335,7 @@ def _feedback_kwargs_from_atomdata(ad):
         # datasets predating the turn-on-delay param used the same time for
         # both effective and ideal pulse
         "t_raman_pulse_ideal": getattr(p, "t_raman_pulse_ideal", p.t_raman_pulse),
-        # The AOM/switch turn-on latency itself. Preferred over the derived
-        # difference t_raman_pulse - t_raman_pulse_ideal, which is only right
-        # when both are scalars -- an experiment that scans t_raman_pulse leaves
-        # the scalar t_raman_pulse_ideal behind and the difference goes wrong.
-        # None means the dataset predates the parameter; replay then falls back
-        # to t_raman_pulse_ideal.
+        # None: the dataset predates the parameter; replay falls back to t_raman_pulse_ideal
         "t_raman_pulse_offset": getattr(p, "t_raman_pulse_offset", None),
         "t_img_pulse": p.t_img_pulse,
         "amp_imaging": p.amp_imaging,
@@ -1792,17 +1346,12 @@ def _feedback_kwargs_from_atomdata(ad):
         "v_apd_all_down": p.v_apd_all_down,
         "n_photons_per_shot": p.n_photons_per_shot,
         "std_n_photons_per_shot": p.std_n_photons_per_shot,
-        "photon_count_scale": getattr(p, "feedback_photon_count_scale", 1.0),
         "feedback_measurement_midpoint_fraction": p.feedback_measurement_midpoint_fraction,
         "feedback_measurement_midpoint_remap_enabled": p.feedback_measurement_midpoint_remap_enabled,
         "feedback_grid_size": int(p.feedback_grid_size),
         "fractional_grid_center_offset": float(p.feedback_fractional_grid_center_offset) if hasattr(p, "feedback_fractional_grid_center_offset") else None,
         "fractional_initial_offset": p.feedback_fractional_initial_offset,
         "guess_span_Omega": float(p.feedback_guess_span_Omega),
-        "feedback_apd_map_enabled": p.feedback_apd_map_enabled,
-        "feedback_apd_map_a": p.feedback_apd_map_a,
-        "feedback_apd_map_b": p.feedback_apd_map_b,
-        "feedback_apd_map_verbose": p.feedback_apd_map_verbose,
         # the state-dependent read model (absent before 2026-10-11: 0 = off)
         "read_twist_per_sz": float(getattr(p, "read_twist_per_sz", 0.0)),
         "back_action_coherence_slope": float(getattr(p, "back_action_coherence_slope", 0.0)),

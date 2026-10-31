@@ -10,7 +10,7 @@ import matplotlib.colors as mcolors
 import matplotlib.pyplot as plt
 import numpy as np
 
-from kexp.base.feedback import (Feedback, _feedback_kwargs_from_atomdata, feedback_grid_convention,
+from kexp.base.feedback import (Feedback, READ_TWIST_SIGN, _feedback_kwargs_from_atomdata, feedback_grid_convention, map_estimate,
                                 feedback_grid_derived, feedback_hypothesis_grid)
 
 
@@ -148,13 +148,8 @@ class FeedbackReplayCore(Feedback):
         "std_n_photons_per_shot": "std_n_photons_per_shot",
         "v_apd_all_up": "v_apd_all_up",
         "v_apd_all_down": "v_apd_all_down",
-        "feedback_photon_count_scale": "photon_count_scale",
         "feedback_measurement_midpoint_fraction": "feedback_measurement_midpoint_fraction",
         "feedback_measurement_midpoint_remap_enabled": "feedback_measurement_midpoint_remap_enabled",
-        "feedback_apd_map_enabled": "feedback_apd_map_enabled",
-        "feedback_apd_map_a": "feedback_apd_map_a",
-        "feedback_apd_map_b": "feedback_apd_map_b",
-        "feedback_apd_map_verbose": "feedback_apd_map_verbose",
         "t_io_update_pretrigger_mu": "t_io_update_pretrigger_mu",
         "t_ffu_pipeline_latency_fudge_mu": "t_ffu_pipeline_latency_fudge_mu",
     }
@@ -180,9 +175,9 @@ class FeedbackReplayCore(Feedback):
         if hasattr(ad.data, "t_raman_pulse"):
             self._t_raman_pulse_rr_cached = self._to_repeat_step(
                 self._restore_shot_step_axis(ad.data.t_raman_pulse), "ad.data.t_raman_pulse")
-        # Per-shot APD endpoints the kernel used (pre-shot runs with
+        # Per-shot APD endpoints the kernel used (older pre-shot runs with
         # p.preshot_endpoint_gain > 0: data.preshot_endpoints = [v_up, v_down,
-        # N_photons_per_shot, updated] per shot, see Feedback.update_shot_endpoints).
+        # N_photons_per_shot, updated] per shot; FeedbackExpt no longer takes them).
         # Replay applies them shot by shot; use_shot_endpoints = False replays the
         # same shots on the calibration instead (the paired comparison).
         self._shot_endpoints_rr = None
@@ -379,9 +374,6 @@ class FeedbackReplayCore(Feedback):
         if kwargs.get("v_apd_all_down") is not None:
             p.v_apd_all_down = float(kwargs["v_apd_all_down"])
 
-        if kwargs.get("photon_count_scale") is not None:
-            p.feedback_photon_count_scale = float(kwargs["photon_count_scale"])
-
         if kwargs.get("feedback_measurement_midpoint_fraction") is not None:
             p.feedback_measurement_midpoint_fraction = float(kwargs["feedback_measurement_midpoint_fraction"])
 
@@ -389,18 +381,6 @@ class FeedbackReplayCore(Feedback):
             p.feedback_measurement_midpoint_remap_enabled = bool(
                 kwargs["feedback_measurement_midpoint_remap_enabled"]
             )
-
-        if kwargs.get("feedback_apd_map_enabled") is not None:
-            p.feedback_apd_map_enabled = bool(kwargs["feedback_apd_map_enabled"])
-
-        if kwargs.get("feedback_apd_map_a") is not None:
-            p.feedback_apd_map_a = float(kwargs["feedback_apd_map_a"])
-
-        if kwargs.get("feedback_apd_map_b") is not None:
-            p.feedback_apd_map_b = float(kwargs["feedback_apd_map_b"])
-
-        if kwargs.get("feedback_apd_map_verbose") is not None:
-            p.feedback_apd_map_verbose = bool(kwargs["feedback_apd_map_verbose"])
 
         if kwargs.get("t_io_update_pretrigger_mu") is not None:
             p.t_io_update_pretrigger_mu = int(kwargs["t_io_update_pretrigger_mu"])
@@ -501,6 +481,48 @@ class FeedbackReplayCore(Feedback):
         if not np.isfinite(arr[0]):
             raise ValueError(f"{name} must contain finite values.")
         return float(arr[0])
+
+    def _initialize_lightshift(self):
+        super()._initialize_lightshift()
+        self._initialize_read_models()
+
+    def _initialize_read_models(self):
+        """Older A/B runs (86509-86520): p.feedback_read_model scanned over {0, 1} picked, per shot,
+        model 0 = the fixed read params or model 1 = p.read_model1_*. Removed from the kernel
+        2026-10-30; kept here so those runs replay as they ran. Not scanned (-1, or absent):
+        nothing changes per shot."""
+        p = self.p
+        rm = np.ravel(np.asarray(getattr(p, "feedback_read_model", -1.0), dtype=float))
+        self.read_model_per_shot = bool(rm.size and np.all(np.isfinite(rm)) and np.any(rm >= 0.0))
+        self.rm0_alpha_lightshift_on = self.read_alpha_lightshift_on
+        self.rm0_alpha_lightshift = self.read_alpha_lightshift
+        self.rm0_twist_on = self.read_twist_on
+        self.rm0_twist = self.read_twist
+        self.rm0_coherence_slope_on = self.read_coherence_slope_on
+        self.rm0_coherence_slope = self.read_coherence_slope
+        self.rm0_coherence = self.back_action_coherence
+        a1 = float(getattr(p, "read_model1_alpha_lightshift", float("nan")))
+        self.rm1_alpha_lightshift_on = bool(np.isfinite(a1))
+        self.rm1_alpha_lightshift = a1 if self.rm1_alpha_lightshift_on else 0.0
+        self.rm1_twist = READ_TWIST_SIGN * float(getattr(p, "read_model1_twist_per_sz", 0.0))
+        self.rm1_twist_on = self.rm1_twist != 0.0
+        self.rm1_coherence_slope = float(getattr(p, "read_model1_coherence_slope", 0.0))
+        self.rm1_coherence_slope_on = self.rm1_coherence_slope != 0.0
+        self.rm1_coherence = float(getattr(p, "read_model1_coherence", self.back_action_coherence))
+
+    def select_read_model(self, model):
+        """At the start of a shot: model >= 0.5 -> read model 1, else model 0. Does nothing unless
+        the run scanned p.feedback_read_model."""
+        if not self.read_model_per_shot:
+            return
+        m = "rm1_" if model >= 0.5 else "rm0_"
+        self.read_alpha_lightshift_on = getattr(self, m + "alpha_lightshift_on")
+        self.read_alpha_lightshift = getattr(self, m + "alpha_lightshift")
+        self.read_twist_on = getattr(self, m + "twist_on")
+        self.read_twist = getattr(self, m + "twist")
+        self.read_coherence_slope_on = getattr(self, m + "coherence_slope_on")
+        self.read_coherence_slope = getattr(self, m + "coherence_slope")
+        self.back_action_coherence = getattr(self, m + "coherence")
 
     def _resolve_read_model_r(self, n_repeat: int) -> np.ndarray:
         """The read model of each shot (row): from the run's xvars when it was
@@ -2159,6 +2181,8 @@ class FeedbackReplay(FeedbackReplayCore):
 
         argmax_idx = np.argmax(P0_final, axis=1)
         max_prob = P0_final[np.arange(n_repeat), argmax_idx]
+        # the mean index of a tie, as the kernel's drive rule (map_estimate)
+        peak_idx = map_estimate(P0_final, j)
 
         # np.argmax silently takes the first of several equal maxima, so a tied
         # posterior scores as a hit or a miss on grid ordering alone. Count them,
@@ -2175,7 +2199,7 @@ class FeedbackReplay(FeedbackReplayCore):
         # With resonance on a point this is |peak - true_idx| <= tolerance_bins, as
         # before; off grid (feedback_grid_shift) it is within tolerance_bins + 1/2,
         # so at a shift of +-1/2 both neighbours count.
-        hit = np.abs(argmax_idx - true_idx) <= int(tolerance_bins) + 0.5 + 1.0e-9
+        hit = np.abs(peak_idx - true_idx) <= int(tolerance_bins) + 0.5 + 1.0e-9
         hit_rate = float(np.mean(hit))
 
         sigma = max(float(sigma_bins), 1.0e-12)
@@ -2738,8 +2762,6 @@ class FeedbackReplay(FeedbackReplayCore):
         apd_noise_min_std: float = 0.03,
         aggregate_mode: str = "auto",
         feedback_measurement_midpoint_remap_enabled: Optional[bool] = None,
-        feedback_apd_map_enabled: Optional[bool] = None,
-        feedback_apd_map_verbose: Optional[bool] = False,
         n_jobs: int = 1,
         parallel_verbose: int = 0,
         eps: float = 1.0e-12,
@@ -2834,8 +2856,6 @@ class FeedbackReplay(FeedbackReplayCore):
             apd_noise_min_std=apd_noise_min_std,
             aggregate_mode=aggregate_mode,
             feedback_measurement_midpoint_remap_enabled=feedback_measurement_midpoint_remap_enabled,
-            feedback_apd_map_enabled=feedback_apd_map_enabled,
-            feedback_apd_map_verbose=feedback_apd_map_verbose,
             n_jobs=int(n_jobs),
             parallel_verbose=int(parallel_verbose),
             eps=eps,
@@ -4215,8 +4235,6 @@ class FeedbackReplayOptimizer:
         apd_noise_min_std: float = 0.03,
         aggregate_mode: str = "auto",
         feedback_measurement_midpoint_remap_enabled: Optional[bool] = None,
-        feedback_apd_map_enabled: Optional[bool] = None,
-        feedback_apd_map_verbose: Optional[bool] = False,
         n_jobs: int = 1,
         parallel_verbose: int = 0,
         eps: float = 1.0e-12,
@@ -4306,16 +4324,10 @@ class FeedbackReplayOptimizer:
         else:
             replay_kwargs = dict(replay_kwargs)
 
-        if feedback_apd_map_enabled is not None:
-            replay_kwargs["feedback_apd_map_enabled"] = bool(feedback_apd_map_enabled)
-
         if feedback_measurement_midpoint_remap_enabled is not None:
             replay_kwargs["feedback_measurement_midpoint_remap_enabled"] = bool(
                 feedback_measurement_midpoint_remap_enabled
             )
-
-        if feedback_apd_map_verbose is not None:
-            replay_kwargs["feedback_apd_map_verbose"] = bool(feedback_apd_map_verbose)
 
         shape = self._shape()
         total_possible = int(np.prod(np.asarray(shape, dtype=np.int64)))
@@ -4701,8 +4713,6 @@ class FeedbackReplayOptimizer:
         apd_noise_min_std: float = 0.03,
         aggregate_mode: str = "auto",
         feedback_measurement_midpoint_remap_enabled: Optional[bool] = None,
-        feedback_apd_map_enabled: Optional[bool] = None,
-        feedback_apd_map_verbose: Optional[bool] = False,
         tolerance_rad_s: Optional[float] = None,
         pulse_weight_power: float = 0.0,
         verbose: bool = True,
@@ -4877,8 +4887,6 @@ class FeedbackReplayOptimizer:
         apd_noise_min_std: float = 0.03,
         aggregate_mode: str = "auto",
         feedback_measurement_midpoint_remap_enabled: Optional[bool] = None,
-        feedback_apd_map_enabled: Optional[bool] = None,
-        feedback_apd_map_verbose: Optional[bool] = False,
         n_jobs: int = 1,
         parallel_verbose: int = 0,
         eps: float = 1.0e-12,
@@ -4941,8 +4949,6 @@ class FeedbackReplayOptimizer:
             apd_noise_min_std=apd_noise_min_std,
             aggregate_mode=aggregate_mode,
             feedback_measurement_midpoint_remap_enabled=feedback_measurement_midpoint_remap_enabled,
-            feedback_apd_map_enabled=feedback_apd_map_enabled,
-            feedback_apd_map_verbose=feedback_apd_map_verbose,
             n_jobs=n_jobs,
             parallel_verbose=parallel_verbose,
             eps=eps,
@@ -4992,10 +4998,6 @@ class FeedbackReplayOptimizer:
             overlay_kwargs["feedback_measurement_midpoint_remap_enabled"] = bool(
                 feedback_measurement_midpoint_remap_enabled
             )
-        if feedback_apd_map_enabled is not None:
-            overlay_kwargs["feedback_apd_map_enabled"] = bool(feedback_apd_map_enabled)
-        if feedback_apd_map_verbose is not None:
-            overlay_kwargs["feedback_apd_map_verbose"] = bool(feedback_apd_map_verbose)
 
         expt_param_pairs: List[Tuple[str, float]] = []
         for pname in param_names:
@@ -5404,8 +5406,6 @@ class FeedbackReplayOptimizer:
                     apd_noise_min_std=apd_noise_min_std,
                     aggregate_mode=aggregate_mode,
                     feedback_measurement_midpoint_remap_enabled=feedback_measurement_midpoint_remap_enabled,
-                    feedback_apd_map_enabled=feedback_apd_map_enabled,
-                    feedback_apd_map_verbose=feedback_apd_map_verbose,
                     tolerance_rad_s=tolerance_rad_s,
                     pulse_weight_power=pulse_weight_power,
                     verbose=verbose,
@@ -5465,8 +5465,6 @@ class FeedbackReplaySweep(FeedbackReplayOptimizer):
         apd_noise_min_std: float = 0.03,
         aggregate_mode: str = "auto",
         feedback_measurement_midpoint_remap_enabled: Optional[bool] = None,
-        feedback_apd_map_enabled: Optional[bool] = None,
-        feedback_apd_map_verbose: Optional[bool] = False,
         n_jobs: int = 1,
         parallel_verbose: int = 0,
         eps: float = 1.0e-12,
@@ -5484,8 +5482,6 @@ class FeedbackReplaySweep(FeedbackReplayOptimizer):
             apd_noise_min_std=float(apd_noise_min_std),
             aggregate_mode=str(aggregate_mode),
             feedback_measurement_midpoint_remap_enabled=feedback_measurement_midpoint_remap_enabled,
-            feedback_apd_map_enabled=feedback_apd_map_enabled,
-            feedback_apd_map_verbose=feedback_apd_map_verbose,
             n_jobs=int(n_jobs),
             parallel_verbose=int(parallel_verbose),
             eps=float(eps),
@@ -6214,8 +6210,6 @@ class FeedbackPosteriorPeakOptimizer(FeedbackReplayOptimizer):
         "feedback_measurement_midpoint_fraction",
         "t_raman_pulse_ideal",
         "t_raman_pulse_offset",
-        "feedback_apd_map_a",
-        "feedback_apd_map_b",
     })
 
     def __init__(
@@ -6582,7 +6576,7 @@ class FeedbackPosteriorPeakOptimizer(FeedbackReplayOptimizer):
         P0_final = np.asarray(
             best_result.P0_rr[:, self.step_index, :], dtype=float)
         true_idx = self.replay._true_resonance_indices(best_result)
-        peak_offset = np.argmax(P0_final, axis=1) - true_idx
+        peak_offset = map_estimate(P0_final, np.arange(P0_final.shape[-1])) - true_idx
         # whole steps, or fractional off grid (feedback_grid_shift): bins cover both
         lo, hi = int(np.floor(peak_offset.min())), int(np.ceil(peak_offset.max()))
         edges = np.arange(lo - 0.5, hi + 1.5, 1.0)
