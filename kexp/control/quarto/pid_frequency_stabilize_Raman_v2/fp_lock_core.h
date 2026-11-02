@@ -46,7 +46,11 @@ struct Settings {
   double p1 = -0.01;       // V/ms, proportional
   double i1 = -0.01;     // V/ms per sweep, integral (the old p1 did this)
   double rail = 8.0;     // V, output and integral clamp
+  int32_t override = 0;  // 1 = output forced to ovolt; the lock keeps running but its output is not sent
+  double ovolt = 0.0;    // V, forced output while override = 1
 };
+
+constexpr double kDacMax = 10.0;  // V, the output is clamped to +/-kDacMax (assumed DAC range)
 
 class Lock {
 public:
@@ -73,6 +77,13 @@ public:
     integral = 0;
     feedback = 0;
     saturated = 0;
+  }
+
+  // Volts the DAC should hold: ovolt while override = 1 (clamped to +/-kDacMax),
+  // otherwise the lock's feedback. The lock keeps running under override.
+  double outputVolts() const {
+    if (s.override != 1) return feedback;
+    return s.ovolt > kDacMax ? kDacMax : (s.ovolt < -kDacMax ? -kDacMax : s.ovolt);
   }
 
   // One ADC sample. Returns true when the DAC output should be rewritten.
