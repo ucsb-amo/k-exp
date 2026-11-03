@@ -13,12 +13,12 @@ class mag_trap(EnvExperiment, Base):
 
     def prepare(self):
         Base.__init__(self,
-                      save_data=False,
-                      camera_select=cameras.xy_basler,
+                      save_data=True,
+                      camera_select=cameras.andor,
                       imaging_type=img_types.ABSORPTION,
                       warmup_shots=0)
 
-        self.p.t_tof = 875e-6
+        self.p.t_tof = 475e-6
         # self.xvar('beans',np.linspace(1,10.,10))
 
         # self.xvar('t_tof',np.linspace(400,1300.,9)*1.e-6)
@@ -37,7 +37,7 @@ class mag_trap(EnvExperiment, Base):
         # # self.p.v_pd_lightsheet_rampup_end = 7.6
  
         # self.xvar('v_pd_hf_lightsheet_rampdown_end',np.linspace(.4,1.4,11))
-        # self.p.v_pd_hf_lightsheet_rampdown_end = 0.82
+        self.p.v_pd_hf_lightsheet_rampdown_end = 0.82
         
         # self.p.t_hf_lightsheet_rampdown=150.e-3
         # self.xvar('t_hf_lightsheet_rampdown',np.linspace(.2,1.5,8))
@@ -47,8 +47,9 @@ class mag_trap(EnvExperiment, Base):
         # self.p.t_decay_exponential = self.p.t_hf_lightsheet_rampdown
         # self.p.n_lightsheet_evap1_decay_exponential = 1.5
         # self.xvar('n_decay_exponential', np.linspace(2.5,5.,7))
+        self.xvar('beans',np.linspace(1,10,10))
 
-        self.p.N_repeats = 1000
+        self.p.N_repeats = 1
         self.p.t_mot_load = 1.
 
         Adjust.__init__(self)
@@ -61,7 +62,7 @@ class mag_trap(EnvExperiment, Base):
 
         # self.adjust('n_decay_exponential', min_val=0.3, max_val=8.)
 
-        self.finish_prepare(shuffle=True)
+        self.finish_prepare(shuffle=False)
         
     @kernel
     def scan_kernel(self):

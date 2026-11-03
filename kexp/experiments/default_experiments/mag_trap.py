@@ -17,7 +17,13 @@ class mag_trap(EnvExperiment, Base):
         diagnostic_images=True)
 
         self.p.t_tof = 10.e-3
-        self.xvar('t_tof',np.linspace(5.,10.,7)*1.e-3)
+        # self.xvar('t_tof',np.linspace(5.,10.,10)*1.e-3)
+
+        # self.xvar('i_magtrap_init',np.linspace(40.,100.,20))
+        # self.p.i_magtrap_init = 45.
+
+        self.xvar('v_xshim_current_magtrap',np.linspace(0.,4.,8))
+        self.xvar('v_yshim_current_magtrap',np.linspace(0.,4.,8))
 
         self.p.t_magtrap_hold = 0.15 
         # self.p.t_magtrap_hold = 1.
