@@ -130,7 +130,7 @@ class ExptParams(ExptParamsWaxx):
         # self.t_hf_lightsheet_rampdown = 1.1
         # self.t_hf_lightsheet_rampdown = 0.3
         # self.t_hf_lightsheet_rampdown = 0.45 #90212+90213, 2026-10-30  # four-knob bundle, see t_mot_load_total
-        self.t_hf_lightsheet_rampdown = 1.25 #91427+91428+91434, 2026-11-02  # six-knob evap bundle (+0.8 s/shot), user OK
+        self.t_hf_lightsheet_rampdown = .27 #91427+91428+91434, 2026-11-02  # six-knob evap bundle (+0.8 s/shot), user OK
         self.t_hf_lightsheet_rampdown2 = .74
         self.t_lf_lightsheet_rampdown2 = .02
         # self.t_lightsheet_rampdown3 = 200.e-3
@@ -221,7 +221,7 @@ class ExptParams(ExptParamsWaxx):
         self.detune_d2_c_mot = -2.35
         self.amp_d2_c_mot = 0.188
 
-        self.detune_d2_r_mot = -5.5
+        self.detune_d2_r_mot = -5.8
         self.amp_d2_r_mot = 0.188
 
         self.detune_d2_c_hmot = -1.7
@@ -233,10 +233,10 @@ class ExptParams(ExptParamsWaxx):
         self.detune_d1_r_mot = 7.5
         self.v_pd_d1_r_mot = 5.0
 
-        self.i_mot = 21.
+        self.i_mot = 23.
 
         self.v_zshim_current = .15
-        self.v_xshim_current = 1.8
+        self.v_xshim_current = 2.8
         self.v_yshim_current = .86
 
         #D2 CMOT
@@ -271,8 +271,8 @@ class ExptParams(ExptParamsWaxx):
         self.pfrac_c_gmramp_end = 0.05
         self.pfrac_r_gmramp_end = 0.5
 
-        self.v_xshim_current_gm = 0.3
-        self.v_yshim_current_gm = 2.5
+        self.v_xshim_current_gm = 0.25
+        self.v_yshim_current_gm = 2.14
         self.v_zshim_current_gm = 0.85
 
         self.detune_d1_c_gm = 7.5 # 7.37F
@@ -287,7 +287,7 @@ class ExptParams(ExptParamsWaxx):
         self.n_gmramp_steps = 100
 
         # mag trap
-        self.i_magtrap_init = 106.5
+        self.i_magtrap_init = 79.
         self.i_magtrap_ramp_end = 100.
 
         self.v_xshim_current_magtrap = 2.3
@@ -313,7 +313,7 @@ class ExptParams(ExptParamsWaxx):
         self.v_pd_lightsheet_rampup_start = self.v_pd_lightsheet_pd_minimum
         self.v_pd_lightsheet_rampup_end = 6.8
         self.v_pd_lf_lightsheet_rampdown_end = 1.0 #4.16
-        self.v_pd_hf_lightsheet_rampdown_end = 0.85 #4.16
+        self.v_pd_hf_lightsheet_rampdown_end = 0.65 # 0.85 #4.16
         self.v_pd_hf_lightsheet_rampdown2_end = 0.0
         self.v_pd_lightsheet_rampdown3_end = .0
         self.n_lightsheet_ramp_steps = 200
@@ -339,7 +339,7 @@ class ExptParams(ExptParamsWaxx):
         # HF evap 2: PID2 start = this x tweezer_vpd1_to_vpd2(evap-1 end) (bias low: integral2 preload at AO2's peak)
         self.fraction_hf_tweezer_evap2_start = 0.95 #87461, 2026-10-20
         # HF evap 2: 1. = painting held at its evap-1 end value; 0. = constant-trap-frequency law in PID2 units
-        self.do_hold_painting_hf_tweezer_evap2 = 1. #87461, 2026-10-20
+        self.do_hold_painting_hf_tweezer_evap2 = 0. #87461, 2026-10-20
 
         self.v_tweezer_paint_rampdown_end1 = -4.985
         self.v_tweezer_paint_rampdown_end2 = -6.5
@@ -455,7 +455,7 @@ class ExptParams(ExptParamsWaxx):
 
         # high field evap
         # self.i_hf_lightsheet_evap1_current = 192.7
-        self.i_hf_lightsheet_evap1_current = 193.0 #91427+91428+91434, 2026-11-02  # six-knob evap bundle, user OK
+        self.i_hf_lightsheet_evap1_current = 192.3 # 192.7 #91427+91428+91434, 2026-11-02  # six-knob evap bundle, user OK
         self.i_hf_lightsheet_evap2_current = 193.3
 
         # self.i_hf_tweezer_load_current = 192.7 # 193.4

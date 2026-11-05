@@ -14,7 +14,7 @@ class mag_trap(EnvExperiment, Base):
 
     def prepare(self):
         Base.__init__(self,
-                      save_data=False,
+                      save_data=True,
                       camera_select=cameras.andor,
                       imaging_type=img_types.ABSORPTION, warmup_shots=1,
                       diagnostic_images=True,
@@ -29,7 +29,7 @@ class mag_trap(EnvExperiment, Base):
         # self.camera_params.exposure_time = self.p.t_imaging_pulse
         # self.camera_params.amp_imaging = 2.5
 
-        self.p.t_tof = 50.e-6
+        self.p.t_tof = 1300.e-6
         
         # self.xvar('beans',np.linspace(1,30.,30))
 
@@ -41,10 +41,13 @@ class mag_trap(EnvExperiment, Base):
 
         self.p.t_tweezer_hold = 1.e-3
 
+
+
         # self.xvar('i_hf_lightsheet_evap1_current',np.linspace(192.,195.,9))
         # self.p.i_hf_lightsheet_evap1_current = 194.
         # self.p.t_hf_lightsheet_rampdown = 0.025
-        # self.xvar('v_pd_hf_lightsheet_rampdown_end',np.linspace(0.25,0.85,7))
+        # self.xvar('v_pd_hf_lightsheet_rampdown_end',np.linspace(0.4,1.4,10))
+
         # self.p.v_pd_hf_lightsheet_rampdown_end=0.25
         # self.p.i_magtrap_init = 95.
         # self.p.v_hf_tweezer_paint_amp_max = -4.95
@@ -82,7 +85,8 @@ class mag_trap(EnvExperiment, Base):
         # self.xvar('t_lightsheet_rampdown3',np.linspace(0.,175.,11)*1.e-3)
         
         # self.adjust('t_tweezer_hold',0.,100.e-3)
-        self.p.N_repeats = 1000
+        self.p.N_repeats = 1
+        self.xvar('beans',np.linspace(1,10,10))
         # self.p.t_mot_load = 1.
             
         # self.p.v_lightsheet_dump = 0.
@@ -97,7 +101,7 @@ class mag_trap(EnvExperiment, Base):
         # self.p.t_lightsheet_dump = 100.e-3
 
         Adjust.__init__(self)
-        self.finish_prepare(shuffle=True)
+        self.finish_prepare(shuffle=False)
 
     @kernel
     def scan_kernel(self):

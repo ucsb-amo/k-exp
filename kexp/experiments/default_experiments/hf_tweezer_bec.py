@@ -13,7 +13,7 @@ class hf_bec(EnvExperiment, Base):
                       camera_select=cameras.andor,
                       imaging_type=img_types.ABSORPTION,
                       diagnostic_images=True,
-                      warmup_shots=2,
+                      warmup_shots=1,
                       mot_preload=True)
 
         # self.p.t_mot_load = 1.0
@@ -21,21 +21,21 @@ class hf_bec(EnvExperiment, Base):
         # self.p.t_tweezer_hold = 100.e-3
         # self.p.t_tweezer_hold = 900.e-3 #87461 (20 ms gave +20-40 % vs 100 ms), 2026-10-20
 
-        # self.xvar('t_tof',np.linspace(150.,2500.,7)*1.e-6)
-        # self.xvar('v_hf_tweezer_paint_amp_max',np.linspace(-2.,4.99,9))
-        self.xvar('v_pd_hf_tweezer_1064_rampdown2_end',np.linspace(0.2,0.5,4))
-        self.p.v_pd_hf_tweezer_1064_rampdown2_end = 0.40 # 0.5
+        self.xvar('t_tof',np.linspace(150.,2500.,7)*1.e-6)
+        # self.xvar('v_hf_tweezer_paint_amp_max',np.linspace(-2.,4.99,6))
+        # self.xvar('v_pd_hf_tweezer_1064_rampdown2_end',np.linspace(0.2,2.0,6))
         # self.xvar('i_hf_lightsheet_evap2_current', np.linspace(192.7, 193.8, 7))
+        # self.xvar('i_hf_tweezer_evap2_current', np.linspace(193.9, 195.8, 5))
         # self.p.t_hf_lightsheet_rampdown = 300.e-3
         # self.p.v_pd_hf_tweezer_1064_rampdown_end = 0.16
     
-        # self.xvar('t_hf_tweezer_1064_rampdown2',np.linspace(0.1,0.7,7))
+        # self.xvar('t_hf_tweezer_1064_rampdown2',np.linspace(0.1,0.7,10))
         # self.p.t_hf_tweezer_1064_rampdown2=0.3
         # self.p.v_pd_hf_tweezer_1064_rampdown2_end = 0.9
         # self.p.v_hf_tweezer_paint_amp_max = 4.9
 
         # self.p.t_tof = 4.e-3
-        self.p.t_tof = 2700.e-6
+        self.p.t_tof = 2500.e-6
 
         # self.data.apd = self.data.add_data_container(1)
         # self.xvar('t_tweezer_hold',np.linspace(0.,0.8,6))
@@ -46,7 +46,7 @@ class hf_bec(EnvExperiment, Base):
 
         self.scanning()
 
-        Adjust.__init__(self)
+        # Adjust.__init__(self)
         self.finish_prepare(shuffle=True)
 
 
