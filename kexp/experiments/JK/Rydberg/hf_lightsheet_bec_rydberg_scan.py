@@ -41,13 +41,13 @@ class hf_lightsheet_bec_rydberg(EnvExperiment, Base):
         # rydberg (from HF_experiments/Rydberg/hf_bec_rydberg_scan.py)
         # self.xvar('do_405_pulse',[0,1])
         self.p.do_405_pulse = 1
-        # self.xvar('do_980_pulse',[0,1])
+        self.xvar('do_980_pulse',[0,1])
         self.p.do_980_pulse = 1
         self.p.amp_dds_405 = 0.04
 
         self.p.hf_imaging_detuning = -568.e6 
 
-        self.xvar('frequency_eo_980', np.linspace(416.,422.0,30)*1.e6)
+        # self.xvar('frequency_eo_980', np.linspace(416.,422.0,30)*1.e6)
         self.p.frequency_eo_980 = 418.7e6
 
         self.p.v_pd_ry_405 = 0.4
@@ -55,7 +55,7 @@ class hf_lightsheet_bec_rydberg(EnvExperiment, Base):
 
         # rydberg beams are on for the whole lightsheet hold
         # self.xvar('t_lightsheet_hold', np.linspace(0.0, 600.0, 7) * 1.e-3)
-        self.p.t_lightsheet_hold = 412.e-3
+        self.p.t_lightsheet_hold = 692.e-3
 
         self.p.N_repeats = 5
         self.finish_prepare(shuffle=True)

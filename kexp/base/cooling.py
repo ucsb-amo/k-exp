@@ -88,7 +88,7 @@ class Cooling():
             ramp_down_painting = True
 
 
-        self.switch_d2_2d(1)
+        # self.switch_d2_2d(1)
         self.mot(self.p.t_mot_load)
         self.dds.push.off()
         self.cmot_d1(self.p.t_d1cmot * s)
@@ -144,10 +144,13 @@ class Cooling():
                           paint=True,keep_trap_frequency_constant=True,
                           paint_exponent=self.p.paint_amp_exponent_hf_tweezer)
 
+
+        
         if do_tweezer_evap_2:
             # PID2 start biased low: integral2 is preloaded to 4 V (AO2's efficiency peak) at enable
             v_start2 = tweezer_vpd1_to_vpd2(self.p.v_pd_hf_tweezer_1064_rampdown_end) \
                 * self.p.fraction_hf_tweezer_evap2_start
+            self.ttl.pd_scope_trig.pulse(1.e-6)
             if self.p.do_hold_painting_hf_tweezer_evap2 == 1.:
                 # painting held at its evap-1 end value (keep_trap_frequency_constant=False
                 # writes v_awg_am_max every step)
@@ -167,7 +170,7 @@ class Cooling():
         self.diag.img_tweezer_evap_x.trigger()      # diagnostic frame after the last evap ramp
 
         self.dac.supply_current_2dmot.set(v=0.)
-        self.ttl.pd_scope_trig.pulse(1.e-6)
+        # self.ttl.pd_scope_trig.pulse(1.e-6)
 
         self.outer_coil.ramp_supply(t=20.e-3,
                              i_end=self.p.i_hf_raman)

@@ -57,5 +57,5 @@ class Adjust(Scanner):
         self.adjust('t_tweezer_hold',min_val=0.,max_val=100.e-3,step=1.e-3)
 
         self.adjust('v_pd_hf_tweezer_1064_rampdown_end',min_val=0.05,max_val=9.2)
-        self.adjust('v_pd_hf_tweezer_1064_rampdown2_end',min_val=2.8,max_val=3.3)
+        self.adjust('v_pd_hf_tweezer_1064_rampdown2_end',min_val=0.01,max_val=3.3)
         self.adjust('v_hf_tweezer_paint_amp_max', min_val=-4.9, max_val=4.9)

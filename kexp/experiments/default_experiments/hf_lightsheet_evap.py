@@ -14,42 +14,42 @@ class mag_trap(EnvExperiment, Base):
     def prepare(self):
         Base.__init__(self,
                       save_data=True,
-                      camera_select=cameras.andor,
+                      camera_select=cameras.xy_basler,
                       imaging_type=img_types.ABSORPTION,
                       warmup_shots=0)
 
-        self.p.t_tof = 475e-6
+        self.p.t_tof = 2500.e-6
         # self.xvar('beans',np.linspace(1,10.,10))
 
-        # self.xvar('t_tof',np.linspace(400,1300.,9)*1.e-6)
+        self.xvar('t_tof',np.linspace(400,2300.,9)*1.e-6)
 
         # self.xvar('t_lightsheet_rampup',np.linspace(20.,400.,15)*1.e-3)
         # self.xvar('v_pd_lightsheet_rampup_end',np.linspace(4.,8.6,11))
         # self.p.t_lightsheet_rampup = 0.074
         # self.p.v_pd_lightsheet_rampup_end = 7.1
 
-        # self.xvar('i_hf_lightsheet_evap1_current',np.linspace(192.5,194.,5))
-        # self.p.i_hf_lightsheet_evap1_current = 192.7
+        # self.xvar('i_hf_lightsheet_evap1_current',np.linspace(191.9,193.8,6))
+        self.p.i_hf_lightsheet_evap1_current = 192.3
         # # self.p.i_hf_lightsheet_evap1_current = 18.
 
         # self.p.t_tof = 1.3992e-3
 
         # # self.p.v_pd_lightsheet_rampup_end = 7.6
  
-        # self.xvar('v_pd_hf_lightsheet_rampdown_end',np.linspace(.4,1.4,11))
-        self.p.v_pd_hf_lightsheet_rampdown_end = 0.82
+        # self.xvar('v_pd_hf_lightsheet_rampdown_end',np.linspace(.4,1.4,10))
+        self.p.v_pd_hf_lightsheet_rampdown_end = 0.5 # 0.82
         
         # self.p.t_hf_lightsheet_rampdown=150.e-3
-        # self.xvar('t_hf_lightsheet_rampdown',np.linspace(.2,1.5,8))
+        # self.xvar('t_hf_lightsheet_rampdown',np.linspace(.05,1.5,10))
     
         # self.adjust('amp_imaging',0.3,0.6)
 
         # self.p.t_decay_exponential = self.p.t_hf_lightsheet_rampdown
         # self.p.n_lightsheet_evap1_decay_exponential = 1.5
         # self.xvar('n_decay_exponential', np.linspace(2.5,5.,7))
-        self.xvar('beans',np.linspace(1,10,10))
+        # self.xvar('beans',np.linspace(1,10,10))
 
-        self.p.N_repeats = 1
+        self.p.N_repeats = 2
         self.p.t_mot_load = 1.
 
         Adjust.__init__(self)
