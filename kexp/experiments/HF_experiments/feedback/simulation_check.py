@@ -1,12 +1,5 @@
 from artiq.experiment import *
-from artiq.language import now_mu, delay, delay_mu, TFloat, TArray, TTuple, at_mu, parallel
-from kexp import Base, img_types, cameras
-from kexp.base import Feedback
-from kexp.calibrations.imaging import integrator_calibration
 import numpy as np
-from numpy import int64
-
-from kexp.util.artiq.async_print import aprint
 
 from kexp.experiments.HF_experiments.feedback.base_expt_feedback import FeedbackExpt
 

@@ -1,7 +1,5 @@
 from artiq.experiment import *
-from artiq.language import now_mu, delay, delay_mu, TFloat, TArray, TTuple, at_mu, parallel
-from kexp import Base, img_types, cameras, aprint
-from kexp.base import Feedback
+from artiq.language import now_mu, delay, TFloat, at_mu
 import numpy as np
 from numpy import int64
 
@@ -50,13 +48,20 @@ class feedback_reinit(EnvExperiment, FeedbackExpt):
 
         ### parameters
 
-        self.p.feedback_fractional_initial_offset = 2.
-        self.xvar('feedback_fractional_initial_offset', np.linspace(-2.5, 2.5, 11))
+        # Hypothesis grid: the params defaults (feedback_grid_convention 2, kexp.base.feedback)
+        # self.p.frequency_feedback_grid_full_span = 637.3e3 # 5 Omega at t_pi 3.9229 us, the old +-2.5 Omega
+        # self.p.feedback_guess_span_Omega = 2.5 # convention 1
+
+        # Initial offsets as fractions of the largest allowed (feedback_fractional_initial_offset,
+        # -1..1): the old -2.5 .. 2.5 Omega every 0.5 on the 21-point +-2.5 Omega grid were
+        # -10 .. 10 steps every 2 of a largest allowed 9.5, the ends moved in to 9.5 (user,
+        # 2026-10-28), kept as fractions so they fit any grid size
+        offset_frac = np.array([-9.5, -8., -6., -4., -2., 0., 2., 4., 6., 8., 9.5]) / 9.5
+        self.p.feedback_fractional_initial_offset = 8. / 9.5 # was 2. Omega; the xvar sets it
+        self.xvar('feedback_fractional_initial_offset', offset_frac)
 
         self.p.N_repeats = 5
         self.p.N_pulses = 17
-
-        self.p.feedback_guess_span_Omega = 2.5 # 21 points x 0.25 Omega, as FB_scan
 
         ### reinitialisation
         self.p.feedback_reinit_std_threshold_Omega = 0.5
@@ -185,13 +190,7 @@ class feedback_reinit(EnvExperiment, FeedbackExpt):
             hz += (cos_H + one_minus_cos * uzuz) * sz
             nx = cos_z * hx + sin_z * hy
             ny = -sin_z * hx + cos_z * hy
-            # State-dependent read (2026-10-11; READ_TWIST_SIGN in kexp.base.feedback).
-            # Off (the defaults): exactly the constant model -- the same multiply
-            # by back_action_coherence. On: a twist d = read_twist * hz added to
-            # the z rotation (second order, not renormalised: sin d ~ d,
-            # cos d ~ 1 - d^2/2 -- model M1-p2, no worse than exact trig in the
-            # simulation check), and the coherence
-            # c0 + slope * hz (clipped to [0, 1]); hz is this point's z at the read.
+            # state-dependent read: as Feedback.generate_posterior
             if self.read_twist_on:
                 d_twist = self.read_twist * hz
                 cos_d = 1.0 - d_twist * d_twist * 0.5
@@ -294,7 +293,7 @@ class feedback_reinit(EnvExperiment, FeedbackExpt):
                 max_prob = P0[i]
                 max_idx = i
             i += 1
-        omega_max = omega_guess_list[max_idx]
+        omega_max = self.map_frequency(max_idx, max_prob)
         self.max_idx = max_idx
         uniform_prob = 1.0 / m
         if max_prob < 1.15 * uniform_prob:
@@ -403,7 +402,7 @@ class feedback_reinit(EnvExperiment, FeedbackExpt):
             at_mu(t_step)
             c_a = self.core.get_rtio_counter_mu()
             self.raman.pulse(t_pulse)
-            self.measurement_events()
+            self.readout_events()
             self.adc_submit()
             c_b = self.core.get_rtio_counter_mu()
             phase_tracker = self.deferred_phase_update(dT, dt0, dt1)
@@ -448,20 +447,6 @@ class feedback_reinit(EnvExperiment, FeedbackExpt):
         self.data.t.put_data(t + t_pulse + self.p.t_img_pulse, i)
         self.data.s_z.put_data(self.state_z[self.zidx], i)
         self.per_feedback_loop_end(idx=i)
-
-    @kernel
-    def measurement_events(self):
-        # FeedbackExpt.measurement up to the ADC read: integrator gate, readout pulse, settle,
-        # stage the next fast frequency update, schedule the integrator clear; cursor left at t0.
-        T_CONV_MU = 80
-        self.integrator.begin_integrate(reset=False)
-        self.imaging.pulse(self.p.t_img_pulse)
-        self.integrator.stop_and_settle()
-        t0 = now_mu()
-        self.raman.stage_ffua()
-        at_mu(t0 + T_CONV_MU)
-        self.integrator.clear(t=0)
-        at_mu(t0)
 
     @kernel
     def measurement_read(self, i):
@@ -705,7 +690,7 @@ class feedback_reinit(EnvExperiment, FeedbackExpt):
 
             self.raman.pulse(t_pulse)
             if self.p.t_split_posterior == 1:
-                self.measurement_events()
+                self.readout_events()
                 self.propagate_hypotheses(t, phase_tracker)
                 k = self.measurement_read(i)
                 self.probe_point(i, 3, t_start_mu)
@@ -781,10 +766,6 @@ class feedback_reinit(EnvExperiment, FeedbackExpt):
         # posterior and grid after pulse idx (row 0 = prior)
         self.data.probabilities.put_data_1d(self.P0, idx+1)
         self.data.omega_raman_mesh.put_data_1d(self.omega_guess_list, idx+1)
-
-    @kernel
-    def per_scan_kernel_end(self):
-        pass
 
     @kernel
     def run(self):

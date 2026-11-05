@@ -6,11 +6,11 @@ client view (``BristolClientWindow``) which talks to this server over
 ZMQ - so we don't want a second floating window.
 """
 from waxx.util.guis.bristol.bristol_wavemeter_server import main as run_server
-from kexp.config.ip import BRISTOL_WAVEMETER_IP
+from kexp.config.ip import BRISTOL_WAVEMETER_IP, BRISTOL_LOG_DIR
 
 
 def main() -> None:
-    run_server(wavemeter_host=BRISTOL_WAVEMETER_IP)
+    run_server(wavemeter_host=BRISTOL_WAVEMETER_IP, log_dir=BRISTOL_LOG_DIR)
 
 
 if __name__ == "__main__":

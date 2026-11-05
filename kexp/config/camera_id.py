@@ -77,6 +77,8 @@ class camera_frame(camera_frame_waxx):
                                     exposure_time_fluor = 1.e-3, amp_fluorescence=0.5,
                                     exposure_time_abs = 19.e-6, amp_absorption = 1.0, gain_abs=30.,
                                     exposure_time_dispersive = 100.e-6, amp_dispersive = 0.248,
+                                    # magnification=0.75 (BaslerParams default, unverified)
+                                    magnification=1.655, # 3.45 um / 2.084 +/- .066 um/px at the atoms, tweezer tone step vs Andor #90582-90589, 2026-10-31. Effective: the 3.45 um pixel is the default, unchecked for this camera
                                     trigger_ttl=_ttl.z_basler)
 
         self.basler_2dmot = BaslerParams(serial_number='40277703',

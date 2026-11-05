@@ -328,6 +328,23 @@ static void test_clear_output() {
   CHECK(std::fabs(s.lk.err) < 0.01, "re-locked err %.4f ms", s.lk.err);
 }
 
+static void test_override() {
+  Sim s; s.sep0 = 10.5; s.run(400);
+  const double fb = s.lk.feedback;
+  CHECK(s.lk.outputVolts() == fb, "lock output %.4f, outputVolts %.4f", fb, s.lk.outputVolts());
+  s.lk.s.override = 1; s.lk.s.ovolt = 1.25;
+  CHECK(s.lk.outputVolts() == 1.25, "forced %.4f", s.lk.outputVolts());
+  s.run(400);
+  CHECK(s.lk.state == fplock::LOCKED && s.lk.feedback != 1.25, "lock keeps running: state %d fb %.4f", s.lk.state, s.lk.feedback);
+  CHECK(s.lk.outputVolts() == 1.25, "forced %.4f after lock sweeps", s.lk.outputVolts());
+  s.lk.s.ovolt = 42.0;
+  CHECK(s.lk.outputVolts() == fplock::kDacMax, "clamp high %.4f", s.lk.outputVolts());
+  s.lk.s.ovolt = -42.0;
+  CHECK(s.lk.outputVolts() == -fplock::kDacMax, "clamp low %.4f", s.lk.outputVolts());
+  s.lk.s.override = 0;
+  CHECK(s.lk.outputVolts() == s.lk.feedback, "override off: outputVolts %.4f feedback %.4f", s.lk.outputVolts(), s.lk.feedback);
+}
+
 int main() {
   test_centroid_accuracy();
   test_noise_and_height();
@@ -342,6 +359,7 @@ int main() {
   test_bad_reasons();
   test_hold_off();
   test_clear_output();
+  test_override();
   std::printf(failures ? "%d FAILED\n" : "all passed\n", failures);
   return failures ? 1 : 0;
 }

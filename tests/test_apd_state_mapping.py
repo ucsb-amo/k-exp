@@ -55,6 +55,22 @@ def test_proposal_block_follows_the_lab_convention(fake):
     json.dumps(m.to_dict(), default=str)
 
 
+def test_loader_reaches_atomdata_call():
+    """A loader replaces waxa.atomdata in load_run, with the arguments atomdata would get."""
+    calls = []
+
+    class Stop(Exception):
+        pass
+
+    def loader(run_id, **kwargs):
+        calls.append((run_id, kwargs))
+        raise Stop
+
+    with pytest.raises(Stop):
+        asm.apd_state_mapping([8], sz_source="params", degree=1, loader=loader)
+    assert calls == [(8, {"roi_id": "auto", "lite": False, "ignore_images": False})]
+
+
 def test_skip_first_pulse_and_param_consistency(fake, monkeypatch):
     m = asm.apd_state_mapping([4, 5], skip_first_pulse=True, n_boot=0)
     assert m.cal.pulses_used == (1, 2, 3, 4)

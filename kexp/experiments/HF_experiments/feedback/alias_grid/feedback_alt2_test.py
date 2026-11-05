@@ -23,9 +23,12 @@ class feedback(EnvExperiment, FeedbackExpt):
 
         ### parameters
 
-        self.p.feedback_fractional_initial_offset = 2.
-        # self.xvar('feedback_fractional_initial_offset', np.linspace(0,4.,5))
-        self.xvar('feedback_fractional_initial_offset', np.linspace(-2., 2., 5))
+        # hypothesis grid: the params defaults (feedback_grid_convention 2)
+        # self.p.frequency_feedback_grid_full_span = 637.3e3 # the 21-point +-2.5 Omega grid this ran on
+        # self.xvar('feedback_fractional_initial_offset', np.linspace(0,4.,5)) # convention 1, Omega
+        # as fractions of the largest allowed offset: was linspace(-2., 2., 5) Omega = -8, -4, 0,
+        # 4, 8 of a largest 9.5 steps on that grid
+        self.xvar('feedback_fractional_initial_offset', np.array([-8., -4., 0., 4., 8.]) / 9.5)
         self.p.N_repeats = 1 # session copy: 5-shot run-only test of the alternating-gap schedule
 
         self.p.N_warmup_shots = 3 # session copy: 3 warm-up shots (Base.pre_scan)

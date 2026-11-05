@@ -121,14 +121,15 @@ def cal_points(view, mode=0):
     return t[ok], apd[ok], ts[ok], ok
 
 
-def load_run(run_id, with_scope=True, scope_windows=None, part=None, mode=0):
+def load_run(run_id, with_scope=True, scope_windows=None, part=None, mode=0, loader=None):
     """One run, read-only: (dict of per-shot arrays, params, ScopePulses or None).
     ``part='cal'``: the run's interleaved readout sub-scan instead of its main
-    scan (one readout ``mode``, no scope)."""
+    scan (one readout ``mode``, no scope). ``loader``: called as ``atomdata`` is
+    (e.g. a caching wrapper); None is ``waxa.atomdata``."""
     from waxa import atomdata
     from waxa.analysis.readout import integrate_scope_pulses
 
-    ad = atomdata(int(run_id), roi_id="auto", lite=False, ignore_images=bool(part))
+    ad = (loader or atomdata)(int(run_id), roi_id="auto", lite=False, ignore_images=bool(part))
     rid = int(np.ravel(ad.run_info.run_id)[0])
     if part is not None:
         if part != "cal":
@@ -313,10 +314,11 @@ def current_feedback_params():
 
 def apd_state_mapping(run_ids, *, skip_first_pulse=False, pulses=None, sz_source="fit", degree="auto",
                       with_scope=True, scope_windows=None, n_boot=2000, seed=0, date=None,
-                      part=None, mode=0) -> ApdStateMapping:
+                      part=None, mode=0, loader=None) -> ApdStateMapping:
     """Load the runs (read-only) and calibrate the APD readout; see the module docstring.
     ``part='cal'``: each run's interleaved readout sub-scan (``ad.cal``) in readout
-    ``mode`` (0 the data shot's readout, 1 the calibration run's), scope off."""
+    ``mode`` (0 the data shot's readout, 1 the calibration run's), scope off.
+    ``loader``: passed to ``load_run``, e.g. a caching wrapper of ``atomdata``."""
     from waxa.analysis.readout import calibrate_readout, ScopePulses
 
     run_ids = [int(r) for r in run_ids]
@@ -329,11 +331,12 @@ def apd_state_mapping(run_ids, *, skip_first_pulse=False, pulses=None, sz_source
                   f"(was {sz_source} / {degree}: the sub-scan has two pulse lengths)")
         sz_source, degree = "params", 1
     T, A, R, TS, infos, scopes, params0 = [], [], [], [], [], [], None
+    by = {"loader": loader} if loader is not None else {}   # absent unless given: load_run's call is unchanged
     for rid in run_ids:
         if part is None:
-            d, prm, sc = load_run(rid, with_scope=with_scope, scope_windows=scope_windows)
+            d, prm, sc = load_run(rid, with_scope=with_scope, scope_windows=scope_windows, **by)
         else:
-            d, prm, sc = load_run(rid, with_scope=False, scope_windows=scope_windows, part=part, mode=mode)
+            d, prm, sc = load_run(rid, with_scope=False, scope_windows=scope_windows, part=part, mode=mode, **by)
         params0 = params0 if params0 is not None else prm
         T.append(d["t"]); A.append(d["apd"]); R.append(np.full(d["t"].size, d["info"]["run_id"]))
         TS.append(d["info"]["timestamps"]); infos.append(d["info"]); scopes.append(sc)

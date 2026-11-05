@@ -44,7 +44,7 @@ class check_twist(EnvExperiment, Base):
         self.p.t_ramsey = self.p.t_img_pulse
 
         self.p.t_tweezer_hold = 15.e-3
-        self.p.t_tof = 2.e-3
+        self.p.t_tof = 1.5e-3
         self.p.t_mot_load = 1.
         self.p.N_repeats = 2
 

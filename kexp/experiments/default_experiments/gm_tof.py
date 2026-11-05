@@ -8,7 +8,7 @@ class gm_tof(EnvExperiment, Base):
     def prepare(self):
         Base.__init__(self,setup_camera=True,save_data=True,
                       camera_select=cameras.xy_basler,
-                      imaging_type=img_types.ABSORPTION)
+                      imaging_type=img_types.ABSORPTION,diagnostic_images=False)
 
         # self.xvar('frequency_detuned_imaging',np.arange(350.,450.,3)*1.e6)]
 
@@ -18,35 +18,38 @@ class gm_tof(EnvExperiment, Base):
         # self.xvar('do_hybrid', [0.,1.])
 
         self.p.imaging_state = 2.
-        self.p.t_tof = 12.e-3
+        self.p.t_tof = 15.e-3
         self.p.t_mot_load = .5
-        self.p.N_repeats = 1
+        self.p.N_repeats = 3
 
         # self.xvar('t_mot_load',[0.05,0.1,0.25])
-        # self.xvar('t_tof',np.linspace(500.,2000.,10)*1.e-6)
+        # self.xvar('t_tof',np.linspace(10.,20.,10)*1.e-3)
 
         # self.xvar('amp_imaging',np.linspace(0.25,1.,8))
         # self.xvar('v_xshim_current_gm',np.linspace(0.,1.,8))
-        # self.xvar('v_yshim_current_gm',np.linspace(0.,3.,7))
-        # self.xvar('v_zshim_current_gm',np.linspace(0,1.2,7))
+        # self.xvar('v_yshim_current_gm',np.linspace(0.,3.,8))
+        # self.xvar('v_zshim_current_gm',np.linspace(.6,1.1,15))
+        # self.p.v_xshim_current_gm = .3
+        # self.p.v_yshim_current_gm = 2.5
+        # self.p.v_zshim_current_gm =
 
-
-        # self.xvar('pfrac_r_gmramp_end',np.linspace(0.0,0.5,15))
-        # self.xvar('pfrac_c_gmramp_end',np.linspace(0.0,0.5,15))
+        # self.xvar('pfrac_r_gmramp_end',np.linspace(0.01,0.9,8))
+        # self.xvar('pfrac_c_gmramp_end',np.linspace(0.01,0.5,8))
         
         # self.xvar('t_gm',[0.,self.p.t_gm])
 
         # self.xvar('t_tof',np.linspace(8.,20.,7)*1.e-3)
 
+        # self.xvar('detune_d1_gm',np.linspace(3.,12.,15))
         # self.xvar('detune_d1_c_gm',np.linspace(6.,11.,7))
         # self.xvar('detune_d1_r_gm',np.linspace(6.,11.,7))
         # self.p.detune_d1_c_gm = 8.5
         # self.p.detune_d1_r_gm = 8.5
 
-        # self.xvar('pfrac_d1_c_gm',np.linspace(0.3,1.,6))
-        # self.p.pfrac_d1_c_gm = 0.94
-        # self.xvar('pfrac_d1_r_gm',np.linspace(0.3,1.,6))
-        # self.p.pfrac_d1_r_gm = 0.9
+        # self.xvar('pfrac_d1_c_gm',np.linspace(0.3,.99,8))
+        # self.p.pfrac_d1_c_gm = 0.79
+        # self.xvar('pfrac_d1_r_gm',np.linspace(0.3,.99,8))
+        # self.p.pfrac_d1_r_gm = 0.89
 
         # self.p.pfrac_c_gmramp_start = 0.35
         # self.p.pfrac_r_gmramp_start = 0.5

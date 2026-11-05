@@ -16,6 +16,9 @@
 //   ngood      good sweeps in a row before HOLD -> LOCKED
 //   g1 p1 i1   gain, proportional, integral:
 //              integral += g1*i1*err, feedback = g1*p1*err + integral
+//   override   1 = force the output to ovolt; anything else = the lock drives it
+//              (the lock keeps running under override; its output is not sent)
+//   ovolt      V, forced output while override = 1 (clamped to +/-10 V)
 //   fmt        printout: 1 = table (default), 0 = CSV, 2 = paused
 //   read only: sep, integ, state (0 off, 1 hold, 2 locked), tfirst, h1, h2,
 //              bad (rejected sweeps) = bad_none + bad_one + bad_win,
@@ -70,6 +73,8 @@ void setup() {
   qC.assignVariable("g1", &lk.s.g1);
   qC.assignVariable("p1", &lk.s.p1);
   qC.assignVariable("i1", &lk.s.i1);
+  qC.assignVariable("override", &lk.s.override);
+  qC.assignVariable("ovolt", &lk.s.ovolt);
   qC.assignVariable("lock", &lk.s.lock);
   qC.assignVariable("hold", &lk.s.hold);
   qC.assignVariable("fmt", &fmt);
@@ -132,6 +137,9 @@ void help(qCommand& qC, Stream& S)
   S.printf("  hys    %10.3f V        a peak ends below vth - hys\n", s.hys);
   S.printf("  nmin   %10ld samples  (%d us each) above vth for a peak to count\n", (long)s.nmin, UPDATE_US);
   S.printf("  tmin   %10.3f ms       ignore peaks closer than this to the first\n", s.tmin);
+  S.printf("  override %8ld          1 = force the output to ovolt (lock keeps running, its output not sent); 0 = lock drives it\n",
+           (long)s.override);
+  S.printf("  ovolt  %10.3f V        forced output while override = 1 (clamped to +/-%g V)\n", s.ovolt, fplock::kDacMax);
   S.printf("  fmt    %10ld          printout: 1 = table, 0 = CSV, 2 = paused\n", (long)fmt);
   S.printf("  (output limit +/-%.2f V, fixed in the code)\n", s.rail);
   S.println("read only: sep integ state tfirst h1 h2 bad unlocks sats period");
@@ -187,6 +195,12 @@ void printEvents(const fplock::Lock& k) {
     Serial.printf("## output hit the +/-%.2f V rail (%lu times so far)\n", k.s.rail,
                   (unsigned long)k.nSat);
   }
+  static int32_t lastOverride = 0;
+  if (k.s.override != lastOverride) {
+    if (k.s.override == 1) Serial.printf("## override on: output forced to %.3f V\n", k.outputVolts());
+    else Serial.println("## override off: the lock drives the output");
+    lastOverride = k.s.override;
+  }
   // skipped sweeps are expected in HOLD; report them only while locked
   if (k.nBad != lastBad && lastState == fplock::LOCKED && k.state == fplock::LOCKED) {
     Serial.printf("## %lu sweep(s) skipped (no pair, or |err| >= win)\n",
@@ -202,6 +216,11 @@ void hold1() {
   if (triggerRead(1)) trigger1Activated = true;
 }
 
+// Set in loop() when override or ovolt changes, so the DAC follows at once
+// (update() only writes when a peak ends).
+int32_t shownOverride = 0;
+double shownOvolt = 0;
+
 void getADC1() {
   currentSignalValue = readADC1_from_ISR();
 }
@@ -210,7 +229,7 @@ void update() {
   noInterrupts();
   const double v = currentSignalValue;
   interrupts();
-  if (lk.step(micros(), v, triggerRead(1))) writeDAC(1, lk.feedback);
+  if (lk.step(micros(), v, triggerRead(1))) writeDAC(1, lk.outputVolts());
 }
 
 void loop() {
@@ -225,6 +244,14 @@ void loop() {
   }
 
   qC.readSerial(Serial);
+
+  if (lk.s.override != shownOverride || lk.s.ovolt != shownOvolt) {
+    shownOverride = lk.s.override;
+    shownOvolt = lk.s.ovolt;
+    noInterrupts();
+    writeDAC(1, lk.outputVolts());
+    interrupts();
+  }
 
   const double period = lk.period;
   if (millis() - lastPrint >= 10 * (period > 1 ? period : 1)) {

@@ -14,7 +14,7 @@ Per step, as production (base_expt_feedback.FeedbackExpt.feedback_loop) except:
   * t_calculation_slack_compensation_mu is set by the run copy (20 us tonight; bench: mode 2 at
     20 us kept a 21 us minimum margin over 10,000 steps, production at 39.7 us had 26 us; 16 us
     was the floor, 14 us underflowed).
-Everything else (pre-shot, SLM mask, remesh hooks, per-step data, hooks per_feedback_loop_top/end)
+Everything else (SLM mask, remesh hooks, per-step data, hooks per_feedback_loop_top/end)
 is inherited. p.fast_path = 1 is recorded in the run's params.
 """
 import numpy as np
@@ -243,7 +243,7 @@ class OverlapPosterior:
                 max_prob = P0[i]
                 max_idx = i
             i += 1
-        omega_max = omega_guess_list[max_idx]
+        omega_max = self.map_frequency(max_idx, max_prob)
         self.max_idx = max_idx
 
         uniform_prob = 1.0 / m
@@ -369,19 +369,12 @@ class FeedbackExptFast(FeedbackExpt, OverlapPosterior):
         issue_read False = this read's integrator gate + imaging pulse were written in the previous
         step (the cursor jumps to its sample time); preissue True = write the NEXT read's gate +
         imaging pulse now, so no satellite write sits between the ADC read and the next deadline."""
-        T_CONV_MU = 80
         if issue_read:
-            self.integrator.begin_integrate(reset=False)
-            self.imaging.pulse(self.p.t_img_pulse)
-            self.integrator.stop_and_settle()
+            self.readout_pulse()
         else:
             at_mu(self.t_sample_next_mu)
-        t0 = now_mu()
-        self.t_sample_mu = t0
-        self.raman.stage_ffua()
-        at_mu(t0 + T_CONV_MU)
-        self.integrator.clear(t=0)
-        at_mu(t0)
+        self.t_sample_mu = now_mu()
+        self.readout_prepare_sample()
         sampler = self.integrator.sampler_ch.sampler_device
         sampler.cnv.pulse(30.e-9)
         delay(450.e-9)
@@ -391,9 +384,7 @@ class FeedbackExptFast(FeedbackExpt, OverlapPosterior):
             # the next read: same cursor arithmetic as raman.pulse + measurement in step i+1
             at_mu(t_next_step)
             delay(t_pulse_next)
-            self.integrator.begin_integrate(reset=False)
-            self.imaging.pulse(self.p.t_img_pulse)
-            self.integrator.stop_and_settle()
+            self.readout_pulse()
             self.t_sample_next_mu = now_mu()
 
         self.propagate_hypotheses(t, phase_tracker)

@@ -161,7 +161,8 @@ SERVER_SPECS: list[ServerSpec] = [
         label="Raman FP lock",
         icon="🔐",
         # Owns the lock Quarto's COM port: a terminal cannot open it while
-        # this runs (the panel has a console).  Not in kong's autostart.
+        # this runs (the panel has a console).  In kong's autostart (user 2026-10-31);
+        # to use a terminal, COM-disconnect it from the panel first.
         body_factory=_lazy_panel("kexp.util.guis.lasers.raman_fp_lock.raman_fp_lock_panel",
                                  "RamanFPLockPanel"),
         server_cmd=[_PY, "-m", "kexp.util.guis.lasers.raman_fp_lock.raman_fp_lock_server"],

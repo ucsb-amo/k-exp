@@ -39,7 +39,7 @@ class Base(Expt, Devices, Cooling, Image, Cameras, Control, Clients):
                  diagnostic_images=True,
                  fast_coil_reset=True,
                  read_magnetometer_per_shot=True,
-                 mot_preload=False):
+                 mot_preload=True):
 
         # camera_select picks the detector and setup_camera says whether to
         # acquire with it: liveOD frames for a camera, the pickoff stage in
@@ -81,7 +81,7 @@ class Base(Expt, Devices, Cooling, Image, Cameras, Control, Clients):
         # word); False skips it and data.b holds 0. (= not read) every shot.
         # Recorded as p.do_read_magnetometer_per_shot.
         self.read_magnetometer_per_shot = bool(read_magnetometer_per_shot)
-        # MOT pre-load (off by default; 2026-10-23): the MOT is switched on at
+        # MOT pre-load (2026-10-23; on by default since 2026-10-31): the MOT is switched on at
         # the end of each shot (cleanup_scan_kernel) and after each warm-up,
         # and loads through the gap to the next shot's mot(). With the per-shot
         # magnetometer read on, that one read moves from the shot's start (the

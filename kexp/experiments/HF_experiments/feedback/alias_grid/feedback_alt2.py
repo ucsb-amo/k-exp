@@ -23,9 +23,12 @@ class feedback(EnvExperiment, FeedbackExpt):
 
         ### parameters
 
-        self.p.feedback_fractional_initial_offset = 2.
-        # self.xvar('feedback_fractional_initial_offset', np.linspace(0,4.,5))
-        self.xvar('feedback_fractional_initial_offset', np.linspace(-2.5, 2.5, 21))
+        # hypothesis grid: the params defaults (feedback_grid_convention 2)
+        # self.p.frequency_feedback_grid_full_span = 637.3e3 # the 21-point +-2.5 Omega grid this ran on
+        # self.xvar('feedback_fractional_initial_offset', np.linspace(0,4.,5)) # convention 1, Omega
+        # as fractions of the largest allowed offset: was linspace(-2.5, 2.5, 21) Omega = every
+        # step -10..10 of a largest 9.5 on that grid, the ends moved in to 9.5 (user, 2026-10-28)
+        self.xvar('feedback_fractional_initial_offset', np.r_[-9.5, np.arange(-9., 10.), 9.5] / 9.5)
 
         self.p.N_warmup_shots = 3 # session copy: 3 warm-up shots (Base.pre_scan)
         self.p.t_calculation_slack_compensation_mu = np.int64(20000) # session copy: fast path, 20 us calc slack (bench 2026-09-29: 21 us min margin; 16 us floor)

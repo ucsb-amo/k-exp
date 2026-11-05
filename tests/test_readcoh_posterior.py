@@ -266,37 +266,43 @@ def test_params_absent_read_as_off():
     del p.back_action_coherence_slope
     fb = Feedback(expt_params=p)
     assert fb.read_twist == 0.0 and not fb.read_twist_on and not fb.read_coherence_slope_on
-    assert "read_twist_on" not in Feedback.kernel_invariants        # (written per shot in an A/B)
+    assert "read_twist_on" in Feedback.kernel_invariants            # (no kernel writes it)
 
 
-# -- per-shot A/B of two read models (p.feedback_read_model scanned) ---------------------------
+# -- replay of the per-shot A/B runs (p.feedback_read_model scanned; 86509-86520) ---------------
 
 M1 = dict(read_alpha_lightshift=1.432, read_twist_per_sz=0.869, back_action_coherence=0.739)
 M1_AS_MODEL1 = dict(read_model1_alpha_lightshift=1.432, read_model1_twist_per_sz=0.869,
                     read_model1_coherence=0.739, read_model1_coherence_slope=0.0)
+READ_ATTRS = ("read_twist", "read_twist_on", "read_coherence_slope", "read_coherence_slope_on",
+              "read_alpha_lightshift", "read_alpha_lightshift_on", "back_action_coherence")
+
+
+def _replay_class():
+    from kexp.analysis.feedback import FeedbackReplayCore
+
+    class Replay(FeedbackReplayCore):
+        def __init__(self, expt_params):             # the Feedback part, no run file
+            Feedback.__init__(self, expt_params=expt_params)
+    return Replay
 
 
 def test_shipped_defaults_are_m1():
-    """The shipped read model has the M1 form (twist + constant read angle, no coherence slope); catches an accidental
-    revert. Values: re-measured 2026-10-26 (#88845-88847, simcheck re-measure); M1-p2 (#86509-86520) before that."""
+    """The shipped read model has the M1 form (twist + constant read angle, no coherence slope);
+    catches an accidental revert. The values are calibrations and move."""
     p = _shipped_params()
-    assert p.read_alpha_lightshift == 1.191
-    assert p.read_twist_per_sz == 1.350
-    assert p.back_action_coherence == 0.775
+    assert p.read_twist_per_sz != 0.0 and np.isfinite(p.read_alpha_lightshift)
     assert p.back_action_coherence_slope == 0.0
     fb = Feedback(expt_params=copy.deepcopy(p))
     assert fb.read_twist_on and fb.read_alpha_lightshift_on and not fb.read_coherence_slope_on
 
 
 def test_per_shot_model_1_is_bit_for_bit_the_fixed_m1_params():
-    ab = Feedback(expt_params=copy.deepcopy(_params(feedback_read_model=np.array([0.0, 1.0]),
-                                                    **M1_AS_MODEL1)))
-    m1 = Feedback(expt_params=copy.deepcopy(_params(**M1)))
-    m0 = Feedback(expt_params=copy.deepcopy(_params()))
+    Replay = _replay_class()
+    ab = Replay(copy.deepcopy(_params(feedback_read_model=np.array([0.0, 1.0]), **M1_AS_MODEL1)))
+    m1 = Replay(copy.deepcopy(_params(**M1)))
+    m0 = Replay(copy.deepcopy(_params()))
     assert ab.read_model_per_shot and not m1.read_model_per_shot and not m0.read_model_per_shot
-    # written per shot: never kernel invariants (ARTIQ refuses writes to them)
-    assert not (set(fbmod.READ_MODEL_ATTRS) & set(Feedback.kernel_invariants))
-    assert {"read_model_per_shot", "rm1_twist", "rm0_coherence"} <= set(Feedback.kernel_invariants)
     dt = ab.t_raman_pulse_current
     for model, ref in ((1.0, m1), (0.0, m0), (1.0, m1)):
         ab.select_read_model(model)
@@ -309,12 +315,17 @@ def test_per_shot_model_1_is_bit_for_bit_the_fixed_m1_params():
 
 
 def test_not_scanned_select_does_nothing():
-    fb = Feedback(expt_params=copy.deepcopy(_params(**M1)))
-    before = {a: getattr(fb, a) for a in fbmod.READ_MODEL_ATTRS}
+    fb = _replay_class()(copy.deepcopy(_params(**M1)))
+    before = {a: getattr(fb, a) for a in READ_ATTRS}
     fb.select_read_model(0.0)
     fb.select_read_model(1.0)
-    assert {a: getattr(fb, a) for a in fbmod.READ_MODEL_ATTRS} == before
-    assert fb.p.feedback_read_model == -1.0
+    assert {a: getattr(fb, a) for a in READ_ATTRS} == before
+
+
+def test_a_run_file_with_the_apd_map_on_is_refused():
+    with pytest.raises(ValueError, match="APD affine map"):
+        Feedback(expt_params=copy.deepcopy(_params(feedback_apd_map_enabled=True)))
+    Feedback(expt_params=copy.deepcopy(_params(feedback_apd_map_enabled=False)))     # older files
 
 
 def test_replay_resolves_the_read_model_per_shot():
@@ -350,8 +361,7 @@ class _OldOverlap:
 def test_a_posterior_without_the_read_model_is_refused_when_it_is_on():
     class OldFast(_OldOverlap, Feedback):
         pass
-    for params in (TWIST_SLOPE, dict(read_alpha_lightshift=1.432),
-                   dict(feedback_read_model=np.array([0.0, 1.0]), **M1_AS_MODEL1)):
+    for params in (TWIST_SLOPE, dict(read_alpha_lightshift=1.432)):
         with pytest.raises(RuntimeError, match="does not implement it"):
             OldFast(expt_params=copy.deepcopy(_params(**params)))
     OldFast(expt_params=copy.deepcopy(_params()))               # off (explicit): no check

@@ -70,7 +70,7 @@ def test_scan_with_the_preload_compiles(monkeypatch, tmp_path):
 
 @harness.pytestmark
 def test_scan_without_the_preload_compiles(monkeypatch, tmp_path):
-    monkeypatch.setattr(harness, "EXPT", EXPT.replace(", mot_preload=True)", ")"))
+    monkeypatch.setattr(harness, "EXPT", EXPT.replace(", mot_preload=True)", ", mot_preload=False)"))
     cls, exp, device_mgr = harness._build(monkeypatch, tmp_path)
     try:
         assert exp.mot_preload is False and exp.p.do_mot_preload == 0
@@ -83,7 +83,7 @@ def test_scan_without_the_preload_compiles(monkeypatch, tmp_path):
 @harness.pytestmark
 def test_a_hand_set_parameter_is_refused(monkeypatch, tmp_path):
     monkeypatch.setattr(harness, "EXPT", EXPT.replace(
-        ", mot_preload=True)", ")").replace(
+        ", mot_preload=True)", ", mot_preload=False)").replace(
         "self.p.t_mot_load = 0.2", "self.p.t_mot_load = 0.2\n        self.p.do_mot_preload = 1"))
     with pytest.raises(ValueError, match="Base argument"):
         harness._build(monkeypatch, tmp_path)

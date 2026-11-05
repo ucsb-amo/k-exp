@@ -75,7 +75,9 @@ class ExptParams(ExptParamsWaxx):
 
         # SLM settings
         self.dimension_slm_mask = 14.e-6 # this parameter has a bug -- it is actually writing "20 px", which ends up being 160um diameter (8 um per px)
-        self.phase_slm_mask = 0.323077 * np.pi  # 89420
+        # self.phase_slm_mask = 0.323077 * np.pi  # 89420
+        # self.phase_slm_mask = 0.5 * np.pi  #90243, 2026-10-30  # contrast 56 mV vs 35 at the old value, middle of the 0.425-0.575 pi plateau (user)
+        self.phase_slm_mask = 0.4125 * np.pi  #90249, 2026-10-30  # fine scan, pre-registered rule (user): best balance about the midpoint with read 1 >= 2/3 of reads 2-5; unconstrained pick 0.5375 pi
         self.px_slm_grating_position_x = 994
         self.px_slm_grating_position_y = 824
         self.px_slm_phase_mask_position_x = 1129
@@ -127,7 +129,8 @@ class ExptParams(ExptParamsWaxx):
         self.t_lf_lightsheet_rampdown = 1.13
         # self.t_hf_lightsheet_rampdown = 1.1
         # self.t_hf_lightsheet_rampdown = 0.3
-        self.t_hf_lightsheet_rampdown = 0.45 #90212+90213, 2026-10-30  # four-knob bundle, see t_mot_load_total
+        # self.t_hf_lightsheet_rampdown = 0.45 #90212+90213, 2026-10-30  # four-knob bundle, see t_mot_load_total
+        self.t_hf_lightsheet_rampdown = 1.25 #91427+91428+91434, 2026-11-02  # six-knob evap bundle (+0.8 s/shot), user OK
         self.t_hf_lightsheet_rampdown2 = .74
         self.t_lf_lightsheet_rampdown2 = .02
         # self.t_lightsheet_rampdown3 = 200.e-3
@@ -143,10 +146,12 @@ class ExptParams(ExptParamsWaxx):
         self.t_lf_tweezer_1064_rampdown3 = .5
         self.t_hf_tweezer_1064_ramp = 0.19 # 0.16 # .285
         # self.t_hf_tweezer_1064_rampdown = 550.e-3 # 200.e-3
-        self.t_hf_tweezer_1064_rampdown = 0.2 #87461, 2026-10-20
+        # self.t_hf_tweezer_1064_rampdown = 0.2 #87461, 2026-10-20
+        self.t_hf_tweezer_1064_rampdown = 0.3 #91427+91428+91434, 2026-11-02  # six-knob evap bundle, user OK
         # self.t_hf_tweezer_1064_rampdown2 = 300.e-3
         # self.t_hf_tweezer_1064_rampdown2 = 0.1 #87461, 2026-10-20
-        self.t_hf_tweezer_1064_rampdown2 = 0.2 #90212+90213, 2026-10-30  # four-knob bundle, see t_mot_load_total
+        # self.t_hf_tweezer_1064_rampdown2 = 0.2 #90212+90213, 2026-10-30  # four-knob bundle, see t_mot_load_total
+        self.t_hf_tweezer_1064_rampdown2 = 0.3 #91427+91428+91434, 2026-11-02  # six-knob evap bundle, user OK
         self.t_tweezer_1064_adiabatic_stretch_ramp = .322
         self.t_tweezer_single_move = 4.e-3
         self.t_tweezer_movement_dt = 10.e-6
@@ -184,7 +189,10 @@ class ExptParams(ExptParamsWaxx):
 
         # self.t_raman_pi_pulse = 3.9229e-06 #89418, 2026-10-28
         # self.t_raman_pi_pulse = 3.8413e-06 #89744, 2026-10-29
-        self.t_raman_pi_pulse = 3.4753e-06 #89767, 2026-10-29
+        # self.t_raman_pi_pulse = 3.4753e-06 #89767, 2026-10-29
+        # self.t_raman_pi_pulse = 3.6616e-06 #89933, 2026-10-29
+        # self.t_raman_pi_pulse = 3.6235e-06 #90199, 2026-10-30
+        self.t_raman_pi_pulse = 3.7045e-06 #90236, 2026-10-30
          
         # DAC controlled AO amplitudes
         self.amp_d1_3d_c = 0.3
@@ -257,15 +265,15 @@ class ExptParams(ExptParamsWaxx):
         self.i_cmot = self.i_mot
         
         #GM
-        self.pfrac_d1_c_gm = .8
-        self.pfrac_d1_r_gm = .99
+        self.pfrac_d1_c_gm = .79
+        self.pfrac_d1_r_gm = .89
 
         self.pfrac_c_gmramp_end = 0.05
         self.pfrac_r_gmramp_end = 0.5
 
-        self.v_xshim_current_gm = 0.429
-        self.v_yshim_current_gm = 2.86
-        self.v_zshim_current_gm = 0.86
+        self.v_xshim_current_gm = 0.3
+        self.v_yshim_current_gm = 2.5
+        self.v_zshim_current_gm = 0.85
 
         self.detune_d1_c_gm = 7.5 # 7.37F
         # self.pfrac_d1_c_gm = .736 # there is an ND on this photodiode -- much higher power/volt than the repump
@@ -282,8 +290,8 @@ class ExptParams(ExptParamsWaxx):
         self.i_magtrap_init = 106.5
         self.i_magtrap_ramp_end = 100.
 
-        self.v_xshim_current_magtrap = 1.4
-        self.v_yshim_current_magtrap = 2.5
+        self.v_xshim_current_magtrap = 2.3
+        self.v_yshim_current_magtrap = 0.
         self.v_zshim_current_magtrap = 0.0
         
         #Optical Pumping
@@ -323,10 +331,11 @@ class ExptParams(ExptParamsWaxx):
 
         self.v_pd_hf_tweezer_1064_ramp_end = 8.4
         self.v_pd_hf_tweezer_1064_rampdown_end = 0.16 #87461, 2026-10-20
-        self.v_pd_hf_tweezer_1064_rampdown2_end = 0.9
+        self.v_pd_hf_tweezer_1064_rampdown2_end = 0.5
         self.n_tweezer_ramp_steps = 200
         # HF tweezer evap 1 painting law: paint_frac = (P/P_max)**e (0.3333 = constant trap frequency)
-        self.paint_amp_exponent_hf_tweezer = 1.0 #87461 (e 0.85-1 best), 2026-10-20
+        # self.paint_amp_exponent_hf_tweezer = 1.0 #87461 (e 0.85-1 best), 2026-10-20
+        self.paint_amp_exponent_hf_tweezer = 1.25 #91427+91428+91434, 2026-11-02  # six-knob evap bundle, user OK
         # HF evap 2: PID2 start = this x tweezer_vpd1_to_vpd2(evap-1 end) (bias low: integral2 preload at AO2's peak)
         self.fraction_hf_tweezer_evap2_start = 0.95 #87461, 2026-10-20
         # HF evap 2: 1. = painting held at its evap-1 end value; 0. = constant-trap-frequency law in PID2 units
@@ -402,7 +411,10 @@ class ExptParams(ExptParamsWaxx):
 
         self.frequency_raman_transition_1m1_2m2 = 147.2593e6 #76037 2026-8-20
         # self.frequency_raman_transition = 119.4636e6 #89435
-        self.frequency_raman_transition = 119.46388e6 #89768, 2026-10-29  # Ramsey 13 x 5, +/- 73 Hz, Raman lock 43.17 GHz
+        # self.frequency_raman_transition = 119.46388e6 #89768, 2026-10-29  # Ramsey 13 x 5, +/- 73 Hz, Raman lock 43.17 GHz
+        # self.frequency_raman_transition = 119.463528e6 #89967, 2026-10-29  # Ramsey 13 x 5, +/- 130 Hz (-347 Hz vs #89934 at 20:33), Raman lock 45.98 GHz
+        # self.frequency_raman_transition = 119.463801e6 #90200, 2026-10-30  # Ramsey 13 x 5, +/- 46 Hz, Raman lock 45.95 GHz
+        self.frequency_raman_transition = 119.463504e6 #90240, 2026-10-30  # Ramsey 13 x 5, +/- 68 Hz (-297 Hz vs #90200), Raman lock 45.95 GHz
 
         self.frequency_raman_transition_nf_1m1_20 = 460.7e6 # 1.5 G 1,-1 to 2,0
         self.frequency_raman_transition_nf_1m1_2m2 = 458.4e6 # 1.5 G 1,-1 to 2,-2
@@ -442,10 +454,12 @@ class ExptParams(ExptParamsWaxx):
         self.i_spin_mixture = 19.48
 
         # high field evap
-        self.i_hf_lightsheet_evap1_current = 192.7
+        # self.i_hf_lightsheet_evap1_current = 192.7
+        self.i_hf_lightsheet_evap1_current = 193.0 #91427+91428+91434, 2026-11-02  # six-knob evap bundle, user OK
         self.i_hf_lightsheet_evap2_current = 193.3
 
-        self.i_hf_tweezer_load_current = 192.7 # 193.4
+        # self.i_hf_tweezer_load_current = 192.7 # 193.4
+        self.i_hf_tweezer_load_current = 193.3 #91427+91428+91434, 2026-11-02  # six-knob evap bundle (193.0 equal in D2 91430), user OK
         # self.i_hf_tweezer_evap1_current = 193.75
         self.i_hf_tweezer_evap1_current = 193.0 #87461, 2026-10-20
         self.i_hf_tweezer_evap2_current = 194.14 # 193.

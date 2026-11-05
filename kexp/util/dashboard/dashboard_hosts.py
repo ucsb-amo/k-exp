@@ -39,5 +39,6 @@ HOST_AUTOSTART_SERVERS: dict[str, list[str]] = {
         "keysight",
         "interlock",
         "pdxc",
+        "raman_fp_lock",
     ]
 }

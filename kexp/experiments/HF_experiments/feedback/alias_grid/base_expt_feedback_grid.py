@@ -5,15 +5,17 @@ Rule: q = grid_step_Hz * T_ref = n + frac. frac = p.feedback_grid_alias_frac (0.
 p.feedback_grid_alias_order (-1 = the integer that keeps the step nearest the legacy 0.25 Omega).
 T_ref = the longest gap class of the schedule (p.feedback_grid_alias_T_ref: "long" | "short" |
 "mean"), computed from the slack / pulse / imaging / FIFO terms exactly as the kernel does plus the
-cycle's extra delays. The grid half-width p.feedback_guess_span_Omega is then DERIVED:
-step_Omega = (q / T_ref) / f_Rabi, span = step_Omega * (m - 1) / 2, and written before
-Feedback.__init__ builds the grid, so the kernel, the saved params and the replay see an ordinary
-span. p.feedback_grid_q, _q_classes, _step_hz, _T_ref_s, _n are recorded.
+cycle's extra delays. The grid's full width p.frequency_feedback_grid_full_span = step_Hz * (m - 1),
+step_Hz = q / T_ref, is then written before FeedbackExpt.finish_prepare derives the kernel's
+Omega-unit span from it (feedback_grid_convention 2, 2026-10-28; until then this wrote
+p.feedback_guess_span_Omega = step_Omega * (m - 1) / 2 itself -- the same number), so the kernel,
+the saved params and the replay see an ordinary grid. p.feedback_grid_q, _q_classes, _step_hz,
+_T_ref_s, _n are recorded.
 
 Remesh: maybe_remesh is overridden so a requested (halved) span is snapped to the nearest
 n' + frac before re-gridding; the centre and the clamp are the original code's.
 
-Run files call self.grid_step_Omega() before xvar() to place the initial offsets on grid points.
+Run files place the initial offsets on grid points in steps (kexp.base.feedback.feedback_offset_frac).
 """
 import numpy as np
 from numpy import int64
@@ -68,7 +70,9 @@ class FeedbackExptGrid(FeedbackExptAlt):
         p.feedback_grid_alias_frac = float(g["frac"])
         p.feedback_grid_alias_order = int(g["order"])
         p.feedback_grid_alias_T_ref = g["mode"]
-        p.feedback_guess_span_Omega = float(g["span_Omega"])          # derived; what the kernel reads
+        # the grid width in Hz; FeedbackExpt.finish_prepare derives feedback_guess_span_Omega
+        # (= g["span_Omega"]) from it, what the kernel reads
+        p.frequency_feedback_grid_full_span = float(g["step_hz"]) * (g["m"] - 1)
         p.feedback_grid_q = float(g["q"])
         p.feedback_grid_q_classes = np.asarray(g["q_classes"], dtype=float)
         p.feedback_grid_step_hz = float(g["step_hz"])

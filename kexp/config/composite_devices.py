@@ -419,7 +419,7 @@ IMAGING = CompositeDevice(
                     "↺ = the dds_id default."),
     ),
     ops=(
-        Op("on", "On", args=("axis", "detuning", "power"),
+        Op("on", "Turn on", args=("axis", "detuning", "power"),
            tooltip="Beat ref on, detuning + power set, PID AO on, switch AO amplitude "
                    "back to its dds_id default, axis shutter open, "
                    f"{T_IMAGING_SHUTTER * 1e3:g} ms, switch AO on.",
@@ -434,7 +434,7 @@ expt.imaging.dds_sw.set_dds(amplitude=expt.imaging.dds_sw._amplitude_default)
 delay({T_IMAGING_SHUTTER!r})
 expt.imaging.on()
 """),
-        Op("off", "Off", tooltip="Switch AO off, both imaging shutters closed "
+        Op("off", "Turn off", tooltip="Switch AO off, both imaging shutters closed "
                                  "(the PID AO and beat ref stay as they are).",
            code="""
 expt.imaging.off()
@@ -451,16 +451,16 @@ expt.ttl.imaging_shutter_xy.off()
            tooltip="Switch AO amplitude only; RF switch and shutters untouched."),
         Op("set_axis", "Set", args=("axis",), code=IMAGING_SHUTTERS,
            tooltip="Open this axis's shutter, close the other; RF untouched."),
-        Op("rf_on", "Switch AO on (shutters unchanged)",
+        Op("rf_on", "Turn AO on, leave shutters",
            code="expt.imaging.dds_sw.set_dds(amplitude=expt.imaging.dds_sw._amplitude_default)"
                 "\nexpt.imaging.on()",
            tooltip="Switch AO amplitude back to its dds_id default, then RF on."),
-        Op("rf_off", "Switch AO off (shutters unchanged)", code="expt.imaging.off()"),
+        Op("rf_off", "Turn AO off, leave shutters", code="expt.imaging.off()"),
         Op("close_shutters", "Close both shutters", code="""
 expt.ttl.imaging_shutter_x.off()
 expt.ttl.imaging_shutter_xy.off()
 """),
-        Op("pid_ao_off", "PID AO off (full off)",
+        Op("pid_ao_off", "Turn PID AO off (full off)",
            code="expt.imaging.off()\nexpt.imaging.dds_pid.off()",
            tooltip="Switch AO and the PID-controlled AO off; the next On turns the "
                    "PID AO back on."),
@@ -575,7 +575,7 @@ RAMAN = CompositeDevice(
                     "↺ = ExptParams fraction_power_raman."),
     ),
     ops=(
-        Op("on", "On", args=("f", "p"),
+        Op("on", "Turn on", args=("f", "p"),
            tooltip="AOs to ARTIQ, raman.init(f, p) (both AOs set + on), shutter open, "
                    f"{T_RAMAN_SHUTTER * 1e3:g} ms, switch AO on.",
            code=f"""
@@ -586,7 +586,7 @@ expt.ttl.raman_shutter.on()
 delay({T_RAMAN_SHUTTER!r})
 expt.raman.on()
 """),
-        Op("off", "Off", tooltip="Switch AO off, shutter closed, both AOs off.",
+        Op("off", "Turn off", tooltip="Switch AO off, shutter closed, both AOs off.",
            code="""
 expt.raman.off()
 expt.ttl.raman_shutter.off()
@@ -605,10 +605,10 @@ if s0 == 0:
 if s1 == 0:
     expt.raman.dds1.off()
 """),
-        Op("switch_on", "Switch AO on (only)", code="expt.raman.on()"),
-        Op("switch_off", "Switch AO off (only)", code="expt.raman.off()"),
-        Op("shutter_open", "Shutter open (only)", code="expt.ttl.raman_shutter.on()"),
-        Op("shutter_close", "Shutter close (only)", code="expt.ttl.raman_shutter.off()"),
+        Op("switch_on", "Turn AO on only", code="expt.raman.on()"),
+        Op("switch_off", "Turn AO off only", code="expt.raman.off()"),
+        Op("shutter_open", "Open shutter only", code="expt.ttl.raman_shutter.on()"),
+        Op("shutter_close", "Close shutter only", code="expt.ttl.raman_shutter.off()"),
     ),
     lamps=(
         Lamp("switch", "dds", "raman_switch", ops=("switch_on", "switch_off")),
@@ -668,14 +668,14 @@ RY_405 = CompositeDevice(
             tooltip="Amplitude of the ry_405_sw DDS. ↺ = the dds_id default."),
     ),
     ops=(
-        Op("on", "On",
+        Op("on", "Turn on",
            tooltip=f"Shutter open, {T_RY_405_SHUTTER * 1e3:g} ms, switch AO on.",
            code=f"""
 expt.ry_405.ttl_shutter.on()
 delay({T_RY_405_SHUTTER!r})
 expt.ry_405.on()
 """),
-        Op("off", "Off", tooltip="Switch AO off, shutter closed.",
+        Op("off", "Turn off", tooltip="Switch AO off, shutter closed.",
            code="expt.ry_405.off()\nexpt.ry_405.ttl_shutter.off()"),
         Op("set_power", "Set", args=("v_pd",),
            tooltip="ry_405.set_power: setpoint DAC, then a 10 us PID clear pulse "
@@ -687,10 +687,10 @@ expt.ry_405.on()
         Op("pid_clear", "Clear PID integrators",
            code="expt.ry_405.ttl_pid_clear.pulse(10.e-6)\nexpt.ry_405.ttl_pid_clear.off()",
            tooltip="10 us pulse on ry_intensity_pid_clear. " + RY_PID_CLEAR_NOTE),
-        Op("shutter_open", "Shutter open (only)", code="expt.ry_405.ttl_shutter.on()"),
-        Op("shutter_close", "Shutter close (only)", code="expt.ry_405.ttl_shutter.off()"),
-        Op("switch_on", "Switch AO on (only)", code="expt.ry_405.on()"),
-        Op("switch_off", "Switch AO off (only)", code="expt.ry_405.off()"),
+        Op("shutter_open", "Open shutter only", code="expt.ry_405.ttl_shutter.on()"),
+        Op("shutter_close", "Close shutter only", code="expt.ry_405.ttl_shutter.off()"),
+        Op("switch_on", "Turn AO on only", code="expt.ry_405.on()"),
+        Op("switch_off", "Turn AO off only", code="expt.ry_405.off()"),
     ),
     lamps=(
         Lamp("switch", "dds", "ry_405_sw"),
@@ -731,8 +731,8 @@ RY_980 = CompositeDevice(
                     "pulse). ↺ = the dac_id default."),
     ),
     ops=(
-        Op("on", "On", code="expt.ry_980.on()", tooltip="Switch AO on (ry_980_sw)."),
-        Op("off", "Off", code="expt.ry_980.off()", tooltip="Switch AO off."),
+        Op("on", "Turn on", code="expt.ry_980.on()", tooltip="Switch AO on (ry_980_sw)."),
+        Op("off", "Turn off", code="expt.ry_980.off()", tooltip="Switch AO off."),
         Op("set_power", "Set", args=("v_pd",),
            tooltip="ry_980.set_power: setpoint DAC, then a 10 us PID clear pulse "
                    "(clears the 405 PID too).",
@@ -802,7 +802,7 @@ LIGHTSHEET = CompositeDevice(
         T_RAMP,
     ),
     ops=(
-        Op("on", "On", args=("v_pd",),
+        Op("on", "Turn on", args=("v_pd",),
            tooltip="Setpoint to v_pd, RF switch on, integrator hold released "
                    "(lightsheet.on_and_end_hold with a setpoint).  Painting unchanged.",
            code="""
@@ -811,7 +811,7 @@ expt.lightsheet.ttl_sw.on()
 delay(1.e-6)
 expt.lightsheet.pid_int_zero_ttl.off()
 """),
-        Op("off", "Off", code="expt.lightsheet.off()\nexpt.lightsheet.pid_int_zero_ttl.off()",
+        Op("off", "Turn off", code="expt.lightsheet.off()\nexpt.lightsheet.pid_int_zero_ttl.off()",
            tooltip="lightsheet.off(): RF switch off, setpoint to v_pd_lightsheet_pd_minimum, "
                    "integrator cleared (hold line left low)."),
         Op("set_power", "Set", args=("v_pd",), code="expt.lightsheet.set_power({v_pd})"),
@@ -822,12 +822,12 @@ expt.lightsheet.pid_int_zero_ttl.off()
                 "expt.lightsheet.pid_dac.v, {v_pd}, 100)"),
         Op("set_paint", "Set", args=("paint",),
            code="expt.lightsheet.paint_amp_dac.set(v={paint})"),
-        Op("paint_off", "Painting off", code="expt.lightsheet.painting_off()"),
+        Op("paint_off", "Turn painting off", code="expt.lightsheet.painting_off()"),
         Op("zero_pid", "Clear PID integrator",
            code="expt.lightsheet.zero_pid()\nexpt.lightsheet.pid_int_zero_ttl.off()",
            tooltip="lightsheet.zero_pid(): 10 ns pulse on lightsheet_pid_int_hold_zero "
                    "(the line is left low: integrating)."),
-        Op("off_and_hold", "Off, hold integrator", code="expt.lightsheet.off_and_hold_pid()",
+        Op("off_and_hold", "Turn off, hold integrator", code="expt.lightsheet.off_and_hold_pid()",
            tooltip="lightsheet.off_and_hold_pid(): integrator held, then RF off."),
     ),
     lamps=(Lamp("RF switch", "ttl", "lightsheet_sw"),),
@@ -845,6 +845,7 @@ expt.lightsheet.pid_int_zero_ttl.off()
         FieldRow(("paint",), ("set_paint", "paint_off")),
         ChannelToggle("lightsheet_pid_int_hold_zero", "PID integrator (ttl 12)",
                       on_text="HELD at zero", off_text="running",
+                      actions=("Hold PID integrator at zero", "Release PID integrator"),
                       tooltip="lightsheet_pid_int_hold_zero: high holds the PID "
                               "integrator (servo disabled), low lets it integrate."),
         Buttons(("zero_pid",)),
@@ -1009,7 +1010,7 @@ TWEEZER = CompositeDevice(
                    "Needs the AWG connected (the connection bar at the top of the tab). "
                    "The AOD RF switch is not touched."),
         Op("trigger", "Trigger AWG", code="expt.tweezer.trigger()"),
-        Op("on", "On", args=("v_pd1", "paint"), payload=("traps",), host=awg_apply,
+        Op("on", "Turn on", args=("v_pd1", "paint"), payload=("traps",), host=awg_apply,
            check=_tweezer_on_check,
            tooltip="Writes the trap table to the AWG and triggers it (as Apply traps; "
                    "refused, nothing switched, when the monitor server does not hold "
@@ -1027,7 +1028,7 @@ expt.tweezer.pid1_int_hold_zero.off()
 delay(1.e-3)
 expt.tweezer.set_power({v_pd1})
 """),
-        Op("off", "Off", code="expt.tweezer.off()",
+        Op("off", "Turn off", code="expt.tweezer.off()",
            tooltip="tweezer.off(): AO1 off, PID2 disabled with AO2 left on, PID1 "
                    "integrator held, PID1 to 0, RF switch off."),
         Op("set_pd1", "Set", args=("v_pd1",), code="expt.tweezer.set_power({v_pd1})"),
@@ -1038,13 +1039,13 @@ expt.tweezer.set_power({v_pd1})
         Op("ramp_pd2", "Ramp", args=("v_pd2", "t_ramp"),
            code="expt.tweezer.pid2_dac.linear_ramp({t_ramp}, expt.tweezer.pid2_dac.v, "
                 "{v_pd2}, 100)"),
-        Op("servo_high", "High power (PID1)", code="expt.tweezer.pid2_enable_ttl.off()",
+        Op("servo_high", "Use high power (PID1)", code="expt.tweezer.pid2_enable_ttl.off()",
            tooltip="PID2 disabled: PID1 holds the power."),
-        Op("servo_low", "Low power (PID2)", args=("v_pd2",),
+        Op("servo_low", "Use low power (PID2)", args=("v_pd2",),
            code="expt.tweezer.pid2_dac.set(v={v_pd2})\nexpt.tweezer.pid2_enable_ttl.on()",
            tooltip="PID2 setpoint to v_pd2, then PID2 enabled (as a low_power ramp starts)."),
         Op("set_paint", "Set", args=("paint",), code="expt.tweezer.paint_amp_dac.set(v={paint})"),
-        Op("paint_off", "Painting off", code="expt.tweezer.painting_off()"),
+        Op("paint_off", "Turn painting off", code="expt.tweezer.painting_off()"),
         Op("pid1_clear", "Clear PID1 integrator",
            code="expt.tweezer.pid1_int_hold_zero.pulse(1.e-6)\n"
                 "expt.tweezer.pid1_int_hold_zero.off()",
@@ -1053,7 +1054,8 @@ expt.tweezer.set_power({v_pd1})
                    "the line is left low (integrating)."),
     ),
     lamps=(
-        Lamp("RF switch", "ttl", "aod_rf_sw"),
+        Lamp("RF switch", "ttl", "aod_rf_sw",
+             tooltip="aod_rf_sw (ttl 13): gates the AWG output to the amplifier."),
         Lamp("AO1", "dds", "tweezer_pid_1"),
         Lamp("AO2", "dds", "tweezer_pid_2"),
         Lamp("servo", "ttl", "tweezer_pid2_enable", "PID2 (low)", "PID1 (high)", "ok",
@@ -1069,10 +1071,9 @@ expt.tweezer.set_power({v_pd1})
         Buttons(("servo_high", "servo_low")),
         FieldRow(("t_ramp",)),
         FieldRow(("paint",), ("set_paint", "paint_off")),
-        ChannelToggle("aod_rf_sw", "AOD RF switch (ttl 13)", on_text="on", off_text="off",
-                      on_level="ok", tooltip="aod_rf_sw: gates the AWG output to the amplifier."),
         ChannelToggle("tweezer_pid1_int_hold_zero", "PID1 integrator (ttl 11)",
                       on_text="HELD at zero", off_text="running",
+                      actions=("Hold PID1 integrator at zero", "Release PID1 integrator"),
                       tooltip="tweezer_pid1_int_hold_zero: high holds PID1's integrator at "
                               "zero (tweezer.off leaves it high), low lets it integrate."),
         Buttons(("pid1_clear",)),
@@ -1143,15 +1144,15 @@ else:
     {c}.on()
     {c}.ramp_supply(t={{t_ramp}}, i_start=i0, i_end={{i}}, n_steps=100)
 """),
-        Op("off", "Off (ramp down)", args=("t_ramp", "i_meas"),
+        Op("off", "Ramp down", args=("t_ramp", "i_meas"),
            tooltip="PID stopped if on (stop_pid, 50 ms, as reset_coils), supply ramped "
                    "to 0 A over t_ramp, voltage limit 0, 30 ms, IGBT open, PID off, "
                    "5 ms, discharge().",
            code=_coil_off_body(c)),
-        Op("snap_off", "Snap off", danger=True,
-           confirm="Snap off opens the IGBT and zeroes the supply at once, with no "
-                   "ramp: the current in the coil is interrupted instantly. Use Off "
-                   "(ramp down) unless that is what you need.",
+        Op("snap_off", "Turn off now", danger=True,
+           confirm="Turn off now opens the IGBT and zeroes the supply at once, with no "
+                   "ramp: the current in the coil is interrupted instantly. Use Ramp "
+                   "down unless that is what you need.",
            tooltip="big_coil.snap_off(): IGBT open, supply current and voltage to 0; "
                    "PID TTL off.",
            code=f"""
@@ -1170,7 +1171,7 @@ else:
         i_end = (f"{c}.i_supply + {c}.i_supply * {slope_overhead_per_i_transducer!r} "
                  f"+ {offset_overhead_per_i_transducer!r}")
         ops += [
-            Op("pid_on", "PID on",
+            Op("pid_on", "Turn PID on",
                tooltip="start_pid() at the present supply current: PID setpoint = I, "
                        "PID TTL on, supply ramped up by the overhead over 50 ms.",
                code=sync + f"""
@@ -1182,7 +1183,7 @@ if {c}.current_to_supply_vdac({i_end}) > {c}.i_control_dac.max_v:
     raise ValueError("the PID overhead would take the supply DAC past its limit")
 {c}.start_pid()
 """),
-            Op("pid_off", "PID off",
+            Op("pid_off", "Turn PID off",
                tooltip="stop_pid(): supply back to the PID setpoint, 30 ms, PID TTL off.",
                code=sync + f"""
 if not {c}.pid_on:
@@ -1192,7 +1193,7 @@ if not {c}.pid_on:
         ]
     if hbridge:
         ops += [
-            Op("helmholtz", "H-bridge → Helmholtz",
+            Op("helmholtz", "Set H-bridge to Helmholtz",
                confirm="Switch the H-bridge to Helmholtz (the coil must be off).",
                code=f"""
 if {c}.igbt_ttl.state == 1:
@@ -1200,7 +1201,7 @@ if {c}.igbt_ttl.state == 1:
 delay(expt.p.t_hbridge_switch_delay)
 expt.ttl.hbridge_helmholtz.on()
 """),
-            Op("antihelmholtz", "H-bridge → anti-Helmholtz",
+            Op("antihelmholtz", "Set H-bridge to anti-Helmholtz",
                confirm="Switch the H-bridge to anti-Helmholtz (the coil must be off).",
                code=f"""
 if {c}.igbt_ttl.state == 1:
@@ -1314,7 +1315,7 @@ def _coil_device(key, title, attr, supply_dac, pid_dac, igbt_ttl, pid_ttl,
                 "the device state is untrusted (" + str(ctx.trust.get("reason", "")) + ") "
                 "and there is no fresh measured current from the Keysight server: the "
                 "ramp would start from a guess. Bring the Keysight server up, or use "
-                "'Trust state' once you know the file is right (Snap off works regardless).")
+                "'Trust state' once you know the file is right (Turn off now works regardless).")
         return None
 
     def ramp_check(args, ctx):
@@ -1359,7 +1360,7 @@ def _coil_device(key, title, attr, supply_dac, pid_dac, igbt_ttl, pid_ttl,
 
     def hbridge_check(args, ctx):
         if ctx.is_on("ttl", igbt_ttl):
-            return Check.error("the coil is on (IGBT closed) -- Off (ramp down) first")
+            return Check.error("the coil is on (IGBT closed) -- Ramp down first")
         return None
 
     checks = {"ramp_to": _checks(ramp_check, trust_check), "off": trust_check,
@@ -1376,7 +1377,8 @@ def _coil_device(key, title, attr, supply_dac, pid_dac, igbt_ttl, pid_ttl,
     # Clicking a coil lamp never flips the line itself: opening the IGBT or
     # the PID under current, or switching the H-bridge, is what the ops'
     # ramps and checks exist for.  Closing the IGBT needs a current -- Ramp to I.
-    lamps = [Lamp("IGBT", "ttl", igbt_ttl, "closed", "open", "warn", ops=("", "off")),
+    lamps = [Lamp("IGBT", "ttl", igbt_ttl, "closed", "open", "warn", ops=("", "off"),
+                  actions=("", "Ramp down")),
              Lamp("PID", "ttl", pid_ttl, "on", "off", "ok",
                   ops=("pid_on", "pid_off") if pid else ("", ""),
                   tooltip=f"ttl.{pid_ttl}" + ("" if pid else
@@ -1536,20 +1538,20 @@ SHIMS = CompositeDevice(
     ops=(
         Op("set", "Set", args=("x", "y", "z"), code="expt.set_shims({x}, {y}, {z})",
            tooltip="set_shims(x, y, z): all three at once."),
-        Op("preset_mot", "MOT", tooltip="set_shims with the ExptParams MOT values.",
+        Op("preset_mot", "Set MOT shims", tooltip="set_shims with the ExptParams MOT values.",
            code="expt.set_shims(expt.p.v_xshim_current, expt.p.v_yshim_current, "
                 "expt.p.v_zshim_current)"),
-        Op("preset_gm", "GM", tooltip="set_shims with the ExptParams gray-molasses values.",
+        Op("preset_gm", "Set GM shims", tooltip="set_shims with the ExptParams gray-molasses values.",
            code="expt.set_shims(expt.p.v_xshim_current_gm, expt.p.v_yshim_current_gm, "
                 "expt.p.v_zshim_current_gm)"),
-        Op("preset_op", "OP", tooltip="set_shims with the ExptParams optical-pumping values.",
+        Op("preset_op", "Set OP shims", tooltip="set_shims with the ExptParams optical-pumping values.",
            code="expt.set_shims(expt.p.v_xshim_current_op, expt.p.v_yshim_current_op, "
                 "expt.p.v_zshim_current_op)"),
-        Op("zero", "Zero", code="expt.set_shims(0., 0., 0.)", tooltip="All three to 0 V."),
-        Op("z_normal", "z polarity normal", check=_z_flip_check,
+        Op("zero", "Zero shims", code="expt.set_shims(0., 0., 0.)", tooltip="All three to 0 V."),
+        Op("z_normal", "Set z polarity normal", check=_z_flip_check,
            code=Z_ZERO_CHECK + "\nexpt.ttl.zshim_hbridge_flip.off()",
            tooltip="zshim_hbridge_flip low (as mot() leaves it). Needs the z shim at 0 V."),
-        Op("z_flipped", "z polarity flipped", check=_z_flip_check,
+        Op("z_flipped", "Flip z polarity", check=_z_flip_check,
            code=Z_ZERO_CHECK + "\nexpt.ttl.zshim_hbridge_flip.on()",
            confirm="Reverse the z shim's polarity?",
            tooltip="zshim_hbridge_flip high. Needs the z shim at 0 V."),
@@ -1604,7 +1606,7 @@ def _mot_on_check(args, ctx):
     if coil_on and i_now is not None and i_now > float(args.get("i", 0.)) + 5.:
         found.append(Check.error(f"the inner coil is at {i_now:.1f} A: MOT on would snap it "
                                  f"to {float(args.get('i', 0.)):.1f} A -- ramp it down "
-                                 "first (Inner coil, or MOT Off)"))
+                                 "first (the Inner coil or MOT card)"))
     if not ctx.trusted and m is None:
         found.append(Check.error("the device state is untrusted and there is no fresh "
                                  "measured inner-coil current: cannot tell what the coil "
@@ -1636,7 +1638,7 @@ MOT = CompositeDevice(
         _i_meas_arg("keysight/inner.current_a"),
     ),
     ops=(
-        Op("on", "On", args=("i", "i_meas"), check=_mot_on_check,
+        Op("on", "Turn on", args=("i", "i_meas"), check=_mot_on_check,
            tooltip="load_2D_mot(0) then mot(0, i_supply=I): refused with the inner "
                    "coil's PID on, the H-bridge in Helmholtz, or the coil more than "
                    "5 A above I.",
@@ -1653,7 +1655,7 @@ if (expt.inner_coil.igbt_ttl.state == 1 or {i_meas} >= 1.) and i_now > {i} + 5.:
 expt.load_2D_mot(0.)
 expt.mot(0., i_supply={i})
 """),
-        Op("off", "Off", args=("t_ramp", "i_meas"),
+        Op("off", "Turn off", args=("t_ramp", "i_meas"),
            tooltip="3D + 2D beams and push off, 2D coil current to 0 V, then the inner "
                    "coil ramped down over the off ramp and discharged.",
            code="""
@@ -1662,7 +1664,7 @@ expt.switch_d2_2d(0)
 expt.dds.push.off()
 expt.dac.supply_current_2dmot.set(v=0.)
 """ + _coil_off_body("expt.inner_coil")),
-        Op("beams_off", "Beams off (coil unchanged)",
+        Op("beams_off", "Turn beams off, leave coil",
            code="expt.switch_d2_3d(0)\nexpt.switch_d2_2d(0)\nexpt.dds.push.off()"),
     ),
     lamps=(
@@ -1752,11 +1754,11 @@ D1_GM = CompositeDevice(
         _d1_vpd_arg("v_r", "d1_3d_r", "Repump VVA", "v_pd_d1_r_gm"),
     ),
     ops=(
-        Op("on", "On", args=("det_c", "det_r", "v_c", "v_r"),
+        Op("on", "Turn on", args=("det_c", "det_r", "v_c", "v_r"),
            tooltip="Both AOs to their detunings, VVAs set explicitly (so DDS.on cannot "
                    "restore a stale setpoint), switch_d1_3d(1).",
            code=D1_SET + "\nexpt.switch_d1_3d(1)"),
-        Op("off", "Off", code="expt.switch_d1_3d(0)", tooltip="switch_d1_3d(0)."),
+        Op("off", "Turn off", code="expt.switch_d1_3d(0)", tooltip="switch_d1_3d(0)."),
         Op("set", "Set", args=("det_c", "det_r", "v_c", "v_r"), code=D1_SET,
            tooltip="Detunings and VVAs rewritten; switch state kept."),
     ),

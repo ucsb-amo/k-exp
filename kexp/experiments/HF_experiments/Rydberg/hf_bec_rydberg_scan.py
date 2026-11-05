@@ -14,7 +14,7 @@ class hf_bec(EnvExperiment, Base):
                       imaging_type=img_types.ABSORPTION)
         
         # self.xvar('t_tof',np.linspace(20.,3000.,7)*1.e-6)
-        self.p.t_tof = 1500.e-6
+        self.p.t_tof = 700.e-6
 
         # self.xvar('do_405_pulse',[0,1])
         self.p.do_405_pulse = 1
@@ -26,8 +26,8 @@ class hf_bec(EnvExperiment, Base):
          # self.xvar('compress',[0,1])
         self.p.compress = 0
 
-        # self.xvar('frequency_eo_980', np.arange(418.,421.,0.7)*1.e6)
-        self.p.frequency_eo_980 = 419.4e6
+        # self.xvar('frequency_eo_980', np.linspace(410.,440.,10)*1.e6)
+        self.p.frequency_eo_980 = 418.7e6
         # self.xvar('frequency_eo_980', 418.1e6 + 1e6*np.linspace(-1,1,3))
 
         # self.xvar('t_tweezer_paint_rampdown',np.linspace(0.0,10.,5)*1.e-3)
@@ -40,7 +40,7 @@ class hf_bec(EnvExperiment, Base):
         self.p.v_pd_ry_405 = 0.45
         self.p.v_pd_ry_980 = 2.8
 
-        self.p.N_repeats = 3
+        self.p.N_repeats = 2
         self.finish_prepare(shuffle=True)
 
         if self.p.do_405_pulse == 1:
@@ -68,10 +68,10 @@ class hf_bec(EnvExperiment, Base):
 
         # self.ry_980.set_power(9.9)
 
-        if self.p.compress:
-            self.prepare_hf_tweezers(squeeze=True)
-        else:
-            self.prepare_hf_tweezers(squeeze=False, do_tweezer_evap_2=True)
+        # if self.p.compress:
+        #     self.prepare_hf_tweezers(squeeze=True)
+        # else:
+        self.prepare_hf_tweezers(squeeze=False, do_tweezer_evap_2=False)
 
         if self.p.do_405_pulse == 1:
             self.ry_405.reboot()
