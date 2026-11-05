@@ -52,6 +52,8 @@ class HostStream(EnvExperiment, FeedbackExpt):
 '''
 
 STD_IMPORT = "kexp.experiments.HF_experiments.feedback.base_expt_feedback import FeedbackExpt"
+# FeedbackExpt itself with p.fast_path set (2026-11-04: 2, the fastest loop, is its default)
+LIB_IMPORT = STD_IMPORT
 FAST_IMPORT = ("kexp.experiments.HF_experiments.feedback.alias_grid.base_expt_feedback_fast "
                "import FeedbackExptFast as FeedbackExpt")
 
@@ -164,7 +166,9 @@ def _give_host_core(root, core, depth=5, seen=None):
 def build(monkeypatch, tmp_path, fast, slack_mu=NARROW_GRID["slack_mu"], offset=0.0,
           update=NARROW_GRID["update_raman_frequency_bool"], n_pulses=NARROW_GRID["N_pulses"],
           grid_size=NARROW_GRID["feedback_grid_size"],
-          full_span=NARROW_GRID["frequency_feedback_grid_full_span"]):
+          full_span=NARROW_GRID["frequency_feedback_grid_full_span"], fast_path=None):
+    """fast: FeedbackExptFast (the overlap loop) when True, else FeedbackExpt. fast_path (None:
+    the experiment does not set it; FeedbackExpt's default is 2): FeedbackExpt's p.fast_path."""
     import feedback_compile_harness as sub
     from artiq.master.databases import DeviceDB
     from artiq.master.worker_db import DeviceManager
@@ -198,7 +202,10 @@ def build(monkeypatch, tmp_path, fast, slack_mu=NARROW_GRID["slack_mu"], offset=
             .replace("UPDATE", str(int(update))).replace("N_PULSES", str(n_pulses))
             .replace("SLACK_MU", str(int(slack_mu))).replace("GRID_SIZE", str(grid_size))
             .replace("FULL_SPAN", repr(float(full_span))).replace("OFFSET", repr(float(offset))))
-    path = tmp_path / f"host_stream_{int(fast)}_{slack_mu}.py"
+    if fast_path is not None:
+        text = text.replace("        self.p.N_repeats = 1\n",
+                            f"        self.p.N_repeats = 1\n        self.p.fast_path = {int(fast_path)}\n")
+    path = tmp_path / f"host_stream_{int(fast)}_{slack_mu}_{fast_path}.py"
     path.write_text(text)
     device_mgr = DeviceManager(DeviceDB(os.environ["db"]))
     module = file_import(str(path), prefix="host_stream_")
@@ -256,19 +263,94 @@ def run_train(monkeypatch, exp, reads_v, t_start_mu=10_000_000, slack_mu=None, o
         if n_writes <= i:
             raise RuntimeError(f"ADC read {i} before its conversion was submitted")
         read_order.append(clock.get_time_mu())
+        # the transfer length is the last ADC config write's: 16 bits shift out channel 7 only
+        cfg = [e for e in events
+               if (e.target >> 8) == adc_channel and (e.target & 0xff) == spi2.SPI_CONFIG_ADDR]
+        n_bits = ((cfg[-1].data >> 8) & 0xff) + 1 if cfg else 32
+        if n_bits == 16:
+            if ch != 7:
+                raise RuntimeError("a 16-bit ADC transfer reads channel 7 only")
+            return (words[i] >> 16) & 0xffff
+        if n_bits != 32:
+            raise RuntimeError(f"ADC transfer of {n_bits} bits")
         return words[i]
+
+    # DMA: a recording captures its writes (now reset to 0, as DMARecordContextManager does);
+    # a playback writes them at now + their offset, in recorded order, and advances now by the
+    # recorded duration (CoreDMA.playback_handle)
+    traces, recording = {}, []
+
+    def dma_record_start(name):
+        recording.append((name, len(events)))
+
+    def dma_record_stop(duration, enable_ddma):
+        name, n0 = recording.pop()
+        traces[name] = (int(duration), [(e.t, e.target, e.data) for e in events[n0:]])
+        del events[n0:]
+
+    def dma_retrieve(name):
+        duration, _ = traces[name]
+        return (duration, list(traces).index(name), False)
+
+    def dma_playback(timestamp, ptr, enable_ddma):
+        _, evs = traces[list(traces)[ptr]]
+        for t, target, data in evs:
+            events.append(Event(len(events), int(timestamp) + t, target, data))
+
+    class _Record:
+        # DMARecordContextManager on the host (its kernels use compiler builtins)
+        def __init__(self, name):
+            self.name = name
+
+        def __enter__(self):
+            dma_record_start(self.name)
+            self.saved = clock.get_time_mu()
+            clock.set_time_mu(0)
+
+        def __exit__(self, *exc):
+            dma_record_stop(clock.get_time_mu(), False)
+            clock.set_time_mu(self.saved)
+
+    cdma = exp.core_dma
+
+    def record(name, enable_ddma=False):
+        cdma.epoch += 1
+        return _Record(name)
+
+    def get_handle(name):
+        advance, ptr, ddma = dma_retrieve(name)
+        return (cdma.epoch, advance, ptr, ddma)
+
+    def playback_handle(handle):
+        epoch, advance, ptr, ddma = handle
+        if epoch != cdma.epoch:
+            raise RuntimeError("DMA handle from before the last record (DMAError on the device)")
+        dma_playback(clock.get_time_mu(), ptr, ddma)
+        clock.take_time_mu(advance)
+
+    monkeypatch.setattr(cdma, "record", record, raising=False)
+    monkeypatch.setattr(cdma, "get_handle", get_handle, raising=False)
+    monkeypatch.setattr(cdma, "playback_handle", playback_handle, raising=False)
 
     monkeypatch.setattr(spi2, "rtio_output", rtio_output)
     monkeypatch.setattr(ttl, "rtio_output", rtio_output)
     from waxx.control import raman_beams
     monkeypatch.setattr(raman_beams, "rtio_output", rtio_output)
+    from kexp.experiments.HF_experiments.feedback.fastest import fastest_loop
+    monkeypatch.setattr(fastest_loop, "rtio_output", rtio_output)
     monkeypatch.setattr(spi2, "rtio_input_data", rtio_input_data)
 
     host_core = HostCore(clock)
     monkeypatch.setattr(exp.core, "run", host_core.run)
     monkeypatch.setattr(exp.core, "get_rtio_counter_mu",
                         lambda: clock.get_time_mu() - 10**12, raising=False)
+    # Core.break_realtime reads the counter through the syscall: the same far-behind counter, so
+    # it never moves the cursor
+    import artiq.coredevice.core as core_mod
+    monkeypatch.setattr(core_mod, "rtio_get_counter", lambda: clock.get_time_mu() - 10**12)
     _give_host_core(exp, host_core)
+    # the DMA recorder's __enter__ / __exit__ are kernels with no core of their own
+    monkeypatch.setattr(exp.core_dma.recorder, "core", host_core, raising=False)
 
     if slack_mu is not None:
         exp.p.t_calculation_slack_compensation_mu = np.int64(slack_mu)
@@ -277,6 +359,9 @@ def run_train(monkeypatch, exp, reads_v, t_start_mu=10_000_000, slack_mu=None, o
         exp.p.compute_feedback_grid()
     if update is not None:
         exp.p.update_raman_frequency_bool = int(update)
+    if getattr(exp, "fast_loop", 0) == 1:
+        # a run prepared with these params: the fastest loop folds them in finish_prepare
+        exp.fastest_finish()
 
     # scan_kernel's state at the top of the train, without its hardware preparation
     exp.omega_raman = exp.reset_initial_omega_from_params()
@@ -291,6 +376,21 @@ def run_train(monkeypatch, exp, reads_v, t_start_mu=10_000_000, slack_mu=None, o
     exp.omega_raman = exp.reset_initial_omega_from_params()
     for name in ("omega_raman", "apd", "t", "s_z"):
         getattr(exp.data, name).shot_data[...] = 0.
+
+    if getattr(exp, "fast_loop", 0) == 1:
+        # the fastest loop's traces, as scan_kernel records them in the first shot
+        exp._fastest_traces_recorded = 0
+        clock.set_time_mu(t_start_mu - 2_000_000)
+        exp._fastest_shot_kernels[0](exp)
+        if exp._fastest_traces_recorded != 1 or sorted(traces) != sorted(
+                ("fb_fastest_read", "fb_fastest_chain")):
+            raise RuntimeError(f"fastest loop traces not recorded: {sorted(traces)}")
+        events.clear()
+
+    # the pair as scan_kernel leaves it (prep_raman -> raman.init): both AOs set, so the cached
+    # words the phase tracker integrates are the chip's (single-AO mode never writes the static AO)
+    clock.set_time_mu(t_start_mu - 1_000_000)
+    exp.raman.init(exp.omega_raman / (2 * np.pi), exp.p.fraction_power_raman, 0., 0., np.int64(-1), 0)
 
     clock.set_time_mu(t_start_mu - 20_000)
     exp.raman.set_up_fast_frequency_update(aggressive_mode=1)

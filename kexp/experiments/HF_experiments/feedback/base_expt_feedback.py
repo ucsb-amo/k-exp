@@ -1,14 +1,20 @@
 from artiq.experiment import *
 from artiq.language import now_mu, delay, TFloat, TArray, at_mu
-from kexp import Base, img_types, cameras
+from kexp import Base, img_types, cameras, aprint
 from kexp.base import Feedback, RandomRamanPulseTimes
 from kexp.base.feedback import check_feedback_grid_params
 import numpy as np
 
 from kexp.experiments.HF_experiments.feedback.expt_params_feedback import ExptParams as ExptParamsFeedback
 from kexp.experiments.HF_experiments.feedback.data_vault_feedback import DataVault
+from kexp.experiments.HF_experiments.feedback.fastest.fastest_loop import FastestLoop, OverlapPosterior
 
-class FeedbackExpt(Base, Feedback, RandomRamanPulseTimes):
+class FeedbackExpt(Base, Feedback, RandomRamanPulseTimes, OverlapPosterior, FastestLoop):
+    """Feedback runs. feedback_loop is the fastest loop by default (p.fast_path = 2,
+    fastest/fastest_loop.py); self.p.fast_path = 0 in prepare() runs the standard loop
+    (feedback_loop_standard). A class that overrides the read or the posterior gets the standard
+    loop, with a printed reason; p.fast_path records the loop that ran."""
+
     def __init__(self,
                  save_data=True,
                  suppress_live_od=False,
@@ -29,7 +35,9 @@ class FeedbackExpt(Base, Feedback, RandomRamanPulseTimes):
                     save_on_underflow=save_on_underflow,
                     warmup_shots=warmup_shots,
                     mot_preload=mot_preload)
-        
+        # the standard loop until finish_prepare chooses (fastest_choose)
+        self.fastest_defaults(FeedbackExpt)
+
     def finish_prepare(self, shuffle=True):
 
         # timing docs: https://docs.google.com/document/d/11tzbmMhPQ-lycEPc1OWHo9MnWyrR9bsQly9bz8DF_WQ/edit?tab=t.cvj0bnjp2og4#heading=h.pimm1a640bup
@@ -66,7 +74,12 @@ class FeedbackExpt(Base, Feedback, RandomRamanPulseTimes):
         self.data.probabilities.shot_data[0, :] = self.P0
         self.data.omega_raman_mesh.shot_data[0, :] = self.omega_guess_list
 
+        # which loop runs (recorded in p.fast_path before the run is registered)
+        self.fastest_choose(FeedbackExpt)
+
         super().finish_prepare(shuffle=shuffle)
+
+        self.fastest_finish()
 
     @kernel
     def scan_kernel(self):
@@ -78,6 +91,9 @@ class FeedbackExpt(Base, Feedback, RandomRamanPulseTimes):
         self.data.t_raman_pulse_seed.put_data(float(t_raman_pulse_seed))
         self.data.t_raman_pulse.put_data_1d(self.p.t_raman_pulse_list)
         self.core.break_realtime()
+
+        # fastest loop: its read traces, recorded in the first shot (nothing for the standard loop)
+        self._fastest_shot_kernels[0](self)
 
         self.integrator.init()
 
@@ -125,7 +141,39 @@ class FeedbackExpt(Base, Feedback, RandomRamanPulseTimes):
                        update_raman_frequency=0,
                        update_rabi_frequency=0,
                        include_photon_noise=1):
-        
+        """The loop finish_prepare chose: feedback_loop_fastest (default) or
+        feedback_loop_standard. Only that one is compiled."""
+        self._feedback_loop_kernels[0](self, t_start_mu, update_raman_frequency,
+                                       update_rabi_frequency, include_photon_noise)
+
+    @kernel
+    def cleanup_scan_kernel(self):
+        Base.cleanup_scan_kernel(self)
+        self._fastest_cleanup_kernels[0](self)
+
+    @kernel
+    def cleanup_abort_kernel(self):
+        """Base's safe state, then the Raman and imaging RF off: the fastest loop's read trace
+        turns the next Raman pulse on, so an exception between the two could leave it on (the
+        shutter is closed by Base). Then the ADC back to the 32-bit transfer."""
+        Base.cleanup_abort_kernel(self)
+        try:
+            self.core.break_realtime()
+            self.raman.off()
+            self.imaging.off()
+        except:
+            aprint("[feedback] cleanup_abort_kernel: switching the Raman / imaging RF off failed")
+        try:
+            self._fastest_cleanup_kernels[0](self)
+        except:
+            aprint("[feedback] cleanup_abort_kernel: restoring the 32-bit ADC transfer failed")
+
+    @kernel
+    def feedback_loop_standard(self, t_start_mu,
+                       update_raman_frequency=0,
+                       update_rabi_frequency=0,
+                       include_photon_noise=1):
+
         self.omega_z_lightshift = 2 * np.pi * self.p.frequency_lightshift
 
         k = 0

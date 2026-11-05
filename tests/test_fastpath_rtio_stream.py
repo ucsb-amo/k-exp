@@ -43,7 +43,8 @@ def _key(e):
 def arms(tmp_path_factory):
     tmp = tmp_path_factory.mktemp("fastpath")
     with pytest.MonkeyPatch.context() as mp:
-        std, dm_std = h.build(mp, tmp, fast=False)
+        # FeedbackExpt's default is the fastest loop since 2026-11-04: the standard arm asks for 0
+        std, dm_std = h.build(mp, tmp, fast=False, fast_path=0)
         fast, dm_fast = h.build(mp, tmp, fast=True)
         yield mp, std, fast
         dm_std.close_devices()

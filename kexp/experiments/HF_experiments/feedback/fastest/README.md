@@ -1,13 +1,16 @@
 # Fastest feedback kernel: structure, timing, lowest reliable spacing
 
-**Status, 2026-11-02: no-atom bench only.** The kernel passed the bench rule at a 26.16 us median spacing
-(m = 21 grid points), against 66.7 us when this work began. Nothing here has run with atoms; see
-"Before atoms" at the end.
+**Status, 2026-11-04: FeedbackExpt's default loop** (`fastest_loop.py`, `p.fast_path = 2`; user: "build it,
+make it default"). `self.p.fast_path = 0` runs the standard loop. Not yet run on the machine (offline: compiled
+against the device db, and run on the host against the standard loop event by event; see "As the default" below).
+The bench kernels below passed the bench rule at a 26.16 us median spacing (m = 21), against 66.7 us when this
+work began; the default keeps the spacing (slack) and the integrator settle as they were.
 
 Files:
 
 | File | What it is |
 | --- | --- |
+| `fastest_loop.py` | FeedbackExpt's default loop: the guarded kernel's step on FeedbackExpt's own loop, with the library posterior. |
 | `bench_fastest_t26.py` | The kernel that passed the rule: run 90958 (class `bench_cg12_t26`, kept as run). Margin records on, no guards. |
 | `bench_fastest_t23_guarded.py` | The same with all three guards, at 23.15 us: run 90988, 63 shots clean (class `bench_cg13_g23`). |
 | `fastest_timing.py` | Spacing, slack and push padding as functions of grid size: the formula below. |
@@ -105,19 +108,47 @@ Only m = 21 has a rule pass; m < 21 are measured floors plus the m = 21 gap to t
 extrapolation. Above 7896 B the push needs its own stall test: pick a size with size % 1460 under about 700 B
 (the 11-01 stall lead, mechanism unknown) and run it before trusting it.
 
-## Before atoms
+## As the default (2026-11-04)
 
-None of this is done:
+`FeedbackExpt.feedback_loop` runs `feedback_loop_fastest` unless `p.fast_path` is set to 0 or the class would
+not run as written on it: a class that overrides the read (`measurement`, `readout_*`) or the posterior
+(`generate_posterior`, the two halves), scans a param the traces are built from (imaging, integrator, slack,
+pretrigger, FIFO and IO_UPDATE timings, `N_pulses`), uses an APD channel other than 7, or scans the
+transition frequency over more than 50 kHz gets the standard loop and a printed reason. A class with its own
+`feedback_loop` (feedback_reinit, the S2 copies, adaptive Ramsey, FeedbackExptFast) is untouched. `p.fast_path`
+records the loop that ran: 2 fastest, 1 overlap (FeedbackExptFast), 0 standard or own loop. The choice is a
+host-side function list, so only the loop that runs is compiled.
 
-- `imaging.off()` and `raman.off()` in `cleanup_abort_kernel`: pulse-on is in the trace, so an exception
-  could otherwise leave Raman RF on.
-- The deadline guard, and the destination-1 core log read after every run: a late word at the satellite is
-  silent and misframes every later word in the shot.
-- Replay the changed numerics on recorded reads (so far synthetic reads only: 6240 steps, 0 argmax
-  disagreements, drive within 2e-8 Hz; limits were set after seeing the values), and keep `s_z` for
-  `analysis/feedback.py`.
-- Settle 2 us with atoms; single-AO t_pi at the reference and +/- 50 kHz; the read model, contrast and the
-  grid recalibrated at the new T (all were measured at T = 66 us).
-- A 10,000-step soak of the exact atom kernel; restore the 32-bit ADC config on every exit.
+What differs from the bench kernel, on purpose: the posterior is the library's (`OverlapPosterior`, bit for bit
+`Feedback.generate_posterior` on the host), not the S2 kernel's faster numerics, so the replay and the
+analysis see the posterior they always did; the slack default (T ~ 66.7 us at m = 21) and the integrator settle
+default are unchanged. The bench floors were measured with the S2 numerics: re-measure before lowering T.
+
+Offline (tests/test_fastest_default.py, test_fastest_rtio_stream.py): compiles; against the standard loop at
+the same slack (39.7, 20, 3.9 us), with the same reads, every Raman switch at the same timestamp; every read
+event shifted by one constant 0-15 ns (the read starts on the 8 ns grid after the pulse end); the moving AO's
+IO_UPDATE where the standard loop pulses it; the same decoded reads; the phase each loop hands the posterior
+within the frequency word's LSB and the tracker's quantisation, and identical on the anchor; the posterior to
+2e-4. In 1 of 24 adaptive trains a posterior near-tie (top two points within 0.07 %) broke the other way at
+step 8: the 1-LSB single-AO word is enough to do that. No sequence error predicted by the lane model.
+
+## Before trusting it on atoms
+
+Done for the default loop:
+
+- `imaging.off()` and `raman.off()` in `FeedbackExpt.cleanup_abort_kernel` (after Base's safe state).
+- The deadline guard (always on in the default loop; < 1 us of lead ends the shot as an RTIOUnderflow).
+- The 32-bit ADC transfer restored at the end of the loop and in both cleanups.
+- The posterior numerics: unchanged (library posterior), so no replay of new numerics is owed; `s_z` kept.
+- The 10,000-step soak: dropped (user, 2026-11-04: "do not do the crazy soak thing").
+
+Not done:
+
+- The first run on the machine (CPU time, the compiled kernel's rounding and the satellite are out of reach
+  offline), and the destination-1 core log read after it (`artiq_coremgmt -s 1 log`): a late word at the
+  satellite is silent.
+- Single-AO t_pi at the reference and +/- 50 kHz (the drive moves within the grid, about +/- 10 kHz).
+- Only when lowering T: settle 2 us with atoms; the read model, contrast and grid recalibrated at the new T
+  (all were measured at T = 66 us).
 
 Record: `TIMING_LOG.md` in the night folder, page https://claude.ai/artifact/Sv8ja2XNmgYNQWpT8UMJvi.

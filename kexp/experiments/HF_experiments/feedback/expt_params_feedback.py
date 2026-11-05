@@ -121,6 +121,18 @@ class ExptParams(expt_params_kexp):
         # self.read_alpha_lightshift = 1.191 #88845-88847, 2026-10-26
         self.feedback_measurement_midpoint_remap_enabled = True
 
+        ### which feedback loop (FeedbackExpt; fastest/fastest_loop.py). 2: the fastest loop (default since
+        # 2026-11-04, user: "build it, make it default"); 0: the standard loop. FeedbackExpt records here the
+        # loop that ran (0 for a class with its own loop or one the fastest loop refused, with the reason printed).
+        self.fast_path = 2
+        # integrator settle for feedback reads, with the fastest-loop default (user 2026-11-04: the APD
+        # calibrations wait for "the change to the integration settle and such"). 4 -> 2 us: no-atom bench
+        # 90907 (+2.1 us margin a step, level unchanged); 1 us rejected (no-atom level -33 mV). The library
+        # value (kexp ExptParams) stays 4 us. v_apd_all_up / v_apd_all_down (above) were measured at 4 us:
+        # recalibrate the APD at 2 us before trusting feedback reads.
+        # self.t_integrator_settle = 4.0e-6 #83674, 2026-09-29 (kexp ExptParams)
+        self.t_integrator_settle = 2.0e-6 # fastest bench 90907, 2026-11-02; default for feedback 2026-11-04
+
         ### timing
         self.t_between_pulses_mu = int64(0)
         self.t_calculation_slack_compensation_mu = int64(0.7 * self.feedback_grid_size * 1.e3) + 15000 if self.feedback_grid_size > 10 else int64(10000)
