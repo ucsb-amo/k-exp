@@ -9,8 +9,7 @@ class simulation_check(EnvExperiment, FeedbackExpt):
 
         FeedbackExpt.__init__(self,
                       save_data=True,
-                      save_on_underflow=True,
-                      recalibrate=False)
+                      save_on_underflow=True)
         
         self.p.update_raman_frequency_bool = 0
         self.p.include_photon_noise = 1

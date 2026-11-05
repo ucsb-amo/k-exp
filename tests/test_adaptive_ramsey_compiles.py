@@ -3,14 +3,14 @@
 AdaptiveRamseyExpt's run() -- scan_kernel, feedback_loop with ramsey_plan_next (the max-variance
 gap + phase policy), ramsey_read, the timing probe in initialize_feedback -- through ARTIQ's
 compiler against the real device db, no core-device connection (as artiq_compile), every network
-client stubbed (the sub-scan compile test's stubs). Once with the default policy and once with
+client stubbed (feedback_compile_harness's stubs). Once with the default policy and once with
 PHASE_RANDOM (the phase-sign check run). Skipped without %db% / %code%. ~10 s per compile.
 """
 import os
 
 import pytest
 
-import test_feedback_subscan_compiles as subscan
+import feedback_compile_harness as harness
 
 pytestmark = pytest.mark.skipif(not (os.environ.get("db") and os.environ.get("code")),
                                 reason="needs the lab env vars %db% and %code%")
@@ -31,7 +31,6 @@ import numpy as np
 class AdaptiveRamseyCompile(EnvExperiment, BASECLASS):
     def prepare(self):
         BASECLASS.__init__(self, save_data=False, suppress_live_od=True)
-        self.p.cal_enabled = CAL_ENABLED
         self.p.N_pulses = 4
         self.p.N_repeats = 1
         self.p.ramsey_phase_policy = PHASE_POLICY
@@ -49,12 +48,7 @@ def _build(monkeypatch, tmp_path, phase_policy, version="v1"):
     module, base = VERSIONS[version]
     src = (EXPT.replace("PHASE_POLICY", str(phase_policy)).replace("MODULE", module)
            .replace("BASECLASS", base))
-    orig = subscan.EXPT
-    monkeypatch.setattr(subscan, "EXPT", src)      # subscan._build fills CAL_ENABLED
-    try:
-        return subscan._build(monkeypatch, tmp_path, cal_enabled=0)
-    finally:
-        monkeypatch.setattr(subscan, "EXPT", orig)
+    return harness._build(monkeypatch, tmp_path, expt=src)
 
 
 @pytest.mark.parametrize("version,phase_policy", [("v1", 4), ("v1", 3), ("v2", 4), ("v2", 3), ("v3", 4), ("v3", 3),
@@ -71,6 +65,6 @@ def test_the_adaptive_ramsey_experiment_compiles(monkeypatch, tmp_path, version,
         assert "ramsey_t_gap" in exp.data.keys and "ramsey_timing" in exp.data.keys
         # the floor the kernel will use is the production gap formula with the phase-set pretrigger
         assert exp.p.t_between_pulses_mu > exp.p.t_calculation_slack_compensation_mu
-        subscan._compile(cls, exp)
+        harness._compile(cls, exp)
     finally:
         device_mgr.close_devices()

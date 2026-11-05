@@ -103,7 +103,6 @@ class AdaptiveRamseyExptV4(FeedbackExpt, AdaptiveRamsey):
                       save_on_underflow=save_on_underflow,
                       warmup_shots=warmup_shots,
                       mot_preload=mot_preload)
-        self.p.cal_enabled = 0          # no interleaved readout sub-scan in the design stage
 
     def finish_prepare(self, shuffle=True):
         p = self.p

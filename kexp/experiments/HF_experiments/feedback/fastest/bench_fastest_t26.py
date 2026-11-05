@@ -178,8 +178,7 @@ class bench_cg12_t26(fr.feedback_reinit):
 
         fr.FeedbackExpt.__init__(self,
                                  save_data=True,
-                                 save_on_underflow=True,
-                                 recalibrate=False)
+                                 save_on_underflow=True)
         _start_trace("s2f")
         self.data.__class__ = BatchVault
 

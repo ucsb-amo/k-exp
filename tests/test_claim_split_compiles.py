@@ -242,8 +242,6 @@ import numpy as np
 class FeedbackClaimCompile(EnvExperiment, FeedbackExpt):
     def prepare(self):
         FeedbackExpt.__init__(self, save_data=False)
-        self.p.cal_enabled = 1
-        self.p.cal_every_n_shots = 2
         self.p.N_pulses = 3
         self.p.N_repeats = 1
         self.xvar('feedback_fractional_initial_offset', np.array([0., 0.5, 1.]))
@@ -584,19 +582,17 @@ def test_the_audit_catches_a_claim_that_sets_a_kernel_value(monkeypatch, tmp_pat
         _cleanup(b)
 
 
-def test_warm_feedback_run_with_its_sub_scan_and_the_claim_changes_no_kernel_value(
+def test_warm_feedback_run_and_the_claim_changes_no_kernel_value(
         monkeypatch, tmp_path, no_outbound_sockets):
-    """The feedback family (sub-scan on, the heaviest kernel): the same audit."""
+    """The feedback family (the heaviest kernel): the same audit."""
     b = _build(monkeypatch, tmp_path, warm=True, source=FEEDBACK_EXPT)
     try:
         assert _claim_events(b.events) == []
-        assert b.exp._subscan is not None and b.exp._subscan_enabled
         embedding_map = _compile(b)[0]
         before = _kernel_view(embedding_map)
         b.queue_gate.ensure_go()
         b.queue_gate.run_claim()
         assert ("liveod_start", "res-1", ("reserve",), None) in b.events
-        assert b.exp._subscan.enabled                  # this liveOD takes PUT_DATA
         after = _kernel_view(embedding_map)
         changed = sorted(k for k in before if after.get(k) != before[k])
         assert changed == [], f"the claim changed kernel-embedded attributes: {changed}"

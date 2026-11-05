@@ -2,7 +2,7 @@
 
 Not a test by itself (test_fastpath_rtio_stream.py uses it). The experiment is prepared
 against the real device db with every network client stubbed (as
-test_feedback_subscan_compiles.py), so the waxx wrappers and ARTIQ's own drivers are the
+feedback_compile_harness.py), so the waxx wrappers and ARTIQ's own drivers are the
 real ones. Only the bottom is replaced:
 
   * a time manager keeps the timeline cursor (at_mu may go back, as on the core device);
@@ -37,7 +37,7 @@ from numpy import int64
 
 class HostStream(EnvExperiment, FeedbackExpt):
     def prepare(self):
-        FeedbackExpt.__init__(self, save_data=False, suppress_live_od=True, recalibrate=False)
+        FeedbackExpt.__init__(self, save_data=False, suppress_live_od=True)
         self.p.update_raman_frequency_bool = UPDATE
         self.p.include_photon_noise = 1
         self.p.N_warmup_shots = 0
@@ -165,7 +165,7 @@ def build(monkeypatch, tmp_path, fast, slack_mu=NARROW_GRID["slack_mu"], offset=
           update=NARROW_GRID["update_raman_frequency_bool"], n_pulses=NARROW_GRID["N_pulses"],
           grid_size=NARROW_GRID["feedback_grid_size"],
           full_span=NARROW_GRID["frequency_feedback_grid_full_span"]):
-    import test_feedback_subscan_compiles as sub
+    import feedback_compile_harness as sub
     from artiq.master.databases import DeviceDB
     from artiq.master.worker_db import DeviceManager
     from artiq.language.environment import ProcessArgumentManager

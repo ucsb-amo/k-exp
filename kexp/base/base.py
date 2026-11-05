@@ -189,8 +189,7 @@ class Base(Expt, Devices, Cooling, Image, Cameras, Control, Clients):
     def _check_mot_preload(self):
         """finish_prepare: the MOT pre-load is a run-level setting made by
         Base(mot_preload=...). Refuses (before any run id) a run that set
-        p.do_mot_preload by hand to a different value or scans it. With an
-        interleaved sub-scan, adds the per-point pre-load record to it.
+        p.do_mot_preload by hand to a different value or scans it.
         Records what the pre-load does in the run file's root text
         'mot_preload'."""
         if 'do_mot_preload' in self.xvarnames:
@@ -200,8 +199,6 @@ class Base(Expt, Devices, Cooling, Image, Cameras, Control, Clients):
             raise ValueError(f"p.do_mot_preload = {self.params.do_mot_preload} but "
                              f"Base(mot_preload={self.mot_preload}): set it with the "
                              f"Base argument, not the parameter.")
-        # (add_sub_scan registers self._subscan in prepare; _subscan_enabled is
-        # decided later, in finish_prepare_wax)
         if self.mot_preload:
             # The MOT goes on before SHOT_COMPLETE and stays on between shots:
             # only safe with a scan loop that runs cleanup_abort_kernel on any
@@ -211,25 +208,6 @@ class Base(Expt, Devices, Cooling, Image, Cameras, Control, Clients):
                 raise ValueError("Base(mot_preload=True) needs a waxx scan loop with "
                                  "SAFE_STATE_ON_EVERY_CLEANUP_FAILURE (jep/mot-preload wax); "
                                  f"the loaded one ({_scanner.__file__}) lacks it.")
-        sub = getattr(self, '_subscan', None)
-        if self.mot_preload and sub is not None:
-            # A point starts pre-loaded like a data shot (its mot() takes the
-            # pre-load) and a completed point re-arms it, so the next point
-            # or data shot starts pre-loaded too: needs the scan loop's safe
-            # state around the sub-scan block (waxx 2026-10-28).
-            from waxx.base import scanner as _scanner
-            if not getattr(_scanner, "SAFE_STATE_AROUND_SUBSCAN", False):
-                raise ValueError("Base(mot_preload=True) with a sub-scan needs a waxx scan loop "
-                                 "with SAFE_STATE_AROUND_SUBSCAN; the loaded one "
-                                 f"({_scanner.__file__}) lacks it.")
-            # each point's [pre-load s, in-shot MOT load s] (-1 = the point
-            # ran no mot()), filled by cleanup_calibration_kernel
-            if sub.enabled:
-                if 'mot_preload' in vars(sub.data):
-                    raise ValueError(f"sub-scan '{sub.name}' declares a container 'mot_preload'; "
-                                     "Base(mot_preload=True) adds its own under that name.")
-                sub.data.mot_preload = sub.add_host_data_container((2,), np.float64,
-                                                                   fill_value=np.nan)
         record = {"enabled": self.mot_preload}
         if self.mot_preload:
             record.update({
@@ -240,7 +218,7 @@ class Base(Expt, Devices, Cooling, Image, Cameras, Control, Clients):
                         "shot-complete message -- and after each warm-up shot; it "
                         "loads until the next shot's mot().",
                 "parameters": "the MOT parameters the kernel holds when the pre-load goes "
-                              "on: those of the shot (or sub-scan point) that just ended, "
+                              "on: those of the shot that just ended, "
                               "so a scanned MOT parameter's pre-load uses the previous "
                               "shot's value (shuffled order).",
                 "data_b": ("read once per shot at the END of the shot (coils reset, shims "
@@ -261,15 +239,6 @@ class Base(Expt, Devices, Cooling, Image, Cameras, Control, Clients):
                 "on_error": "cleanup_abort_kernel: coils reset (full path), MOT light and "
                             "2D coil current off, 1064 off.",
             })
-            if sub is not None:
-                record["sub_scan"] = (
-                    f"points of sub-scan '{sub.name}' start pre-loaded like a data shot (the "
-                    f"point's mot() takes the pre-load); after a point that returned normally "
-                    f"the coils are reset, shims / 2D coil to 0 and the pre-load is switched "
-                    f"on again (no field read), so the next point or data shot starts "
-                    f"pre-loaded. Each point's [pre-load s, in-shot MOT load s] is "
-                    f"data.{sub.name}_mot_preload (-1 = no mot() in the point). A point that "
-                    f"raised leaves the pre-load off.")
         self._extra_file_texts["mot_preload"] = json.dumps(record)
         if self.mot_preload:
             console.info("[mot preload] ON: the MOT loads from the end of each shot; "
@@ -595,71 +564,6 @@ class Base(Expt, Devices, Cooling, Image, Cameras, Control, Clients):
         except:
             aprint("[scan] cleanup_abort_kernel: restoring the raman DDS from fast "
                    "frequency update mode failed; the next run's init_kernel re-inits it.")
-
-    # ---- interleaved sub-scan points (waxx Scanner / Expt.add_sub_scan) ----
-
-    @kernel
-    def init_calibration_kernel(self):
-        """Before a sub-scan point: the per-shot reset a warm-up shot gets
-        (pre_scan) -- devices and tweezers reset, the diagnostic cameras off
-        so no frame is triggered for a shot liveOD does not count. No scope
-        arming, no magnetometer read, no DataVault write. A pre-loaded MOT
-        is left on: the point's mot() takes it, as a data shot's does."""
-        self.diag.active = False
-        # the point's MOT bookkeeping (kernel buffer only: the next data
-        # shot's init_scan_kernel resets it before anything is pushed); -1
-        # stays when the point runs no mot()
-        self.data.mot_preload.put_data(-1., 0)
-        self.data.mot_preload.put_data(-1., 1)
-        self.core.break_realtime()
-        self.reset_devices()
-        self.core.break_realtime()
-        self.reset_tweezers(False)
-        self.core.break_realtime()
-
-    @kernel
-    def cleanup_calibration_kernel(self):
-        """After a sub-scan point (also after one that ended on an RTIO
-        error): the TTL input drain every data shot gets
-        (cleanup_scan_kernel_wax -- a point's prep_raman waits on the line
-        trigger, and a stale edge would let the next shot's wait return at
-        once), the safety cleanup with the raman DDS taken out of
-        fast-frequency-update mode (cleanup_abort_kernel, failure swallowed),
-        the imaging and raman RF off as cleanup_scan_kernel leaves them, and
-        the diagnostic cameras back on.
-
-        With the MOT pre-load: the point's pre-load record goes to the
-        sub-scan, and after a point that returned normally the pre-load goes
-        on again (shims / 2D coil to 0 first, as after a data shot; no field
-        read), so the next point or data shot starts pre-loaded. A point that
-        raised leaves it off."""
-        self.core.break_realtime()
-        self.ttl.clear_input_events()
-        self.cleanup_abort_kernel()
-        self.core.break_realtime()
-        self.imaging.off()
-        self.raman.off()
-        if self.mot_preload:
-            self._record_point_mot_preload(self.data.mot_preload.shot_data[0],
-                                           self.data.mot_preload.shot_data[1])
-            if self.subscan_point_completed:
-                self.core.break_realtime()
-                self.background_field()
-                self.mot_preload_on()
-        self.core.break_realtime()
-        self.diag.active = self.diag.enabled
-
-    def _record_point_mot_preload(self, t_pre, t_load):
-        """RPC from cleanup_calibration_kernel: this point's [pre-load s,
-        in-shot MOT load s] into the sub-scan's mot_preload container at the
-        point's slot (pushed with the point by _subscan_end). Never raises."""
-        try:
-            sub = self._subscan
-            dc = vars(sub.data).get('mot_preload') if sub is not None else None
-            if dc is not None and sub.counter < sub.N:
-                dc.put_shot_data_host((sub.counter,), np.array([t_pre, t_load]))
-        except Exception as e:
-            self._subscan_note("mot_preload record", e)
 
     @kernel
     def cleanup_scan_kernel(self):

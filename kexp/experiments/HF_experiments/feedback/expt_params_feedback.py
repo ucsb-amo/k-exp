@@ -150,22 +150,6 @@ class ExptParams(expt_params_kexp):
 
         self.t_tweezer_hold = 30.e-3
 
-        ### interleaved readout calibration (waxx Expt.add_sub_scan; FeedbackExpt.calibration_kernel)
-        # 1: every cal_every_n_shots data shots (and before the first), one all-up + all-down pair of
-        # raw readout points (ad.cal). Evaluated on the host; the kernel's constants never change.
-        self.cal_enabled = 0
-        self.cal_every_n_shots = 20
-        self.cal_n_reads = 5
-        # cycled event by event: 0 = the data shot's readout, 1 = the calibration run's
-        # (apd_voltage_vs_state_2); [0.] for the data readout only
-        self.cal_readout_modes = np.array([0., 1.])
-        self.cal_t_between_reads_mu = int64(25000)
-        # gap between the point's raman pulse and its first read
-        self.cal_t_raman_to_read = 10.e-6
-        self.cal_alternate = 1 # 1: reverse the pair's order on every other event
-        self.cal_apply = 0 # any other value is refused: the in-run apply path is not built
-        self.cal_readout_mode = 0. # set per point by the scan loop
-
         self.compute_feedback_grid()
 
     def compute_feedback_grid(self):
