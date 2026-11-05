@@ -48,6 +48,9 @@ class Base(Expt, Devices, Cooling, Image, Cameras, Control, Clients):
         self.prepare_devices(expt_params=self.params)
 
         self.ds = DataSaver(*PATHS, server_talk=server_talk)
+        # the params file and base classes, now that ds knows where they are
+        # (waxx Expt: source texts are read at the start, saved at END)
+        self._snapshot_source_texts()
 
         Clients.__init__(self, suppress_live_od=suppress_live_od)
 

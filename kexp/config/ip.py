@@ -4,6 +4,9 @@ from waxa.data.server_talk import server_talk as st
 
 from waxx.config.ip import EMAIL_CREDENTIALS_FILEPATH  # noqa: F401  (re-exported for kexp consumers)
 INTERLOCK_EMAIL_CREDENTIALS_FILEPATH = r"G:\Shared drives\Tweezers\Environments and Profiles\interlock_gmail_credentials.txt"
+# Remote Control's Google Voice number, notification addresses and whitelist, kept off GitHub
+# (format: kexp.util.remote_control.rc_config)
+REMOTE_CONTROL_CONFIG_FILEPATH = r"G:\Shared drives\Tweezers\Environments and Profiles\remote_control.json"
 
 ### data, filepaths
 DATA_DIR = os.getenv("data")
@@ -37,7 +40,7 @@ EXPT_PARAM_RELPATH = os.path.join("config","expt_params.py")
 BASE_CLASS_RELPATH = os.path.join("base")  # all .py files in this directory will be saved
 PATHS = (DATA_DIR, EXPT_PACKAGE_DIR, EXPT_PARAM_RELPATH, BASE_CLASS_RELPATH)
 
-MAP_BAT_PATH = "\"G:\\Shared drives\\Weld Lab Shared Drive\\Infrastructure\\map_network_drives_PeterRecommended.bat\""
+MAP_BAT_PATH = "\"G:\\Shared drives\\Weld Lab Shared Drive\\Infrastructure\\map_network_drives.bat\""
 # MAP_BAT_PATH = "\"G:\Shared drives\Tweezers\Software\map_fake_network_drive.bat\""
 FIRST_DATA_FOLDER_DATE = datetime(2023,6,22)
 
@@ -62,6 +65,23 @@ MONITOR_STATE_FILEPATH = (
 )
 # MONITOR_EXPT_PATH = str( Path(EXPT_PACKAGE_DIR) / 'experiments' / 'tools' / 'monitor.py' )
 MONITOR_EXPT_PATH = _safe_join(EXPT_PACKAGE_DIR, 'experiments', 'tools', 'monitor.py')
+# Run by the Device Control GUI's "Run MOT Observe" button (through the monitor
+# server), e.g. when the device state is untrusted: its end state replaces the file.
+RESET_STATE_EXPT_PATH = _safe_join(EXPT_PACKAGE_DIR, 'experiments', 'tools', 'mot_observe.py')
+# Run back to back by the monitor server from the Device Control GUI's Composite
+# tab (waxx.util.device_state.run_loop): key -> (card title, experiment file).
+# Only these files can be looped -- plus, for 'expt_loop' (the Monitor panel's
+# Loops, file chosen at Start), any .py file under kexp/experiments except the monitor.
+AUTO_TOF_EXPT_PATH = _safe_join(EXPT_PACKAGE_DIR, 'experiments', 'tools', 'auto_tof.py')
+EXPT_LOOP_ROOT = _safe_join(EXPT_PACKAGE_DIR, 'experiments')
+# The BEC TOF loop's scan, set from its card (⚙; waxx.util.device_state.loop_scan):
+# bounds and the defaults it starts with after a monitor server restart (SI).
+AUTO_TOF_SCAN = {'xvar': 't_tof', 'unit': 'ms', 'scale': 1.e-3,
+                 'minimum': 0., 'maximum': 25.e-3,
+                 'start': 2.5e-3, 'stop': None, 'n': 1, 'repeats': 15}
+RUN_LOOP_EXPTS = {'auto_tof': ('BEC TOF loop', AUTO_TOF_EXPT_PATH, AUTO_TOF_SCAN),
+                  'expt_loop': {'title': 'Experiment loop', 'root': EXPT_LOOP_ROOT,
+                                'exclude': (MONITOR_EXPT_PATH,)}}
 
 ### SRS control servers
 SRS_CONTROL_IP = "192.168.1.76"
@@ -83,6 +103,19 @@ PRECILASER_COM = 'COM20'
 ###
 MAGNETOMETER_COM = 'COM33'
 MAGNETOMETER_REFERENCE_CSV_PATH = _safe_join(DATA_DIR, 'magnetometer_reference.csv')
+# Daily field-log CSVs written by the magnetometer server (one reading per second).
+MAGNETOMETER_LOG_DIR = _safe_join(DATA_DIR, 'magnetometer_data')
+
+# Daily CSVs of the Bristol wavemeter (1 row/s: unix_s, frequency_thz, std_hz, n), written by its server.
+BRISTOL_LOG_DIR = _safe_join(DATA_DIR, 'bristol_wavemeter_logs')
+
+### Raman FP-cavity peak-separation lock (qNimble Quarto, pid_frequency_stabilize_Raman_v2)
+RAMAN_FP_LOCK_COM = 'COM35'
+# Daily CSVs of every lock status line, written by the lock server.
+RAMAN_FP_LOCK_LOG_DIR = _safe_join(DATA_DIR, 'raman_fp_lock_logs')
+
+### Diagnostic viewer: saved reference mean counts of the diagnostic camera frames
+DIAGNOSTIC_REFERENCE_CSV_PATH = _safe_join(DATA_DIR, 'diagnostic_reference.csv')
 
 ### Interlock controller
 INTERLOCK_COM = 'COM5'
@@ -102,7 +135,16 @@ KEYSIGHT_SUPPLIES = [
 ### kinesis motors
 DEVICE_ID_KINESIS_REF_BEAM_WAVEPLATE_ROTATOR = 27500961
 
+### PDXC picomotor controller (kong, 192.168.1.76)
+PDXC_SERVER_IP = "192.168.1.76"   # kong
+PDXC_COM = "COM40"
+
+### Tweezer AWG (Spectrum DN2 netbox; takes one connection at a time -- held by
+### the monitor server between runs, see kexp.config.monitor_connections)
+AWG_IP = 'TCPIP::192.168.1.83::inst0::INSTR'
+
 ### remote control
+# The old whitelist file, read once to move its entries into REMOTE_CONTROL_CONFIG_FILEPATH
 WHITELIST_PATH = (
     os.path.join(DATA_DIR, "remote_whitelist.json")
     if DATA_DIR
