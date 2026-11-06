@@ -23,16 +23,17 @@ class lightsheet_paint_test(EnvExperiment, Base):
         Base.__init__(self,
                     save_data=True,
                     camera_select=cameras.xy_basler,
-                    imaging_type=img_types.ABSORPTION, warmup_shots=0)
+                    imaging_type=img_types.ABSORPTION, warmup_shots=2)
 
         self.p.t_tof = 900.e-6
 
-        self.p.frequency_fm_deviation_lightsheet = 2.e6
-        self.p.frequency_fm_rate_lightsheet = 100.e3
-        self.xvar('frequency_fm_deviation_lightsheet', np.linspace(0., 3.e6, 7))
-        self.xvar('frequency_fm_rate_lightsheet', np.linspace(0., 400.e3, 5))
+        self.xvar('frequency_fm_deviation_lightsheet',[0.0,(0.35)*1.e6])
+        self.p.frequency_fm_deviation_lightsheet=0.35*1.e6
+        self.p.frequency_fm_rate_lightsheet = 192.e3
+        # self.xvar('frequency_fm_deviation_lightsheet', np.linspace(0.3, 0.6, 7)*1.e6)
+        # self.xvar('frequency_fm_rate_lightsheet', np.linspace(170.e3, 230.e3, 9))
 
-        self.p.N_repeats = 2
+        self.p.N_repeats = 7
         self.p.t_mot_load = 1.
         self.p.imaging_state = 2.
 
