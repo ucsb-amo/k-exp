@@ -198,6 +198,12 @@ class Devices():
 
         self.siglent = siglent_frame(self.core)
 
+        # Lightsheet painting test: the Siglent at 192.168.1.126 driving the
+        # lightsheet AO (80 MHz carrier, FM painting, <= 2 Vpp). Separate from
+        # self.lightsheet. Kernel: .init(), .set(amplitude_vpp, fm_deviation,
+        # fm_rate), .fm_on(), .fm_off() -- each a host RPC of tens of ms.
+        self.lightsheet_painting_test = self.siglent.siglent_lightsheet_paint
+
         self._fzw = fzw_frame(params=self.params)
 
         self.ry_405 = RydbergDDSSwitchBeam(
