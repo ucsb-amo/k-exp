@@ -493,11 +493,13 @@ def _raman_f_readback(ctx):
 
 
 def _raman_p_readback(ctx):
-    a = ctx.dds_amplitude("raman_150_plus")
-    a0 = _frame_attr(ctx, "dds", "raman_150_plus", "amplitude")
-    if a is None or not a0:
+    # expt.raman is RamanBeamsPID: the power is the 150+ PID setpoint over its
+    # balanced-max setpoint (the DDS amplitudes stay at their defaults)
+    v = ctx.dac_voltage("raman_150")
+    v_max = _float(getattr(ctx.params, "v_pd_dds0_balanced_max", None))
+    if v is None or not v_max:
         return None
-    return (a / a0) ** 2
+    return v / v_max
 
 
 def _raman_f_check(value, ctx):
@@ -556,8 +558,9 @@ RAMAN = CompositeDevice(
     key="raman",
     title="Raman beams",
     group="Probe light",
-    doc=("expt.raman (RamanBeamPair): raman_150_plus + raman_80_plus set the "
-         "two-photon frequency, raman_switch is the switch AO, raman_shutter the "
+    doc=("expt.raman (RamanBeamsPID): raman_150_plus + raman_80_plus set the "
+         "two-photon frequency, the DACs raman_150 + raman_80 the intensity PID "
+         "setpoints, raman_switch is the switch AO, raman_shutter the "
          "shutter.  quantum_machines_raman_rf_handoff_ttl high means the OPX drives "
          "the two AOs; On takes them back for ARTIQ."),
     fields=(
@@ -571,7 +574,8 @@ RAMAN = CompositeDevice(
         Arg("p", "Power fraction", decimals=3, step=0.01, minimum=0., maximum=1.,
             default=lambda ctx: ctx.params.fraction_power_raman,
             readback=_raman_p_readback, param="fraction_power_raman",
-            tooltip="fraction_power: each AO at sqrt(p) x its default amplitude. "
+            tooltip="fraction_power: each intensity PID setpoint at p x its balanced-max "
+                    "setpoint (v_pd_dds0/1_balanced_max); AOs at their default amplitudes. "
                     "↺ = ExptParams fraction_power_raman."),
     ),
     ops=(

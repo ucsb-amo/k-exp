@@ -16,12 +16,12 @@ class hf_bec(EnvExperiment, Base):
         Base.__init__(self,setup_camera=True,save_data=True,
                       camera_select=cameras.andor,
                       imaging_type=img_types.ABSORPTION,
-                      warmup_shots=3)
+                      warmup_shots=1)
 
-        self.p.i_hf_raman = 192.
-        f_img_predicted = -568.e6 - 4.0935e6 * (self.p.i_hf_raman - 182.)
-        self.xvar('frequency_detuned_hf_f1m1',
-                  f_img_predicted + np.arange(-12.,12.01,1.)*1.e6)
+        self.p.i_hf_raman = 192.0
+        self.p.f_img_predicted = -612.e6
+        # self.xvar('frequency_detuned_hf_f1m1',
+                #   f_img_predicted + np.arange(-12.,12.01,1.)*1.e6)
 
         # self.xvar('t_tof',np.linspace(20.,3000.,7)*1.e-6)
         self.p.t_tof = 1500.e-6
@@ -66,7 +66,7 @@ class hf_bec(EnvExperiment, Base):
     @kernel
     def scan_kernel(self):
 
-        self.set_imaging_detuning(frequency_detuned=self.p.frequency_detuned_hf_f1m1)
+        self.set_imaging_detuning(frequency_detuned=self.p.f_img_predicted)
 
         self.ry_405.set_power(self.p.v_pd_ry_405)
         self.ry_980.set_power(self.p.v_pd_ry_980)

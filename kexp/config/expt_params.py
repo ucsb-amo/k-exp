@@ -192,7 +192,8 @@ class ExptParams(ExptParamsWaxx):
         # self.t_raman_pi_pulse = 3.4753e-06 #89767, 2026-10-29
         # self.t_raman_pi_pulse = 3.6616e-06 #89933, 2026-10-29
         # self.t_raman_pi_pulse = 3.6235e-06 #90199, 2026-10-30
-        self.t_raman_pi_pulse = 3.7045e-06 #90236, 2026-10-30
+        # self.t_raman_pi_pulse = 3.7045e-06 #90236, 2026-10-30
+        self.t_raman_pi_pulse = 5.0688e-06 #92595, 2026-11-05
          
         # DAC controlled AO amplitudes
         self.amp_d1_3d_c = 0.3
@@ -405,6 +406,12 @@ class ExptParams(ExptParamsWaxx):
         self.frequency_raman_zeeman_state_xfer_sweep_fullwidth = 5.e6
         self.fraction_power_raman = 0.3
         self.fraction_power_raman_nf = 1.
+        # Raman intensity PID setpoints (V) giving ~max power with the two beams at equal
+        # power at the atoms; RamanBeamsPID sets fraction_power_raman * these.
+        # dds0 = raman_150_plus (DAC raman_150, PID loop 2), dds1 = raman_80_plus (DAC raman_80, loop 1).
+        # PLACEHOLDERS, NOT MEASURED: the DAC channels' max_v (dac_id.py), not a balance point.
+        self.v_pd_dds0_balanced_max = 5.2
+        self.v_pd_dds1_balanced_max = 3.2
         self.n_raman_sweep_steps = 100
 
         # self.frequency_raman_transition = 41.25e6 # 57 G 1,-1 to 1,0
@@ -414,7 +421,8 @@ class ExptParams(ExptParamsWaxx):
         # self.frequency_raman_transition = 119.46388e6 #89768, 2026-10-29  # Ramsey 13 x 5, +/- 73 Hz, Raman lock 43.17 GHz
         # self.frequency_raman_transition = 119.463528e6 #89967, 2026-10-29  # Ramsey 13 x 5, +/- 130 Hz (-347 Hz vs #89934 at 20:33), Raman lock 45.98 GHz
         # self.frequency_raman_transition = 119.463801e6 #90200, 2026-10-30  # Ramsey 13 x 5, +/- 46 Hz, Raman lock 45.95 GHz
-        self.frequency_raman_transition = 119.463504e6 #90240, 2026-10-30  # Ramsey 13 x 5, +/- 68 Hz (-297 Hz vs #90200), Raman lock 45.95 GHz
+        # self.frequency_raman_transition = 119.463504e6 #90240, 2026-10-30  # Ramsey 13 x 5, +/- 68 Hz (-297 Hz vs #90200), Raman lock 45.95 GHz
+        self.frequency_raman_transition = 119.4635753e6 #92596+#92600, 2026-11-05  # Ramsey coarse (17 x 5) + fine (500 us, 15 x 12) inverse-variance mean, +/- 35 Hz, Raman lock 47.19-47.21 GHz; branch: sign-constrained profile, post hoc, next branch at delta-chi2 >= 13.8
 
         self.frequency_raman_transition_nf_1m1_20 = 460.7e6 # 1.5 G 1,-1 to 2,0
         self.frequency_raman_transition_nf_1m1_2m2 = 458.4e6 # 1.5 G 1,-1 to 2,-2

@@ -12,7 +12,8 @@
 //  - a sweep is rejected (no update, output held) when no pair is found or
 //    |err| >= win; nbad rejected sweeps in a row while LOCKED -> HOLD
 //  - HOLD keeps the output where it is and re-locks by itself after ngood
-//    good sweeps in a row
+//    good sweeps in a row; at the relock the integral is cleared, so the
+//    output steps from the held value to g1*(p1 + i1)*err
 //  - PI: integral += g1*i1*err, feedback = g1*p1*err + integral. In the old
 //    code p1 acted as the integral gain, i1 as a double integral and d1 as
 //    proportional: the old default p1 = -0.01 is the new i1 = -0.01. No
@@ -23,6 +24,12 @@
 //    cannot move the output). Only the +/-rail clamp then limits a wrong
 //    pairing.
 //  - integer microsecond timestamps with unsigned differences (micros() wrap)
+//  - override = 1 sets the output to ovolt and the state to HOLD, whether the
+//    lock is on or off. The PI is frozen (no integral update, so no windup); sweeps are
+//    still measured (sep, err, bad counts) and it is not counted as an unlock.
+//    Released with the lock on: HOLD at ovolt, re-locks after ngood good sweeps
+//    (at the next pair with hold = 0) with the integral cleared. With the lock
+//    off: OFF, 0 V.
 #pragma once
 #include <stdint.h>
 #include <math.h>
@@ -46,7 +53,7 @@ struct Settings {
   double p1 = -0.01;       // V/ms, proportional
   double i1 = -0.01;     // V/ms per sweep, integral (the old p1 did this)
   double rail = 8.0;     // V, output and integral clamp
-  int32_t override = 0;  // 1 = output forced to ovolt; the lock keeps running but its output is not sent
+  int32_t override = 0;  // 1 = output set to ovolt, state HOLD, PI frozen (integral does not wind)
   double ovolt = 0.0;    // V, forced output while override = 1
 };
 
@@ -80,17 +87,29 @@ public:
   }
 
   // Volts the DAC should hold: ovolt while override = 1 (clamped to +/-kDacMax),
-  // otherwise the lock's feedback. The lock keeps running under override.
+  // otherwise the lock's feedback. step() also copies ovolt into feedback under
+  // override; this gives the same value before the first sample is taken.
   double outputVolts() const {
     if (s.override != 1) return feedback;
-    return s.ovolt > kDacMax ? kDacMax : (s.ovolt < -kDacMax ? -kDacMax : s.ovolt);
+    return overrideVolts();
   }
 
   // One ADC sample. Returns true when the DAC output should be rewritten.
   bool step(uint32_t tUs, double v, bool trig) {
     bool write = false;
 
-    if (s.lock != 1) {
+    if (s.override == 1) {
+      // output = ovolt, state HOLD, PI frozen; not an unlock
+      if (state != HOLD) state = HOLD;
+      goodRun = 0;
+      badRun = 0;
+      saturated = 0;
+      const double u = overrideVolts();
+      if (u != feedback) {
+        feedback = u;
+        write = true;
+      }
+    } else if (s.lock != 1) {
       if (state != OFF) {
         state = OFF;
         feedback = 0;
@@ -185,12 +204,14 @@ private:
       reject(&nBadWin);
       return false;
     }
+    if (s.override == 1) return false;  // measured and counted, never applied
     badRun = 0;
     if (state == HOLD) {
       if (s.hold && ++goodRun < s.ngood) return false;
       state = LOCKED;
-      // bumpless: the first output after HOLD equals the held output
-      integral = feedback - s.g1 * s.p1 * err;
+      // relock: the integral restarts from zero, so the output steps from the
+      // held value to g1*(p1 + i1)*err
+      integral = 0;
     }
     integral = clamp(integral + s.g1 * s.i1 * err);
     const double raw = s.g1 * s.p1 * err + integral;
@@ -200,6 +221,10 @@ private:
     saturated = sat;
     feedback = u;
     return true;
+  }
+
+  double overrideVolts() const {
+    return s.ovolt > kDacMax ? kDacMax : (s.ovolt < -kDacMax ? -kDacMax : s.ovolt);
   }
 
   double clamp(double x) const {

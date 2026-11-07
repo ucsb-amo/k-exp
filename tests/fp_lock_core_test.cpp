@@ -126,7 +126,7 @@ static void test_lock_converges() {
 }
 
 // laser A's peak falls below vth: the pairing goes wrong, the output must hold,
-// and the lock must come back by itself without a jump
+// and the lock must come back by itself with the integral cleared at the relock
 static void test_dropout_holds_and_relocks() {
   Sim s;
   s.sep0 = 10.3;
@@ -140,10 +140,19 @@ static void test_dropout_holds_and_relocks() {
   CHECK(s.lk.feedback == fbBefore, "output moved %.5f -> %.5f", fbBefore, s.lk.feedback);
   CHECK(s.nWrites == writesBefore, "%d writes during dropout", s.nWrites - writesBefore);
   s.hA = 8.0;
-  s.run(30);
+  int n = 0;
+  while (s.lk.state != fplock::LOCKED && n++ < 30) s.run(1);
   CHECK(s.lk.state == fplock::LOCKED, "state %d after recovery", s.lk.state);
-  CHECK(std::fabs(s.lk.feedback - fbBefore) < 1e-3, "output jumped %.5f -> %.5f",
-        fbBefore, s.lk.feedback);
+  CHECK(s.lk.nUnlock == 1, "unlocks %u after recovery", s.lk.nUnlock);
+  // the relock sweep: integral = 0 + g1*i1*err, output = g1*p1*err + integral
+  const double integ0 = s.lk.s.g1 * s.lk.s.i1 * s.lk.err;
+  CHECK(std::fabs(s.lk.integral - integ0) < 1e-12, "integral at relock %.6f, expected %.6f (cleared)",
+        s.lk.integral, integ0);
+  CHECK(std::fabs(s.lk.feedback - (s.lk.s.g1 * s.lk.s.p1 * s.lk.err + integ0)) < 1e-12,
+        "output at relock %.6f", s.lk.feedback);
+  s.run(400);
+  CHECK(s.lk.state == fplock::LOCKED && std::fabs(s.lk.err) < 0.01, "re-converged: state %d err %.4f ms",
+        s.lk.state, s.lk.err);
 }
 
 // a single bad sweep is skipped without unlocking
@@ -303,14 +312,14 @@ static void test_hold_off() {
           s.lk.state, fb, s.lk.feedback);
     CHECK(s.lk.nBadNone >= 25, "no peaks: nBadNone %u", s.lk.nBadNone);
   }
-  {   // switching hold off while paused: locks at the next pair, without an output jump
+  {   // switching hold off while paused: locks at the next pair, integral cleared
     Sim s; s.sep0 = 13.0; s.run(20);
     CHECK(s.lk.state == fplock::HOLD, "state %d before the switch", s.lk.state);
-    const double fb = s.lk.feedback;
     s.lk.s.hold = 0;
     s.run(1);
     CHECK(s.lk.state == fplock::LOCKED, "state %d after the switch", s.lk.state);
-    CHECK(std::fabs(s.lk.feedback - fb) < 0.05, "output jumped %.4f -> %.4f", fb, s.lk.feedback);
+    CHECK(std::fabs(s.lk.integral - s.lk.s.g1 * s.lk.s.i1 * s.lk.err) < 1e-12,
+          "integral %.6f at the relock, expected g1*i1*err", s.lk.integral);
   }
 }
 
@@ -328,21 +337,56 @@ static void test_clear_output() {
   CHECK(std::fabs(s.lk.err) < 0.01, "re-locked err %.4f ms", s.lk.err);
 }
 
+// override: output = ovolt, state HOLD, PI frozen (no windup), not an unlock;
+// released, the lock re-locks from HOLD with the integral cleared
 static void test_override() {
-  Sim s; s.sep0 = 10.5; s.run(400);
-  const double fb = s.lk.feedback;
-  CHECK(s.lk.outputVolts() == fb, "lock output %.4f, outputVolts %.4f", fb, s.lk.outputVolts());
-  s.lk.s.override = 1; s.lk.s.ovolt = 1.25;
-  CHECK(s.lk.outputVolts() == 1.25, "forced %.4f", s.lk.outputVolts());
-  s.run(400);
-  CHECK(s.lk.state == fplock::LOCKED && s.lk.feedback != 1.25, "lock keeps running: state %d fb %.4f", s.lk.state, s.lk.feedback);
-  CHECK(s.lk.outputVolts() == 1.25, "forced %.4f after lock sweeps", s.lk.outputVolts());
-  s.lk.s.ovolt = 42.0;
-  CHECK(s.lk.outputVolts() == fplock::kDacMax, "clamp high %.4f", s.lk.outputVolts());
-  s.lk.s.ovolt = -42.0;
-  CHECK(s.lk.outputVolts() == -fplock::kDacMax, "clamp low %.4f", s.lk.outputVolts());
-  s.lk.s.override = 0;
-  CHECK(s.lk.outputVolts() == s.lk.feedback, "override off: outputVolts %.4f feedback %.4f", s.lk.outputVolts(), s.lk.feedback);
+  {
+    Sim s; s.sep0 = 10.5; s.run(400);
+    CHECK(s.lk.state == fplock::LOCKED, "state %d before override", s.lk.state);
+    CHECK(s.lk.outputVolts() == s.lk.feedback, "lock output %.4f, outputVolts %.4f", s.lk.feedback,
+          s.lk.outputVolts());
+    s.lk.s.override = 1; s.lk.s.ovolt = -0.05;
+    CHECK(s.lk.outputVolts() == -0.05, "forced %.4f before a sample", s.lk.outputVolts());
+    const double integ = s.lk.integral;
+    const uint32_t unlocks = s.lk.nUnlock;
+    // ovolt = -0.05 V puts the separation 0.5 - 0.05*3.33 = 0.33 ms off (inside
+    // win = 1 ms): a lock that kept integrating would wind by i1*0.33 per sweep
+    s.run(400);
+    CHECK(s.lk.state == fplock::HOLD, "state %d under override", s.lk.state);
+    CHECK(s.lk.feedback == -0.05 && s.lk.outputVolts() == -0.05, "fb %.4f out %.4f under override",
+          s.lk.feedback, s.lk.outputVolts());
+    CHECK(s.lk.integral == integ, "integral wound %.6f -> %.6f under override", integ, s.lk.integral);
+    CHECK(s.lk.nUnlock == unlocks, "override counted as an unlock (%u -> %u)", unlocks, s.lk.nUnlock);
+    CHECK(std::fabs(s.lk.err - (s.sep0 - 0.05 * s.kLaser - s.lk.s.setp)) < 0.01, "still measured: err %.4f ms", s.lk.err);
+    s.lk.s.ovolt = 42.0; s.run(1);
+    CHECK(s.lk.outputVolts() == fplock::kDacMax && s.lk.feedback == fplock::kDacMax,
+          "clamp high out %.4f fb %.4f", s.lk.outputVolts(), s.lk.feedback);
+    s.lk.s.ovolt = -42.0;
+    CHECK(s.lk.outputVolts() == -fplock::kDacMax, "clamp low %.4f", s.lk.outputVolts());
+    s.lk.s.ovolt = -0.05; s.run(1);
+    // released: HOLD at ovolt until ngood good sweeps, then LOCKED with the integral cleared
+    s.lk.s.override = 0;
+    s.run(5);
+    CHECK(s.lk.state == fplock::HOLD && s.lk.feedback == -0.05, "released: state %d fb %.4f",
+          s.lk.state, s.lk.feedback);
+    int n = 0;
+    while (s.lk.state != fplock::LOCKED && n++ < 30) s.run(1);
+    CHECK(s.lk.state == fplock::LOCKED, "state %d after release", s.lk.state);
+    CHECK(std::fabs(s.lk.integral - s.lk.s.g1 * s.lk.s.i1 * s.lk.err) < 1e-12,
+          "integral %.6f at the relock, expected cleared", s.lk.integral);
+    s.run(400);
+    CHECK(std::fabs(s.lk.err) < 0.01, "re-locked err %.4f ms", s.lk.err);
+  }
+  {   // with the lock off: override still sets the output and shows HOLD; released: OFF, 0 V
+    Sim s; s.lk.s.lock = 0; s.run(5);
+    CHECK(s.lk.state == fplock::OFF, "state %d with the lock off", s.lk.state);
+    s.lk.s.override = 1; s.lk.s.ovolt = -0.7; s.run(5);
+    CHECK(s.lk.state == fplock::HOLD && s.lk.feedback == -0.7, "lock off + override: state %d fb %.4f",
+          s.lk.state, s.lk.feedback);
+    s.lk.s.override = 0; s.run(1);
+    CHECK(s.lk.state == fplock::OFF && s.lk.feedback == 0 && s.lk.outputVolts() == 0,
+          "released with the lock off: state %d fb %.4f", s.lk.state, s.lk.feedback);
+  }
 }
 
 int main() {

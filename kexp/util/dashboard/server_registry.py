@@ -31,6 +31,7 @@ from kexp.config.ip import (
     INTERLOCK_COM,
     PDXC_COM,
     RAMAN_FP_LOCK_COM,
+    RAMAN_INTENSITY_COM,
 )
 
 
@@ -174,6 +175,28 @@ SERVER_SPECS: list[ServerSpec] = [
         com_label=RAMAN_FP_LOCK_COM,
         graceful_stop_timeout_s=3.0,   # puts the firmware's table printout back on stop
         warm_imports=["pyqtgraph", "waxx.util.guis.fp_lock.fp_lock_panel"],
+        default_dock_area="right",
+        default_placement="tab",
+        tab_group="diag",
+    ),
+    ServerSpec(
+        id="raman_intensity",
+        label="Raman intensity",
+        icon="🔆",
+        # Owns the intensity-PID Quarto's COM port (a terminal cannot open it
+        # while this runs).  Re-applies the gains last set through it when
+        # the board comes up with others (reset / reflash), with a warning.
+        body_factory=_lazy_panel("kexp.util.guis.lasers.raman_intensity.raman_intensity_panel",
+                                 "RamanIntensityPanel"),
+        server_cmd=[_PY, "-m", "kexp.util.guis.lasers.raman_intensity.raman_intensity_server"],
+        cwd=_REPO,
+        server_id="raman_intensity",
+        client_factory=_lazy_client("waxx.util.guis.intensity_pid.intensity_pid_client",
+                                    "IntensityPIDClient", server_id="raman_intensity",
+                                    discovery_timeout=3.0, timeout=1.5),
+        com_label=RAMAN_INTENSITY_COM,
+        graceful_stop_timeout_s=3.0,
+        warm_imports=["pyqtgraph", "waxx.util.guis.intensity_pid.intensity_pid_panel"],
         default_dock_area="right",
         default_placement="tab",
         tab_group="diag",

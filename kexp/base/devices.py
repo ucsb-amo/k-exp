@@ -39,6 +39,7 @@ from kexp.control.painted_lightsheet import lightsheet, V_LIGHTSHEET_PAINT_MIN
 from kexp.control.awg_tweezer import tweezer, V_TWEEZER_PAINT_MIN
 from kexp.control.doubled_rf import doubled_rf
 from kexp.control.rydberg_lasers import RydbergDDSSwitchBeam, RydbergTTLSwitchBeam
+from kexp.control.misc.raman_beams_pid import RamanBeamsPID
 
 from kexp.calibrations.magnets import (slope_i_transducer_per_v_setpoint_supply_outer,
                                        offset_i_transducer_per_v_setpoint_supply_outer,
@@ -63,7 +64,7 @@ class Devices():
         self.tweezer = tweezer()
         self.lightsheet = lightsheet()
         self.params = ExptParams()
-        self.raman = RamanBeamPair()
+        self.raman = RamanBeamsPID()
         self.data = DataVault()
         self.p = self.params
 
@@ -174,13 +175,18 @@ class Devices():
                                expt_params = self.params,
                                core=self.core)
         
-        self.raman = RamanBeamPair(dds0=self.dds.raman_150_plus,
+        # powers set by the Raman intensity PID setpoints: dds0 (150+) is PID loop 2
+        # (DAC raman_150), dds1 (80+) is loop 1 (DAC raman_80)
+        self.raman = RamanBeamsPID(dds0=self.dds.raman_150_plus,
                                     dds1=self.dds.raman_80_plus,
                                     dds_sw=self.dds.raman_switch,
+                                    dac_pid0=self.dac.raman_150,
+                                    dac_pid1=self.dac.raman_80,
+                                    core=self.core,
                                     frequency_transition=self.params.frequency_raman_transition,
                                     fraction_power=self.params.fraction_power_raman,
                                     params=self.params)
-        
+
         # self.raman_lf_hf = RamanBeamPair(dds0=self.dds.raman_150_minus,
         #                                 dds1=self.dds.raman_80_plus,
         #                                 frequency_transition=self.params.frequency_raman_transition,

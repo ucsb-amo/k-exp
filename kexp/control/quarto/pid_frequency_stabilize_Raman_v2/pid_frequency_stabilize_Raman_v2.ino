@@ -16,8 +16,10 @@
 //   ngood      good sweeps in a row before HOLD -> LOCKED
 //   g1 p1 i1   gain, proportional, integral:
 //              integral += g1*i1*err, feedback = g1*p1*err + integral
-//   override   1 = force the output to ovolt; anything else = the lock drives it
-//              (the lock keeps running under override; its output is not sent)
+//   override   1 = output set to ovolt, state HOLD, PI frozen (the integral does
+//              not wind; sweeps are still measured); anything else = the lock
+//              drives it. Released, the lock re-locks from HOLD as usual.
+//              Every relock (HOLD -> LOCKED) clears the integral.
 //   ovolt      V, forced output while override = 1 (clamped to +/-10 V)
 //   fmt        printout: 1 = table (default), 0 = CSV, 2 = paused
 //   read only: sep, integ, state (0 off, 1 hold, 2 locked), tfirst, h1, h2,
@@ -137,7 +139,7 @@ void help(qCommand& qC, Stream& S)
   S.printf("  hys    %10.3f V        a peak ends below vth - hys\n", s.hys);
   S.printf("  nmin   %10ld samples  (%d us each) above vth for a peak to count\n", (long)s.nmin, UPDATE_US);
   S.printf("  tmin   %10.3f ms       ignore peaks closer than this to the first\n", s.tmin);
-  S.printf("  override %8ld          1 = force the output to ovolt (lock keeps running, its output not sent); 0 = lock drives it\n",
+  S.printf("  override %8ld          1 = output = ovolt, state HOLD, PI frozen; 0 = lock drives it\n",
            (long)s.override);
   S.printf("  ovolt  %10.3f V        forced output while override = 1 (clamped to +/-%g V)\n", s.ovolt, fplock::kDacMax);
   S.printf("  fmt    %10ld          printout: 1 = table, 0 = CSV, 2 = paused\n", (long)fmt);
@@ -197,8 +199,8 @@ void printEvents(const fplock::Lock& k) {
   }
   static int32_t lastOverride = 0;
   if (k.s.override != lastOverride) {
-    if (k.s.override == 1) Serial.printf("## override on: output forced to %.3f V\n", k.outputVolts());
-    else Serial.println("## override off: the lock drives the output");
+    if (k.s.override == 1) Serial.printf("## override on: output %.3f V, HOLD, PI frozen\n", k.outputVolts());
+    else Serial.println("## override off: re-locks from HOLD (integral cleared at the relock)");
     lastOverride = k.s.override;
   }
   // skipped sweeps are expected in HOLD; report them only while locked

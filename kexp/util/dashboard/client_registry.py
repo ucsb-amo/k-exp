@@ -101,6 +101,17 @@ CLIENT_SPECS: list[ClientSpec] = [
         tab_group="lock",
     ),
     ClientSpec(
+        id="raman_intensity",
+        label="Raman intensity",
+        icon="🔆",
+        body_factory=_lazy_panel("kexp.util.guis.lasers.raman_intensity.raman_intensity_panel",
+                                 "RamanIntensityPanel"),
+        warm_imports=["pyqtgraph", "waxx.util.guis.intensity_pid.intensity_pid_panel"],
+        default_dock_area="right",
+        default_placement="tab",
+        tab_group="lock",
+    ),
+    ClientSpec(
         id="basler",
         label="Camera Viewer",
         icon="📷",

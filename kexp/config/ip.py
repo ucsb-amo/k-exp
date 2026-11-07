@@ -114,6 +114,11 @@ RAMAN_FP_LOCK_COM = 'COM35'
 # Daily CSVs of every lock status line, written by the lock server.
 RAMAN_FP_LOCK_LOG_DIR = _safe_join(DATA_DIR, 'raman_fp_lock_logs')
 
+### Raman beam intensity stabilization (qNimble Quarto, pid_intensity_stabilize_raman), on kong
+RAMAN_INTENSITY_COM = 'COM16'
+# Daily CSVs of 1 s means of the board's status lines, written by its server.
+RAMAN_INTENSITY_LOG_DIR = _safe_join(DATA_DIR, 'raman_intensity_logs')
+
 ### Diagnostic viewer: saved reference mean counts of the diagnostic camera frames
 DIAGNOSTIC_REFERENCE_CSV_PATH = _safe_join(DATA_DIR, 'diagnostic_reference.csv')
 

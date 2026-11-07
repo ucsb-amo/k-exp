@@ -125,9 +125,9 @@ def test_raman_readback_inverts_the_classes_split(config, params, frames):
 
 
 def test_raman_power_readback(config, params, frames):
+    # RamanBeamsPID.set: the 150+ PID setpoint at p x v_pd_dds0_balanced_max
     ctx = _ctx(config, params, frames)
-    a0 = frames.dds.raman_150_plus.amplitude
-    config["dds"]["raman_150_plus"]["amplitude"] = np.sqrt(0.3) * a0   # RamanBeamPair.set
+    config["dac"]["raman_150"]["voltage"] = 0.3 * params.v_pd_dds0_balanced_max
     assert kc._raman_p_readback(ctx) == pytest.approx(0.3)
 
 
