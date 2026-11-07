@@ -62,7 +62,8 @@ class ExptParams(expt_params_kexp):
         # self.frequency_lightshift = 2.337e+04  # Hz, +/- 1.5e+03 Hz, imaging amp 0.2, t_pulse 5 us #89769, 2026-10-29
         # self.frequency_lightshift = 2.465e+04  # Hz, +/- 3.6e+03 Hz, imaging amp 0.2, t_pulse 5 us #89935, 2026-10-29
         # self.frequency_lightshift = 2.375e+04  # Hz, +/- 1.8e+03 Hz, imaging amp 0.2, t_pulse 5 us #90201, 2026-10-30
-        self.frequency_lightshift = 2.195e+04  # Hz, +/- 1.1e+03 Hz, imaging amp 0.2, t_pulse 5 us #90242, 2026-10-30
+        # self.frequency_lightshift = 2.195e+04  # Hz, +/- 1.1e+03 Hz, imaging amp 0.2, t_pulse 5 us #90242, 2026-10-30
+        self.frequency_lightshift = 3.30e+04  # Hz, +/- 6.1e+03 Hz, imaging amp 0.2, t_pulse 5 us #92599+#92602, 2026-11-05  # on-minus-off, inverse-variance mean of 2 runs (40.9 +/- 9.6, 27.8 +/- 7.8 kHz; agree 1.06 SE), rule fixed before the 2nd run
                 
         # calibration run 89425 (S_z endpoints from 'fit', deg-2 S_z response fit)
         self.t_img_pulse = 5e-06  # s
@@ -77,14 +78,16 @@ class ExptParams(expt_params_kexp):
         # self.v_apd_all_up = -0.13814 #89937, 2026-10-29  # S_z=+1 of the degree-1 single-shot fit, +/- 0.0017 V; retry 89938 -0.13693 agrees
         # self.v_apd_all_up = -0.13801 #89960, 2026-10-29  # periodic recal 3-pt, +/- 0.0014 V; retry 89962 -0.13895 agrees
         # self.v_apd_all_up = -0.13616 #90019, 2026-10-30  # refit-block recal 3-pt, +/- 0.0020 V; retry 90020 -0.13648 agrees
-        self.v_apd_all_up = -0.1409 #90202, 2026-10-30  # S_z=+1 of the degree-1 single-shot fit, +/- 0.0021 V
+        # self.v_apd_all_up = -0.1409 #90202, 2026-10-30  # S_z=+1 of the degree-1 single-shot fit, +/- 0.0021 V
+        self.v_apd_all_up = -0.14588 #92603, 2026-11-05  # S_z=+1 of the degree-2 single-shot fit, reads 3-5, +/- 0.0014 V; contrast 14.2 +/- 1.9 mV (read 1 alone 24.7 +/- 3.3)
         # self.v_apd_all_down = -0.16908
         # self.v_apd_all_down = -0.16948 #89442, 2026-10-29  # S_z=-1 of the degree-1 single-shot fit, +/- 0.0013 V
         # self.v_apd_all_down = -0.16677 #89746, 2026-10-29  # S_z=-1 of the degree-1 single-shot fit, +/- 0.0014 V
         # self.v_apd_all_down = -0.16945 #89937, 2026-10-29  # S_z=-1 of the degree-1 single-shot fit, +/- 0.0018 V; retry 89938 -0.16817 agrees
         # self.v_apd_all_down = -0.16109 #89960, 2026-10-29  # periodic recal 3-pt, +/- 0.0015 V; retry 89962 -0.16114 agrees (contrast 31.3 -> 23.1 mV)
         # self.v_apd_all_down = -0.17389 #90019, 2026-10-30  # refit-block recal 3-pt, +/- 0.0021 V; retry 90020 -0.17579 agrees (contrast 23.1 -> 37.7 mV)
-        self.v_apd_all_down = -0.17856 #90202, 2026-10-30  # S_z=-1 of the degree-1 single-shot fit, +/- 0.0022 V
+        # self.v_apd_all_down = -0.17856 #90202, 2026-10-30  # S_z=-1 of the degree-1 single-shot fit, +/- 0.0022 V
+        self.v_apd_all_down = -0.16012 #92603, 2026-11-05  # S_z=-1 of the degree-2 single-shot fit, reads 3-5, +/- 0.0015 V
         # self.n_photons_per_shot = 691.7
         # self.n_photons_per_shot = 614.32 #89442, 2026-10-29  # scope integral, up minus down per pulse, +/- 30
         # self.n_photons_per_shot = 538.19 #89746, 2026-10-29  # scope integral, up minus down per pulse, +/- 33
@@ -101,14 +104,16 @@ class ExptParams(expt_params_kexp):
         # self.std_n_photons_per_shot = 130.23 #89937, 2026-10-29  # 415.3 * 9.82 mV / 31.31 mV (within-run, down)
         # self.std_n_photons_per_shot = 112.31 #89960, 2026-10-29  # 308.2 * 8.41 mV / 23.08 mV (within-run, up)
         # self.std_n_photons_per_shot = 124.0 #90019, 2026-10-30  # 545 * 8.59 mV / 37.73 mV (within-run, up)
-        self.std_n_photons_per_shot = 151.98 #90202, 2026-10-30  # 552 * 10.37 mV / 37.66 mV (within-run, up)
+        # self.std_n_photons_per_shot = 151.98 #90202, 2026-10-30  # 552 * 10.37 mV / 37.66 mV (within-run, up)
+        self.std_n_photons_per_shot = 367.98 #92603, 2026-11-05  # 552 * 9.49 mV / 14.24 mV (within-run, down; reads 3-5; n_photons kept, scope check failed)
         # self.feedback_measurement_midpoint_fraction = 0.50278
         # self.feedback_measurement_midpoint_fraction = 0.5 #89442, 2026-10-29  # linear map (quadratic term not resolved)
         # self.feedback_measurement_midpoint_fraction = 0.5 #89746, 2026-10-29  # linear map (degree 1 by procedure; deg-2 midpoint 0.691 +/- 0.055 NOT used)
         # self.feedback_measurement_midpoint_fraction = 0.5 #89937, 2026-10-29  # linear map (quadratic term not resolved)
         # self.feedback_measurement_midpoint_fraction = 0.5 #89960, 2026-10-29  # linear map
         # self.feedback_measurement_midpoint_fraction = 0.5 #90019, 2026-10-30  # linear map
-        self.feedback_measurement_midpoint_fraction = 0.5 #90202, 2026-10-30  # linear map (degree 1 by procedure; deg-2 midpoint 0.85 +/- 0.07 NOT used)
+        # self.feedback_measurement_midpoint_fraction = 0.5 #90202, 2026-10-30  # linear map (degree 1 by procedure; deg-2 midpoint 0.85 +/- 0.07 NOT used)
+        self.feedback_measurement_midpoint_fraction = 0.58247 #92603, 2026-11-05  # quadratic fit, reads 3-5, +/- 0.14; quadratic term not resolved (F p .55), 0.6 SE from 0.5
 
         self.back_action_coherence = 0.8445 #88845-88847, 2026-10-26  # open-loop simcheck re-measure (SIMCHECK_PREREG.md sha c3448752, fit_remeasure.py 489c70c0): C0 under the live model, APD scale fixed at map #88792,88794 (34.21 mV), +/- 0.006, Raman lock 44.89 GHz, f_LS 26.2 kHz
 
@@ -139,6 +144,27 @@ class ExptParams(expt_params_kexp):
         # +10 us: the new integrator window moved the APD sample 4.7 us later, and ~40 us DRTIO stalls
         # happen (83670-83672); 29.7 -> 39.7 us at grid 21 (user, 2026-09-29)
         self.t_calculation_slack_compensation_mu = self.t_calculation_slack_compensation_mu + int64(10000)
+        # The fastest loop replaces the slack above with the measured required slack
+        # (fastest/fastest_timing.py required_slack_mu: about -0.42 us, T ~ 26.6 us at grid 21 with the two
+        # defaults below; user, 2026-11-05: "pick the wait time from the measured required slack. make this the
+        # default behavior"), unless the experiment sets t_calculation_slack_compensation_mu itself or this is 0.
+        # A grid above 21 is refused until it has a slack test (fastest/README.md "Slack test"; user 2026-11-05).
+        # FeedbackExpt records here whether it was applied (1) or not (0). The standard loop always uses the
+        # slack above.
+        self.fastest_slack_auto = 1
+        # The fastest loop's posterior numerics: 1 lean (fastest_loop.LeanPosterior, the bench kernel's, which
+        # every bench floor was measured with), 0 the library's (OverlapPosterior, bit for bit
+        # Feedback.generate_posterior on the host). User, 2026-11-05: "port the S2 numerics and fix it to be
+        # default if it works fine". FeedbackExpt records the one that ran (0 for the standard loop). Also for runs
+        # that keep their own slack (their RTIO schedule is unchanged, their posterior arithmetic is not: equal to
+        # rounding); a copy that must match earlier library-posterior runs bit for bit sets this to 0.
+        self.fastest_posterior = 1
+        # The fastest loop's first gap (pulse 0 -> 1) longer than the rest, step 0 not chained, as every bench
+        # rung ran (the first post-read step has ~4.4 us less margin; 90873). User, 2026-11-05: "lengthen only
+        # the first gap if it gets rid of the 5us". -1 = auto: 5000 ns when the loop takes the measured required
+        # slack (above), 0 when the experiment keeps its own slack (its timeline stays as it was); >= 0 (a
+        # multiple of 8 ns) as set. FeedbackExpt records the one that ran (0 for the standard loop).
+        self.fastest_first_gap_extra_mu = int64(-1)
         self.t_fifo_mu = int64(18416)
         self.t_raman_set_pretrigger_mu = int64(800) & ~7 # int64(1260)
 

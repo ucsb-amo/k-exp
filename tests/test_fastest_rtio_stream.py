@@ -51,10 +51,17 @@ def arms(tmp_path_factory):
         dm_fst.close_devices()
 
 
-def _pair(arms, reads, slack_mu=h.NARROW_GRID["slack_mu"], offset=0.0, update=1):
+# The comparison runs the fastest loop with no first-gap stretch: the standard loop's gaps are uniform, and
+# the stretch is tested on its own (test_fastest_first_gap.py). The posterior is the fastest loop's default,
+# the lean one, so this also holds it against the library's through the whole RTIO stream.
+FASTEST_UNIFORM = {"fastest_first_gap_extra_mu": 0}
+
+
+def _pair(arms, reads, slack_mu=h.NARROW_GRID["slack_mu"], offset=0.0, update=1, fastest=None):
     """Both trains; each result also carries .phases, the (t, phase) each posterior update got."""
     mp, std, fst = arms
     kw = dict(slack_mu=slack_mu, offset=offset, update=update)
+    fastest = dict(FASTEST_UNIFORM, **(fastest or {}))
     ph_s, ph_f = [], []
     with pytest.MonkeyPatch.context() as m2:
         gp = type(std).generate_posterior
@@ -62,11 +69,15 @@ def _pair(arms, reads, slack_mu=h.NARROW_GRID["slack_mu"], offset=0.0, update=1)
                    lambda k, t, phase_raman_pulse_start=0., **k2:
                    (ph_s.append((t, phase_raman_pulse_start)),
                     gp(std, k, t, phase_raman_pulse_start=phase_raman_pulse_start, **k2))[1])
+        # whichever posterior the fastest loop runs: record the (t, phase) each half gets
         pr = type(fst).propagate_hypotheses
         m2.setattr(fst, "propagate_hypotheses",
                    lambda t, phase=0.: (ph_f.append((t, phase)), pr(fst, t, phase))[1])
+        lp = type(fst).lean_propagate
+        m2.setattr(fst, "lean_propagate",
+                   lambda t, phase=0.: (ph_f.append((t, phase)), lp(fst, t, phase))[1])
         ev_s, r_s = h.run_train(mp, std, reads, **kw)
-        ev_f, r_f = h.run_train(mp, fst, reads, **kw)
+        ev_f, r_f = h.run_train(mp, fst, reads, fastest=fastest, **kw)
     r_s.phases, r_f.phases = np.array(ph_s), np.array(ph_f)
     return ev_s, r_s, ev_f, r_f
 
@@ -88,13 +99,15 @@ def _targets(exp):
     )
 
 
+@pytest.mark.parametrize("posterior", (1, 0))
 @pytest.mark.parametrize("slack_mu", SLACKS_MU)
 @pytest.mark.parametrize("offset", OFFSETS)
 @pytest.mark.parametrize("update", (1, 0))
-def test_same_light_same_reads_same_posterior(arms, slack_mu, offset, update):
+def test_same_light_same_reads_same_posterior(arms, slack_mu, offset, update, posterior):
     mp, std, fst = arms
     ev_s, r_s, ev_f, r_f = _pair(arms, _reads(int(slack_mu + 100 * offset + update)),
-                                 slack_mu=slack_mu, offset=offset, update=update)
+                                 slack_mu=slack_mu, offset=offset, update=update,
+                                 fastest={"fastest_posterior": posterior})
     n = h.NARROW_GRID["N_pulses"]
     tg = _targets(std)
     assert tg == _targets(fst)
@@ -164,7 +177,7 @@ def test_same_light_same_reads_same_posterior(arms, slack_mu, offset, update):
 
 def test_the_adc_is_back_on_32_bits_after_the_loop(arms):
     mp, std, fst = arms
-    ev_f, _ = h.run_train(mp, fst, _reads(9), slack_mu=39696, offset=0.0, update=1)
+    ev_f, _ = h.run_train(mp, fst, _reads(9), slack_mu=39696, offset=0.0, update=1, fastest=FASTEST_UNIFORM)
     sampler = fst.integrator.sampler_ch.sampler_device
     cfg = [e for e in ev_f if e.target == ((sampler.bus_adc.channel << 8) | 1)]
     assert [((e.data >> 8) & 0xff) + 1 for e in cfg] == [16, 32]

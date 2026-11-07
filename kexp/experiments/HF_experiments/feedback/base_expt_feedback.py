@@ -37,8 +37,15 @@ class FeedbackExpt(Base, Feedback, RandomRamanPulseTimes, OverlapPosterior, Fast
                     mot_preload=mot_preload)
         # the standard loop until finish_prepare chooses (fastest_choose)
         self.fastest_defaults(FeedbackExpt)
+        # the params' default slack: a different value at finish_prepare means the experiment set
+        # its own, which the fastest loop keeps instead of the measured required slack
+        self._slack_default_mu = int(self.p.t_calculation_slack_compensation_mu)
 
     def finish_prepare(self, shuffle=True):
+
+        # which loop runs (recorded in p.fast_path before the run is registered); the fastest loop
+        # also picks its slack here (fastest_pick_slack), so the spacing is computed after it
+        self.fastest_choose(FeedbackExpt)
 
         # timing docs: https://docs.google.com/document/d/11tzbmMhPQ-lycEPc1OWHo9MnWyrR9bsQly9bz8DF_WQ/edit?tab=t.cvj0bnjp2og4#heading=h.pimm1a640bup
         self.p.t_between_pulses_mu = self.compute_t_between_pulses_mu(
@@ -73,9 +80,6 @@ class FeedbackExpt(Base, Feedback, RandomRamanPulseTimes, OverlapPosterior, Fast
         # populate first row of probabilities with pre-pulse lists
         self.data.probabilities.shot_data[0, :] = self.P0
         self.data.omega_raman_mesh.shot_data[0, :] = self.omega_guess_list
-
-        # which loop runs (recorded in p.fast_path before the run is registered)
-        self.fastest_choose(FeedbackExpt)
 
         super().finish_prepare(shuffle=shuffle)
 

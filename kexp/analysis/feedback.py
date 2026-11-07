@@ -633,7 +633,19 @@ class FeedbackReplayCore(Feedback):
             # recorded imaging pulse in mu, converted exactly as the kernel's
             # compute_t_between_pulses_mu does (int64 truncation)
             "t_img_pulse_mu": int(np.int64(float(getattr(p, "t_img_pulse", 0.0)) * 1.0e9)),
+            # the fastest loop's first gap (pulse 0 -> 1) longer by this, ns (since 2026-11-05; recorded as
+            # what ran, 0 for the standard loop; runs before it have no stretch)
+            "first_gap_extra_mu": self._recorded_first_gap_extra_mu(p),
         }
+
+    @staticmethod
+    def _recorded_first_gap_extra_mu(p) -> int:
+        """The first-gap stretch the run had: p.fastest_first_gap_extra_mu on a fastest-loop run
+        (p.fast_path 2), else 0. A negative value (the unresolved auto setting) never ran as such: 0."""
+        if int(np.ravel(getattr(p, "fast_path", 0))[0]) != 2:
+            return 0
+        extra = int(np.ravel(getattr(p, "fastest_first_gap_extra_mu", 0))[0])
+        return extra if extra > 0 else 0
 
     @staticmethod
     def _restore_shot_step_axis(arr):
@@ -1015,10 +1027,21 @@ class FeedbackReplayCore(Feedback):
                     "inter-pulse gap. Timing may be off by up to 8 ns per step.",
                     UserWarning,
                 )
-            return np.full(t_pulse.shape, self._frozen_t_between_pulses_mu, dtype=np.int64)
+            return self._add_first_gap_extra(
+                np.full(t_pulse.shape, self._frozen_t_between_pulses_mu, dtype=np.int64))
         # .astype(np.int64) truncates toward zero, matching np.int64() in the kernel
         t_pulse_mu = (t_pulse * 1.0e9).astype(np.int64)
-        return (np.int64(self._t_between_base_mu) + t_pulse_mu) & ~np.int64(7)
+        dT = (np.int64(self._t_between_base_mu) + t_pulse_mu) & ~np.int64(7)
+        return self._add_first_gap_extra(dT)
+
+    def _add_first_gap_extra(self, dT: np.ndarray) -> np.ndarray:
+        """The fastest loop stretches the gap after pulse 0 (index 0 on the step axis) by the recorded
+        first_gap_extra_mu; the next step's phase and every later time follow from it, as in the kernel."""
+        extra = int(self._default_timing.get("first_gap_extra_mu", 0))
+        if extra and dT.shape[-1] > 0:
+            dT = np.array(dT, dtype=np.int64, copy=True)
+            dT[..., 0] += np.int64(extra)
+        return dT
 
     @staticmethod
     def _trim_known_unused_trailing_column(

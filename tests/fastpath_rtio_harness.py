@@ -216,10 +216,12 @@ def build(monkeypatch, tmp_path, fast, slack_mu=NARROW_GRID["slack_mu"], offset=
 
 
 def run_train(monkeypatch, exp, reads_v, t_start_mu=10_000_000, slack_mu=None, offset=None,
-              update=None):
+              update=None, fastest=None):
     """One shot's train: feedback_loop as scan_kernel calls it, from fresh posterior state,
     with the APD reading reads_v[i] at read i. slack_mu / offset / update override the
-    prepared values for this train. Returns (events, result)."""
+    prepared values for this train; fastest: {param: value} for the fastest loop's own choices
+    (fastest_posterior, fastest_first_gap_extra_mu), set before its constants are folded.
+    Returns (events, result)."""
     import artiq.language.core as lang
     import artiq.coredevice.spi2 as spi2
     import artiq.coredevice.ttl as ttl
@@ -360,6 +362,8 @@ def run_train(monkeypatch, exp, reads_v, t_start_mu=10_000_000, slack_mu=None, o
     if update is not None:
         exp.p.update_raman_frequency_bool = int(update)
     if getattr(exp, "fast_loop", 0) == 1:
+        for key, value in (fastest or {}).items():
+            setattr(exp.p, key, np.int64(value) if key.endswith("_mu") else value)
         # a run prepared with these params: the fastest loop folds them in finish_prepare
         exp.fastest_finish()
 
