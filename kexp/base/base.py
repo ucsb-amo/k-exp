@@ -338,14 +338,20 @@ class Base(Expt, Devices, Cooling, Image, Cameras, Control, Clients):
                     init_sampler = True,
                     init_imaging = True,
                     beat_ref_on=True,
-                    init_shuttler = True, 
+                    init_shuttler = True,
                     init_lightsheet = True,
                     setup_awg = True, 
                     setup_slm = True,
                     init_magnets = True,
                     init_ry = True,
-                    force_dds_init = True):
+                    force_dds_init = True,
+                    raman_aos_on = True):
         """
+        raman_aos_on: turn the raman_150_plus and raman_80_plus AOs on after
+        the all-off (at their default amplitudes when dds_set), so they are
+        already on, like the beat-lock ref, before the first shot's
+        raman.init(). raman_switch stays off.
+
         force_dds_init: run the full AD9910 init on every channel. The default
         is True (since k-exp 68d8dcb8, 2026-09-22): every run pays the full init
         (~1.4 s). With False, channels that still hold their PLL / SYNC setup
@@ -401,6 +407,13 @@ class Base(Expt, Devices, Cooling, Image, Cameras, Control, Clients):
         self.ttl.quantum_machines_raman_rf_handoff_ttl.off()
         if beat_ref_on:
             self.dds.beatlock_ref.on()
+        if raman_aos_on:
+            # the two Raman frequency AOs (150+, 80+) run at their default
+            # amplitudes (set_all_dds above) from init on, like the beat-lock
+            # ref; light to the atoms stays gated by raman_switch (off here)
+            # and the raman shutter
+            self.dds.raman_150_plus.on()
+            self.dds.raman_80_plus.on()
         if init_imaging:
             self.imaging.init()
             self.integrator.init()

@@ -16,6 +16,11 @@ bool pid_enable2 = true;
 
 // hold = true: DAC1 and DAC2 stay at their last values (send "hold 1" / "hold 0")
 bool hold = false;
+// override1 = true: DAC1 = ovolt1 instead of the PID (same for 2)
+bool override1 = false;
+bool override2 = false;
+float ovolt1 = 0.;
+float ovolt2 = 0.;
 double meas1 = 0.;
 double meas2 = 0.;
 double out1 = 0.;
@@ -31,8 +36,8 @@ struct Cal
 };
 
 void setup() {
-  configureADC(1, 1, 0, BIPOLAR_5V, getMeas1);
-  configureADC(2, 1, 0, BIPOLAR_5V, getSet1);
+  configureADC(1, 1, 0, BIPOLAR_10V, getMeas1);
+  configureADC(2, 1, 0, BIPOLAR_10V, getSet1);
   configureADC(3, 1, 0, BIPOLAR_10V, getMeas2);
   configureADC(4, 1, 0 ,BIPOLAR_10V, getSet2);
 
@@ -44,6 +49,10 @@ void setup() {
   qC.assignVariable("set1", &SETPOINT1);
   qC.assignVariable("set2", &SETPOINT2);
   qC.assignVariable("hold", &hold);
+  qC.assignVariable("override1", &override1);
+  qC.assignVariable("override2", &override2);
+  qC.assignVariable("ovolt1", &ovolt1);
+  qC.assignVariable("ovolt2", &ovolt2);
 
   // enableInterruptTrigger(1,BOTH_EDGES,&switch1);
   // enableInterruptTrigger(2,BOTH_EDGES,&switch2);
@@ -92,6 +101,13 @@ void getMeas1() {
   writeDAC(3, newadc1);
   // writeDAC(4, SETPOINT1);
 
+  if (override1) {
+    out1 = ovolt1;
+    integral1 = out1; // on release the PID starts from the override voltage
+    writeDAC(1, out1);
+    return;
+  }
+
   if (hold) {
     integral1 = out1; // on release the PID starts from the held output
     return;
@@ -100,6 +116,8 @@ void getMeas1() {
   if (pid_enable1) {
     double prop1 = (newadc1 - SETPOINT1) * P1;
     integral1 += (newadc1 - SETPOINT1) * I1;
+    if (integral1 > 9.9) integral1 = 9.9;
+    if (integral1 < 0) integral1 = 0;
     newdac1 = prop1 + integral1;
   } else {
     newdac1 = 0.;
@@ -128,6 +146,13 @@ void getMeas2() {
   writeDAC(4, newadc2);
   // writeDAC(4, SETPOINT2);
 
+  if (override2) {
+    out2 = ovolt2;
+    integral2 = out2; // on release the PID starts from the override voltage
+    writeDAC(2, out2);
+    return;
+  }
+
   if (hold) {
     integral2 = out2; // on release the PID starts from the held output
     return;
@@ -136,6 +161,8 @@ void getMeas2() {
   if (pid_enable2) {
     double prop2 = (newadc2 - SETPOINT2) * P2;
     integral2 += (newadc2 - SETPOINT2) * I2;
+    if (integral2 > 9.9) integral2 = 9.9;
+    if (integral2 < 0) integral2 = 0;
     newdac2 = prop2 + integral2;
   } else {
     newdac2 = 0.;
@@ -160,7 +187,7 @@ void getSet2() {
 void loop() {
   qC.readSerial(Serial);
   // every 10 ms: meas1,set1,meas2,set2,hold,out1,out2
-  if (millis() - last_print >= 50) {
+  if (millis() - last_print >= 100) {
     last_print = millis();
     Serial.printf("%.4f,%.4f,%.4f,%.4f,%d,%.4f,%.4f\n", meas1, SETPOINT1, meas2, SETPOINT2, hold, out1, out2);
   }

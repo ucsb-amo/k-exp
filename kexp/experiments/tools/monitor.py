@@ -61,6 +61,7 @@ class testcrate_base(EnvExperiment, Base):
                          dds_set=False,
                          dds_off=False,
                          beat_ref_on=True,
+                         raman_aos_on=False,
                          init_shuttler=False,
                          init_imaging=False,
                          init_ry=False,

@@ -13,7 +13,8 @@
 //    |err| >= win; nbad rejected sweeps in a row while LOCKED -> HOLD
 //  - HOLD keeps the output where it is and re-locks by itself after ngood
 //    good sweeps in a row; at the relock the integral is cleared, so the
-//    output steps from the held value to g1*(p1 + i1)*err
+//    output steps from the held value to g1*(p1 + i1)*err (except the first
+//    relock after an override, see below)
 //  - PI: integral += g1*i1*err, feedback = g1*p1*err + integral. In the old
 //    code p1 acted as the integral gain, i1 as a double integral and d1 as
 //    proportional: the old default p1 = -0.01 is the new i1 = -0.01. No
@@ -28,8 +29,17 @@
 //    lock is on or off. The PI is frozen (no integral update, so no windup); sweeps are
 //    still measured (sep, err, bad counts) and it is not counted as an unlock.
 //    Released with the lock on: HOLD at ovolt, re-locks after ngood good sweeps
-//    (at the next pair with hold = 0) with the integral cleared. With the lock
-//    off: OFF, 0 V.
+//    (at the next pair with hold = 0) with the integral STARTING AT THE HELD
+//    OUTPUT (ovolt, clamped to +/-rail), so the lock takes over from the
+//    override voltage instead of stepping to ~0 V. Only that first relock is
+//    seeded; later relocks (after a dropout) clear the integral as usual. With
+//    the lock off: OFF, 0 V, and nothing is seeded.
+//  - the printed peak values all describe one sweep: tFirst, h1, sep and h2
+//    are committed together when a pair completes (the first peak of a sweep
+//    without a pair is not reported), nNoPair counts the completed sweeps in a
+//    row without a pair (how old they are), and errNow() = sep - setp against
+//    the current setpoint. The bad-sweep counters count in every state (OFF
+//    included); only LOCKED -> HOLD depends on the state.
 #pragma once
 #include <stdint.h>
 #include <math.h>
@@ -43,8 +53,8 @@ struct Settings {
   int32_t hold = 1;      // 1 = gate on win and pause in HOLD; 0 = use every pair, never HOLD
   double vth = 3.0;      // V, peak threshold
   double hys = 0.2;      // V, a peak ends when v < vth - hys
-  int32_t nmin = 3;      // samples above vth for a peak to count (x the sketch's UPDATE_US)
-  double tmin = 1.5;     // ms, peaks closer than this to the first are ignored
+  int32_t nmin = 2;      // samples above vth for a peak to count (x the sketch's UPDATE_US)
+  double tmin = 2.5;     // ms, peaks closer than this to the first are ignored
   double setp = 5.5;     // ms, separation setpoint
   double win = 15.0;      // ms, |err| >= win rejects the sweep
   int32_t nbad = 5;      // rejected sweeps in a row: LOCKED -> HOLD
@@ -63,13 +73,14 @@ class Lock {
 public:
   Settings s;
 
-  // last result, for printing
+  // last pair (sep, tFirst, h1, h2 all from the same sweep), for printing
   double sep = 0;        // ms
-  double err = 0;        // ms
+  double err = 0;        // ms, sep - setp when the pair was measured (what the PI used)
   double feedback = 0;   // V
   double integral = 0;   // V
-  double tFirst = 0;     // ms, first peak after the trigger edge
-  double h1 = 0, h2 = 0; // V, peak heights
+  double tFirst = 0;     // ms, the pair's first peak after the trigger edge
+  double h1 = 0, h2 = 0; // V, the pair's peak heights
+  uint32_t nNoPair = 0;  // completed sweeps in a row without a pair (0 = the last sweep had one)
   double period = 0;     // ms, trigger period
   int32_t state = HOLD;
   int32_t saturated = 0;
@@ -86,6 +97,10 @@ public:
     saturated = 0;
   }
 
+  // The last pair's separation against the current setpoint (0 before any pair).
+  // err keeps the error the PI used; after a setp change only this one is current.
+  double errNow() const { return sep > 0 ? sep - s.setp : 0; }
+
   // Volts the DAC should hold: ovolt while override = 1 (clamped to +/-kDacMax),
   // otherwise the lock's feedback. step() also copies ovolt into feedback under
   // override; this gives the same value before the first sample is taken.
@@ -101,6 +116,7 @@ public:
     if (s.override == 1) {
       // output = ovolt, state HOLD, PI frozen; not an unlock
       if (state != HOLD) state = HOLD;
+      seedHeld = true;   // the relock after the release starts from this output
       goodRun = 0;
       badRun = 0;
       saturated = 0;
@@ -110,6 +126,7 @@ public:
         write = true;
       }
     } else if (s.lock != 1) {
+      seedHeld = false;
       if (state != OFF) {
         state = OFF;
         feedback = 0;
@@ -128,7 +145,10 @@ public:
       if (haveEdge) {
         period = (uint32_t)(tUs - tEdge) / 1000.0;
         nSweeps++;
-        if (!measured) reject(nPeaks == 0 ? &nBadNone : &nBadOne);
+        if (!measured) {
+          nNoPair++;
+          reject(nPeaks == 0 ? &nBadNone : &nBadOne);
+        }
       }
       haveEdge = true;
       tEdge = tUs;
@@ -159,15 +179,17 @@ public:
 
 private:
   bool lastTrig = false, haveEdge = false, measured = false, inPeak = false;
+  bool seedHeld = false;   // set by override: the next relock starts the integral at the held output
   uint32_t tEdge = 0;
   int32_t nPeaks = 0, goodRun = 0, badRun = 0;
   // peak being integrated: time = pBase + pS1/pS0 (us)
   uint32_t pBase = 0;
   double pS0 = 0, pS1 = 0, pMax = 0;
   int32_t pN = 0;
-  // first peak of the sweep
+  // first peak of the sweep (a candidate: reported only once its pair completes)
   uint32_t aBase = 0;
   double aOff = 0;
+  double aT = 0, aH = 0;   // ms after the edge, V
 
   void accumulate(uint32_t tUs, double v) {
     const double w = v - s.vth;
@@ -183,35 +205,41 @@ private:
     if (nPeaks == 0) {
       aBase = base;
       aOff = off;
-      h1 = h;
-      tFirst = ((double)(uint32_t)(base - tEdge) + off) / 1000.0;
+      aH = h;
+      aT = ((double)(uint32_t)(base - tEdge) + off) / 1000.0;
       nPeaks = 1;
       return false;
     }
     const double dtUs = (double)(uint32_t)(base - aBase) + (off - aOff);
     if (dtUs <= s.tmin * 1000.0) return false;
     nPeaks++;
-    h2 = h;
     measured = true;
+    // commit the pair: every printed peak value comes from this sweep
+    tFirst = aT;
+    h1 = aH;
+    h2 = h;
     sep = dtUs / 1000.0;
+    nNoPair = 0;
     return onMeasurement();
   }
 
   bool onMeasurement() {
     err = sep - s.setp;
-    if (state == OFF) return false;
     if (s.hold && !(fabs(err) < s.win)) {
-      reject(&nBadWin);
+      reject(&nBadWin);   // counted in every state
       return false;
     }
+    if (state == OFF) return false;
     if (s.override == 1) return false;  // measured and counted, never applied
     badRun = 0;
     if (state == HOLD) {
       if (s.hold && ++goodRun < s.ngood) return false;
       state = LOCKED;
-      // relock: the integral restarts from zero, so the output steps from the
-      // held value to g1*(p1 + i1)*err
-      integral = 0;
+      // relock: after an override the integral starts at the held output
+      // (ovolt, clamped to +/-rail); otherwise it restarts from zero, so the
+      // output steps from the held value to g1*(p1 + i1)*err
+      integral = seedHeld ? clamp(feedback) : 0;
+      seedHeld = false;
     }
     integral = clamp(integral + s.g1 * s.i1 * err);
     const double raw = s.g1 * s.p1 * err + integral;
@@ -231,9 +259,9 @@ private:
     return x > s.rail ? s.rail : (x < -s.rail ? -s.rail : x);
   }
 
-  // sweep without a usable pair: output held
+  // sweep without a usable pair: output held. Counted in every state; only a
+  // LOCKED lock can fall to HOLD.
   void reject(uint32_t* reasonCount) {
-    if (state == OFF) return;
     nBad++;
     (*reasonCount)++;
     goodRun = 0;

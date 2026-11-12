@@ -282,10 +282,43 @@ static void test_bad_reasons() {
     CHECK(s.lk.nBad == s.lk.nBadWin && s.lk.nBadWin >= 8 && s.lk.nBadNone == 0 && s.lk.nBadOne == 0,
           "win: bad %u none %u one %u win %u", s.lk.nBad, s.lk.nBadNone, s.lk.nBadOne, s.lk.nBadWin);
   }
-  {   // lock off counts nothing
+  {   // lock off counts too (diagnostics), and stays OFF
     Sim s; s.lk.s.lock = 0; s.sep0 = 13.0; s.run(10);
-    CHECK(s.lk.nBad == 0, "off: bad %u", s.lk.nBad);
+    CHECK(s.lk.nBad == s.lk.nBadWin && s.lk.nBadWin >= 8, "off: bad %u win %u", s.lk.nBad, s.lk.nBadWin);
+    CHECK(s.lk.state == fplock::OFF && s.lk.nUnlock == 0 && s.lk.feedback == 0,
+          "off: state %d unlocks %u fb %.4f", s.lk.state, s.lk.nUnlock, s.lk.feedback);
+    Sim t; t.lk.s.lock = 0; t.lk.s.tmin = 38.0; t.run(10);
+    CHECK(t.lk.nBadOne >= 8 && t.lk.state == fplock::OFF, "off, 1pk: one %u state %d", t.lk.nBadOne, t.lk.state);
   }
+}
+
+// the printed peak values all come from the last pair; a sweep with only a
+// first peak changes none of them and counts in nNoPair; errNow follows setp
+static void test_pair_reporting() {
+  Sim s; s.sep0 = 10.3; s.run(400);
+  CHECK(s.lk.nNoPair == 0, "nopair %u while pairing", s.lk.nNoPair);
+  const double sep = s.lk.sep, tf = s.lk.tFirst, h1 = s.lk.h1, h2 = s.lk.h2;
+  CHECK(std::fabs(tf - s.tA) < 2e-3, "tfirst %.4f, laser A at %.4f", tf, s.tA);
+  s.lk.s.tmin = 38.0;   // no second peak counts: first peak only
+  s.tA = 6.0;           // the lone first peak moves
+  s.hA = 6.0;
+  s.run(12);
+  CHECK(s.lk.nNoPair >= 11, "nopair %u after 12 first-peak-only sweeps", s.lk.nNoPair);
+  CHECK(s.lk.sep == sep && s.lk.tFirst == tf && s.lk.h1 == h1 && s.lk.h2 == h2,
+        "a lone first peak was reported: sep %.4f tfirst %.4f -> %.4f h1 %.3f -> %.3f",
+        s.lk.sep, tf, s.lk.tFirst, h1, s.lk.h1);
+  s.lk.s.setp = s.lk.sep;  // what "reset setp" does
+  CHECK(s.lk.errNow() == 0, "errNow %.4f after setp = sep", s.lk.errNow());
+  CHECK(s.lk.err != 0, "err (the PI's last error) %.4f", s.lk.err);
+  s.lk.s.setp = 10.0;
+  s.lk.s.tmin = 2.0;    // pairs again
+  s.run(2);
+  CHECK(s.lk.nNoPair == 0, "nopair %u after pairs return", s.lk.nNoPair);
+  CHECK(std::fabs(s.lk.tFirst - 6.0) < 2e-3 && std::fabs(s.lk.h1 - 6.0) < 0.3,
+        "new pair: tfirst %.4f h1 %.3f", s.lk.tFirst, s.lk.h1);
+  CHECK(std::fabs(s.lk.errNow() - (s.lk.sep - 10.0)) < 1e-12, "errNow %.4f", s.lk.errNow());
+  Sim fresh;
+  CHECK(fresh.lk.errNow() == 0, "errNow %.4f before any pair", fresh.lk.errNow());
 }
 
 // hold = 0: no window gate, never HOLD
@@ -338,7 +371,8 @@ static void test_clear_output() {
 }
 
 // override: output = ovolt, state HOLD, PI frozen (no windup), not an unlock;
-// released, the lock re-locks from HOLD with the integral cleared
+// released, the lock re-locks from HOLD with the integral starting at ovolt
+// (first relock only; clamped to the rail; not when the lock was off)
 static void test_override() {
   {
     Sim s; s.sep0 = 10.5; s.run(400);
@@ -364,18 +398,45 @@ static void test_override() {
     s.lk.s.ovolt = -42.0;
     CHECK(s.lk.outputVolts() == -fplock::kDacMax, "clamp low %.4f", s.lk.outputVolts());
     s.lk.s.ovolt = -0.05; s.run(1);
-    // released: HOLD at ovolt until ngood good sweeps, then LOCKED with the integral cleared
+    // released: HOLD at ovolt until ngood good sweeps, then LOCKED with the
+    // integral starting at ovolt (the lock takes over from the override voltage)
     s.lk.s.override = 0;
     s.run(5);
     CHECK(s.lk.state == fplock::HOLD && s.lk.feedback == -0.05, "released: state %d fb %.4f",
           s.lk.state, s.lk.feedback);
+    s.maxStep = 0;
     int n = 0;
     while (s.lk.state != fplock::LOCKED && n++ < 30) s.run(1);
     CHECK(s.lk.state == fplock::LOCKED, "state %d after release", s.lk.state);
-    CHECK(std::fabs(s.lk.integral - s.lk.s.g1 * s.lk.s.i1 * s.lk.err) < 1e-12,
-          "integral %.6f at the relock, expected cleared", s.lk.integral);
+    const double seeded = -0.05 + s.lk.s.g1 * s.lk.s.i1 * s.lk.err;
+    CHECK(std::fabs(s.lk.integral - seeded) < 1e-12,
+          "integral %.6f at the relock, expected ovolt + g1*i1*err = %.6f", s.lk.integral, seeded);
+    CHECK(std::fabs(s.lk.feedback - (s.lk.s.g1 * s.lk.s.p1 * s.lk.err + seeded)) < 1e-12,
+          "output at the relock %.6f", s.lk.feedback);
+    CHECK(s.maxStep < 0.01, "output stepped %.4f V at the relock from override", s.maxStep);
     s.run(400);
     CHECK(std::fabs(s.lk.err) < 0.01, "re-locked err %.4f ms", s.lk.err);
+    // only the first relock is seeded: a dropout after it re-locks with the integral cleared
+    s.hA = 2.0; s.run(30);
+    CHECK(s.lk.state == fplock::HOLD, "state %d during dropout after override", s.lk.state);
+    s.hA = 8.0;
+    n = 0;
+    while (s.lk.state != fplock::LOCKED && n++ < 30) s.run(1);
+    CHECK(s.lk.state == fplock::LOCKED, "state %d after the dropout", s.lk.state);
+    CHECK(std::fabs(s.lk.integral - s.lk.s.g1 * s.lk.s.i1 * s.lk.err) < 1e-12,
+          "integral %.6f at the dropout relock, expected cleared", s.lk.integral);
+  }
+  {   // ovolt beyond the rail: the seeded integral is clamped to +/-rail
+    Sim s; s.lk.s.win = 2.0;
+    s.sep0 = 10.5 - 2.0 * s.kLaser;   // separation at setp + 0.5 ms with 2.0 V out (rail 1.5)
+    s.lk.s.override = 1; s.lk.s.ovolt = 2.0; s.run(5);
+    s.lk.s.override = 0;
+    int n = 0;
+    while (s.lk.state != fplock::LOCKED && n++ < 30) s.run(1);
+    CHECK(s.lk.state == fplock::LOCKED, "state %d after release above the rail", s.lk.state);
+    const double seeded = s.lk.s.rail + s.lk.s.g1 * s.lk.s.i1 * s.lk.err;
+    CHECK(std::fabs(s.lk.integral - seeded) < 1e-12, "integral %.6f, expected rail + g1*i1*err = %.6f",
+          s.lk.integral, seeded);
   }
   {   // with the lock off: override still sets the output and shows HOLD; released: OFF, 0 V
     Sim s; s.lk.s.lock = 0; s.run(5);
@@ -386,6 +447,13 @@ static void test_override() {
     s.lk.s.override = 0; s.run(1);
     CHECK(s.lk.state == fplock::OFF && s.lk.feedback == 0 && s.lk.outputVolts() == 0,
           "released with the lock off: state %d fb %.4f", s.lk.state, s.lk.feedback);
+    // turned on later: starts from 0 V, the old ovolt is not seeded
+    s.lk.s.lock = 1;
+    int n = 0;
+    while (s.lk.state != fplock::LOCKED && n++ < 30) s.run(1);
+    CHECK(s.lk.state == fplock::LOCKED, "state %d after lock on", s.lk.state);
+    CHECK(std::fabs(s.lk.integral - s.lk.s.g1 * s.lk.s.i1 * s.lk.err) < 1e-12,
+          "integral %.6f after lock off -> on, expected cleared (not ovolt)", s.lk.integral);
   }
 }
 
@@ -401,6 +469,7 @@ int main() {
   test_gain_meaning();
   test_no_windup();
   test_bad_reasons();
+  test_pair_reporting();
   test_hold_off();
   test_clear_output();
   test_override();

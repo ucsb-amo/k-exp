@@ -80,6 +80,7 @@ class Cooling():
                             ramp_down_painting = False,
                             squeeze=False,
                             cubic_ramp_squeeze=True,
+                            magnet_PID=True
                             ):
         """prepares hf evap tweezers at i_outer = ExptParams.i_non_inter with
         PID enabled.
@@ -123,8 +124,8 @@ class Cooling():
                           v_end=self.p.v_pd_hf_tweezer_1064_ramp_end,
                           paint=True,keep_trap_frequency_constant=False,
                           tau=-self.p.t_hf_tweezer_1064_ramp/3)
-        self.diag.img_tweezer_load_x.trigger()      # diagnostic frames (no-op when off)
-        self.diag.img_tweezer_pickoff.trigger()
+        # self.diag.img_tweezer_load_x.trigger()      # diagnostic frames (no-op when off)
+        # self.diag.img_tweezer_pickoff.trigger()
                           
         # lightsheet ramp down (to off)
         self.lightsheet.exponential_ramp(t=self.p.t_lightsheet_rampdown3,
@@ -172,13 +173,14 @@ class Cooling():
         self.dac.supply_current_2dmot.set(v=0.)
         # self.ttl.pd_scope_trig.pulse(1.e-6)
 
-        self.outer_coil.ramp_supply(t=20.e-3,
-                             i_end=self.p.i_hf_raman)
-        # delay(100.e-3)
-        # self.outer_coil.ttl_blanking.off()
-        # delay(100.e-3)
-        
-        self.outer_coil.start_pid()
+        if magnet_PID:
+            self.outer_coil.ramp_supply(t=20.e-3,
+                                i_end=self.p.i_hf_raman)
+            # delay(100.e-3)
+            # self.outer_coil.ttl_blanking.off()
+            # delay(100.e-3)
+            
+            self.outer_coil.start_pid()
         
         delay(30.e-3)
         

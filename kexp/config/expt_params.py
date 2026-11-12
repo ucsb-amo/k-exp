@@ -409,7 +409,8 @@ class ExptParams(ExptParamsWaxx):
         # Raman intensity PID setpoints (V) giving ~max power with the two beams at equal
         # power at the atoms; RamanBeamsPID sets fraction_power_raman * these.
         # dds0 = raman_150_plus (DAC raman_150, PID loop 2), dds1 = raman_80_plus (DAC raman_80, loop 1).
-        # PLACEHOLDERS, NOT MEASURED: the DAC channels' max_v (dac_id.py), not a balance point.
+        # PLACEHOLDERS, NOT MEASURED: the DAC channels' max_v of 2026-11-07 (3.2 / 5.2 V, since removed
+        # from dac_id.py), not a balance point.
         self.v_pd_dds0_balanced_max = 5.2
         self.v_pd_dds1_balanced_max = 3.2
         self.n_raman_sweep_steps = 100

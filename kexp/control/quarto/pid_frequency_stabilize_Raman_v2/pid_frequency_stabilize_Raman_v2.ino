@@ -18,19 +18,25 @@
 //              integral += g1*i1*err, feedback = g1*p1*err + integral
 //   override   1 = output set to ovolt, state HOLD, PI frozen (the integral does
 //              not wind; sweeps are still measured); anything else = the lock
-//              drives it. Released, the lock re-locks from HOLD as usual.
-//              Every relock (HOLD -> LOCKED) clears the integral.
+//              drives it. Released, the lock re-locks from HOLD after ngood
+//              good sweeps with the integral starting at ovolt (clamped to
+//              +/-rail), so it takes over from the override voltage. Every
+//              other relock (HOLD -> LOCKED after a dropout) clears the integral.
 //   ovolt      V, forced output while override = 1 (clamped to +/-10 V)
 //   fmt        printout: 1 = table (default), 0 = CSV, 2 = paused
 //   read only: sep, integ, state (0 off, 1 hold, 2 locked), tfirst, h1, h2,
 //              bad (rejected sweeps) = bad_none + bad_one + bad_win,
-//              unlocks, sats (times at the rail)
+//              unlocks, sats (times at the rail), nopair
+//              sep, tfirst, h1, h2 all come from the last sweep that found a
+//              pair; nopair = completed sweeps in a row since then without one.
+//              The bad counters count in every state, OFF included.
 //   clear      zero the integral and the output (0 V), keep the state
 //   help       lists all of the above with their current values
 // Printed every ~10 sweeps. fmt 1: a table with a header every 20 rows and a
 // "##" line when the state or a counter changes. fmt 0: CSV
-//   sep, er, feedback, state, tfirst, h1, h2, bad, unlocks, sats, saturated,
-//   bad_none, bad_one, bad_win, integ, period
+//   sep, err, feedback, state, tfirst, h1, h2, bad, unlocks, sats, saturated,
+//   bad_none, bad_one, bad_win, integ, period, nopair
+// where err = sep - setp against the current setpoint
 // (the dashboard's FP lock server reads this; columns are only ever appended)
 // The table's "why" column is the main reason sweeps were skipped since the
 // previous row: none = no peak, 1pk = first peak only, win = pair outside win.
@@ -92,6 +98,7 @@ void setup() {
   qC.assignVariable("unlocks", &lk.nUnlock, true);
   qC.assignVariable("sats", &lk.nSat, true);
   qC.assignVariable("period", &lk.period, true);
+  qC.assignVariable("nopair", &lk.nNoPair, true);
 
   writeDAC(1, 0);
   enableInterruptTrigger(1, BOTH_EDGES, hold1);
@@ -144,7 +151,8 @@ void help(qCommand& qC, Stream& S)
   S.printf("  ovolt  %10.3f V        forced output while override = 1 (clamped to +/-%g V)\n", s.ovolt, fplock::kDacMax);
   S.printf("  fmt    %10ld          printout: 1 = table, 0 = CSV, 2 = paused\n", (long)fmt);
   S.printf("  (output limit +/-%.2f V, fixed in the code)\n", s.rail);
-  S.println("read only: sep integ state tfirst h1 h2 bad unlocks sats period");
+  S.println("read only: sep integ state tfirst h1 h2 bad unlocks sats period nopair");
+  S.println("  sep tfirst h1 h2: the last sweep with a pair; nopair: sweeps since then without one");
   S.println("  bad = bad_none (no peak) + bad_one (first peak only) + bad_win (pair, |err| >= win)");
   S.println("states: OFF = lock off | HOLD = output frozen, waiting for good sweeps | LOCKED");
   S.println("clear: zero the integral and the output (0 V), keep the state; ping (board label); help");
@@ -164,23 +172,24 @@ const char* whySince(const fplock::Lock& k) {
 }
 
 void printHeader() {
-  Serial.println("   sep ms    err ms     fb V  integ V  state  rail  tfirst ms  h1 V  h2 V     bad  unlk  sats  why");
+  Serial.println("   sep ms    err ms     fb V  integ V  state  rail  tfirst ms  h1 V  h2 V     bad  unlk  sats nopair  why");
 }
 
 void printRow(const fplock::Lock& k, const char* why) {
-  Serial.printf("%9.3f %+9.3f %+8.4f %+8.4f  %-6s %-4s %10.3f %5.2f %5.2f %7lu %5lu %5lu  %s\n",
-                k.sep, k.err, k.feedback, k.integral, stateName(k.state),
+  Serial.printf("%9.3f %+9.3f %+8.4f %+8.4f  %-6s %-4s %10.3f %5.2f %5.2f %7lu %5lu %5lu %6lu  %s\n",
+                k.sep, k.errNow(), k.feedback, k.integral, stateName(k.state),
                 k.saturated ? "RAIL" : "-", k.tFirst, k.h1, k.h2,
-                (unsigned long)k.nBad, (unsigned long)k.nUnlock, (unsigned long)k.nSat, why);
+                (unsigned long)k.nBad, (unsigned long)k.nUnlock, (unsigned long)k.nSat,
+                (unsigned long)k.nNoPair, why);
 }
 
 void printCsv(const fplock::Lock& k) {
   Serial.printf("%.3f, %.3f, %.4f, %ld, %.3f, %.3f, %.3f, %lu, %lu, %lu, %ld, %lu, %lu, %lu, "
-                "%.4f, %.3f\n",
-                k.sep, k.err, k.feedback, (long)k.state, k.tFirst, k.h1, k.h2,
+                "%.4f, %.3f, %lu\n",
+                k.sep, k.errNow(), k.feedback, (long)k.state, k.tFirst, k.h1, k.h2,
                 (unsigned long)k.nBad, (unsigned long)k.nUnlock, (unsigned long)k.nSat,
                 (long)k.saturated, (unsigned long)k.nBadNone, (unsigned long)k.nBadOne,
-                (unsigned long)k.nBadWin, k.integral, k.period);
+                (unsigned long)k.nBadWin, k.integral, k.period, (unsigned long)k.nNoPair);
 }
 
 // a "##" line when the state changes or a counter jumps between two printouts
@@ -200,7 +209,10 @@ void printEvents(const fplock::Lock& k) {
   static int32_t lastOverride = 0;
   if (k.s.override != lastOverride) {
     if (k.s.override == 1) Serial.printf("## override on: output %.3f V, HOLD, PI frozen\n", k.outputVolts());
-    else Serial.println("## override off: re-locks from HOLD (integral cleared at the relock)");
+    else if (k.s.lock == 1)
+      Serial.printf("## override off: HOLD at %.3f V, locks after %ld good sweeps with the integral starting there\n",
+                    k.outputVolts(), (long)k.s.ngood);
+    else Serial.println("## override off: lock is off, output 0 V");
     lastOverride = k.s.override;
   }
   // skipped sweeps are expected in HOLD; report them only while locked

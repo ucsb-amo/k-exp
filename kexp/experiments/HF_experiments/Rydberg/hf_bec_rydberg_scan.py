@@ -14,11 +14,11 @@ class hf_bec(EnvExperiment, Base):
                       imaging_type=img_types.ABSORPTION)
         
         # self.xvar('t_tof',np.linspace(20.,3000.,7)*1.e-6)
-        self.p.t_tof = 700.e-6
+        self.p.t_tof = 2300.e-6
 
         # self.xvar('do_405_pulse',[0,1])
         self.p.do_405_pulse = 1
-        self.xvar('do_980_pulse',[0,1])
+        # self.xvar('do_980_pulse',[0,1])
         self.p.do_980_pulse = 1
         self.p.amp_dds_405 = 0.06
 #   
@@ -40,7 +40,7 @@ class hf_bec(EnvExperiment, Base):
         self.p.v_pd_ry_405 = 0.45
         self.p.v_pd_ry_980 = 2.8
 
-        self.p.N_repeats = 2
+        self.p.N_repeats = 4
         self.finish_prepare(shuffle=True)
 
         if self.p.do_405_pulse == 1:
@@ -71,7 +71,7 @@ class hf_bec(EnvExperiment, Base):
         # if self.p.compress:
         #     self.prepare_hf_tweezers(squeeze=True)
         # else:
-        self.prepare_hf_tweezers(squeeze=False, do_tweezer_evap_2=False)
+        self.prepare_hf_tweezers(squeeze=False, do_tweezer_evap_2=True)
 
         if self.p.do_405_pulse == 1:
             self.ry_405.reboot()
