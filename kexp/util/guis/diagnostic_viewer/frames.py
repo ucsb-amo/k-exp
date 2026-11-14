@@ -66,13 +66,13 @@ def configured_keys():
 
 
 #: Full-scale count of a uint16 frame by the pixel format its camera runs at.
-_UINT16_FULL_SCALE = {"Mono12": 4095, "Mono12p": 4095}
+_UINT16_FULL_SCALE = {"Mono10": 1023, "Mono10p": 1023, "Mono12": 4095, "Mono12p": 4095}
 
 
 def saturation_level(dtype, pixel_format=None):
     """The count a saturated pixel reads, or None when it is not known: 255
-    for a uint8 frame; 4095 for a uint16 frame whose camera is configured
-    Mono12 / Mono12p; otherwise (another uint16 camera, e.g. 16 bit) None --
+    for a uint8 frame; 1023 / 4095 for a uint16 frame whose camera is configured
+    Mono10 / Mono10p or Mono12 / Mono12p; otherwise (another uint16 camera, e.g. 16 bit) None --
     not checked."""
     dtype = np.dtype(dtype)
     if dtype == np.uint8:
