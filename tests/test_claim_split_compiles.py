@@ -58,7 +58,7 @@ class ClaimSplitCompile(EnvExperiment, Base):
         self.diag.img_gm_beams_z.trigger()
         self.diag.img_tweezer_load_x.trigger()
         self.diag.img_tweezer_evap_x.trigger()
-        self.diag.img_tweezer_pickoff.trigger()
+        self.diag.img_apd_plane.trigger()
         delay(self.p.t_tof)
 
     @kernel
@@ -77,8 +77,8 @@ class _NoDatasets:
 
 
 class _Frame:
-    def __init__(self, seq, rev, shape=(10, 12)):
-        self.image = np.zeros(shape, dtype=np.uint8)
+    def __init__(self, seq, rev, shape=(10, 12), dtype=np.uint8):
+        self.image = np.zeros(shape, dtype=dtype)
         self.seq = seq
         self.settings_rev = rev
         self.settings = {}
@@ -87,7 +87,8 @@ class _Frame:
 class _FakeStream:
     """beacon.camera.stream.CameraStream as a triggered client uses it."""
 
-    def __init__(self, serial):
+    def __init__(self, serial, dtype=np.uint8):
+        self.dtype = dtype          # the client's pixel format's frame dtype
         self.entry = SimpleNamespace(host="127.0.0.1")
         self.server_id = "camera_server:fake"
         self.camera_id = f"basler:{serial}"
@@ -99,7 +100,7 @@ class _FakeStream:
 
     def snap(self, timeout=5.0, policy="restart", require_rev=None):
         self._seq += 1
-        return _Frame(self._seq, self.rev)
+        return _Frame(self._seq, self.rev, dtype=self.dtype)
 
     def get_settings(self):
         return dict(self._settings), self.rev
@@ -309,7 +310,7 @@ def _build(monkeypatch, tmp_path, warm, liveod_kw=None, source=None):
 
     def _resolve(self, directory):
         events.append(("cam_connect", self.key))
-        return _FakeStream(self.serial)
+        return _FakeStream(self.serial, self._pixel_dtype)
 
     monkeypatch.setattr(csc.CameraStreamClient, "_resolve_and_connect", _resolve)
     monkeypatch.setattr(csc.CameraStreamClient, "_read_server_defaults",

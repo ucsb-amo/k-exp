@@ -106,13 +106,15 @@ def test_the_config_carried_over_unchanged():
     assert mot.frame_rois == {"img_mot": [1668, 1049, 2373, 1767], "img_gm": [1668, 1049, 2373, 1767]}
 
 
-def test_tweezer_pickoff_entry():
-    """The tweezer pickoff camera (2026-10-19): on the 2D-MOT basler's trigger
-    line, Line2, so the two streams are siblings."""
-    cam = diagnostic_cameras.img_tweezer_pickoff.camera
-    assert cam.key == "tweezer_pickoff_basler" and cam.serial_no == "40427782"
-    assert cam.trigger_ttl == cameras.basler_2dmot.trigger_ttl == "basler_2dmot"
-    assert cam.trigger_source == "Line2"
+def test_apd_plane_entry():
+    """The APD-plane camera (2026-11-14; it replaced the tweezer pickoff
+    basler, parked in camera_id): an acA640-750um on its own trigger line,
+    Line4, at Mono10p (the sensor has no 12-bit mode)."""
+    cam = diagnostic_cameras.img_apd_plane.camera
+    assert cam.key == "apd_plane_camera" and cam.serial_no == "25618760"
+    assert cam.trigger_ttl == "apd_plane_camera"
+    assert cam.trigger_source == "Line4" and cam.pixel_format == "Mono10p"
+    assert not hasattr(diagnostic_cameras, "img_tweezer_pickoff")
 
 
 class _Frame(diagnostic_frame_waxx):
@@ -205,9 +207,10 @@ def test_bind_with_diagnostics_off(monkeypatch):
             assert (img.frame, img.j, img.live, img.ttl) == (diag, j, False, _ttl(cam.camera))
     # the config singleton is left as it was
     assert all(img.j == -1 and img.frame is None for img in diagnostic_cameras.images().values())
-    # the 2D-MOT and pickoff baslers share a line, as do the MOT and x baslers
-    assert diag.img_2dmot.ttl == diag.img_tweezer_pickoff.ttl
+    # the MOT and x baslers share a line; the APD-plane camera has its own
     assert diag.img_mot.ttl == diag.img_tweezer_load_x.ttl
+    assert diag.img_apd_plane.ttl not in {img.ttl for k, img in diag.images().items()
+                                          if k != "img_apd_plane"}
 
 
 def test_bind_with_streams_and_the_edge_reaching_its_stream(capsys):
@@ -230,11 +233,11 @@ def test_bind_with_streams_and_the_edge_reaching_its_stream(capsys):
 
     diag = _bound(enabled=True, make_streams=make_streams)
     assert diag.active
-    # cameras in order: mot_2d 0, xy 1, z 2, mot 3, x 4, tweezer_pickoff 5 -- even ones live
+    # cameras in order: mot_2d 0, xy 1, z 2, mot 3, x 4, apd_plane 5 -- even ones live
     assert {k: img.live for k, img in diag.images().items()} == {
         "img_2dmot": True, "img_mot_beams_xy": False, "img_gm_beams_xy": False,
         "img_mot_beams_z": True, "img_gm_beams_z": True, "img_mot": False, "img_gm": False,
-        "img_tweezer_load_x": True, "img_tweezer_evap_x": True, "img_tweezer_pickoff": False}
+        "img_tweezer_load_x": True, "img_tweezer_evap_x": True, "img_apd_plane": False}
     x = diag.img_tweezer_evap_x
     assert (x.ttl, x.exposure_delay_cell.value, x.t_trigger, x.j) == ("line4", 1.e-4, 3.e-6, 1)
     # the stream's cell itself (the kernel writes the claim's delay into it)
@@ -245,7 +248,7 @@ def test_bind_with_streams_and_the_edge_reaching_its_stream(capsys):
     assert calls == [(4, 1234, 1)]
     out = capsys.readouterr().out
     assert ("connected: basler_2dmot, z_basler, x_basler | NOT connected: xy_basler, mot_basler, "
-            "tweezer_pickoff_basler") in out
+            "apd_plane_camera") in out
     # the MOT basler's stream: at its first frame's settings, each frame cropped to its own ROI,
     # no saved viewer ROI read
     spec = seen[3]

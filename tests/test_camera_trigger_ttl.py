@@ -12,7 +12,8 @@ from waxx.control.cameras.camera_param_classes import BaslerParams
 
 EXPECTED_CH = {"andor": 7, "apd": 7, "xy_basler": 5, "x_basler": 51,
                "z_basler": 10, "basler_2dmot": 20, "mot_basler": 51,
-               "tweezer_pickoff_basler": 20}    # on the 2D-MOT basler's line (user, 2026-10-19)
+               "apd_plane_camera": 55}    # own line (2026-11-14; the tweezer pickoff basler,
+                                          # on the 2D-MOT basler's line 20, is parked)
 
 
 def _entries():
