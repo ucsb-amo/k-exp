@@ -43,7 +43,7 @@ class dac_frame(dac_frame_waxx):
         self.z_shim_mosfet_gate = self.assign_dac_ch(25)
 
         self.ry_980_intensity_control = self.assign_dac_ch(30, v=2.8)
-        self.ry_405_intensity_control = self.assign_dac_ch(31, v=2.6)
-        # self.ry_405_intensity_control = self.assign_dac_ch(31, v=0.745)
+        # self.ry_405_intensity_control = self.assign_dac_ch(31, v=2.6)
+        self.ry_405_intensity_control = self.assign_dac_ch(31, v=0.745)
 
         self.cleanup()
