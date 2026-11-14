@@ -102,10 +102,17 @@ class camera_frame(camera_frame_waxx):
         # line (user, 2026-10-19): a pulse on ttl.basler_2dmot exposes both,
         # and their streams are siblings. Input on Line2 (user, 2026-10-19).
         # Resolution/magnification not set.
-        self.tweezer_pickoff_basler = BaslerParams(serial_number='40427782',
-                                                   trigger_source='Line2',
-                                                   trigger_ttl=_ttl.basler_2dmot,
-                                                   pixel_size_m=2.5e-6)
+        # self.tweezer_pickoff_basler = BaslerParams(serial_number='40427782',
+        #                                            trigger_source='Line2',
+        #                                            trigger_ttl=_ttl.basler_2dmot,
+        #                                            pixel_size_m=2.5e-6)
+
+        # acA640-750um: 8/10-bit sensor, no Mono12 -> Mono10p (uint16, 0..1023), 2026-11-14
+        self.apd_plane_camera = BaslerParams(serial_number='25618760',
+                                             trigger_source='Line4',
+                                             trigger_ttl=_ttl.apd_plane_camera,
+                                             pixel_size_m=4.8e-6,
+                                             pixel_format='Mono10p')
 
         self.cleanup()
 
@@ -203,9 +210,14 @@ class diagnostic_frame(diagnostic_frame_waxx):
         # tweezer beam position from the pickoff; shares the 2D-MOT basler's trigger line (2026-10-19)
         # end of the tweezer ramp-up, 1 ms after it (user, 2026-10-19; a 2 us offset briefly
         # set that day was a mix-up with the 2 us exposure)
-        self.img_tweezer_pickoff = self.image(cameras.tweezer_pickoff_basler, t_offset=1.e-3,
-                                              exposure_time=2.e-6, gain=0., roi=[1799, 909, 2787, 1804],
-                                              label='tweezer pickoff', show='image')
+        # self.img_tweezer_pickoff = self.image(cameras.tweezer_pickoff_basler, t_offset=1.e-3,
+        #                                       exposure_time=2.e-6, gain=0., roi=[1799, 909, 2787, 1804],
+        #                                       label='tweezer pickoff', show='image')
+
+        self.img_apd_plane = self.image(cameras.apd_plane_camera,
+                                        exposure_time=100.e-6, gain=11.99,
+                                        # roi=[0, 0, 640, 480],
+                                        label='apd plane')
 
         self.cleanup()
 
