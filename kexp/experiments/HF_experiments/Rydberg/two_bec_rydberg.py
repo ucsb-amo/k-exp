@@ -15,22 +15,42 @@ class hf_raman(EnvExperiment, Base):
                       save_data=True,
                       imaging_type=img_types.ABSORPTION,
                       warmup_shots=0)
+
+        
+        # self.xvar('t_tof',np.linspace(2500.,5000.,10)*1.e-6) 
+        self.p.t_tof = 3000.e-6
         
         # self.p.v_pd_hf_tweezer_1064_rampdown2_end = .5
         # self.xvar('shot_number',np.linspace(1,400,400))
 
         # self.xvar('dumy',np.linspace(1.,100.,50))
-        # self.xvar('frequency_detuned_imaging',np.linspace(-630.,-615.,7)*1.e6)
+        # self.xvar('frequency_detuned_imaging',np.linspace(-640.,-610.,20)*1.e6)
         self.p.frequency_detuned_imaging = -614.e6 
 
+        self.p.v_pd_hf_lightsheet_rampdown_end = 1.0 # 0.85 #4.16
         # self.xvar('v_pd_hf_tweezer_1064_rampdown_end',np.linspace(.5,1.5,20))
         # self.p.v_pd_hf_tweezer_1064_rampdown_end = 6.
+        self.p.i_hf_tweezer_load_current = 193.3 #91427+91428+91434, 2026-11-02  # six-knob evap bundle (193.0 equal in D2 91430), user OK
+        # self.xvar('i_hf_tweezer_load_current',np.linspace(193.0,194.4,7))
+        
 
-        # self.xvar('v_hf_tweezer_paint_amp_max',np.linspace(-1.5,4.99,20))
-        self.p.v_hf_tweezer_paint_amp_max = 2.5
+        self.p.i_hf_tweezer_evap2_current =  193.9  #87461, 2026-10-20
+        # self.xvar('i_hf_tweezer_evap2_current',np.linspace(193.7,194.8,8))
 
-        # self.xvar('v_pd_hf_tweezer_1064_rampdown2_end',np.linspace(.5,1.,15))
-        self.p.v_pd_hf_tweezer_1064_rampdown2_end = .78
+        self.p.t_hf_tweezer_1064_rampdown2 = 0.3 #91427+91428+91434, 2026-11-02  # six-knob evap bundle, user OK
+        # self.xvar('t_hf_tweezer_1064_rampdown2',np.linspace(0.1,0.9,8))
+
+        self.p.t_hf_tweezer_1064_rampdown = 0.6 #91427+91428+91434, 2026-11-02  # six-knob evap bundle, user OK
+
+        #self.xvar('v_hf_tweezer_paint_amp_max',np.linspace(0.0,4.99,15))
+        self.p.v_hf_tweezer_paint_amp_max = 1.6
+       #self.xvar('v_pd_hf_tweezer_1064_rampdown2_end',np.linspace(.5,1.,11))
+        self.p.v_pd_hf_tweezer_1064_rampdown2_end = .8
+
+        self.xvar('t_tweezer_hold',np.geomspace(0.01e-3,10.e-3,10))
+        # self.p.t_tweezer_hold = 500.e-3
+
+        ######## -- AWG params -- ##################################################################################
 
         # self.xvar('amp_tweezer1', np.linspace(.2,.499,8))
         # self.xvar('amp_tweezer2', np.linspace(.2,.499,8))
@@ -46,31 +66,33 @@ class hf_raman(EnvExperiment, Base):
 
         self.p.frequency_tweezer_list=[74.5e6, 75.5e6]
         self.p.amp_tweezer_list = [0.49,.49]
-        
-        # self.xvar('t_tweezer_hold',np.linspace(1.e-3,300.e-3,10))
-        self.p.t_tweezer_hold = 100.e-3
 
-        # self.xvar('t_tof',np.linspace(2500.,5000.,10)*1.e-6) 
-        self.p.t_tof = 3000.e-6
+        
+
+        ######## -- Rydberg params -- ##################################################################################
+
+        self.p.do_Ry = 1
+        # self.xvar('do_Ry',[0,1])
 
         self.p.do_405_pulse = 1
         # self.xvar('do_980_pulse',[0,1])
         self.p.do_980_pulse = 1
-        self.p.frequency_eo_980 = 384.8e6
-        # self.xvar('frequency_eo_980',np.linspace(380.e6,398.e6,30))
-        # self.xvar('frequency_eo_980',[391.8e6,385.0e6])     
+
+        self.p.frequency_eo_980 = 391.68e6 # 384.8e6
+        # self.xvar('frequency_eo_980',np.linspace(388.4e6,392.5e6,11))
+        # self.xvar('frequency_eo_980',[391.3e6,385.0e6]) 
+            
         self.p.amp_dds_405 = 0.06
+
         
-        self.p.v_pd_ry_405 = 0.6
-        self.p.v_pd_ry_980 = 2.8
-
-        self.p.i_fringe_expt_current=193.5
-        # self.p.t_tweezer_hold=120.e-3
+        self.p.v_pd_ry_405 = 0.45
+        self.p.v_pd_ry_980 = 2.8 # default/max is 2.8
 
 
-        self.p.t_mot_load = 1.
+
+        ######## -- other -- ##################################################################################
         
-        self.p.N_repeats = 25
+        self.p.N_repeats = 3
 
         # self.camera_params.gain = 75.
 
@@ -88,35 +110,37 @@ class hf_raman(EnvExperiment, Base):
         self.tweezer.traps[1].set_frequency(75.e6 + self.p.frequency_diff_tweezer,trigger=True)
         delay(10.e-3)
 
-        # self.set_high_field_imaging(i_outer=self.p.i_hf_tweezer_evap2_current)
-        self.set_imaging_detuning(frequency_detuned=self.p.frequency_detuned_imaging)
+        self.set_high_field_imaging(i_outer=self.p.i_hf_tweezer_evap2_current)
+        # self.set_imaging_detuning(frequency_detuned=self.p.frequency_detuned_imaging)
         if self.p.do_980_pulse == 1:
                     self.ry_980.sweep_to(self.p.frequency_eo_980)
 
         self.ry_405.set_power(self.p.v_pd_ry_405)
         self.ry_980.set_power(self.p.v_pd_ry_980)
+
         self.prepare_hf_tweezers(magnet_PID=False)
         # self.outer_coil.ramp_supply(t=40.e-3,i_end=self.p.i_fringe_expt_current)
         # delay(30.e-3)
 
-        if self.p.do_405_pulse == 1:
-                    self.ry_405.reboot()
-                    self.ry_405.dds_sw.set_dds(amplitude=self.p.amp_dds_405)
-                    self.ry_405.on()
-        if self.p.do_980_pulse == 1:
-            self.ry_980.on()
+        if self.p.do_Ry == 1:
+            if self.p.do_405_pulse == 1:
+                        self.ry_405.reboot()
+                        self.ry_405.dds_sw.set_dds(amplitude=self.p.amp_dds_405)
+                        self.ry_405.on()
+            if self.p.do_980_pulse == 1:
+                self.ry_980.on()
 
         delay(self.p.t_tweezer_hold)
-        
-        
+        self.ry_405.off()
+        self.ry_980.off()
+        self.ry_405.ttl_shutter.off()
         self.tweezer.off()
+        
 
         delay(self.p.t_tof)
 
         self.abs_image()
-        self.ry_405.off()
-        self.ry_980.off()
-        self.ry_405.ttl_shutter.off()
+        
 
     @kernel
     def run(self):

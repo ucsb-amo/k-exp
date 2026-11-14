@@ -7,7 +7,7 @@ from kexp import Base, img_types, cameras
 class hf_bec(EnvExperiment, Base):
 
     def prepare(self):
-        Base.__init__(self,setup_camera=True,save_data=False,
+        Base.__init__(self,setup_camera=True,save_data=True,
                       camera_select=cameras.andor,
                       imaging_type=img_types.ABSORPTION)
         
@@ -28,16 +28,16 @@ class hf_bec(EnvExperiment, Base):
 
 
         # self.xvar('frequency_eo_980', 366.4e6 + 1.e6 * np.linspace(-5,5,9))
-        # self.xvar('frequency_eo_980', np.arange(410.5,424.5,0.3)*1.e6)
+        self.xvar('frequency_eo_405', np.arange(307.0,310.0,0.3)*1.e6)
         # self.xvar('frequency_eo_980',[263.1*1.e6,288.0*1.e6])
         # self.p.frequency_eo_980 = self.siglent.siglent_980._frequency_default
         # self.p.frequency_eo_980 = 352.1e6
-        self.p.frequency_eo_405 = 200.1e6
+        self.p.frequency_eo_405 = 303.9e6
 
         # self.xvar('t_tweezer_paint_rampdown',np.linspace(0.0,10.,5)*1.e-3)
 
-        # self.xvar('t_tweezer_hold', np.linspace(0.0, 100.0, 5) * 1.e-3)
-        self.p.t_tweezer_hold = 121.e-3
+        # self.xvar('t_tweezer_hold', np.linspace(0.0, 1.0, 5) * 1.e-3)
+        self.p.t_tweezer_hold = 150.e-6
 
         # self.p.v_pd_hf_tweezer_1064_rampdown3_end=3.5
 
@@ -52,7 +52,7 @@ class hf_bec(EnvExperiment, Base):
 
        
         # self.xvar('beans',np.linspace(0,30,10))
-        self.p.N_repeats = 300
+        self.p.N_repeats = 2
         self.finish_prepare(shuffle=True)
 
         if self.p.do_405_pulse == 1:
@@ -64,12 +64,12 @@ class hf_bec(EnvExperiment, Base):
     def scan_kernel(self):
         
         self.ry_405.set_power(self.p.v_pd_ry_405)
-
+        self.ry_405.sweep_to(self.p.frequency_eo_405)
 
         self.set_imaging_detuning(frequency_detuned=self.p.hf_imaging_detuning)
         self.imaging.set_power(self.p.amp_imaging)
 
-        self.prepare_hf_tweezers(squeeze=False, do_tweezer_evap_3=True, do_tweezer_evap_2=True)
+        self.prepare_hf_tweezers(do_tweezer_evap_2=True)
 
         # self.tweezer.ramp(t=self.p.t_tweezer_squeezer_ramp_1,
         #                         v_start=self.p.v_pd_hf_tweezer_1064_rampdown3_end,
