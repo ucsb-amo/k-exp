@@ -39,7 +39,7 @@ from waxx.util.dashboard import theme
 from .fetch import AuxFetcher, discover_endpoint
 from .frames import FRAME_KEYS, FRAMES, SPEC, STATS, FrameHistory, configured_keys, \
     frame_stats, run_summary, same_settings, stat_value
-from .references import ReferenceStore, build_reference, compare, reference_stat
+from .references import ReferenceStore, build_reference, compare, ref_bits, reference_stat
 
 
 def default_reference_path():
@@ -433,8 +433,10 @@ class DiagnosticViewer(QWidget):
             rid = img.get("run_id")
             if rid is None:
                 continue
+            spec = SPEC.get(key)
             st = frame_stats(img.get("array"), None if meta is None else meta.get("array"),
-                             rid, img.get("index"), img.get("t", time.time()))
+                             rid, img.get("index"), img.get("t", time.time()),
+                             pixel_format=getattr(spec, "pixel_format", None))
             if st is None:      # a cleared slot or a placeholder: not a frame
                 continue
             tag = (st.run_id, st.index, st.seq)
@@ -470,8 +472,8 @@ class DiagnosticViewer(QWidget):
         if self.trend_combo.currentData() == key:
             self._refresh_trend()
 
-    def _compare(self, value, exposure, gain, n_pixels, kr, stat):
-        return compare(value, exposure, gain, kr, stat=stat, n_pixels=n_pixels)
+    def _compare(self, value, exposure, gain, n_pixels, kr, stat, bits=None):
+        return compare(value, exposure, gain, kr, stat=stat, n_pixels=n_pixels, bits=bits)
 
     def _caption(self, key, st):
         stat = self.stat_for(key)
@@ -480,7 +482,8 @@ class DiagnosticViewer(QWidget):
                 f"{fmt_settings(st.exposure, st.gain)}")
         kr = self._key_ref(key)
         if kr and kr.get("n"):
-            c = self._compare(stat_value(st, stat), st.exposure, st.gain, st.n_pixels, kr, stat)
+            c = self._compare(stat_value(st, stat), st.exposure, st.gain, st.n_pixels, kr, stat,
+                              st.bits)
             if "reason" in c:
                 text += f"<br>reference: {c['reason']}"
             else:
@@ -535,7 +538,8 @@ class DiagnosticViewer(QWidget):
                     note_warn = True
                     n_saturated += not stale
                 elif latest.n_saturated is None:
-                    tips["Notes"] = "saturation not checked: not an 8-bit frame"
+                    tips["Notes"] = ("saturation not checked: full scale unknown (not an 8-bit "
+                                     "frame, nor one from a camera configured Mono12 / Mono12p)")
             if summ is not None:
                 cells["Run mean ± sem (DN)"] = (f"{fmt_count(summ['mean'], stat)} ± "
                                                 f"{fmt_count(summ['sem'], stat)}  (n={summ['n']})")
@@ -558,10 +562,11 @@ class DiagnosticViewer(QWidget):
                 if latest is not None:
                     cells["Δ shot"], tips["Δ shot"] = fmt_compare(self._compare(
                         stat_value(latest, stat), latest.exposure, latest.gain, latest.n_pixels,
-                        kr, stat))
+                        kr, stat, latest.bits))
                 if summ is not None:
                     cells["Δ run"], tips["Δ run"] = fmt_compare(self._compare(
-                        summ["mean"], summ["exposure"], summ["gain"], summ["n_pixels"], kr, stat))
+                        summ["mean"], summ["exposure"], summ["gain"], summ["n_pixels"], kr, stat,
+                        summ.get("bits")))
                 if latest is not None and not same_settings(latest.exposure, latest.gain,
                                                             kr["exposure"], kr["gain"]):
                     notes.append(f"settings differ from the reference "
@@ -617,14 +622,18 @@ class DiagnosticViewer(QWidget):
         kr = self._key_ref(key)
         if kr and kr.get("n"):
             ref_e, ref_g, ref_n = kr["exposure"], kr["gain"], kr.get("n_pixels")
+            ref_b = ref_bits(kr)
         elif entries:
             ref_e, ref_g, ref_n = entries[-1].exposure, entries[-1].gain, entries[-1].n_pixels
+            ref_b = entries[-1].bits
         else:
             ref_e = ref_g = ref_n = math.nan
+            ref_b = None
 
         def matches(e):
             same_size = not _fin(ref_n) or int(ref_n) == e.n_pixels
-            return same_settings(e.exposure, e.gain, ref_e, ref_g) and same_size
+            same_bits = ref_b is None or e.bits == ref_b
+            return same_settings(e.exposure, e.gain, ref_e, ref_g) and same_size and same_bits
         same = [e for e in entries if matches(e)]
         other = [e for e in entries if not matches(e)]
         self.trend_same.setData([e.t for e in same], [stat_value(e, stat) for e in same])

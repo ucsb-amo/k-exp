@@ -225,3 +225,42 @@ def test_window_fed_fake_replies(qapp):
     finally:
         w.shutdown()
         w.deleteLater()
+
+
+# -- bit depth (Mono8 uint8 / Mono12, Mono12p uint16) ----------------------------------
+def test_12_bit_frames_saturate_at_4095_only_when_configured_12_bit():
+    img = _frame(100, dtype=np.uint16)
+    img[0, :4] = 4095
+    m = meta_row(seq=1, exposure=1e-3, gain=0.)
+    st = frame_stats(img, m, 1, [0], 0., pixel_format="Mono12p")
+    assert st.n_saturated == 4 and st.bits == 16
+    # a uint16 frame whose camera is not configured 12-bit: full scale unknown
+    assert frame_stats(img, m, 1, [0], 0.).n_saturated is None
+    assert frame_stats(img, m, 1, [0], 0., pixel_format="Mono8").n_saturated is None
+    assert frame_stats(_frame(5), m, 1, [0], 0.).bits == 8
+
+
+def test_references_never_compare_across_bit_depths():
+    kr = {"mean": 10., "std": 2., "n": 5, "exposure": 300e-6, "gain": 3., "bits": 8}
+    assert "reason" not in compare(12., 300e-6, 3., kr, bits=8)
+    c = compare(160., 300e-6, 3., kr, bits=16)
+    assert "bit depth" in c["reason"]
+    legacy = {k: v for k, v in kr.items() if k != "bits"}      # saved before bits: 8 bit
+    assert "reason" in compare(160., 300e-6, 3., legacy, bits=16)
+    assert "reason" not in compare(12., 300e-6, 3., legacy, bits=8)
+
+
+def test_run_summary_and_reference_cut_at_a_bit_depth_change():
+    h = FrameHistory()
+    key = FRAME_KEYS[0]
+    m = meta_row(seq=1, exposure=300e-6, gain=3.)
+    for i in range(3):
+        h.add(key, frame_stats(_frame(10), meta_row(seq=i, exposure=300e-6, gain=3.), 1, [i], i))
+    for i in range(3, 5):
+        h.add(key, frame_stats(_frame(160, dtype=np.uint16), meta_row(seq=i, exposure=300e-6,
+                                                                       gain=3.), 1, [i], i))
+    s = run_summary(h, key, 1)
+    assert s["n"] == 2 and s["n_other_settings"] == 3 and s["bits"] == 16
+    ref, notes = build_reference(h, 10)
+    assert ref["keys"][key]["n"] == 2 and ref["keys"][key]["bits"] == 16
+    assert any("bit depth" in n for n in notes)

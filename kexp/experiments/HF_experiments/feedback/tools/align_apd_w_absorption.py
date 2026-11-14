@@ -11,21 +11,21 @@ from kexp.util.artiq.async_print import aprint
 class hf_monitored_rabi(EnvExperiment, Base):
 
     def prepare(self):
-        Base.__init__(self,camera_select=cameras.andor,
+        Base.__init__(self,camera_select=cameras.apd,
                       save_data=False,
                       imaging_type=img_types.ABSORPTION,
                       mot_preload=True)
         
         self.p.t_imaging_pulse = 20.e-6
         
-        self.xvar('make_atoms',[1]*1000)
+        self.xvar('make_atoms',[0,1]*1000)
         
         # self.xvar('amp_imaging',np.linspace(0.1,1.,10))
         self.p.amp_imaging = 0.2
 
         # self.xvar('t_tweezer_hold',np.linspace(1.e-3,1.1e-3,10))
         self.p.t_tweezer_hold = 20.e-3
-        self.p.t_tof = 20.e-6
+        self.p.t_tof = 10.e-6
         self.p.t_mot_load = 1.0
         
         self.p.N_repeats = 1
@@ -33,33 +33,38 @@ class hf_monitored_rabi(EnvExperiment, Base):
         self.p.phase_slm_mask = 0.
 
         self.p.make_atoms = 1.
-        self.adjust('make_atoms',0.,1.,1)
+        # self.adjust('make_atoms',0.,1.,1)
 
         self.data.apd = self.data.add_data_container(1)
-        Adjust.__init__(self)
+        # Adjust.__init__(self)
         
         self.finish_prepare(shuffle=False)
 
     @kernel
     def scan_kernel(self):
 
-        self.slm.write_phase_mask_kernel(phase=self.p.phase_slm_mask)
+        # self.slm.write_phase_mask_kernel(phase=self.p.phase_slm_mask)
         
         self.set_imaging_detuning(frequency_detuned = self.p.frequency_detuned_hf_f1m1)
         self.imaging.set_power(self.p.amp_imaging)
 
-        if self.p.make_atoms:
-            self.prepare_hf_tweezers(ramp_down_painting=False)
-        else:
-            delay(0.2)
+        self.prepare_hf_tweezers()
+        # if self.p.make_atoms:
+        #     self.prepare_hf_tweezers(ramp_down_painting=False)
+        # else:
+        #     delay(0.2)
         
         delay(self.p.t_tweezer_hold)
-        # self.tweezer.off()
+        self.tweezer.off()
 
-        # delay(self.p.t_tof)
+        if self.p.make_atoms:
+            delay(self.p.t_tof)
+        else:
+            delay(10.e-3)
 
         self.ttl.pd_scope_trig3.pulse(1.e-6)
-        self.abs_image_and_apd(self.data.apd)
+        self.abs_image()
+        # self.abs_image_and_apd(self.data.apd)
 
     @kernel
     def run(self):

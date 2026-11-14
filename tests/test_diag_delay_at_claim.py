@@ -64,7 +64,7 @@ def _use_claim_streams(monkeypatch):
     from waxx.control.cameras import camera_stream_client as csc
 
     def _resolve(self, directory):
-        return _ClaimStream(self.serial)
+        return _ClaimStream(self.serial, self._pixel_dtype)
 
     monkeypatch.setattr(csc.CameraStreamClient, "_resolve_and_connect", _resolve)
 
@@ -156,7 +156,7 @@ def test_cold_with_a_reporting_camera(monkeypatch, tmp_path, no_outbound_sockets
 
     def setattr_keep_claim_stream(target, name, value, *a, **k):
         if target is csc.CameraStreamClient and name == "_resolve_and_connect":
-            value = lambda self, directory: _ClaimStream(self.serial)    # noqa: E731
+            value = lambda self, directory: _ClaimStream(self.serial, self._pixel_dtype)  # noqa: E731
         return real_setattr(target, name, value, *a, **k)
 
     monkeypatch.setattr = setattr_keep_claim_stream

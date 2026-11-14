@@ -271,8 +271,8 @@ class Cooling():
                           paint=True,keep_trap_frequency_constant=False,
                           v_awg_am_max=self.p.v_lf_tweezer_paint_amp_max)
         self.diag.img_tweezer_load_x.trigger()      # diagnostic frames (no-op when off)
-        self.diag.img_tweezer_pickoff.trigger()
-        
+        # self.diag.img_tweezer_pickoff.trigger()   # pickoff basler parked in camera_id, 2026-11-14
+
         # lightsheet ramp down (to off)
         self.lightsheet.ramp(t=self.p.t_lf_lightsheet_rampdown2,
                              v_start=self.p.v_pd_lf_lightsheet_rampdown_end,

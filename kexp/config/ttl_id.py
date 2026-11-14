@@ -58,6 +58,7 @@ class ttl_frame(ttl_frame_waxx):
         self.ry_980_sw = self.assign_ttl_out(52)
         self.phase_lock_beam_enable = self.assign_ttl_out(53)
         self.ry_phase_lock_ao_sw_ttl = self.assign_ttl_out(54)
+        self.apd_plane_camera=self.assign_ttl_out(55)
         self.ry_intensity_pid_clear = self.assign_ttl_out(56)
         
         # Quantum Machines OPX+ handshake (kexp.control.opx; timing diagram

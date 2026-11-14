@@ -117,7 +117,7 @@ class lf_bec_evap_claude_6_11(EnvExperiment, Base):
                                               paint=True, keep_trap_frequency_constant=False,
                                               tau=-self.p.t_hf_tweezer_1064_ramp / 3)
                 self.diag.img_tweezer_load_x.trigger()
-                self.diag.img_tweezer_pickoff.trigger()
+                # self.diag.img_tweezer_pickoff.trigger()   # pickoff basler parked in camera_id, 2026-11-14
                 # lightsheet ramp down (to off), HF
                 self.lightsheet.exponential_ramp(t=self.p.t_lightsheet_rampdown3,
                                                  v_start=self.p.v_pd_hf_lightsheet_rampdown_end,

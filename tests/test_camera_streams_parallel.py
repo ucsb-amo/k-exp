@@ -31,8 +31,8 @@ CROPPED = (6, 5)       # a (10, 12) frame cropped to DEFAULTS' roi
 
 
 class Frame:
-    def __init__(self, seq, rev, shape=(10, 12)):
-        self.image = np.zeros(shape, dtype=np.uint8)
+    def __init__(self, seq, rev, shape=(10, 12), dtype=np.uint8):
+        self.image = np.zeros(shape, dtype=dtype)
         self.seq = seq
         self.settings_rev = rev
 
@@ -42,9 +42,11 @@ class FakeTrigStream:
     first call (the connect) takes SETUP_S and fails for a serial in
     ``rig.fail``; every call is counted."""
 
-    def __init__(self, rig, serial):
+    def __init__(self, rig, serial, pixel_format=None):
         self.rig = rig
         self.serial = serial
+        # a 10/12-bit format gives uint16 frames, as the Basler backend does
+        self.dtype = np.uint8 if pixel_format in (None, "Mono8") else np.uint16
         self.calls = 0
         self.entry = SimpleNamespace(host="127.0.0.1")
         self.server_id = "camera_server:fake"
@@ -66,7 +68,7 @@ class FakeTrigStream:
     def snap(self, timeout=5.0, policy="restart", require_rev=None):
         self._call()
         self._seq += 1
-        return Frame(self._seq, self.rev)
+        return Frame(self._seq, self.rev, dtype=self.dtype)
 
     def get_settings(self):
         self._call()
@@ -122,7 +124,7 @@ def rig(monkeypatch):
 
     def make(expt, serial, key, **kw):
         assert kw.get("connect") is False          # camera_streams never connects
-        s = FakeTrigStream(rig, serial)
+        s = FakeTrigStream(rig, serial, kw.get("pixel_format"))
         rig.streams[serial] = s
         return real(expt, serial, key, _stream=s, _server_defaults=DEFAULTS, **kw)
 
@@ -299,3 +301,21 @@ def test_same_camera_twice_in_one_call_is_refused(rig):
     with pytest.raises(ValueError, match="asked for twice"):
         cs_mod.camera_streams(fe, [spec, other])
     assert rig.streams == {} and fe.camera_streams == []
+
+
+def test_pixel_format_comes_from_the_spec_else_the_camera_entry(monkeypatch, rig):
+    seen = {}
+
+    def record(expt, serial, key, **kw):
+        seen[serial] = kw.get("pixel_format")
+        raise RuntimeError("recorded (test)")
+
+    monkeypatch.setattr(cs_mod, "TriggeredCameraStreamClient", record)
+    entries = diagnostic_cameras.entries()
+    first, second = entries[0], entries[1]
+    monkeypatch.setattr(second.camera, "pixel_format", "Mono12", raising=False)
+    specs = _specs()
+    specs[0]["pixel_format"] = "Mono12p"
+    cs_mod.camera_streams(FakeExpt(), specs[:2])
+    assert seen[str(first.camera.serial_no)] == "Mono12p"       # the spec's
+    assert seen[str(second.camera.serial_no)] == "Mono12"       # the entry's

@@ -73,7 +73,7 @@ class hf_bec_rydberg_hole_burn(EnvExperiment, Base):
         # self.p.v_pd_hf_tweezer_1064_rampdown3_end=3.5
         self.p.hf_imaging_detuning = self.p.frequency_detuned_hf_f1m1 # not read by the sequence; kept in step
         self.p.v_pd_ry_405 = 0.45
-        self.p.v_pd_ry_980 = 2.8
+        self.p.v_pd_ry_980 = 2.8 # default/max is 2.8
 
         self.p.N_repeats = 9
         self.finish_prepare(shuffle=True)
