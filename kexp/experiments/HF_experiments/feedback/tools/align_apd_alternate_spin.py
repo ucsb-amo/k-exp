@@ -33,8 +33,8 @@ class hf_monitored_rabi(EnvExperiment, Base):
         self.scope = self.scope_data.add_siglent_scope("192.168.1.108", label='PD', arm=False)
         # self.adjust('phase_slm_mask',0.,2*np.pi)
 
-        self.p.fraction_power_raman = .35
-        self.p.t_raman_pi_pulse = 9.0783e-06
+        self.p.fraction_power_raman = .4
+        self.p.t_raman_pi_pulse = 9.2990e-06
 
         self.p.phase_slm_mask = 0.5 * np.pi
         # self.adjust('frequency_detuned_hf_midpoint',-568e6,-489.e6)
