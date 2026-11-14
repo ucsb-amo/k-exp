@@ -15,6 +15,7 @@ from waxx.control.misc.pdxc import (
     POSITION_OUT,
     POSITION_UNKNOWN,
 )
+from waxx.util import console
 
 
 class APDStageClient():
@@ -101,7 +102,11 @@ class APDStageClient():
         """Drive the stage to ``POSITION_IN`` or ``POSITION_OUT``."""
         result = self._call(f"move to {state}", "move_to", state, force=force)
         if result is not None:
-            print(f"[PDXC] APD stage {result}.")
+            # "already <state>" (no move; a cold launch asks twice) is detail;
+            # a move, or any other answer, is said at the default level
+            already = isinstance(result, str) and result.startswith("already")
+            console.info(f"[PDXC] APD stage {result}.",
+                         level=console.VERBOSE if already else console.NORMAL)
         return result
 
     def apd_in(self, force=False):

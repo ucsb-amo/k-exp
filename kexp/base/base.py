@@ -149,12 +149,13 @@ class Base(Expt, Devices, Cooling, Image, Cameras, Control, Clients):
         self.params.N_warmup_shots = int(warmup_shots)
         self.params.do_read_magnetometer_per_shot = int(self.read_magnetometer_per_shot)
         self.params.do_mot_preload = int(self.mot_preload)
+        # said on the Scan: line (waxx Scanner.get_N_img), not a line of its own
         if self.params.N_warmup_shots <= 0:
-            console.info("[warmup] none: first shot likely ~25% low "
-                         "(Base(warmup_shots=2) to fix).")
+            self._scan_line_notes["warmup"] = ("warm-up none (first shot likely ~25% "
+                                               "low; Base(warmup_shots=2) to fix)")
         else:
-            console.info(f"[warmup] {self.params.N_warmup_shots} warm-up "
-                         "shot(s) before the first real shot.")
+            self._scan_line_notes["warmup"] = (f"warm-up {self.params.N_warmup_shots} "
+                                               "shot(s)")
 
         # Last: from here to finish_prepare, params the experiment assigns
         # are its overrides (self._param_overrides); everything above is Base's.
@@ -241,8 +242,8 @@ class Base(Expt, Devices, Cooling, Image, Cameras, Control, Clients):
             })
         self._extra_file_texts["mot_preload"] = json.dumps(record)
         if self.mot_preload:
-            console.info("[mot preload] ON: the MOT loads from the end of each shot; "
-                         "data.b is read at the end of the shot.")
+            self._scan_line_notes["mot_preload"] = ("MOT preload on (data.b read at "
+                                                    "the shot's end)")
 
     def claim_hardware(self):
         """The run's claim, machine part (waxx Expt.claim; before the liveOD
