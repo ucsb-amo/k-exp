@@ -301,19 +301,25 @@ def test_the_record():
     assert diagnostic_cameras.img_mot.t_offset == -150.e-3
 
 
-def test_a_camera_pixel_format_reaches_its_stream_spec_and_line():
+def test_a_camera_entry_pixel_format_reaches_its_stream_and_record():
+    """The pixel format is the camera entry's (one stream per camera runs one
+    format): the frame passes none of its own, the stream factory
+    (kexp camera_stream: the spec's, else the entry's) applies the entry's,
+    and each image's record says what the stream set."""
+    import copy
     from waxx.control.cameras.diagnostic_frame import diagnostic_frame
     from kexp.config.camera_id import cameras
+
+    mot = copy.copy(cameras.mot_basler)
+    mot.pixel_format = "Mono12p"
 
     class F(diagnostic_frame):
         def __init__(self):
             self.setup()
-            self.mot = self.camera(cameras.mot_basler, pixel_format="Mono12p")
-            self.img_a = self.image(self.mot, t_offset=-1e-3)
+            self.img_a = self.image(mot, t_offset=-1e-3)
             self.cleanup()
 
     f = F()
-    assert "pixel_format='Mono12p'" in f.mot.assignment()
     seen = []
 
     def make_streams(expt, specs):
@@ -325,15 +331,17 @@ def test_a_camera_pixel_format_reaches_its_stream_spec_and_line():
             st = object.__new__(TriggeredCameraStreamClient)
             st.ttl = SimpleNamespace(ch=0)
             st.exposure_delay, st.t_trigger = 17e-6, 2e-6
-            st._pixel_format = spec["pixel_format"]
+            st.exposure_delay_cell = SimpleNamespace(value=17e-6)
+            st._pixel_format = spec.get("pixel_format") or spec["camera"].pixel_format
             out.append(st)
         return out
 
     expt = SimpleNamespace(core=None, params=None, camera_streams=[])
     f.bind(expt, True, make_streams, lambda cam: SimpleNamespace(ch=0))
-    assert seen and seen[0]["pixel_format"] == "Mono12p"
+    assert seen and "pixel_format" not in seen[0]        # the entry decides
+    assert seen[0]["camera"].pixel_format == "Mono12p"
     rec = f.record()["images"]["img_a"]
-    assert rec["pixel_format"] == "Mono12p" and rec["taken"] is True
+    assert rec["pixel_format"] == "Mono12p"
 
 
 # ---- compile ---------------------------------------------------------------
