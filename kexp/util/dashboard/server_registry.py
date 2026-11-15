@@ -158,6 +158,20 @@ SERVER_SPECS: list[ServerSpec] = [
         default_dock_area="right",
     ),
     ServerSpec(
+        id="pco",
+        label="PCO camera server",
+        icon="📷",
+        # The beacon PCO server (pco.edge on Camera Link; camera_server:<host>:pco).
+        # Headless and panel-less: its cameras show in the Camera Viewer like
+        # any other camera server's.  Not in any host's autostart: start it
+        # from the Servers menu on the PC with the frame grabber.
+        body_factory=None,
+        server_cmd=[_PY, "-m", "beacon.pco.server_headless"],
+        cwd=_REPO,
+        graceful_stop_timeout_s=3.0,
+        hidden_panel=True,
+    ),
+    ServerSpec(
         id="raman_fp_lock",
         label="Raman FP lock",
         icon="🔐",

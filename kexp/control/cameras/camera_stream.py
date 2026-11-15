@@ -28,6 +28,12 @@ default, ``'raise'``, stops the run in its claim instead, before it has a
 run id. Triggered streams whose cameras share a trigger line are made
 siblings. A camera on liveOD's bar is leased from liveOD.
 
+A PCO entry (``PCOParams``, e.g. cameras.pco_edge; served by the beacon PCO
+server) streams the same way: its exposure, ``sensor_roi`` (hardware ROI and
+binning) and ``readout_rate`` come from the entry unless given
+(``exposure_time=``, ``settings={'sensor_roi': ...}``); ``roi`` crops the
+frames it reads out, in frame (binned) pixels.
+
 ``camera_streams(expt, specs)`` builds several streams at once
 (the diagnostic frame's bind uses it).
 """
@@ -44,6 +50,9 @@ from waxx.util import console
 from kexp.config.camera_id import cameras, camera_trigger_ttl, CameraParams
 
 MODES = ('free_run', 'triggered')
+# camera types a triggered stream can drive (one frame per TTL edge, through
+# a beacon camera server)
+TRIGGERED_CAMERA_TYPES = ('basler', 'pco')
 ON_ERROR = ('raise', 'dummy')
 
 
@@ -170,12 +179,21 @@ def _plan(expt, spec, taken):
         raise ValueError(f"camera_stream '{name}': {serial} is asked for twice "
                          f"in one camera_streams call")
     live_od_client = getattr(expt, 'live_od_client', None)
+    entry = camera if isinstance(camera, CameraParams) else _entry_by_serial(serial)
     if pixel_format is None:
         # the camera entry's (kexp.config.camera_id), as its runs use; Mono8
         # for a camera with no entry -- never the camera as it stands
-        entry = camera if isinstance(camera, CameraParams) else _entry_by_serial(serial)
         pixel_format = str(getattr(entry, 'pixel_format', None) or 'Mono8')
     kw['pixel_format'] = pixel_format
+    if getattr(entry, 'camera_type', '') == 'pco':
+        # No saved-defaults store on the PCO server: everything this run sets
+        # comes from the entry (or the call), never the camera as it stands.
+        kw['settings'] = {**entry.stream_settings(), **dict(kw.get('settings') or {})}
+        kw['read_saved_defaults'] = False
+        if exposure_time is None:
+            exposure_time = entry.exposure_time
+        if gain is None:
+            gain = 0.
 
     try:
         if not triggered:
@@ -184,13 +202,13 @@ def _plan(expt, spec, taken):
                 t_snap_lead=t_snap_lead, live_od_client=live_od_client,
                 defer_register=True, connect=False, on_error=on_error, **kw)
         else:
-            entry = camera if isinstance(camera, CameraParams) else _entry_by_serial(serial)
             if entry is None:
                 raise ValueError(f"camera_stream '{name}': no kexp.config.camera_id entry "
                                  f"has serial {serial}")
-            if entry.camera_type != 'basler':
-                raise ValueError(f"camera_stream '{name}': triggered mode is for Basler "
-                                 f"cameras, and '{entry.key}' is a {entry.camera_type}")
+            if entry.camera_type not in TRIGGERED_CAMERA_TYPES:
+                raise ValueError(f"camera_stream '{name}': triggered mode is for "
+                                 f"{' / '.join(TRIGGERED_CAMERA_TYPES)} cameras, and "
+                                 f"'{entry.key}' is a {entry.camera_type}")
             ttl = camera_trigger_ttl(expt.ttl, entry)
             if run_cam is not None and getattr(run_cam, 'trigger_ttl', '') == entry.trigger_ttl:
                 # one pulse on the line would expose the run camera too

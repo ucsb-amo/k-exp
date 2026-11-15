@@ -1,4 +1,4 @@
-from waxx.control.cameras.camera_param_classes import CameraParams, BaslerParams, AndorParams, APDParams, img_types
+from waxx.control.cameras.camera_param_classes import CameraParams, BaslerParams, AndorParams, APDParams, PCOParams, img_types
 from waxx.config.camera_id import camera_frame as camera_frame_waxx
 from waxx.control.cameras.diagnostic_frame import (DiagnosticImage, DiagnosticCamera,
                                                   camera_trigger_ttl,
@@ -113,6 +113,27 @@ class camera_frame(camera_frame_waxx):
                                              trigger_ttl=_ttl.apd_plane_camera,
                                              pixel_size_m=4.8e-6,
                                              pixel_format='Mono10p')
+
+        # pco.edge 5.5 (global reset) on Camera Link, served by the beacon PCO
+        # server (beacon.pco). An auxiliary camera only: camera_stream / a
+        # diagnostic image, never a run's acquisition camera. 2026-11-15:
+        #  - serial_number is the string the camera's SDK reports
+        #    (camera id pco_sc2:7010807XXXX); its numeric serial field reads
+        #    924. Not checked against the label.
+        #  - sensor_roi: full sensor binned 4x4 -> 640 x 540 frames, the
+        #    widest that arrive uncorrupted over this Camera Link (the server
+        #    refuses wider; hardware check 2026-11-14).
+        #  - no trigger line wired yet: free-run streams only (triggered mode
+        #    needs trigger_ttl; it was tested with software triggers only,
+        #    and exposure_delay is not measured).
+        #  - magnification not measured (1.0 is a placeholder); pixel size
+        #    6.5 um is the sensor's, 26 um per frame pixel at 4x4.
+        self.pco_edge = PCOParams(serial_number='7010807XXXX',
+                                  exposure_time=1.e-3,
+                                  sensor_roi=(0, 2560, 0, 2160, 4, 4),
+                                  readout_rate='slow',
+                                  magnification=1.,
+                                  trigger_ttl="")
 
         self.cleanup()
 
