@@ -32,7 +32,10 @@ A PCO entry (``PCOParams``, e.g. cameras.pco_edge; served by the beacon PCO
 server) streams the same way: its exposure, ``sensor_roi`` (hardware ROI and
 binning) and ``readout_rate`` come from the entry unless given
 (``exposure_time=``, ``settings={'sensor_roi': ...}``); ``roi`` crops the
-frames it reads out, in frame (binned) pixels.
+frames it reads out, in frame (binned) pixels (default, as for a Basler: the
+ROI saved for the camera in the Camera Viewer).  The stream client asks the
+camera's server what the camera is, so no camera type is special here beyond
+which types have a trigger input (TRIGGERED_CAMERA_TYPES).
 
 ``camera_streams(expt, specs)`` builds several streams at once
 (the diagnostic frame's bind uses it).
@@ -185,15 +188,15 @@ def _plan(expt, spec, taken):
         # for a camera with no entry -- never the camera as it stands
         pixel_format = str(getattr(entry, 'pixel_format', None) or 'Mono8')
     kw['pixel_format'] = pixel_format
-    if getattr(entry, 'camera_type', '') == 'pco':
-        # No saved-defaults store on the PCO server: everything this run sets
-        # comes from the entry (or the call), never the camera as it stands.
-        kw['settings'] = {**entry.stream_settings(), **dict(kw.get('settings') or {})}
-        kw['read_saved_defaults'] = False
+    stream_settings = getattr(entry, 'stream_settings', None)
+    if callable(stream_settings):
+        # An entry that carries its camera's readout (a PCO's sensor_roi and
+        # readout_rate) and exposure: this run sets them from the entry (or
+        # the call), never the camera as it stands.  Its crop, like a
+        # Basler's, is the ROI saved for it in the Camera Viewer unless given.
+        kw['settings'] = {**stream_settings(), **dict(kw.get('settings') or {})}
         if exposure_time is None:
             exposure_time = entry.exposure_time
-        if gain is None:
-            gain = 0.
 
     try:
         if not triggered:

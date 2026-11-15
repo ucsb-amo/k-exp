@@ -46,9 +46,12 @@ def test_free_run_stream_takes_everything_from_the_entry(expt):
     s = cs_mod.camera_stream(expt, cameras.pco_edge, "img_pco")
     p = cameras.pco_edge
     assert s.serial == p.serial_no
-    assert s.kw["pixel_format"] == "Mono16" and s.kw["read_saved_defaults"] is False
+    assert s.kw["pixel_format"] == "Mono16"
     assert s.kw["settings"] == {"sensor_roi": p.sensor_roi, "readout_rate": p.readout_rate}
-    assert s.kw["exposure_time"] == p.exposure_time and s.kw["gain"] == 0.0
+    # no gain is asked of a camera without one; saved defaults (the viewer's ROI)
+    # are read from its server like any camera's
+    assert s.kw["exposure_time"] == p.exposure_time and s.kw["gain"] is None
+    assert "read_saved_defaults" not in s.kw
 
 
 def test_the_call_overrides_the_entry(expt):
