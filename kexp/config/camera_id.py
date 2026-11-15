@@ -120,12 +120,11 @@ class camera_frame(camera_frame_waxx):
         #  - serial_number is the string the camera's SDK reports
         #    (camera id pco_sc2:7010807XXXX); its numeric serial field reads
         #    924. Not checked against the label.
-        #  - sensor_roi: the centre 640 columns, full height, bin 1 -> frames
-        #    640 wide x 2160 high. 640 is the widest that arrives uncorrupted
-        #    over this Camera Link (the server refuses wider; hardware check
-        #    2026-11-14), and in global shutter mode the camera does not bin
-        #    (it was full sensor binned 4x4 while the camera was in global
-        #    reset mode, until 2026-11-15).
+        #  - sensor_roi: the full sensor, bin 1 -> frames 2560 x 2160. In
+        #    global reset mode only frames up to 640 px wide arrived
+        #    uncorrupted over this Camera Link (2026-11-14); in global shutter
+        #    mode full-width frames are clean (hardware check with the cap
+        #    lifted, 2026-11-15), and the camera does not bin.
         #  - no trigger line wired yet: free-run streams only (triggered mode
         #    needs trigger_ttl; it was tested with software triggers only,
         #    and exposure_delay is not measured).
@@ -142,7 +141,8 @@ class camera_frame(camera_frame_waxx):
         self.pco_edge = PCOParams(serial_number='7010807XXXX',
                                   exposure_time=1.e-3,
                                   # sensor_roi=(0, 2560, 0, 2160, 4, 4), # global reset mode, 2026-11-15
-                                  sensor_roi=(960, 1600, 0, 2160, 1, 1), # global shutter mode, 2026-11-15
+                                  # sensor_roi=(960, 1600, 0, 2160, 1, 1), # global shutter mode, 2026-11-15
+                                  sensor_roi=(0, 2560, 0, 2160, 1, 1), # full frame, clean in global shutter, 2026-11-15
                                   readout_rate='slow',
                                   magnification=1.,
                                   trigger_ttl="")

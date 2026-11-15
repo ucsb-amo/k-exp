@@ -37,8 +37,9 @@ def test_the_camera_table_entry():
     p = cameras.pco_edge
     assert isinstance(p, PCOParams) and p.key == "pco_edge" and p.camera_type == "pco"
     assert p.pixel_format == "Mono16"
-    # inside the Camera Link width cap (beacon CAMERA_LINK_MAX_OUTPUT_WIDTH = 640)
-    assert p.resolution[1] <= 640
+    # the full sensor, unbinned: the camera is in global shutter mode, where
+    # full-width frames are clean over Camera Link and there is no binning
+    assert p.sensor_roi == (0, 2560, 0, 2160, 1, 1) and p.resolution == (2160, 2560)
     assert p.trigger_ttl == ""                      # no trigger line wired (2026-11-15)
 
 
