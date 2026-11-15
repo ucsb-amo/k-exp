@@ -235,60 +235,26 @@ def liveod_camera_id(params) -> str:
 
 
 class ServedCore(CameraServerCore):
-    """CameraServerCore that says when it lent a camera (RELINQUISH) or got
-    it back (RETURN), and waits ``relinquish_timeout_s`` for a lent camera's
-    verified close (the Andor's SDK shutdown is slower than a Basler's).
+    """CameraServerCore that waits ``relinquish_timeout_s`` for a lent
+    camera's verified close (the Andor's SDK shutdown is slower than a
+    Basler's).
 
+    The hooks are the core's own (beacon ``CameraServerCore.relinquish``):
     ``on_lent(camera_id, holder, result)`` after a RELINQUISH that reserved a
     camera for someone new (not a renewal), once the close is done or has
     failed; ``on_returned(camera_id, holder_id)`` after a RETURN that ended a
-    reservation. ``before_relinquish(camera_ids, holder)`` right before a
+    reservation; ``before_relinquish(camera_ids, holder)`` right before a
     RELINQUISH is acted on (the source ends a triggered hold there, so the
-    worker is not locked when the camera is closed). All run on the core's
+    worker is not locked when the camera is closed).  All run on the core's
     request threads."""
 
     def __init__(self, server_id, *, relinquish_timeout_s: float = RELINQUISH_CLOSE_S, **kw):
+        if not getattr(CameraServerCore, "LENDING_HOOKS", False):
+            # without them a lent camera would be closed under a triggered hold
+            raise RuntimeError("this beacon's camera server core has no lending hooks "
+                               "(before_relinquish / on_lent / on_returned); update beacon")
         super().__init__(server_id, **kw)
         self.relinquish_timeout_s = float(relinquish_timeout_s)
-        self.on_lent: Optional[Callable] = None
-        self.on_returned: Optional[Callable] = None
-        self.before_relinquish: Optional[Callable] = None
-
-    def relinquish(self, camera_ids, holder, ttl_s: float = DEFAULT_TTL_S,
-                   timeout_s: Optional[float] = None) -> dict:
-        hook = self.before_relinquish
-        if hook is not None:
-            try:
-                hook(list(camera_ids), holder.to_wire())
-            except Exception:
-                logger.exception("[spot finder] before_relinquish failed")
-        results = super().relinquish(camera_ids, holder, ttl_s,
-                                     self.relinquish_timeout_s if timeout_s is None else timeout_s)
-        hook = self.on_lent
-        if hook is not None:
-            for cid, r in results.items():
-                # a renewal lends nothing new, a refusal lent nothing; a failed
-                # close ("reserved": True) did lend it -- it is reserved now
-                if r.get("renewed") or not (r.get("ok") or r.get("reserved")):
-                    continue
-                try:
-                    hook(cid, holder.to_wire(), dict(r))
-                except Exception:
-                    logger.exception("[spot finder] on_lent failed")
-        return results
-
-    def return_cameras(self, camera_ids, holder_id: str) -> dict:
-        results = super().return_cameras(camera_ids, holder_id)
-        hook = self.on_returned
-        if hook is not None:
-            for cid, r in results.items():
-                if not r.get("ok") or r.get("note") == "was not reserved":
-                    continue
-                try:
-                    hook(cid, str(holder_id))
-                except Exception:
-                    logger.exception("[spot finder] on_returned failed")
-        return results
 
 
 class ServedAndorSource:
