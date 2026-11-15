@@ -16,8 +16,24 @@ EXPECTED_CH = {"andor": 7, "apd": 7, "xy_basler": 5, "x_basler": 51,
                                           # on the 2D-MOT basler's line 20, is parked)
 
 
+# Entries with no trigger line wired (free-run camera streams only): they name
+# no TTL, and asking for one says so.
+UNWIRED = {"pco_edge"}                    # pco.edge 5.5, 2026-11-15
+
+
 def _entries():
-    return {k: v for k, v in vars(cameras).items() if isinstance(v, CameraParams)}
+    return {k: v for k, v in vars(cameras).items()
+            if isinstance(v, CameraParams) and k not in UNWIRED}
+
+
+def test_an_unwired_camera_names_no_ttl_and_says_so_when_asked():
+    assert set(EXPECTED_CH) | UNWIRED == {k for k, v in vars(cameras).items()
+                                          if isinstance(v, CameraParams)}
+    for key in UNWIRED:
+        cam = getattr(cameras, key)
+        assert cam.trigger_ttl == "" and cam.trigger_ttl_ch == -1
+        with pytest.raises(ValueError, match="No camera TTL mapping"):
+            camera_trigger_ttl(ttl_frame(), cam)
 
 
 def test_every_camera_resolves_onto_the_experiments_frame():
