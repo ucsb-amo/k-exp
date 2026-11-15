@@ -120,25 +120,29 @@ class camera_frame(camera_frame_waxx):
         #  - serial_number is the string the camera's SDK reports
         #    (camera id pco_sc2:7010807XXXX); its numeric serial field reads
         #    924. Not checked against the label.
-        #  - sensor_roi: full sensor binned 4x4 -> 640 x 540 frames, the
-        #    widest that arrive uncorrupted over this Camera Link (the server
-        #    refuses wider; hardware check 2026-11-14).
+        #  - sensor_roi: the centre 640 columns, full height, bin 1 -> frames
+        #    640 wide x 2160 high. 640 is the widest that arrives uncorrupted
+        #    over this Camera Link (the server refuses wider; hardware check
+        #    2026-11-14), and in global shutter mode the camera does not bin
+        #    (it was full sensor binned 4x4 while the camera was in global
+        #    reset mode, until 2026-11-15).
         #  - no trigger line wired yet: free-run streams only (triggered mode
         #    needs trigger_ttl; it was tested with software triggers only,
         #    and exposure_delay is not measured).
         #  - magnification not measured (1.0 is a placeholder); pixel size
-        #    6.5 um is the sensor's, 26 um per frame pixel at 4x4.
-        #  - the camera is in GLOBAL RESET shutter mode (read from it
-        #    2026-11-15): rows start together but are read out over ~30 ms and
-        #    collect light until read, so with steady light the image hardly
-        #    follows exposure_time (27.5 us vs 10 ms: mean 49000 vs 60000
-        #    counts, same scene). Pulse the light inside the exposure, or
-        #    switch the camera to rolling shutter (beacon
-        #    scripts/pco_settings_probe.py --set-shutter rolling; it reboots).
+        #    6.5 um is the sensor's (one frame pixel at bin 1).
+        #  - the camera is in GLOBAL SHUTTER mode (set 2026-11-15; it was in
+        #    global reset, where rows collect light until read out and the
+        #    image hardly follows exposure_time). In global shutter the image
+        #    follows the exposure (same scene: mean 457 / 709 / 3535 / 10121
+        #    counts at 27.5 us / 1 ms / 10 ms / 30 ms), there is no binning,
+        #    and a full-height frame takes ~60 ms. The mode is stored in the
+        #    camera (beacon scripts/pco_settings_probe.py --set-shutter).
         #  - exposure goes in 27.5 us steps (one sensor line), at least one.
         self.pco_edge = PCOParams(serial_number='7010807XXXX',
                                   exposure_time=1.e-3,
-                                  sensor_roi=(0, 2560, 0, 2160, 4, 4),
+                                  # sensor_roi=(0, 2560, 0, 2160, 4, 4), # global reset mode, 2026-11-15
+                                  sensor_roi=(960, 1600, 0, 2160, 1, 1), # global shutter mode, 2026-11-15
                                   readout_rate='slow',
                                   magnification=1.,
                                   trigger_ttl="")
