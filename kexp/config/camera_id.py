@@ -128,6 +128,14 @@ class camera_frame(camera_frame_waxx):
         #    and exposure_delay is not measured).
         #  - magnification not measured (1.0 is a placeholder); pixel size
         #    6.5 um is the sensor's, 26 um per frame pixel at 4x4.
+        #  - the camera is in GLOBAL RESET shutter mode (read from it
+        #    2026-11-15): rows start together but are read out over ~30 ms and
+        #    collect light until read, so with steady light the image hardly
+        #    follows exposure_time (27.5 us vs 10 ms: mean 49000 vs 60000
+        #    counts, same scene). Pulse the light inside the exposure, or
+        #    switch the camera to rolling shutter (beacon
+        #    scripts/pco_settings_probe.py --set-shutter rolling; it reboots).
+        #  - exposure goes in 27.5 us steps (one sensor line), at least one.
         self.pco_edge = PCOParams(serial_number='7010807XXXX',
                                   exposure_time=1.e-3,
                                   sensor_roi=(0, 2560, 0, 2160, 4, 4),

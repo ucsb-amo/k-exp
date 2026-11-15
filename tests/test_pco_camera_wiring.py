@@ -47,7 +47,8 @@ def test_free_run_stream_takes_everything_from_the_entry(expt):
     p = cameras.pco_edge
     assert s.serial == p.serial_no
     assert s.kw["pixel_format"] == "Mono16"
-    assert s.kw["settings"] == {"sensor_roi": p.sensor_roi, "readout_rate": p.readout_rate}
+    assert s.kw["settings"] == {"sensor_roi": p.sensor_roi, "readout_rate": p.readout_rate,
+                                "trigger_edge": "rising"}
     # no gain is asked of a camera without one; saved defaults (the viewer's ROI)
     # are read from its server like any camera's
     assert s.kw["exposure_time"] == p.exposure_time and s.kw["gain"] is None
@@ -60,7 +61,7 @@ def test_the_call_overrides_the_entry(expt):
                              roi=[0, 0, 100, 100])
     assert s.kw["exposure_time"] == 5e-3 and s.kw["roi"] == [0, 0, 100, 100]
     assert s.kw["settings"] == {"sensor_roi": (960, 1600, 0, 2160, 1, 1),
-                                "readout_rate": "slow"}
+                                "readout_rate": "slow", "trigger_edge": "rising"}
 
 
 def test_triggered_needs_a_trigger_line(expt):
