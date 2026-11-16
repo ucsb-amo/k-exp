@@ -20,11 +20,25 @@ caveat: after a Ctrl-C, cmd's batch prompt can swallow the exit code. When `kq.e
 `kq.bat` are both on PATH, the folder that comes first on PATH wins; within one folder
 `.EXE` comes before `.BAT`. Both do the same thing.
 
-## The file that runs is kong's
+## The PC that submits a job runs it (since 2026-11-15)
 
-The queue runs the file at that path on kong, so it must match yours. kq sends a hash of
-your copy, and the queue refuses the job if kong's copy differs ("your copy differs from
-kong's"). From another PC, a file kq cannot read is refused too.
+The queue on kong decides the order and when a job may start; it never runs a job itself.
+`kq run` / `submit` / `insert` (and `ar`) read your file on your PC, submit it, and start a
+hidden `kq launch` on your PC -- the job's *launcher*. When the job's turn comes the
+launcher runs `artiq_run` from YOUR copy, sends its output to kong (so `kq tail` and the
+panels work from anywhere), and kills it only on the queue's order. Edit and run from any
+lab PC; nothing is copied to kong. The rest of the code (`expt_params.py`, the
+calibrations, waxx) is your PC's checkout too, and a calibration write-back edits your
+PC's params file.
+
+- "Run again" / "run again next" (the Run Queue panel, liveOD's button) runs the job again
+  on the PC that ran it: that PC's Run Queue panel (or kong, for kong's jobs) starts its
+  launcher. Until one attaches the job waits ("waiting for <PC>'s launcher").
+- A launcher that goes silent (the PC sleeps, its network drops) holds the queue: nothing
+  else starts, because a second run would take the core device from the first, and the
+  first run's cleanup would never happen. Once you have checked that nothing of the job
+  runs on that PC any more: `kq kill <id> --gone` (a person only).
+- Closing the terminal leaves the run and its launcher going (as before).
 
 ## What changes for `%kpy% & ar ...` callers when `ar` is flipped
 
@@ -36,12 +50,9 @@ call is `kq run` and goes through the queue:
   has `WAXX_OWNER=agent`. A person's job is placed ahead of every queued agent job; an
   agent's job goes to the end. The queue then runs in that order (`kq list` shows it), and
   `kq move` changes it. `--priority` is only a placement hint within the owner's block.
-- **Paths are checked on kong.** The file must exist on kong and lie under the server's roots
-  as seen on kong: `%code%` and `C:\lab\skynet_log` by default (`WAXX_RUN_QUEUE_ROOTS`
-  overrides). A builder that writes its file to `%TEMP%` is refused with exit 6. A builder on
-  another PC passes a path on its own disk. It is refused with exit 6 unless the same path
-  exists on kong, holds the same bytes, and the builder's copy can be read. A relative path
-  is made absolute on the caller's PC first.
+- **Paths are the caller's PC's.** The file must exist on the PC that calls `ar` / `kq` --
+  that PC runs it (see above). A relative path is made absolute there first. A file that
+  is not there, or not a `.py` file, is refused before anything is sent (exit 6).
 - **Refused arguments.** An argument or path holding any of `& | < > ^ % " !` is refused
   (`x=50%` too, which `artiq_run` accepts), and so is one ending in a backslash.
 - **One job at a time, behind the gate.** The call returns only when the job has waited its
@@ -68,10 +79,11 @@ call is `kq run` and goes through the queue:
   - Give each builder a private file under `%code%` (or `C:\lab\skynet_log`) and never
     rewrite it while its job is queued or running.
 - **The run belongs to the queue.** Killing the caller (a `subprocess` kill, a notebook
-  interrupt, a closed terminal) no longer ends the run. Without a terminal, Ctrl-C leaves the
-  run going. To stop it, use `kq cancel <id>`, which sends liveOD's Abort.
-- **Working folder.** The job runs in the file's folder on kong (or `--cwd`), not in the
-  caller's working folder.
+  interrupt, a closed terminal) no longer ends the run: it runs under the job's launcher,
+  started outside the caller's process tree. Without a terminal, Ctrl-C leaves the run
+  going. To stop it, use `kq cancel <id>`, which sends liveOD's Abort.
+- **Working folder.** The job runs in the file's folder on the caller's PC (or `--cwd`),
+  not in the caller's working folder.
 - **Launcher tag.** The experiment sees `WAXX_LAUNCHER=kq` and `WAXX_QUEUE_JOB=<id>:<token>`,
   and leaves restarting the monitor to the server.
 - **run_lock.py** (the agents' launcher, `.claude/skills/run-experiment/scripts/run_lock.py`)
