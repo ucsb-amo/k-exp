@@ -9,7 +9,7 @@ gives it kexp's tool windows and forwards to it; `python -m waxx.util.live_od.gu
 same thing. `RemoteViewerWindow` and the rest of that module's names are
 importable from here, as they always were.
 """
-import runpy as _runpy
+import sys as _sys
 
 import waxx.util.live_od.gui.remote_viewer_window as _impl
 
@@ -20,4 +20,6 @@ if __name__ == '__main__':
     from waxx.util.live_od.config import LiveODConfig, set_config
     from kexp.config.live_od import tool_windows
     set_config(LiveODConfig(tool_windows=tool_windows()))
-    _runpy.run_module("waxx.util.live_od.gui.remote_viewer_window", run_name="__main__")
+    # call the module's main() rather than re-running it as __main__ (runpy would
+    # execute a second copy of an already-imported module: RuntimeWarning)
+    _sys.exit(_impl.main())

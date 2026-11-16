@@ -163,8 +163,8 @@ SERVER_SPECS: list[ServerSpec] = [
         icon="📷",
         # The beacon PCO server (pco.edge on Camera Link; camera_server:<host>:pco).
         # Headless and panel-less: its cameras show in the Camera Viewer like
-        # any other camera server's.  Not in any host's autostart: start it
-        # from the Servers menu on the PC with the frame grabber.
+        # any other camera server's.  Autostarts on sheck (192.168.1.114),
+        # the PC with the frame grabber; elsewhere start it from the Servers menu.
         body_factory=None,
         server_cmd=[_PY, "-m", "beacon.pco.server_headless"],
         cwd=_REPO,

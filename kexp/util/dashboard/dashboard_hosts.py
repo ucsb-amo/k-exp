@@ -41,5 +41,9 @@ HOST_AUTOSTART_SERVERS: dict[str, list[str]] = {
         "pdxc",
         "raman_fp_lock",
         "raman_intensity",
-    ]
+    ],
+    # sheck (Jared's office PC) - has the PCO frame grabber.
+    "192.168.1.114": [
+        "pco",
+    ],
 }
