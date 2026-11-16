@@ -34,23 +34,28 @@ class hf_bec(EnvExperiment, Base):
         # self.p.v_pd_hf_tweezer_1064_rampdown2_end = 0.9
         # self.p.v_hf_tweezer_paint_amp_max = 4.9
 
-        self.camera_params.amp_imaging = 0.25
-        self.camera_params.gain = 300.
+        # self.p.amp_imaging = self.camera_params.amp_imaging
+        # self.p.amp_imaging = 1.5
+        # self.camera_params.gain = 300.
 
         # self.p.t_tof = 4.e-3
         self.p.t_tof = 5.e-6
 
-        self.p.t_imaging_pulse = 100.e-6
-        self.diag.img_apd_plane.exposure_time = self.p.t_imaging_pulse
+        # self.p.t_imaging_pulse = 200.e-6
+        # self.diag.img_apd_plane.exposure_time = self.p.t_imaging_pulse
 
         # self.data.apd = self.data.add_data_container(1)
         # self.xvar('t_tweezer_hold',np.linspace(0.,0.8,6))
-        self.p.N_repeats = 1000
+        self.p.N_repeats = 100
         # self.xvar('beans',np.linspace(1,10,10))
 
         # self.p.amp_tweezer_list = [0.5]
 
         self.scanning()
+
+        # self.adjust('phase_slm_mask',0.,3.*np.pi,0.1*np.pi)
+        # self.adjust('amp_imaging',0.,3.,0.1)
+        # self.adjust('t_imaging_pulse',10.e-6,500.e-6,10.e-6)
 
         # Adjust.__init__(self)
         self.finish_prepare(shuffle=True)
@@ -84,6 +89,9 @@ class hf_bec(EnvExperiment, Base):
     @kernel
     def scan_kernel(self):
         self.set_imaging_detuning(frequency_detuned=self.p.frequency_detuned_hf_f1m1)
+        # self.slm.write_phase_mask_kernel(phase=self.p.phase_slm_mask)
+        # self.set_imaging_detuning(frequency_detuned=self.p.frequency_detuned_hf_midpoint)
+        # self.imaging.set_power(self.p.amp_imaging)
 
         self.prepare_hf_tweezers(do_tweezer_evap_2=True)
         # self.prepare_hf_tweezers()
@@ -97,6 +105,7 @@ class hf_bec(EnvExperiment, Base):
         self.ttl.pd_scope_trig3.pulse(1.e-6)
 
         # self.diag.img_apd_plane.trigger()
+        self.ttl.apd_plane_camera.pulse(1.e-6)
         self.abs_image()
 
     @kernel

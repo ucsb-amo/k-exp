@@ -108,11 +108,11 @@ class camera_frame(camera_frame_waxx):
         #                                            pixel_size_m=2.5e-6)
 
         # acA640-750um: 8/10-bit sensor, no Mono12 -> Mono10p (uint16, 0..1023), 2026-11-14
-        self.apd_plane_camera = BaslerParams(serial_number='25618760',
-                                             trigger_source='Line4',
-                                             trigger_ttl=_ttl.apd_plane_camera,
-                                             pixel_size_m=4.8e-6,
-                                             pixel_format='Mono10p')
+        # self.apd_plane_camera = BaslerParams(serial_number='25618760',
+        #                                      trigger_source='Line4',
+        #                                      trigger_ttl=_ttl.apd_plane_camera,
+        #                                      pixel_size_m=4.8e-6,
+        #                                      pixel_format='Mono10p')
 
         # pco.edge 5.5 (global reset) on Camera Link, served by the beacon PCO
         # server (beacon.pco). An auxiliary camera only: camera_stream / a
@@ -247,10 +247,10 @@ class diagnostic_frame(diagnostic_frame_waxx):
         #                                       exposure_time=2.e-6, gain=0., roi=[1799, 909, 2787, 1804],
         #                                       label='tweezer pickoff', show='image')
 
-        self.img_apd_plane = self.image(cameras.apd_plane_camera,
-                                        exposure_time=100.e-6, gain=11.99,
-                                        # roi=[0, 0, 640, 480],
-                                        label='apd plane')
+        # self.img_apd_plane = self.image(cameras.apd_plane_camera,
+        #                                 exposure_time=5.e-3, gain=11.99,
+        #                                 # roi=[0, 0, 640, 480],
+        #                                 label='apd plane')
 
         self.cleanup()
 

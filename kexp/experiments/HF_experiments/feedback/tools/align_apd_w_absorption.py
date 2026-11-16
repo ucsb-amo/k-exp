@@ -18,17 +18,17 @@ class hf_monitored_rabi(EnvExperiment, Base):
         
         self.p.t_imaging_pulse = 20.e-6
         
-        self.xvar('make_atoms',[0,1]*1000)
+        # self.xvar('make_atoms',[0,1]*1000)
         
         # self.xvar('amp_imaging',np.linspace(0.1,1.,10))
-        self.p.amp_imaging = 0.2
+        self.p.amp_imaging = 0.25
 
         # self.xvar('t_tweezer_hold',np.linspace(1.e-3,1.1e-3,10))
         self.p.t_tweezer_hold = 20.e-3
         self.p.t_tof = 10.e-6
         self.p.t_mot_load = 1.0
         
-        self.p.N_repeats = 1
+        self.p.N_repeats = 1000
 
         self.p.phase_slm_mask = 0.
 
