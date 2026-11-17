@@ -178,7 +178,8 @@ class Devices():
                                core=self.core)
         
         # powers set by the Raman intensity PID setpoints: dds0 (150+) is PID loop 2
-        # (DAC raman_150), dds1 (80+) is loop 1 (DAC raman_80)
+        # (DAC raman_150_pid), dds1 (80+) is loop 1 (DAC raman_80_pid); fraction_power
+        # maps to dark + p * (max - dark) with p.v_pd_dds0/1_dark, p.v_pd_dds0/1_balanced_max
         self.raman = RamanBeamsPID(dds0=self.dds.raman_150_plus,
                                     dds1=self.dds.raman_80_plus,
                                     dds_sw=self.dds.raman_switch,
