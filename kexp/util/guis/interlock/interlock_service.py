@@ -37,6 +37,11 @@ Safety invariants (must always hold; see plan §"Safety invariants")
    A reconnect never enables the magnets or resets the interlock.
 5. Relay unreachable when trip needed → retry forever, ``CRITICAL`` every 10
    attempts.  PLC hardware interlock is backstop.
+5a. Relay not answering (at startup or later) → the server keeps running and
+   reports ``state="relay_down"`` (address + since when) in the snapshot;
+   Enable is refused until it answers.  A background thread re-checks it;
+   when it answers the magnet relay is left as it is (as at a normal
+   startup), except a startup kill owed for a missing COM port is done then.
 6. Reset has no effect if PLC still reports trip.
 7. Email never blocks the trip (queued to background executor).
 8. No silent failure path: every trip-suppressing branch logs ``WARNING``+.
@@ -86,6 +91,16 @@ _SNAPSHOT_RELAY_TIMEOUT_S = 0.5
 # intermittently took >0.5 s to accept, and each miss logged an ERROR.
 # Service-initiated enable/kill force a fresh read on the next snapshot.
 _SNAPSHOT_RELAY_MIN_INTERVAL_S = 5.0
+# Startup relay read: a few short attempts, so the server is up and answering
+# the panel within seconds when the relay does not answer (a refused connect
+# takes ~2 s on Windows unless the timeout cuts it short).
+_STARTUP_RELAY_RETRIES = 2
+_STARTUP_RELAY_TIMEOUT_S = 1.0
+# The relay is reported down after this many failed contacts in a row (one
+# slow accept is not an outage); one success clears it.
+_RELAY_DOWN_AFTER_FAILURES = 2
+# While it is reported down, a background thread re-checks it this often.
+_RELAY_RECHECK_INTERVAL_S = 5.0
 
 # Daily history files.  temperature_plc_k is the PLC's reading as sent;
 # temperature_c is the value shown on the panel (plc_k - 273.0, the
@@ -122,6 +137,7 @@ class InterlockConfig:
     email_recipient: Optional[str] = None
     email_credentials_filepath: Optional[str] = None
     reset_debounce_s: float = 5.0
+    relay_label: str = "ethernet relay"   # shown in the relay-down message
 
 
 @dataclass
@@ -190,7 +206,15 @@ class InterlockService:
         # Earliest time get_snapshot() may probe the relay again (successful
         # or not); 0 = probe on the next snapshot.
         self._next_snapshot_probe_monotonic: float = 0.0
-        self._snapshot_probe_failing = False
+        # Relay health, from the outcome of every relay call (startup read,
+        # snapshot probe, kills, enables, re-checks); guarded by _state_lock.
+        self._relay_failures = 0
+        self._relay_error: Optional[str] = None
+        self._relay_down_since: Optional[float] = None   # wall time; None = answering
+        # COM port missing at startup while the relay was down: the startup
+        # magnet kill is done when the relay first answers.
+        self._startup_kill_owed = False
+        self._relay_thread: Optional[threading.Thread] = None
         # At most one persistent-kill thread at a time (PLC repeats
         # "I TRIPPED" every frame while tripped).
         self._kill_thread: Optional[threading.Thread] = None
@@ -284,20 +308,6 @@ class InterlockService:
 
     # --- startup validation (IT15) -----------------------------------
 
-    def validate_config(self) -> Optional[str]:
-        """Return None if config valid; else a short reason string.
-
-        Causes the caller to enter safe mode if the result is non-None.  A COM
-        port that does not enumerate is not a safe-mode reason any more
-        (see :meth:`com_port_missing_reason` and :meth:`start`).
-        """
-        try:
-            with self._relay_lock:
-                _ = self._relay.read_magnet_status()
-        except Exception as exc:
-            return f"{_sm.REASON_RELAY_UNREACHABLE_AT_BOOT}: {exc!r}"
-        return None
-
     def com_port_missing_reason(self) -> Optional[str]:
         """None if the configured COM port enumerates; else a short reason
         (also when the port list cannot be read: the stricter answer)."""
@@ -310,7 +320,8 @@ class InterlockService:
         return None
 
     def enter_safe_mode(self, reason: str) -> None:
-        """IT15: refuse to operate; try once to drop magnets."""
+        """IT15: refuse to operate; try once to drop magnets.  Nothing calls
+        this at present (a relay that does not answer is ``relay_down``)."""
         _LOG.critical("Entering SAFE MODE: %s", reason)
         with self._state_lock:
             self._state = _sm.STATE_SAFE_MODE
@@ -333,43 +344,111 @@ class InterlockService:
         try:
             with self._relay_lock:
                 self._relay.kill_magnets()
+            self._note_relay_ok()
             _LOG.critical("Startup magnet kill (no COM port): success")
-        except Exception:
+        except Exception as exc:
+            self._note_relay_failed(exc)
             _LOG.exception("Startup magnet kill (no COM port): FAILED — hardware interlock "
                            "is sole defense")
         self._next_snapshot_probe_monotonic = 0.0
+
+    # --- relay health ---------------------------------------------------
+
+    def _note_relay_ok(self) -> None:
+        with self._state_lock:
+            was_down = self._relay_down_since is not None
+            self._relay_failures = 0
+            self._relay_error = None
+            self._relay_down_since = None
+        if was_down:
+            _LOG.warning("Relay %s is answering again", self._cfg.relay_label)
+
+    def _note_relay_failed(self, exc: BaseException, *, down_now: bool = False) -> None:
+        """Count a failed relay contact; report the relay down after
+        ``_RELAY_DOWN_AFTER_FAILURES`` in a row (or at once with *down_now*)."""
+        with self._state_lock:
+            self._relay_failures += 1
+            self._relay_error = repr(exc)
+            newly_down = (self._relay_down_since is None
+                          and (down_now or self._relay_failures >= _RELAY_DOWN_AFTER_FAILURES))
+            if newly_down:
+                self._relay_down_since = time.time()
+        if newly_down:
+            _LOG.critical(
+                "RELAY NOT ANSWERING (%s): %r.  Magnet relay state unknown; the software "
+                "cannot switch the magnets until it answers (the PLC hardware interlock "
+                "still can).  Enable is refused meanwhile; re-checking every %.0f s.",
+                self._cfg.relay_label, exc, _RELAY_RECHECK_INTERVAL_S)
+        else:
+            _LOG.debug("relay contact failed: %r", exc)
+
+    def _relay_recheck_loop(self) -> None:
+        """While the relay is reported down (or the startup kill is owed),
+        try it once every ``_RELAY_RECHECK_INTERVAL_S`` with one short
+        attempt.  When it answers: the owed startup kill if any, else the
+        magnet relay is left as it is (as at a normal startup, IT10)."""
+        while not self._stop_event.wait(_RELAY_RECHECK_INTERVAL_S):
+            with self._state_lock:
+                down = self._relay_down_since is not None
+            if not (down or self._startup_kill_owed):
+                continue
+            if not self._relay_lock.acquire(timeout=1.0):
+                continue   # a kill/enable holds it; its outcome is noted there
+            try:
+                enabled = bool(self._relay.read_magnet_status(
+                    retries=0, timeout=_STARTUP_RELAY_TIMEOUT_S))
+                if self._startup_kill_owed:
+                    self._relay.kill_magnets()
+                    enabled = bool(self._relay.read_magnet_status(
+                        retries=0, timeout=_STARTUP_RELAY_TIMEOUT_S))
+                    if not enabled:
+                        self._startup_kill_owed = False
+                        _LOG.critical("Startup magnet kill (no COM port at startup), "
+                                      "done once the relay answered: success")
+            except Exception as exc:
+                self._note_relay_failed(exc)
+            else:
+                self._note_relay_ok()
+                self._note_magnet_status(enabled)
+                self._next_snapshot_probe_monotonic = 0.0
+            finally:
+                self._relay_lock.release()
 
     # --- start / stop -----------------------------------------------
 
     def start(self) -> bool:
         """Begin polling.  Returns True on success.  Never waits for the COM
-        port: the link opens it in the background."""
+        port (the link opens it in the background) and waits only a few
+        seconds for the relay (a relay that does not answer is reported as
+        ``relay_down``, and the service runs anyway)."""
         if not self.acquire_singleton_mutex():
             return False
-        # IT15: validate config before doing anything else.
         com_missing = self.com_port_missing_reason()
         if com_missing is not None:
             self._com_config_valid = False
-        bad = self.validate_config()
-        if bad is not None:
-            if com_missing is not None:
-                bad = f"{bad}; {com_missing}"
-            self.enter_safe_mode(bad)
-            # Even in safe mode, run the watchdog + heartbeat so observers see life.
-            self._start_watchdog_and_heartbeat()
-            return True  # service is "running" but in safe mode
+        try:
+            with self._relay_lock:
+                relay_state = self._relay.read_magnet_status(
+                    retries=_STARTUP_RELAY_RETRIES, timeout=_STARTUP_RELAY_TIMEOUT_S)
+            relay_exc = None
+        except Exception as exc:
+            relay_exc = exc
 
-        if com_missing is not None:
+        if relay_exc is not None:
+            self._note_relay_failed(relay_exc, down_now=True)
+            if com_missing is not None:
+                self._startup_kill_owed = True
+                _LOG.critical("COM port missing at startup (%s) and the relay is not "
+                              "answering: the startup magnet kill is done when the relay "
+                              "answers", com_missing)
+        elif com_missing is not None:
+            self._note_relay_ok()
             self._kill_magnets_without_com(com_missing)
         else:
             # Preserve current magnet state (IT10) — do NOT auto-enable.
-            try:
-                with self._relay_lock:
-                    state = self._relay.read_magnet_status()
-                self._note_magnet_status(state)
-                _LOG.info("Startup: current relay magnet-enabled state preserved as %s", state)
-            except Exception:
-                _LOG.exception("Could not read initial relay state; continuing")
+            self._note_relay_ok()
+            self._note_magnet_status(relay_state)
+            _LOG.info("Startup: current relay magnet-enabled state preserved as %s", relay_state)
 
         # Treat the warmup window (IT11): require fresh PLC data within
         # warmup_seconds, else trip.  Mark warmup active.
@@ -387,6 +466,10 @@ class InterlockService:
         )
         self._poll_thread.start()
         self._link.start()
+        self._relay_thread = threading.Thread(
+            target=self._relay_recheck_loop, name="ilock-relay", daemon=True
+        )
+        self._relay_thread.start()
         self._start_watchdog_and_heartbeat()
         if self._history is not None:
             self._history.start(self._cfg.history_flush_interval_s)
@@ -410,6 +493,8 @@ class InterlockService:
         self._stop_event.set()
         if self._poll_thread is not None:
             self._poll_thread.join(timeout=3.0)
+        if self._relay_thread is not None:
+            self._relay_thread.join(timeout=3.0)
         if self._watchdog_thread is not None:
             self._watchdog_thread.join(timeout=2.0)
         if self._heartbeat_thread is not None:
@@ -457,26 +542,40 @@ class InterlockService:
             try:
                 self._note_magnet_status(self._relay.read_magnet_status(
                     retries=_SNAPSHOT_RELAY_RETRIES, timeout=_SNAPSHOT_RELAY_TIMEOUT_S))
-                if self._snapshot_probe_failing:
-                    self._snapshot_probe_failing = False
-                    _LOG.info("Relay snapshot read recovered")
+                self._note_relay_ok()
             except Exception as exc:
-                # Log the transition once, not every probe.
-                if not self._snapshot_probe_failing:
-                    self._snapshot_probe_failing = True
-                    _LOG.warning("Relay snapshot read failing (reporting cached "
-                                 "magnet state with its age): %r", exc)
-                else:
-                    _LOG.debug("read_magnet_status in snapshot failed: %r", exc)
+                # Counted; the transition to "down" is logged once.  Cached
+                # magnet state is reported with its age meanwhile.
+                self._note_relay_failed(exc)
             finally:
                 self._relay_lock.release()
         magnets_enabled = self._magnets_enabled_cached
         read_at = self._magnets_read_monotonic
         magnets_age = round(time.monotonic() - read_at, 2) if read_at is not None else None
+        with self._state_lock:
+            relay_down_since = self._relay_down_since
+            relay_error = self._relay_error
+        # The relay note takes the place of ok / warmup / unknown; a trip (or
+        # safe mode) keeps its state and gets the note appended.
+        shown_state, shown_message = state, message
+        if relay_down_since is not None:
+            note = (f"relay {self._cfg.relay_label} not answering since "
+                    f"{time.strftime('%H:%M:%S', time.localtime(relay_down_since))}; "
+                    "the software cannot switch the magnets")
+            if state in (_sm.STATE_OK, _sm.STATE_WARMUP, _sm.STATE_UNKNOWN):
+                shown_state = _sm.STATE_RELAY_DOWN
+                shown_message = note if state == _sm.STATE_OK else f"{note}; {message}"
+            else:
+                shown_message = f"{message}; {note}"
         return {
             "com": com,
-            "state": state,                    # ok | tripped | warmup | safe_mode | unknown
-            "message": message,
+            # ok | tripped | warmup | relay_down | safe_mode | unknown
+            "state": shown_state,
+            "message": shown_message,
+            "interlock_state": state,          # state without the relay note
+            "relay_ok": relay_down_since is None,
+            "relay_down_since": relay_down_since,   # epoch s, None while answering
+            "relay_error": relay_error,        # last failed contact (cleared on success)
             "safe_mode_reason": safe_reason,
             "last_data_age_s": round(last_data_age, 2),
             "stale_threshold_s": self._cfg.stale_threshold_s,
@@ -545,6 +644,9 @@ class InterlockService:
                 return {"status": "refused", "reason": "safe_mode"}
             if self._state == _sm.STATE_TRIPPED:
                 return {"status": "refused", "reason": "tripped"}
+            if self._relay_down_since is not None:
+                return {"status": "refused", "reason": "relay_not_answering",
+                        "message": f"relay {self._cfg.relay_label} is not answering"}
             if self._warmup_active:
                 return {"status": "refused", "reason": "no_plc_data",
                         "message": "no good PLC frame received since startup"}
@@ -554,10 +656,12 @@ class InterlockService:
         try:
             with self._relay_lock:
                 self._relay.enable_magnets()
+            self._note_relay_ok()
             self._next_snapshot_probe_monotonic = 0.0
             _LOG.info("enable_magnets executed (requested by %s)", client_addr)
             return {"status": "ok"}
         except Exception as exc:
+            self._note_relay_failed(exc)
             _LOG.exception("enable_magnets failed")
             return {"status": "error", "message": repr(exc)}
 
@@ -566,10 +670,12 @@ class InterlockService:
         try:
             with self._relay_lock:
                 self._relay.kill_magnets()
+            self._note_relay_ok()
             self._next_snapshot_probe_monotonic = 0.0
             _LOG.warning("disable_magnets executed by %s", client_addr)
             return {"status": "ok"}
         except Exception as exc:
+            self._note_relay_failed(exc)
             _LOG.exception("disable_magnets failed")
             return {"status": "error", "message": repr(exc)}
 
@@ -621,10 +727,12 @@ class InterlockService:
             enabled = bool(self._relay.read_magnet_status(
                 retries=_SNAPSHOT_RELAY_RETRIES, timeout=_SNAPSHOT_RELAY_TIMEOUT_S))
         except Exception as exc:
+            self._note_relay_failed(exc)
             return (f"magnet state unknown (relay read failed: {exc!r}): cannot confirm the "
                     "magnets are disabled, so the interlock's COM port stays connected")
         finally:
             self._relay_lock.release()
+        self._note_relay_ok()
         self._note_magnet_status(enabled)
         if enabled:
             return ("magnets are enabled: disable them before disconnecting the "
@@ -821,11 +929,13 @@ class InterlockService:
                     self._relay.kill_magnets()
                     still_on = bool(self._relay.read_magnet_status())
                 self._note_magnet_status(still_on)
+                self._note_relay_ok()
                 if not still_on:
                     _LOG.warning("Magnets confirmed killed after %d attempt(s) in %.2fs",
                                  attempt, time.monotonic() - t0)
                     return
             except Exception as exc:
+                self._note_relay_failed(exc)
                 if attempt % 10 == 0:
                     _LOG.critical(
                         "RELAY UNREACHABLE: %d attempts over %.1fs; latest: %r",
@@ -851,6 +961,10 @@ class InterlockService:
     def _watchdog_loop(self) -> None:
         # First check after one full interval, so a slow start doesn't trip us.
         while not self._stop_event.wait(self._cfg.watchdog_check_interval_s):
+            if self._poll_thread is None:
+                # No poll loop was started (safe mode): nothing to watch.  It
+                # used to "freeze" here and exit the server ~1 min after start.
+                continue
             age = time.monotonic() - self._last_loop_iteration_monotonic
             if age <= self._cfg.watchdog_loop_grace_s:
                 continue

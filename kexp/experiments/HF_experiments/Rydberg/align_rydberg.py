@@ -19,7 +19,7 @@ class hf_bec(EnvExperiment, Base):
         # self.xvar('do_405_pulse',[0,1])
         self.p.do_405_pulse = 1
         # self.xvar('do_980_pulse',[0,1])
-        self.p.do_980_pulse = 0
+        self.p.do_980_pulse = 1
 
         self.p.amp_dds_405 = 0.06
         self.adjust('amp_dds_405',0.04,0.145)
@@ -27,7 +27,7 @@ class hf_bec(EnvExperiment, Base):
 
 
         # self.xvar('frequency_eo_980', np.arange(422.,424.,0.1)*1.e6)
-        self.p.frequency_eo_980 = 422.1e6
+        self.p.frequency_eo_980 = 418.7e6
         # self.xvar('frequency_eo_980', 418.1e6 + 1e6*np.linspace(-1,1,3))
 
 
@@ -35,17 +35,15 @@ class hf_bec(EnvExperiment, Base):
         self.adjust('t_tweezer_hold',0.,1.)
 
 
-        self.p.amp_imaging = .1
 
         # self.p.v_pd_hf_tweezer_1064_rampdown3_end=3.5
-        self.p.hf_imaging_detuning = -568.e6    
-        self.p.v_pd_ry_405 = 2.0
+        self.p.v_pd_ry_405 = 0.45
         self.adjust('v_pd_ry_405',0.,2.5)
 
-        self.p.v_pd_ry_980 = 2.8
+        self.p.v_pd_ry_980 = 2.5
         self.adjust('v_pd_ry_980',0.,2.5)
 
-        self.p.N_repeats = 1000
+        self.p.N_repeats = 7000
         self.finish_prepare(shuffle=True)
 
         if self.p.do_405_pulse == 1:
@@ -60,8 +58,7 @@ class hf_bec(EnvExperiment, Base):
     @kernel
     def scan_kernel(self):
         
-        self.set_imaging_detuning(frequency_detuned=self.p.hf_imaging_detuning)
-        self.dds.imaging.set_dds(amplitude=self.p.amp_imaging)
+        self.set_imaging_detuning(frequency_detuned=self.p.frequency_detuned_hf_f1m1)
 
         self.ry_405.set_power(self.p.v_pd_ry_405)
         self.ry_980.set_power(self.p.v_pd_ry_980)

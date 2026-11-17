@@ -10,7 +10,7 @@ Sources (``provider/key``):
 
 * ``keysight/outer.*``, ``keysight/inner.*`` -- ``current_a``, ``output_on``,
   ``connected``; outer = the 500 A supply (.78), inner = the 170 A supply (.77).
-* ``interlock/*`` -- ``state`` (ok | tripped | warmup | safe_mode | unknown),
+* ``interlock/*`` -- ``state`` (ok | tripped | warmup | relay_down | safe_mode | unknown),
   ``tripped``, ``magnets_enabled``, ``temperature_c``.
 * ``live_od/*`` -- ``run_in_progress``, ``run_id``, ``expt_name``, ``n_shots``,
   ``n_shots_expected``, ``run_state``.

@@ -11,7 +11,7 @@ from kexp.util.artiq.async_print import aprint
 class hf_monitored_rabi(EnvExperiment, Base):
 
     def prepare(self):
-        Base.__init__(self,camera_select=cameras.apd,
+        Base.__init__(self,camera_select=cameras.andor,
                       save_data=False,
                       imaging_type=img_types.ABSORPTION,
                       mot_preload=True)

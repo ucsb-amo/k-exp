@@ -51,6 +51,7 @@ _STATE_COLOR = {
     _sm.STATE_WARMUP: ("#d4a017", "white", "Warmup"),
     _sm.STATE_TRIPPED: ("#b22222", "white", "INTERLOCK TRIPPED"),
     _sm.STATE_SAFE_MODE: ("#8b0000", "white", "SAFE MODE"),
+    _sm.STATE_RELAY_DOWN: ("#b35900", "white", "RELAY NOT ANSWERING"),
     _sm.STATE_UNKNOWN: ("#888", "white", "Unknown"),
 }
 
