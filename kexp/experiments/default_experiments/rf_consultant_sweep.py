@@ -2,7 +2,8 @@
 
 Each shot starts with ``self.ry_980.sweep_to(...)``, which walks the EO's
 frequency source from the frequency it reports to this shot's value in 0.5 MHz
-steps 0.1 s apart, so a shuffled scan never jumps the laser.  The same code
+steps (0.1 s apart on the Siglent, 50 ms on the RF consultant), so a shuffled
+scan never jumps the laser.  The same code
 runs on the Siglent or the RF consultant: which one is ``RY_980_RF`` in
 kexp/base/devices.py.  The rest of the shot is a plain MOT TOF to stand in for
 your sequence.
