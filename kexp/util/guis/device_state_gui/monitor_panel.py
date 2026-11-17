@@ -161,6 +161,10 @@ class MonitorClientPanel(WidgetPanelBase):
             dac = _dac_frame_cls()
             dds = _dds_frame_cls(dac_frame_obj=dac)
         except Exception:
+            import logging  # noqa: PLC0415
+            logging.getLogger(__name__).exception(
+                "DDS/DAC frames failed to build; channel defaults and the Composite "
+                "tab's conversions (e.g. the Raman AO check) are off.")
             dds = None
             dac = None
 
