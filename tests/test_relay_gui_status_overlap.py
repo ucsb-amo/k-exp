@@ -116,10 +116,12 @@ def test_a_slow_status_read_blocks_further_ticks(gui):
     assert _spin(lambda: len(relay.read_calls) == 2)
 
 
-def test_the_status_probe_is_bounded(gui):
+def test_the_status_probe_reads_the_servers_cache(gui):
+    # The panel asks the interlock server for the states it last read; it
+    # never makes the server (the relay's only user) contact the relay.
     g, relay = gui
     assert _spin(lambda: len(relay.read_calls) == 1)
-    assert relay.read_calls[0] == {"retries": 0, "timeout": 3.0}
+    assert relay.read_calls[0] == {"fresh": False}
 
 
 def test_an_operation_waits_for_the_status_read(gui):
@@ -150,6 +152,28 @@ def test_a_status_error_leaves_an_operation_alone(gui):
     _spin(lambda: False, timeout=0.2)
     assert g.operation_in_progress
     assert not g.toggle_btn.isEnabled()
+
+
+def test_a_refused_enable_is_said_in_words_not_shown_as_error(gui, monkeypatch):
+    from kexp.control.ethernet_relay import RelayRefused
+    from kexp.util.guis.ethernet_relay import ethernet_relay_gui as mod
+    g, relay = gui
+    relay.release.set()
+    assert _spin(lambda: g.status_indicator.text() == "OFF")
+    assert _spin(lambda: not g.status_read_in_flight())
+    shown = []
+    monkeypatch.setattr(mod.QMessageBox, "information",
+                        lambda parent, title, text: shown.append(text))
+
+    def refuse():
+        raise RelayRefused("tripped")
+    relay.enable_magnets = refuse
+    g.magnet_status = False                 # button reads "INH - Reset?" -> magnet_on
+    g.toggle_magnet()
+    assert _spin(lambda: shown)
+    assert shown == ["The magnets were not enabled: the interlock is tripped."]
+    assert g.status_indicator.text() == "OFF"   # not the ERROR indicator
+    assert _spin(lambda: not g.operation_in_progress)
 
 
 def test_error_indicator_clears_when_state_is_unchanged(gui):

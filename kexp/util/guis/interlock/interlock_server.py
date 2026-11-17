@@ -25,7 +25,23 @@ Commands:
                              or resets the interlock.
     SHUTDOWN             -> {"status": "ok"}; then the process exits exactly as
                              on SIGINT/SIGTERM (main loop stop_event -> tcp.stop()
-                             -> service.stop()).  Touches no relay/interlock state.
+                             -> service.stop()).  Touches no relay/interlock state
+                             (except: a running ARTIQ restart restores crate power).
+
+The ethernet relay (this server is its only user; one JSON object per line,
+answered with one JSON line; ``kexp.control.ethernet_relay.EthernetRelay`` is
+the client):
+    {"cmd": "relay_status", "fresh": false}
+        -> {"status": "ok", "states": [4 bools], "relays": {name: bool}, "age_s", "stale"}
+    {"cmd": "relay_set", "channel": "source_on" | "artiq_main_power_cut" |
+                                    "artiq_satellites_power_cut", "on": true|false}
+        -> {"status": "ok"|"refused"|"error", "states", "relays", ...}
+           (the magnet relay is refused here: ENABLE_MAGNETS / DISABLE_MAGNETS)
+    {"cmd": "artiq_restart", "which": "all"|"main"|"satellites", "t_wait": s, "t_between": s}
+        -> {"status": "started", "job_id"} | {"status": "busy"|"error", ...}
+    {"cmd": "relay_job", "job_id": id}
+        -> {"state": "running"|"done"|"failed"|"aborted"|"unknown", "steps", ...}
+An older server answers these with {"status": "error", "message": "unknown command: ..."}.
 
 No authentication; LAN-trusted (matches existing protocol).
 """
@@ -60,7 +76,7 @@ LOGGER = logging.getLogger("kexp.dashboard.server.interlock.runner")
 # Now safe to import heavy stuff.
 from beacon.discovery.server import NetServer  # noqa: E402
 
-from kexp import EthernetRelay  # noqa: E402
+from kexp.control.ethernet_relay import EthernetRelayDirect  # noqa: E402  (the board itself)
 from kexp.config.ip import (  # noqa: E402
     ETHERNET_RELAY_IP, ETHERNET_RELAY_PORT, INTERLOCK_COM, INTERLOCK_EMAIL_CREDENTIALS_FILEPATH,
 )
@@ -212,6 +228,10 @@ class InterlockTCPServer(NetServer):
                 pass
 
     def _dispatch(self, raw: str, client_addr: str) -> str:
+        if raw.lstrip().startswith("{"):
+            # JSON request (the relay commands): parsed as sent, never
+            # upper-cased (channel names, true/false).
+            return json.dumps(self._dispatch_json(raw, client_addr))
         cmd = raw.strip().upper()
         # Don't log snapshot polls (would spam at 1 Hz).
         if cmd != "GET_SNAPSHOT":
@@ -238,6 +258,32 @@ class InterlockTCPServer(NetServer):
         except Exception as exc:
             LOGGER.exception("RPC handler raised for %s", cmd)
             return json.dumps({"status": "error", "message": repr(exc)})
+
+    def _dispatch_json(self, raw: str, client_addr: str) -> dict:
+        try:
+            req = json.loads(raw)
+        except json.JSONDecodeError as exc:
+            return {"status": "error", "message": f"bad JSON request: {exc}"}
+        if not isinstance(req, dict):
+            return {"status": "error", "message": "a request is a JSON object"}
+        cmd = req.get("cmd")
+        if cmd != "relay_status" and cmd != "relay_job":
+            LOGGER.info("RPC: %s from %s", raw.strip()[:200], client_addr)
+        try:
+            svc = self._service
+            if cmd == "relay_status":
+                return svc.relay_status(bool(req.get("fresh", False)), client_addr)
+            if cmd == "relay_set":
+                return svc.relay_set(req.get("channel"), req.get("on"), client_addr)
+            if cmd == "artiq_restart":
+                return svc.artiq_restart(req.get("which"), req.get("t_wait"),
+                                         req.get("t_between", 0.0), client_addr)
+            if cmd == "relay_job":
+                return svc.relay_job(req.get("job_id"))
+            return {"status": "error", "message": f"unknown command: {cmd!r}"}
+        except Exception as exc:
+            LOGGER.exception("RPC handler raised for %s", cmd)
+            return {"status": "error", "message": repr(exc)}
 
     def _request_shutdown(self, client_addr: str) -> dict:
         """Graceful process stop over TCP.
@@ -297,9 +343,9 @@ def main() -> int:
     )
 
     try:
-        relay = EthernetRelay()
+        relay = EthernetRelayDirect()
     except Exception:
-        LOGGER.exception("Could not instantiate EthernetRelay; aborting startup")
+        LOGGER.exception("Could not instantiate EthernetRelayDirect; aborting startup")
         return _sm.EXIT_BAD_CONFIG
 
     email_sender = _build_email_sender()

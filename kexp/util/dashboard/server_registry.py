@@ -240,6 +240,11 @@ SERVER_SPECS: list[ServerSpec] = [
                                     discovery_timeout=3.0, timeout=1.5),
         com_label=INTERLOCK_COM,
         graceful_stop_timeout_s=4.0,   # service joins its poll/watchdog threads
+        # The watchdog's os._exit expects a restart, and the interlock server is
+        # the ethernet relay's only user (source, ARTIQ power, magnets): bring
+        # it back after a crash (bounded: 5 tries in 60 s, then FAILED).  A
+        # restart never enables the magnets (IT10).
+        restart_on_crash=True,
         warm_imports=["pyqtgraph"],
         default_dock_area="top",
     ),
