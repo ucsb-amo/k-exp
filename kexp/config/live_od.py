@@ -92,6 +92,9 @@ def make_live_od_config():
         # finder and the Camera Viewer. Off: CameraNanny opens them, as before.
         use_camera_host=True,  # flip to True after the hardware smoke (k-jam/jpagett/camera_host/PLAN.md)
         camera_host_claim_on_start=CAMERA_HOST_CLAIM_ON_START,
+        # Lab PCs may snap liveOD's cameras (a diagnostic stream's probe from a
+        # run launched off kong); never during a run that holds the camera.
+        camera_host_snap_from=("192.168.1.",),
         camera_constraints={"andor_emccd": (du897_vs,)},
         # Kept exactly as it was: the pinned taskbar button's identity.
         tool_windows=tool_windows(),
