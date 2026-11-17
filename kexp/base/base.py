@@ -524,6 +524,11 @@ class Base(Expt, Devices, Cooling, Image, Cameras, Control, Clients):
         matched to a real shot. Nothing here triggers the camera, writes shot
         data, or notifies liveOD; the diagnostic cameras are switched off
         for the duration too.
+
+        Between two warm-up shots (not after the last: the scan loop asks
+        next) it asks liveOD whether Abort was pressed: if so the run ends
+        there, through scan()'s safe state, as an Abort between shots does
+        (2026-11-17; one POLL, ~1 ms, after a break_realtime).
         """
         self.diag.active = False
         for i in range(self.p.N_warmup_shots):
@@ -541,6 +546,8 @@ class Base(Expt, Devices, Cooling, Image, Cameras, Control, Clients):
                 self.mot_preload_on()
 
             self.core.break_realtime()
+            if i < self.p.N_warmup_shots - 1:
+                self._check_for_abort_signal()
         self.diag.active = self.diag.enabled
 
     @kernel
