@@ -699,6 +699,43 @@ def test_new_client_against_this_server_end_to_end(make, monkeypatch, tmp_path):
         tcp.stop()
 
 
+def test_full_stack_on_a_fake_board(make, monkeypatch, tmp_path):
+    """client EthernetRelay -> interlock TCP server -> service -> RelayOwner ->
+    EthernetRelayDirect -> a fake NCD board on 127.0.0.1 (real sockets, real
+    packet framing).  Nothing else connects to the board."""
+    from test_relay_owner import FakeBoard
+    from kexp.control.ethernet_relay import EthernetRelay, EthernetRelayDirect
+    board = FakeBoard()
+    board.states = [False, True, False, False]          # magnets enabled at start
+    srv_mod = _server_module(monkeypatch, tmp_path)
+    direct = EthernetRelayDirect(relay_ip="127.0.0.1", port=board.port)
+    svc, bus, _ = make(present=True, relay=direct)
+    tcp = srv_mod.InterlockTCPServer(svc, host="127.0.0.1", port=0)
+    tcp.start()
+
+    def no_direct():
+        raise AssertionError("the client went around the server")
+    try:
+        assert svc.get_snapshot()["magnets_enabled"] is True   # startup read, preserved
+        relay = EthernetRelay(client=_client_for(tcp._port), direct_factory=no_direct)
+        relay.JOB_POLL_S = 0.05
+        relay.source_on()
+        assert board.states[2] is True
+        assert relay.read_relay_status() == board.states
+        relay.kill_magnets()
+        assert board.states[1] is False
+        relay.toggle_artiq_main_power(t_wait=0.1)
+        assert board.states[0] is False
+        assert any(c[1] == 48 and c[2] == 0 for c in board.commands)   # main was cut
+        relay.source_off()
+        assert board.states == [False, False, False, False]
+        stats = svc.get_snapshot()["relay"]["stats"]
+        assert stats["contacts"] >= 6 and stats["refused"] == 0 and stats["timeout"] == 0
+    finally:
+        tcp.stop()
+        board.close()
+
+
 def test_client_com_replies_parse(monkeypatch):
     client = _client_for(1)
     replies = {
