@@ -18,7 +18,7 @@ class hf_bec(EnvExperiment, Base):
 
         # self.xvar('do_405_pulse',[0,1])
         self.p.do_405_pulse = 1
-        # self.xvar('do_980_pulse',[0,1])
+        self.xvar('do_980_pulse',[0,1])
         self.p.do_980_pulse = 1
         self.p.amp_dds_405 = 0.06
 #   
