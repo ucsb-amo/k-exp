@@ -194,8 +194,9 @@ class ExptParams(ExptParamsWaxx):
         # self.t_raman_pi_pulse = 3.6235e-06 #90199, 2026-10-30
         # self.t_raman_pi_pulse = 3.7045e-06 #90236, 2026-10-30
         # self.t_raman_pi_pulse = 5.0688e-06 #92595, 2026-11-05
-        self.t_raman_pi_pulse = 9.3139e-06 #95762, 2026-11-14
-
+        # self.t_raman_pi_pulse = 9.3139e-06 #95762, 2026-11-14
+        # self.t_raman_pi_pulse = 9.1169e-06 #95779, 2026-11-16
+        self.t_raman_pi_pulse = 9.4525e-06 #95797, 2026-11-16
          
         # DAC controlled AO amplitudes
         self.amp_d1_3d_c = 0.3
@@ -406,7 +407,7 @@ class ExptParams(ExptParamsWaxx):
         # raman
         self.frequency_raman_zeeman_state_xfer_sweep_center = 40.e6
         self.frequency_raman_zeeman_state_xfer_sweep_fullwidth = 5.e6
-        self.fraction_power_raman = 0.3
+        self.fraction_power_raman = 0.4
         self.fraction_power_raman_nf = 1.
         # Raman intensity PID setpoints (V) giving ~max power with the two beams at equal
         # power at the atoms; RamanBeamsPID sets fraction_power_raman * these.
