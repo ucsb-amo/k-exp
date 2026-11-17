@@ -9,10 +9,10 @@ class hf_bec(EnvExperiment, Base):
 
     def prepare(self):
         Base.__init__(self,
-                      save_data=False,
+                      save_data=True,
                       camera_select=cameras.andor,
                       imaging_type=img_types.ABSORPTION,
-                      diagnostic_images=True,
+                    #   diagnostic_images=True,
                       warmup_shots=0,
                       mot_preload=True)
 
@@ -39,14 +39,14 @@ class hf_bec(EnvExperiment, Base):
         # self.camera_params.gain = 300.
 
         # self.p.t_tof = 4.e-3
-        self.p.t_tof = 5.e-6
+        # self.p.t_tof = 5.e-6
 
         # self.p.t_imaging_pulse = 200.e-6
         # self.diag.img_apd_plane.exposure_time = self.p.t_imaging_pulse
 
         # self.data.apd = self.data.add_data_container(1)
         # self.xvar('t_tweezer_hold',np.linspace(0.,0.8,6))
-        self.p.N_repeats = 100
+        self.p.N_repeats = 10
         # self.xvar('beans',np.linspace(1,10,10))
 
         # self.p.amp_tweezer_list = [0.5]
@@ -72,7 +72,7 @@ class hf_bec(EnvExperiment, Base):
         # self.p.v_hf_tweezer_paint_amp_max = 3.25
 
 
-        # self.xvar('t_tof',np.linspace(800.e-6,2000.e-6,5))
+        self.xvar('t_tof',np.linspace(10.e-6,2000.e-6,5))
         # self.p.i_hf_tweezer_evap1_current= 193.75
         # self.xvar('i_hf_tweezer_evap1_current',np.linspace(192.,194.,9))
         
