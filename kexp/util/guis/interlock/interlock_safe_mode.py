@@ -2,8 +2,19 @@
 
 This module documents and centralizes the constants and contract for the
 interlock's "safe mode" — entered when the server cannot trust its own
-inputs (unreachable relay at startup, configuration mismatch per IT15 in
-the plan).
+inputs (configuration mismatch per IT15 in the plan).  Nothing enters it at
+present; ``InterlockService.enter_safe_mode`` keeps the contract below.
+
+A relay that does not answer (at startup or later) is **not** a safe-mode
+reason (since 2026-11-16): the server keeps running -- PLC monitoring, the
+trip path, the panel -- and reports ``state="relay_down"`` with the relay's
+address and since when.  Enable is refused while the relay is down; a trip
+keeps retrying the kill until the relay answers.  When the relay answers
+again, the server returns to normal and leaves the magnet relay as it is
+(as a normal startup does), except that a startup kill owed because the
+COM port was missing is done then.  It used to enter safe mode, whose
+watchdog then killed the process about a minute after start (the panel
+only ever saw "server unreachable").
 
 **Safety-critical behavior in safe mode**
 
@@ -38,11 +49,12 @@ STATE_TRIPPED = "tripped"
 STATE_WARMUP = "warmup"
 STATE_SAFE_MODE = "safe_mode"
 STATE_UNKNOWN = "unknown"
+# Reported in the snapshot (not an internal state) while the interlock would
+# otherwise read ok / warmup / unknown but the relay does not answer.
+STATE_RELAY_DOWN = "relay_down"
 
-# Reasons we'd enter safe mode.  Strings used both as log tags and as the
-# ``message`` field in the snapshot.
+# Reasons used both as log tags and as the ``message`` field in the snapshot.
 REASON_BAD_COM_PORT = "configured COM port does not enumerate"
-REASON_RELAY_UNREACHABLE_AT_BOOT = "relay unreachable at startup"
 REASON_WATCHDOG_FORCED = "main poll loop frozen (watchdog trip)"
 
 # Exit codes from interlock_server.py main():
@@ -54,6 +66,7 @@ EXIT_ALREADY_RUNNING = 3
 
 __all__ = [
     "STATE_OK", "STATE_TRIPPED", "STATE_WARMUP", "STATE_SAFE_MODE", "STATE_UNKNOWN",
-    "REASON_BAD_COM_PORT", "REASON_RELAY_UNREACHABLE_AT_BOOT", "REASON_WATCHDOG_FORCED",
+    "STATE_RELAY_DOWN",
+    "REASON_BAD_COM_PORT", "REASON_WATCHDOG_FORCED",
     "EXIT_NORMAL", "EXIT_BAD_CONFIG", "EXIT_WATCHDOG", "EXIT_ALREADY_RUNNING",
 ]

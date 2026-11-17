@@ -61,7 +61,9 @@ LOGGER = logging.getLogger("kexp.dashboard.server.interlock.runner")
 from beacon.discovery.server import NetServer  # noqa: E402
 
 from kexp import EthernetRelay  # noqa: E402
-from kexp.config.ip import INTERLOCK_COM, INTERLOCK_EMAIL_CREDENTIALS_FILEPATH  # noqa: E402
+from kexp.config.ip import (  # noqa: E402
+    ETHERNET_RELAY_IP, ETHERNET_RELAY_PORT, INTERLOCK_COM, INTERLOCK_EMAIL_CREDENTIALS_FILEPATH,
+)
 from kexp.util.guis.interlock import interlock_safe_mode as _sm  # noqa: E402
 from kexp.util.guis.interlock.interlock_service import (  # noqa: E402
     InterlockConfig, InterlockService,
@@ -291,6 +293,7 @@ def main() -> int:
         history_dir=history_dir or None,
         heartbeat_path=heartbeat_path or None,
         email_credentials_filepath=INTERLOCK_EMAIL_CREDENTIALS_FILEPATH,
+        relay_label=f"{ETHERNET_RELAY_IP}:{ETHERNET_RELAY_PORT}",
     )
 
     try:

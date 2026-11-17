@@ -26,6 +26,7 @@ from kexp.util.guis.interlock import interlock_service as isvc
 from kexp.util.guis.interlock.interlock_client import InterlockClient
 
 PORT = "COMFAKE7"
+RELAY_LABEL = "10.255.255.1:2101 (fake)"
 FRAME = (b"Flowmeter 1 reads 1.00V/Flowmeter 2 reads 1.10V/Flowmeter 3 reads 1.20V/"
          b"Flowmeter 4 reads 1.30V/Temp is 300.0k/")
 
@@ -49,16 +50,24 @@ class FakeRelay:
         self.kills = 0
         self.enables = 0
         self.fail_reads = False
+        self.down = False          # every call refused, like a relay not answering
+
+    def _check_down(self):
+        if self.down:
+            raise ConnectionRefusedError(10061, "actively refused (fake)")
 
     def kill_magnets(self):
+        self._check_down()
         self.kills += 1
         self.enabled = False
 
     def enable_magnets(self):
+        self._check_down()
         self.enables += 1
         self.enabled = True
 
     def read_magnet_status(self, retries=None, timeout=None):
+        self._check_down()
         if self.fail_reads:
             raise OSError("relay unreachable (fake)")
         return self.enabled
@@ -128,19 +137,22 @@ def make(monkeypatch):
     monkeypatch.setattr(isvc.InterlockService, "acquire_singleton_mutex", lambda self: True)
     monkeypatch.setattr(isvc.InterlockService, "release_singleton_mutex", lambda self: None)
     monkeypatch.setattr(isvc._PLCLink, "BACKOFF_S", (0.05,))
+    monkeypatch.setattr(isvc, "_RELAY_RECHECK_INTERVAL_S", 0.05)
     from beacon.discovery import server as dserver
     monkeypatch.setattr(dserver.NetServer, "_start_beacon", lambda self: None)
 
-    def _make(present=False, relay=None, stale=30.0, start=True):
+    def _make(present=False, relay=None, stale=30.0, start=True, **cfg_overrides):
         bus = FakeBus([PORT] if present else [])
         monkeypatch.setattr(serial, "Serial", bus.serial)
         monkeypatch.setattr(serial.tools.list_ports, "comports", bus.comports)
         relay = relay or FakeRelay(enabled=True)
-        cfg = isvc.InterlockConfig(
+        cfg_kwargs = dict(
             com_port=PORT, com_timeout_s=0.05, stale_threshold_s=stale,
             watchdog_check_interval_s=60.0, heartbeat_interval_s=60.0,
-            reset_debounce_s=0.0,
+            reset_debounce_s=0.0, relay_label=RELAY_LABEL,
         )
+        cfg_kwargs.update(cfg_overrides)
+        cfg = isvc.InterlockConfig(**cfg_kwargs)
         svc = isvc.InterlockService(relay, cfg)
         made.append((svc, bus))
         if start:
@@ -188,19 +200,90 @@ def test_boot_without_port_comes_up_kills_once_and_refuses_enable(make):
     assert relay.kills == 1
 
 
-def test_boot_without_port_and_relay_unreachable_is_still_safe_mode(make):
+# ---------------------------------------------------------------------------
+# Relay not answering
+# ---------------------------------------------------------------------------
+
+def test_boot_with_relay_down_runs_reports_it_and_recovers(make):
     relay = FakeRelay(enabled=True)
-    relay.fail_reads = True
+    relay.down = True
+    t0 = time.monotonic()
+    svc, bus, relay = make(present=True, relay=relay)
+    assert time.monotonic() - t0 < 1.0             # comes up; no safe mode
+    snap = svc.get_snapshot()
+    assert snap["state"] == _sm.STATE_RELAY_DOWN
+    assert snap["relay_ok"] is False and snap["relay_down_since"] is not None
+    assert RELAY_LABEL in snap["message"] and "not answering" in snap["message"]
+    assert snap["safe_mode_reason"] is None
+    assert snap["magnets_enabled"] is None         # never read
+    # PLC monitoring runs meanwhile; the relay note still shows, Enable refused.
+    bus.feed.set()
+    assert _until(lambda: svc.get_snapshot()["interlock_state"] == _sm.STATE_OK)
+    snap = svc.get_snapshot()
+    assert snap["state"] == _sm.STATE_RELAY_DOWN
+    assert snap["temperature_c"] is not None
+    reply = svc.enable_magnets("person")
+    assert reply["status"] == "refused" and reply["reason"] == "relay_not_answering"
+    # The relay answers again: normal, magnet relay left as it was (IT10).
+    relay.down = False
+    assert _until(lambda: svc.get_snapshot()["state"] == _sm.STATE_OK)
+    snap = svc.get_snapshot()
+    assert snap["relay_ok"] is True and snap["relay_error"] is None
+    assert snap["magnets_enabled"] is True
+    assert relay.kills == 0 and relay.enables == 0 and bus.writes == []
+
+
+def test_relay_down_with_port_missing_kills_once_when_relay_answers(make):
+    relay = FakeRelay(enabled=True)
+    relay.down = True
     svc, bus, relay = make(present=False, relay=relay)
     snap = svc.get_snapshot()
-    assert snap["state"] == _sm.STATE_SAFE_MODE
-    assert _sm.REASON_RELAY_UNREACHABLE_AT_BOOT in snap["safe_mode_reason"]
-    assert _sm.REASON_BAD_COM_PORT in snap["safe_mode_reason"]
-    assert relay.kills == 1
+    assert snap["state"] == _sm.STATE_RELAY_DOWN
+    assert PORT in snap["message"]                 # the warmup note is kept
     assert snap["com"]["config_valid"] is False
-    assert svc.com_connect()["status"] == "refused"   # safe mode opens no port
     time.sleep(0.2)
-    assert bus.opens == 0
+    assert relay.kills == 0                        # nothing reaches the relay
+    relay.down = False
+    assert _until(lambda: relay.kills == 1)        # the owed startup kill
+    assert relay.enabled is False
+    assert _until(lambda: svc.get_snapshot()["state"] == _sm.STATE_WARMUP)
+    time.sleep(0.2)
+    assert relay.kills == 1 and relay.enables == 0
+
+
+def test_relay_dropping_out_later_is_reported_after_two_failures(make):
+    svc, bus, relay = make(present=True, relay=FakeRelay(enabled=False))
+    bus.feed.set()
+    assert _until(lambda: _state(svc) == _sm.STATE_OK)
+    relay.down = True
+    svc._next_snapshot_probe_monotonic = 0.0
+    assert _state(svc) == _sm.STATE_OK             # one failed probe: not yet
+    svc._next_snapshot_probe_monotonic = 0.0
+    assert _state(svc) == _sm.STATE_RELAY_DOWN     # two in a row: reported
+    relay.down = False
+    assert _until(lambda: _state(svc) == _sm.STATE_OK)
+
+
+def test_trip_while_relay_down_keeps_tripped_state_with_relay_note(make):
+    relay = FakeRelay(enabled=True)
+    relay.down = True
+    svc, bus, relay = make(present=True, relay=relay, stale=0.3)
+    assert _until(lambda: svc.get_snapshot()["state"] == _sm.STATE_TRIPPED)
+    snap = svc.get_snapshot()
+    assert "not answering" in snap["message"]
+    relay.down = False
+    assert _until(lambda: relay.enabled is False)  # the trip's kill lands
+
+
+def test_watchdog_does_not_exit_without_a_poll_loop(make, monkeypatch):
+    exits = []
+    monkeypatch.setattr(isvc.os, "_exit", lambda code: exits.append(code))
+    svc, bus, relay = make(present=True, start=False,
+                           watchdog_check_interval_s=0.05, watchdog_loop_grace_s=0.1)
+    svc.enter_safe_mode("test reason")
+    svc._start_watchdog_and_heartbeat()
+    time.sleep(0.5)
+    assert exits == []
 
 
 def test_link_keeps_retrying_and_connects_when_port_appears(make):
@@ -366,6 +449,21 @@ def test_server_answers_with_port_missing_and_beacons_com_state(make, monkeypatc
         ok, msg = client.com_disconnect()
         assert ok is False and "magnets are enabled" in msg
         assert relay.enables == 0
+    finally:
+        tcp.stop()
+
+
+def test_server_answers_promptly_while_relay_down(make, monkeypatch, tmp_path):
+    srv_mod = _server_module(monkeypatch, tmp_path)
+    relay = FakeRelay(enabled=True)
+    relay.down = True
+    svc, bus, relay = make(present=True, relay=relay)
+    tcp = srv_mod.InterlockTCPServer(svc, host="127.0.0.1", port=0)
+    tcp.start()
+    try:
+        snap = _client_for(tcp._port).get_snapshot()
+        assert snap["state"] == _sm.STATE_RELAY_DOWN
+        assert RELAY_LABEL in snap["message"]
     finally:
         tcp.stop()
 

@@ -36,11 +36,10 @@ class hf_bec(EnvExperiment, Base):
         self.p.t_tweezer_hold = 512.e-3
 
         # self.p.v_pd_hf_tweezer_1064_rampdown3_end=3.5
-        self.p.hf_imaging_detuning = -568.e6    
         self.p.v_pd_ry_405 = 0.45
         self.p.v_pd_ry_980 = 2.8
 
-        self.p.N_repeats = 4
+        self.p.N_repeats = 5
         self.finish_prepare(shuffle=True)
 
         if self.p.do_405_pulse == 1:

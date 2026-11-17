@@ -64,6 +64,18 @@ def monitor_state_generator():
     return default_device_state
 
 
+def monitor_hold_policy():
+    """When a person hold lapses by itself (kexp.config.person_hold).  None
+    if it fails to load -- a hold then lapses only at a time a person set."""
+    try:
+        from kexp.config.person_hold import HOLD_POLICY  # noqa: PLC0415
+    except Exception:
+        log.exception("Person hold lapse rule failed to load; holds will not lapse by "
+                      "themselves.")
+        return None
+    return HOLD_POLICY
+
+
 def check_config() -> list[str]:
     """Return one message per unresolved kexp monitor config constant."""
     problems = []
@@ -111,7 +123,8 @@ def main() -> int:
     return run(MONITOR_EXPT_PATH, config_file_path=MONITOR_STATE_FILEPATH,
                journal_dir=journal_dir, reset_expt_path=RESET_STATE_EXPT_PATH,
                run_loops=loop_specs(RUN_LOOP_EXPTS), connections=monitor_connections(),
-               slm_reinit=monitor_slm_reinit(), state_generator=monitor_state_generator())
+               slm_reinit=monitor_slm_reinit(), state_generator=monitor_state_generator(),
+               hold_policy=monitor_hold_policy())
 
 
 if __name__ == "__main__":

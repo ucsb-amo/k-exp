@@ -1258,7 +1258,7 @@ def _interlock_measured() -> Measured:
 
     return Measured("interlock", "interlock/state", text=text, judge=judge, stale_s=10.,
                     tooltip="Interlock server state (read only): ok | tripped | warmup | "
-                            "safe_mode | unknown.")
+                            "relay_down | safe_mode | unknown.")
 
 
 def _coil_device(key, title, attr, supply_dac, pid_dac, igbt_ttl, pid_ttl,

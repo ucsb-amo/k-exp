@@ -131,6 +131,8 @@ class Cameras():
         # before, which coincided only for the Andor.)
         if self.camera_params.optical_path_key == cameras.andor.key:
             # Once per run, before the scan: the blocking write (parallel=False).
+            # An experiment's own first write in the scan is blocking too
+            # (waxx SLM.write_phase_mask_kernel): its mask is set there.
             if imaging_type == img_types.ABSORPTION or imaging_type == img_types.ABSORPTION:
                 self.slm.write_phase_mask_kernel(0.,0.,parallel=False)
             elif imaging_type == img_types.DISPERSIVE:

@@ -16,17 +16,17 @@ class mag_trap(EnvExperiment, Base):
                       save_data=True,
                       camera_select=cameras.andor,
                       imaging_type=img_types.ABSORPTION,
-                      warmup_shots=2)
+                      warmup_shots=0)
 
-        self.p.t_tof = 1200.e-6
-        # self.xvar('t_tof',np.linspace(600.,3800.,8)*1.e-6)
+        self.p.t_tof = 0.e-6
+        # self.xvar('t_tof',np.linspace(0.,3800.,8)*1.e-6)
         # self.xvar('beans',np.linspace(1,10.,10))
 
-        self.p.N_repeats = 1
+        self.p.N_repeats = 2
         self.p.t_mot_load = 1.
 
         self.p.i_hf_lightsheet_evap1_current = 193.15
-        self.xvar('i_hf_lightsheet_evap1_current',np.linspace(192.,194.,8))
+        # self.xvar('i_hf_lightsheet_evap1_current',np.linspace(192.,194.,8))
         # self.p.v_pd_hf_lightsheet_rampdown_end = 1.
         # self.xvar('v_pd_hf_lightsheet_rampdown_end',np.linspace(0.5,2.,8))
 
@@ -34,7 +34,7 @@ class mag_trap(EnvExperiment, Base):
         # self.xvar('i_hf_lightsheet_evap2_current',np.linspace(192.7,193.6,8))
 
         # self.p.t_hf_lightsheet_rampdown2 = 1.2
-        self.xvar('t_hf_lightsheet_rampdown1',np.linspace(0.2,1.5,8))
+        # self.xvar('t_hf_lightsheet_rampdown1',np.linspace(0.2,1.5,8))
 
         self.p.v_pd_hf_lightsheet_rampdown2_end = 0.185
         # self.xvar('v_pd_hf_lightsheet_rampdown2_end',np.linspace(0.17,0.23,7))
@@ -46,7 +46,7 @@ class mag_trap(EnvExperiment, Base):
 
         # self.p.t_decay_exponential = self.p.t_hf_lightsheet_rampdown / self.p.n_decay_exponential
 
-        f0 = high_field_imaging_detuning(self.p.i_hf_lightsheet_evap1_current)
+        f0 = high_field_imaging_detuning(self.p.i_hf_lightsheet_evap2_current)
         # aprint(f0/1.e6)
         # if self.p.use_imaging_calibration == 1.:
         self.set_imaging_detuning(f0)
@@ -82,14 +82,14 @@ class mag_trap(EnvExperiment, Base):
                              v_end=self.p.v_pd_hf_lightsheet_rampdown_end)
         # self.diag.lightsheet_evap()     # diagnostic frame (no-op when off)
 
-        # self.outer_coil.ramp_supply(t=self.p.t_feshbach_field_ramp,
-        #                      i_start=self.p.i_hf_lightsheet_evap1_current,
-        #                      i_end=self.p.i_hf_lightsheet_evap2_current)
+        self.outer_coil.ramp_supply(t=self.p.t_feshbach_field_ramp,
+                             i_start=self.p.i_hf_lightsheet_evap1_current,
+                             i_end=self.p.i_hf_lightsheet_evap2_current)
         
-        # # # lightsheet evap 2
-        # self.lightsheet.exponential_ramp(t=self.p.t_hf_lightsheet_rampdown2,
-        #                      v_start=self.p.v_pd_hf_lightsheet_rampdown_end,
-        #                      v_end=self.p.v_pd_hf_lightsheet_rampdown2_end)
+        # # lightsheet evap 2
+        self.lightsheet.exponential_ramp(t=self.p.t_hf_lightsheet_rampdown2,
+                             v_start=self.p.v_pd_hf_lightsheet_rampdown_end,
+                             v_end=self.p.v_pd_hf_lightsheet_rampdown2_end)
 
         delay(self.p.t_lightsheet_hold)
 
