@@ -1,22 +1,20 @@
-"""Compatibility shim — the RF consultant identity map now lives in beacon.
+"""RF consultants (TPI signal generators) for K-machine experiments: ``self.rf_consultant``.
 
-The canonical file is ``beacon/tpi/rf_consultant_id.py``.  Add/relabel
-consultants THERE.  This module simply re-exports its public API so existing
-``from kexp.config import rf_consultant_id`` call sites keep working, and the
-live-reload (``reload_module=True``) still targets the beacon module.
+Nothing to edit here.  Serials, names, defaults and limits are assigned in
+``beacon/beacon/tpi/rf_consultant_id.py``, the one file the TPI GUI, notebooks
+and experiments all read.  Each assigned consultant appears in an experiment as
+``self.rf_consultant.<key>``.
+
+(A limit that should hold in experiments only could be tightened here after
+``super().__init__``, e.g. ``self.<key>.limit(max_amplitude_dbm=-5.)``; it can never
+be loosened.)
 """
-from beacon.tpi.rf_consultant_id import (  # noqa: F401
-    RfConsultantId,
-    default_map,
-    label_map,
-    load_frame,
-    rf_consultant_frame,
-)
+from artiq.coredevice.core import Core
 
-__all__ = [
-    "RfConsultantId",
-    "rf_consultant_frame",
-    "load_frame",
-    "label_map",
-    "default_map",
-]
+from waxx.config.rf_consultant_id import rf_consultant_frame as rf_consultant_frame_waxx
+
+
+class rf_consultant_frame(rf_consultant_frame_waxx):
+    def __init__(self, core=Core):
+        super().__init__(core)
+        # super().rf_consultant_980.limit(max_amplitude_dbm=-0.5, max_frequency=600.e6)
