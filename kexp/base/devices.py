@@ -30,6 +30,7 @@ from kexp.config.dac_id import dac_frame
 from kexp.config.shuttler_id import shuttler_frame
 from kexp.config.sampler_id import sampler_frame
 from kexp.config.siglent_id import siglent_frame
+from kexp.config.rf_consultant_id import rf_consultant_frame
 from kexp.config.ip import DEVICE_ID_KINESIS_REF_BEAM_WAVEPLATE_ROTATOR
 from kexp.config.wavemeter_id import fzw_frame
 from kexp.config.data_vault import DataVault, DataContainer
@@ -52,6 +53,7 @@ d_exptparams = ExptParams()
 
 from waxx.util.artiq.async_print import aprint
 from kexp.base.cameras import img_config
+
 
 class Devices():
     def __init__(self):
@@ -203,11 +205,17 @@ class Devices():
         # self.ry_980_eo = SSG3021X()
 
         self.siglent = siglent_frame(self.core)
+        self.rf_consultant = rf_consultant_frame(self.core)
 
         self._fzw = fzw_frame(params=self.params)
 
+
+        # change argument to _ry_rf_sources() to 'siglent' (default) or 'rf_consultant'
+        ry_405_source, ry_980_source = self._ry_rf_sources(ry_980_source='rf_consultant', 
+                                                           ry_405_source='siglent')
+
         self.ry_405 = RydbergDDSSwitchBeam(
-                            siglent_ch=self.siglent.siglent_405,
+                            rf_eo_source=ry_405_source,
                             dds_sw=self.dds.ry_405_sw,
                             dac_pid=self.dac.ry_405_intensity_control,
                             ttl_shutter=self.ttl.ry_405_shutter,
@@ -220,7 +228,7 @@ class Devices():
                             )
         
         self.ry_980 = RydbergTTLSwitchBeam(
-            siglent_ch=self.siglent.siglent_980,
+            rf_eo_source=ry_980_source,
             ttl_sw=self.ttl.ry_980_sw,
             dac_pid=self.dac.ry_980_intensity_control,
             ttl_pid_clear=self.ttl.ry_intensity_pid_clear,
@@ -243,6 +251,30 @@ class Devices():
 
         # camera placeholder
         self.camera = DummyCamera()
+
+    def _ry_rf_sources(self, ry_980_source='siglent', ry_405_source='siglent'):
+        """The fiber-EO frequency source of each Rydberg beam, from RY_980_RF /
+        RY_405_RF: 'siglent' or 'rf_consultant' (the consultant named in
+        RY_RF_CONSULTANT_KEYS)."""
+        choice = {'980': ry_980_source, '405': ry_405_source}
+        sources = []
+        RY_RF_CONSULTANT_KEYS = {'980': 'rf_consultant_980', '405': 'rf_consultant_405'}
+        for beam, siglent_ch in (('405', self.siglent.siglent_405),
+                                 ('980', self.siglent.siglent_980)):
+            which = choice.get(beam, 'siglent')
+            if which == 'siglent':
+                sources.append(siglent_ch)
+            elif which == 'rf_consultant':
+                key = RY_RF_CONSULTANT_KEYS[beam]
+                rf = getattr(self.rf_consultant, key, None)
+                if rf is None:
+                    raise ValueError(f"RY_{beam}_RF = 'rf_consultant' (devices.py), but no RF consultant "
+                                     f"{key!r} is assigned in beacon/beacon/tpi/rf_consultant_id.py")
+                print(f"ry_{beam}: fiber EO driven by RF consultant {key} (S/N {rf.serial})")
+                sources.append(rf)
+            else:
+                raise ValueError(f"RY_{beam}_RF = {which!r} (devices.py): use 'siglent' or 'rf_consultant'")
+        return sources
 
     def configure_imaging_system(self, imaging_configuration):
         

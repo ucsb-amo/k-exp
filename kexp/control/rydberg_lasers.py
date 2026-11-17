@@ -16,7 +16,11 @@ class RydbergBeamBase():
     """Shared control for a Rydberg laser beam.
 
     Both beams share the same control topology:
-    - Frequency is set at the wavemeter position by a siglent-driven fiber EO
+    - Frequency is set at the wavemeter position by a fiber EO driven by its
+      frequency source: a Siglent channel (``SDG6000X_CH``) or an RF consultant
+      (``waxx.control.misc.rf_consultant.RFConsultant``), chosen per beam by
+      ``RY_980_RF`` / ``RY_405_RF`` in ``kexp/base/devices.py``.  Both take the same
+      calls here -- ``sweep_to``, ``set_frequency``, ``init``, ``lock_status``.
       (and, when enabled, a cavity AO -- off for now, so ``cavity_ao_order``
       defaults to 0 and the term drops out).
     - Intensity is stabilized by a DDS+DAC PID: the setpoint is written to
@@ -26,7 +30,7 @@ class RydbergBeamBase():
     mechanical shutter, which the subclasses provide.
     """
     def __init__(self,
-                 siglent_ch: SDG6000X_CH,
+                 rf_eo_source: SDG6000X_CH,
                  dac_pid: DAC_CH,
                  ttl_pid_clear: TTL_OUT,
                  eo_shift_direction,
@@ -37,7 +41,11 @@ class RydbergBeamBase():
                  cavity_ao_order=0,
                  ttl_shutter=None,
                  core: Core = DummyCore()):
-        self.siglent = siglent_ch
+        # The EO's frequency source: a Siglent channel or an RF consultant.
+        # (``siglent`` is its old name, kept for existing code.)
+        self.rf_source = rf_eo_source
+        self.siglent = rf_eo_source
+        self.uses_rf_consultant = not isinstance(rf_eo_source, SDG6000X_CH)
         self.dac_pid = dac_pid
         self.ttl_pid_clear = ttl_pid_clear
         self.ttl_shutter = ttl_shutter
@@ -60,7 +68,15 @@ class RydbergBeamBase():
         self._used = False
 
     @kernel
+    def set_frequency(self, frequency):
+        """Set the EO frequency (Hz), whichever source drives it (a jump; use
+        sweep_to to walk there)."""
+        self.siglent.set(frequency=frequency)
+
+    @kernel
     def set_siglent(self, frequency=dv, amplitude=dv, init=False):
+        """Siglent ``set``.  On a beam driven by an RF consultant a frequency
+        works, an amplitude (Vpp) is refused -- set its dBm on the consultant."""
         self.siglent.set(frequency=frequency, amplitude=amplitude, init=init)
 
     @kernel
@@ -71,6 +87,7 @@ class RydbergBeamBase():
     @kernel
     def sweep_to(self, frequency_end=dv, frequency_step=5.e5, reset=False):
         self.siglent.sweep(frequency_end, frequency_step, reset)
+        self._used = True
 
     @kernel
     def lock_status(self, robust=True):
@@ -113,7 +130,8 @@ class RydbergBeamBase():
             f_siglent = self.siglent.get_frequency()
             siglent_ok = True
         except Exception as e:
-            print(f"[{name}] siglent read failed, recording 0.: {e!r}")
+            source = "RF consultant" if self.uses_rf_consultant else "siglent"
+            print(f"[{name}] {source} read failed, recording 0.: {e!r}")
             f_siglent, siglent_ok = 0., False
         try:
             if siglent_ok:
@@ -135,7 +153,7 @@ class RydbergDDSSwitchBeam(RydbergBeamBase):
     double-pass detuning math for the switch itself.
     """
     def __init__(self,
-                 siglent_ch: SDG6000X_CH,
+                 rf_eo_source: SDG6000X_CH,
                  dds_sw: DDS,
                  dac_pid: DAC_CH,
                  ttl_shutter: TTL_OUT,
@@ -147,7 +165,7 @@ class RydbergDDSSwitchBeam(RydbergBeamBase):
                  cavity_ao_frequency=0.,
                  cavity_ao_order=0,
                  core: Core = DummyCore()):
-        super().__init__(siglent_ch=siglent_ch,
+        super().__init__(rf_eo_source=rf_eo_source,
                          dac_pid=dac_pid,
                          ttl_pid_clear=ttl_pid_clear,
                          eo_shift_direction=eo_shift_direction,
@@ -196,7 +214,7 @@ class RydbergDDSSwitchBeam(RydbergBeamBase):
 class RydbergTTLSwitchBeam(RydbergBeamBase):
     """980 nm beam: TTL-switched AO, siglent fiber EO frequency control."""
     def __init__(self,
-                 siglent_ch: SDG6000X_CH,
+                 rf_eo_source: SDG6000X_CH,
                  ttl_sw: TTL_OUT,
                  dac_pid: DAC_CH,
                  ttl_pid_clear: TTL_OUT,
@@ -207,7 +225,7 @@ class RydbergTTLSwitchBeam(RydbergBeamBase):
                  cavity_ao_frequency=0.,
                  cavity_ao_order=0,
                  core: Core = DummyCore()):
-        super().__init__(siglent_ch=siglent_ch,
+        super().__init__(rf_eo_source=rf_eo_source,
                          dac_pid=dac_pid,
                          ttl_pid_clear=ttl_pid_clear,
                          eo_shift_direction=eo_shift_direction,

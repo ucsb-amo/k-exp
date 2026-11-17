@@ -149,6 +149,11 @@ class Base(Expt, Devices, Cooling, Image, Cameras, Control, Clients):
         self.params.N_warmup_shots = int(warmup_shots)
         self.params.do_read_magnetometer_per_shot = int(self.read_magnetometer_per_shot)
         self.params.do_mot_preload = int(self.mot_preload)
+        # The EO frequency source per Rydberg beam (RY_980_RF / RY_405_RF in
+        # kexp/base/devices.py). With 1, the containers
+        # data.frequency_siglent_980/_405 hold the RF consultant's read-back.
+        self.params.ry_980_rf_consultant = int(self.ry_980.uses_rf_consultant)
+        self.params.ry_405_rf_consultant = int(self.ry_405.uses_rf_consultant)
         # said on the Scan: line (waxx Scanner.get_N_img), not a line of its own
         if self.params.N_warmup_shots <= 0:
             self._scan_line_notes["warmup"] = ("warm-up none (first shot likely ~25% "
@@ -674,6 +679,8 @@ class Base(Expt, Devices, Cooling, Image, Cameras, Control, Clients):
         # as failed (loudly) and skipped, and the run still ends normally.
         if self.ry_980._used:
             self.ry_980.sweep_to(reset=True)
+        if self.ry_405._used:
+            self.ry_405.sweep_to(reset=True)
         self.tweezer.reset_awg()
         self.core.break_realtime()
         if self.mot_preload:
