@@ -336,7 +336,7 @@ def test_stale_trips_while_held(make):
     assert svc.com_disconnect("person")["status"] == "ok"
     assert _com(svc)["status"] == "held"
     assert _until(lambda: _state(svc) == _sm.STATE_TRIPPED)
-    assert relay.kills >= 1
+    assert _until(lambda: relay.kills >= 1)       # the kill thread starts just after
 
 
 def test_stale_trips_while_in_error(make):
@@ -399,6 +399,21 @@ def test_com_disconnect_refused_while_enabled_then_held_then_connect(make):
     assert _until(lambda: _com(svc)["status"] == "connected")
     assert bus.opens == opens + 1
     assert relay.enables == 0 and bus.writes == []
+
+
+def test_com_disconnect_allowed_while_tripped_with_relay_busy(make):
+    # Stale PLC data -> tripped; the kill thread keeps _relay_lock busy.  The
+    # Disconnect must not wait on the relay then (11-17: refused as "relay busy").
+    svc, bus, relay = make(present=True, relay=FakeRelay(enabled=False), stale=0.4)
+    assert _until(lambda: _com(svc)["status"] == "connected")
+    assert _until(lambda: _state(svc) == _sm.STATE_TRIPPED)
+    assert svc._relay_lock.acquire(timeout=2.0)
+    try:
+        reply = svc.com_disconnect("person")
+    finally:
+        svc._relay_lock.release()
+    assert reply["status"] == "ok"
+    assert _com(svc)["status"] == "held"
 
 
 # ---------------------------------------------------------------------------

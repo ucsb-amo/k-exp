@@ -696,8 +696,8 @@ class InterlockService:
     def com_disconnect(self, client_addr: str = "?") -> dict:
         """Dashboard Disconnect: close the COM port and hold it closed.
 
-        Refused unless the relay reads the magnets disabled
-        (``_com_disconnect_refusal``).  While held there is no PLC data, so
+        Refused unless the interlock is tripped or the relay reads the
+        magnets disabled (``_com_disconnect_refusal``).  While held there is no PLC data, so
         the staleness check trips the interlock after ``stale_threshold_s``."""
         try:
             self._link.disconnect(hold=True)
@@ -718,7 +718,19 @@ class InterlockService:
         The authority on "magnets enabled" is the relay's magnet-inhibit
         channel (``EthernetRelay.read_magnet_status``) -- the PLC stream
         carries no magnet state -- so it is read fresh here.  When it cannot
-        be read, the disconnect is refused too (the stricter answer)."""
+        be read, the disconnect is refused too (the stricter answer).
+
+        Except while the interlock is tripped: the trip already owes the
+        magnet kill and its kill thread keeps at it whatever the COM port
+        does, so a Disconnect changes nothing about the magnets.  The relay
+        is not asked then -- while the PLC data is stale every poll restarts
+        that kill, which keeps ``_relay_lock`` busy nearly all the time."""
+        with self._state_lock:
+            tripped = self._state == _sm.STATE_TRIPPED
+        if tripped:
+            _LOG.warning("COM disconnect allowed: the interlock is tripped (the magnet kill "
+                         "is owed and continues without the COM port)")
+            return None
         if not self._relay_lock.acquire(timeout=_SNAPSHOT_RELAY_TIMEOUT_S):
             return ("magnet state unknown (relay busy; a magnet kill may be in progress): "
                     "cannot confirm the magnets are disabled, so the interlock's COM port "
