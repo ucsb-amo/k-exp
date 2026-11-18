@@ -22,7 +22,9 @@ Commands:
                              held: the interlock trips after stale_threshold_s.
     COM_CONNECT           -> {"status": "ok"|"refused", "message": ...}; releases the
                              hold and opens the port now.  Never enables the magnets
-                             or resets the interlock.
+                             and never writes to the PLC; the PLC data after it
+                             decides a tripped status (ok once the PLC reports no
+                             trip for 5 s of data; see InterlockService 4b).
     SHUTDOWN             -> {"status": "ok"}; then the process exits exactly as
                              on SIGINT/SIGTERM (main loop stop_event -> tcp.stop()
                              -> service.stop()).  Touches no relay/interlock state

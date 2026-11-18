@@ -252,7 +252,15 @@ class _InterlockBodyBase(WidgetPanelBase):
         state = str(snap.get("state", _sm.STATE_UNKNOWN))
         msg = str(snap.get("message", ""))
         self._last_state = state
-        self._apply_status_style(state, msg)
+        railed = snap.get("railed") or {}
+        if railed and state == _sm.STATE_TRIPPED:
+            reads = ", ".join(f"{ch} {r.get('value')} {r.get('unit', '')}".rstrip()
+                              for ch, r in sorted(railed.items()))
+            self._apply_status_style(state, f"{reads}; {msg}", label="OPTA READ RAILED")
+        else:
+            self._apply_status_style(state, msg)
+        # Older servers send no plc_inhibiting: the last frame's trip flag.
+        plc_inhibiting = bool(snap.get("plc_inhibiting", snap.get("plc_tripped", False)))
 
         # Metric labels.  JSON converts integer dict keys to strings on the
         # wire, so the snapshot's flow_v has '1'/'2'/'3'/'4' as keys.  Coerce
@@ -291,7 +299,7 @@ class _InterlockBodyBase(WidgetPanelBase):
             else:
                 self._magnets_state = None
                 self._magnets_btn.setEnabled(False)
-            self._apply_magnets_style(self._magnets_state)
+            self._apply_magnets_style(self._magnets_state, plc_inhibiting=plc_inhibiting)
 
         # Plot append.
         if self._plot is not None and isinstance(temp, (int, float)):
@@ -328,8 +336,9 @@ class _InterlockBodyBase(WidgetPanelBase):
             last = _STATE_COLOR.get(self._last_state, (None, None, None))[2]
             self._apply_status_style(_sm.STATE_UNKNOWN, f"{link}; last: {last}" if last else link)
 
-    def _apply_status_style(self, state: str, msg: str) -> None:
-        bg, fg, label = _STATE_COLOR.get(state, _STATE_COLOR[_sm.STATE_UNKNOWN])
+    def _apply_status_style(self, state: str, msg: str, label: Optional[str] = None) -> None:
+        bg, fg, state_label = _STATE_COLOR.get(state, _STATE_COLOR[_sm.STATE_UNKNOWN])
+        label = label or state_label
         # When everything's OK, show just the label — no noisy suffix.
         if state == _sm.STATE_OK or not msg:
             text = label
@@ -348,16 +357,29 @@ class _InterlockBodyBase(WidgetPanelBase):
     # Actions
     # ------------------------------------------------------------------
 
-    def _apply_magnets_style(self, state: Optional[bool]) -> None:
+    def _apply_magnets_style(self, state: Optional[bool], plc_inhibiting: bool = False) -> None:
         """Render the single Magnets button per current state.
 
         state is True (currently enabled — button says "Kill Magnets" red),
-        False (currently off — button says "Enable Magnets…" green),
-        or None (unknown — button says "Magnets …" gray).
+        False (currently off — button says "Enable Magnets…" green, or red
+        while the PLC (Opta) inhibits the magnets), or None (unknown — button
+        says "Magnets …" gray).
         """
         if self._magnets_btn is None:
             return
-        if state is True:
+        tip = ("The PLC (Opta) is inhibiting the magnets: it reports a trip."
+               if plc_inhibiting else "")
+        if self._magnets_btn.toolTip() != tip:
+            self._magnets_btn.setToolTip(tip)
+        if state is False and plc_inhibiting:
+            self._magnets_btn.setText("Enable Magnets…")
+            set_style_if_changed(
+                self._magnets_btn,
+                "QPushButton { background-color: #b22222; color: white;"
+                " font-weight: 600; padding: 4px 10px; border-radius: 3px; }"
+                "QPushButton:disabled { background-color: #8b2020; color: #eee; }"
+            )
+        elif state is True:
             self._magnets_btn.setText("Kill Magnets")
             set_style_if_changed(
                 self._magnets_btn,

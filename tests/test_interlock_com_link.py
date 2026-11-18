@@ -125,7 +125,8 @@ class FakeSerial:
             raise serial.SerialException("ClearCommError failed (fake unplug)")
         if self.bus.feed.is_set():
             time.sleep(0.01)
-            return FRAME
+            frame = self.bus.frame
+            return frame() if callable(frame) else frame
         time.sleep(self.timeout)
         return b""
 
@@ -143,6 +144,7 @@ class FakeBus:
     def __init__(self, present):
         self.present = set(present)
         self.feed = threading.Event()        # PLC frames flowing
+        self.frame = FRAME                   # what each read returns (bytes or callable)
         self.open_gate = None                # Event an open waits on (hang)
         self.opens = 0
         self.ports = []
@@ -174,6 +176,7 @@ def make(monkeypatch):
     monkeypatch.setattr(isvc.InterlockService, "release_singleton_mutex", lambda self: None)
     monkeypatch.setattr(isvc._PLCLink, "BACKOFF_S", (0.05,))
     monkeypatch.setattr(isvc, "_RELAY_POLL_INTERVAL_S", 0.05)
+    monkeypatch.setattr(isvc, "_PLC_CLEAR_S", 0.4)
     from beacon.discovery import server as dserver
     monkeypatch.setattr(dserver.NetServer, "_start_beacon", lambda self: None)
 
@@ -363,8 +366,11 @@ def test_link_keeps_retrying_and_connects_when_port_appears(make):
     assert relay.enables == 1
 
 
-def test_reconnect_never_enables_magnets_or_resets_interlock(make):
-    svc, bus, relay = make(present=True, relay=FakeRelay(enabled=False), stale=0.3)
+TRIPPED_FRAME = FRAME + b"\r\nI TRIPPED\r\n"
+
+
+def test_reconnect_rechecks_status_but_never_enables_magnets(make):
+    svc, bus, relay = make(present=True, relay=FakeRelay(enabled=False), stale=0.6)
     bus.feed.set()
     assert _until(lambda: _state(svc) == _sm.STATE_OK)
     assert svc.enable_magnets("person")["status"] == "ok"
@@ -373,14 +379,116 @@ def test_reconnect_never_enables_magnets_or_resets_interlock(make):
     assert _until(lambda: _state(svc) == _sm.STATE_TRIPPED)
     assert _until(lambda: relay.enabled is False)
     enables = relay.enables
-    # The port fails and comes back; the PLC talks again.
+    # The port fails and comes back; the PLC talks again, reporting no trip.
     bus.current.fail_next_read = True
     assert _until(lambda: bus.opens >= 2 and _com(svc)["status"] == "connected")
     bus.feed.set()
-    time.sleep(0.3)
-    assert _state(svc) == _sm.STATE_TRIPPED        # the trip latch is untouched
-    assert relay.enables == enables and relay.enabled is False
+    assert svc.get_snapshot()["plc_recheck_since"] is not None
+    # Not on the first frame: only after _PLC_CLEAR_S of data with no trip.
+    assert _until(lambda: _state(svc) == _sm.STATE_OK, timeout=5.0)
+    snap = svc.get_snapshot()
+    assert snap["plc_recheck_since"] is None and snap["plc_inhibiting"] is False
+    assert relay.enables == enables and relay.enabled is False   # magnets stay off
     assert bus.writes == []                        # no 'O' to the PLC
+    assert _until(lambda: svc.enable_magnets("person")["status"] == "ok")
+
+
+def test_reconnect_with_plc_still_tripped_stays_tripped_until_plc_reset(make):
+    svc, bus, relay = make(present=True, relay=FakeRelay(enabled=False))
+    bus.feed.set()
+    assert _until(lambda: _state(svc) == _sm.STATE_OK)
+    bus.frame = TRIPPED_FRAME                      # the PLC trips and latches
+    assert _until(lambda: _state(svc) == _sm.STATE_TRIPPED)
+    assert svc.get_snapshot()["plc_inhibiting"] is True
+    bus.current.fail_next_read = True              # COM drops and comes back
+    assert _until(lambda: bus.opens >= 2 and _com(svc)["status"] == "connected")
+    time.sleep(1.0)                                # > _PLC_CLEAR_S of tripped frames
+    snap = svc.get_snapshot()
+    assert snap["state"] == _sm.STATE_TRIPPED
+    assert "PLC still reports a trip" in snap["message"]
+    assert svc.enable_magnets("person")["status"] == "refused"
+    # A person resets the PLC (USB re-enumerates): clean frames after a reconnect.
+    bus.frame = FRAME
+    bus.current.fail_next_read = True
+    assert _until(lambda: _state(svc) == _sm.STATE_OK, timeout=5.0)
+    assert svc.get_snapshot()["plc_inhibiting"] is False
+    assert relay.enables == 0 and relay.enabled is False
+
+
+def test_without_reconnect_a_trip_stays_latched(make):
+    svc, bus, relay = make(present=True, relay=FakeRelay(enabled=False), stale=0.6)
+    bus.feed.set()
+    assert _until(lambda: _state(svc) == _sm.STATE_OK)
+    assert _until(lambda: svc.get_snapshot()["plc_recheck_since"] is None, timeout=5.0)
+    bus.feed.clear()                               # silent PLC, port stays open
+    assert _until(lambda: _state(svc) == _sm.STATE_TRIPPED)
+    bus.feed.set()
+    time.sleep(1.2)
+    assert _state(svc) == _sm.STATE_TRIPPED
+
+
+def test_trip_text_split_across_reads_is_found(make):
+    svc, bus, relay = make(present=True, start=False)
+    first = isvc._Sample(epoch=0.0, flow_v={1: 1.0, 2: 1.0, 3: 1.0, 4: 1.0}, temperature_k=300.0)
+    assert svc._track_plc_stream(FRAME + b"\r\nI TRIP", first)[0] is False
+    assert svc._track_plc_stream(b"PED\r\n" + FRAME, first)[0] is True
+    assert svc._plc_latched is True
+    # The tail that held the match is not matched again by the next read.
+    assert svc._track_plc_stream(FRAME, first)[0] is False
+    assert svc._track_plc_stream(b"SHUTTING OFF POWER SUPPLY DUE TO TEMPERATURE\r\n", None)[0]
+
+
+def _temp_frame(t_k):
+    return (b"Flowmeter 1 reads 1.00V/Flowmeter 2 reads 1.10V/Flowmeter 3 reads 1.20V/"
+            b"Flowmeter 4 reads 1.30V/Temp is " + f"{t_k:.5f}".encode() + b"k/")
+
+
+def _moving_frame(n):
+    """Every reading differs from the previous frame's."""
+    flows = "".join(f"Flowmeter {m} reads {1.0 + m * 0.1 + n % 2 * 0.01:.2f}V/" for m in (1, 2, 3, 4))
+    return flows.encode() + f"Temp is {300.0 + n * 1e-5:.5f}k/".encode()
+
+
+def test_railed_read_trips_kills_and_holds_until_the_value_changes(make):
+    # Flows constant in every frame; only the temperature can move.
+    svc, bus, relay = make(present=True, relay=FakeRelay(enabled=False), railed_window_s=0.8)
+    temps = iter(range(10**6))
+    bus.frame = lambda: _temp_frame(300.0 + next(temps) * 1e-5)
+    bus.feed.set()
+    assert _until(lambda: _state(svc) == _sm.STATE_OK)
+    assert svc.enable_magnets("person")["status"] == "ok"
+    # The flows never change: railed after railed_window_s -> trip + kill.
+    assert _until(lambda: _state(svc) == _sm.STATE_TRIPPED, timeout=5.0)
+    snap = svc.get_snapshot()
+    assert "Opta read railed" in snap["message"]
+    assert set(snap["railed"]) == {"flow 1", "flow 2", "flow 3", "flow 4"}
+    assert "temperature" not in snap["railed"]
+    assert snap["railed"]["flow 1"]["value"] == 1.0
+    assert _until(lambda: relay.enabled is False)
+    reply = svc.enable_magnets("person")
+    assert reply["status"] == "refused" and reply["reason"] == "opta_read_railed"
+    # A reconnect does not clear it while the read is railed.
+    bus.current.fail_next_read = True
+    assert _until(lambda: bus.opens >= 2 and _com(svc)["status"] == "connected")
+    time.sleep(1.0)
+    snap = svc.get_snapshot()
+    assert snap["state"] == _sm.STATE_TRIPPED and "Opta read is railed" in snap["message"]
+    # The reads move again: railed clears; the pending recheck then returns to ok.
+    bus.frame = lambda: _moving_frame(next(temps))
+    assert _until(lambda: svc.get_snapshot()["railed"] == {}, timeout=5.0)
+    assert _until(lambda: _state(svc) == _sm.STATE_OK, timeout=5.0)
+    assert relay.enabled is False and relay.enables == 1
+
+
+def test_railed_run_restarts_after_a_gap_in_reports(make):
+    svc, bus, relay = make(present=True, start=False, railed_window_s=1.0, stale=0.2)
+    s = isvc._Sample(epoch=0.0, temperature_k=300.0)
+    assert svc._track_railed(s) is None
+    time.sleep(0.3)                                # a gap longer than stale_threshold_s
+    assert svc._track_railed(s) is None
+    time.sleep(0.15)
+    assert svc._track_railed(s) is None            # run restarted at the gap: 0.15 s held
+    assert svc._railed == {}
 
 
 # ---------------------------------------------------------------------------

@@ -53,6 +53,10 @@ Safety invariants (must always hold; see plan §"Safety invariants")
    status returns to ok (the magnets stay off until a person's Enable).
    A PLC still latched keeps printing "I TRIPPED", so the status stays
    tripped.  Without a reconnect a trip stays latched in the server.
+4c. An Opta reading (temperature or a flow) reported identically for
+   ``railed_window_s`` (180 s) → railed read: trip (magnets killed through
+   the relay).  Enable stays refused, and a recheck cannot clear the trip,
+   until that channel reports a different value.
 5. Relay unreachable when trip needed → retry forever, ``CRITICAL`` every 10
    attempts.  PLC hardware interlock is backstop.
 5a. Relay not answering (at startup or later) → the server keeps running and
@@ -184,6 +188,10 @@ class InterlockConfig:
     email_credentials_filepath: Optional[str] = None
     reset_debounce_s: float = 5.0
     relay_label: str = "ethernet relay"   # shown in the relay-down message
+    # An Opta reading (temperature or a flow) reported identically for this
+    # long counts as a railed read (an old Opta could not read above some
+    # voltage): the server trips (magnets killed through the relay).
+    railed_window_s: float = 180.0
 
 
 @dataclass
@@ -232,6 +240,12 @@ class InterlockService:
         # Set by a COM (re)connect: the first completed clean run decides a
         # tripped status (OK if the PLC reports no trip).  Wall time, for the message.
         self._plc_recheck_since: Optional[float] = None
+        # Railed reads (_track_railed; guarded by _state_lock).  Per channel:
+        # [value, run start, last report] (monotonic); and the channels found
+        # railed -> {"value", "unit", "since" (epoch s)}, kept until the
+        # channel reports a different value.
+        self._railed_runs: dict[str, list] = {}
+        self._railed: dict[str, dict] = {}
 
         # Monotonic timers (IT8 - clock-jump immunity).
         self._last_valid_data_monotonic = time.monotonic()
@@ -578,6 +592,21 @@ class InterlockService:
             warmup = self._warmup_active
             last_data_age = now - self._last_valid_data_monotonic
             safe_reason = self._safe_mode_reason
+            plc_inhibiting = self._plc_latched
+            railed = {ch: dict(r) for ch, r in self._railed.items()}
+            recheck_since = self._plc_recheck_since
+            clean_for = (0.0 if self._plc_clean_since is None
+                         else now - self._plc_clean_since)
+        if state == _sm.STATE_TRIPPED and recheck_since is not None:
+            # A COM reconnect's recheck is running: say what it waits for.
+            at = time.strftime('%H:%M:%S', time.localtime(recheck_since))
+            if railed:
+                wait = "an Opta read is railed"
+            elif plc_inhibiting:
+                wait = "the PLC still reports a trip"
+            else:
+                wait = f"PLC data without a trip {clean_for:.0f} of {_PLC_CLEAR_S:.0f} s"
+            message = f"{message}; COM reconnected {at}, rechecking: {wait}"
         com = self._com_snapshot()
         reconnect_attempts = com["reconnect_attempts"]
         # The relay is never contacted here: the relay poll thread (and every
@@ -625,6 +654,13 @@ class InterlockService:
             "temperature_c": sample.temperature_c if sample else None,
             "flow_v": dict(sample.flow_v) if sample else {},
             "plc_tripped": sample.plc_tripped if sample else False,
+            # The PLC holds the magnets off (trip text seen, not yet followed
+            # by _PLC_CLEAR_S of data without it); last known while no data.
+            "plc_inhibiting": plc_inhibiting,
+            # Railed Opta reads: channel -> {"value", "unit", "since" (epoch s)}.
+            "railed": railed,
+            # A COM reconnect's recheck of a tripped status: since (epoch s) or None.
+            "plc_recheck_since": recheck_since,
         }
 
     def _com_snapshot(self) -> dict:
@@ -681,6 +717,9 @@ class InterlockService:
         with self._state_lock:
             if self._state == _sm.STATE_SAFE_MODE:
                 return {"status": "refused", "reason": "safe_mode"}
+            if self._railed:     # before "tripped": the more specific reason
+                return {"status": "refused", "reason": "opta_read_railed",
+                        "message": "Opta read railed: " + ", ".join(sorted(self._railed))}
             if self._state == _sm.STATE_TRIPPED:
                 return {"status": "refused", "reason": "tripped"}
             if self._relay_down_since is not None:
@@ -689,10 +728,12 @@ class InterlockService:
             if self._warmup_active:
                 return {"status": "refused", "reason": "no_plc_data",
                         "message": "no good PLC frame received since startup"}
-            last_plc_tripped = bool(self._last_sample and self._last_sample.plc_tripped)
+            last_plc_tripped = (bool(self._last_sample and self._last_sample.plc_tripped)
+                                or self._plc_latched)
         if last_plc_tripped:
             return {"status": "refused", "reason": "plc_still_tripped"}
-        if self._owner.lock.kill_waiting:
+        kill_thread = self._kill_thread
+        if self._owner.lock.kill_waiting or (kill_thread is not None and kill_thread.is_alive()):
             return {"status": "refused", "reason": "kill_in_progress",
                     "message": "a magnet kill is in progress"}
         return None
@@ -804,8 +845,8 @@ class InterlockService:
     def com_connect(self, client_addr: str = "?") -> dict:
         """Dashboard Connect: release a held COM port and open it now.
 
-        Touches nothing else: the interlock state, the trip latch and the
-        magnets stay exactly as they are (data resumes on the next frame)."""
+        Never touches the magnets.  The PLC data after the (re)connect
+        decides a tripped status (invariant 4b, ``_track_plc_stream``)."""
         with self._state_lock:
             if self._state == _sm.STATE_SAFE_MODE:
                 _LOG.warning("COM connect refused (safe mode) from %s", client_addr)
@@ -937,15 +978,21 @@ class InterlockService:
             self._link.report_error(read_exc, where="read")   # closes; link reopens
         if buffer:
             self._link.note_rx()
+        sample = self._parse_plc_buffer(buffer) if buffer else None
+        railed = self._track_railed(sample) if sample is not None else None
+        trip_text, notes = self._track_plc_stream(buffer, sample)
+        for note in notes:
+            _LOG.warning(note)
         if not buffer:
             # No data this cycle — check stale (the link handles reopening).
             self._check_stale()
             return
 
-        sample = self._parse_plc_buffer(buffer)
         if sample is None:
             # Bad/incomplete frame; counted toward stale, not toward "good".
             _LOG.warning("PLC frame failed checksum; not refreshing last_valid_data")
+            if trip_text:
+                self._trip(reason="PLC reported a trip (in a frame that failed the checksum)")
             self._check_stale()
             return
 
@@ -972,9 +1019,106 @@ class InterlockService:
         if self._history is not None:
             self._history.add(sample.epoch, _history_row(sample))
 
-        # Did the PLC explicitly report tripped?
+        # Did the PLC explicitly report tripped?  (Also a trip line split
+        # across two reads, or "SHUTTING OFF ...".)
         if sample.plc_tripped:
             self._trip(reason="PLC reported I TRIPPED")
+        elif trip_text:
+            self._trip(reason="PLC reported a trip")
+        if railed is not None:
+            self._trip(reason=railed)
+
+    def _track_plc_stream(self, buffer: bytes,
+                          sample: Optional[_Sample]) -> tuple[bool, list[str]]:
+        """Follow the PLC stream for its trip text; returns (trip text in
+        this read, notes to log).
+
+        The PLC is latched (``plc_inhibiting``) from any trip text until
+        ``_PLC_CLEAR_S`` of unbroken data with none (an empty read or a COM
+        reconnect restarts that run; a frame failing the checksum neither
+        starts nor breaks it).  A COM (re)connect's recheck is decided when
+        that run completes: a tripped status returns to ok -- unless an Opta
+        read is railed, which keeps the recheck waiting."""
+        now = time.monotonic()
+        notes: list[str] = []
+        with self._state_lock:
+            if not buffer:
+                self._plc_clean_since = None
+                return False, notes
+            tail = self._plc_rx_tail
+            combined = tail + buffer
+            # Only matches that end inside this read (one wholly in the tail
+            # was found last time).
+            trip_text = any(combined.find(p, max(0, len(tail) - len(p) + 1)) >= 0
+                            for p in _PLC_TRIP_TEXTS)
+            self._plc_rx_tail = combined[-_PLC_TAIL_BYTES:]
+            if trip_text or (sample is not None and sample.plc_tripped):
+                self._plc_latched = True
+                self._plc_clean_since = None
+                return True, notes
+            if sample is None:
+                return False, notes
+            if self._plc_clean_since is None:
+                self._plc_clean_since = now
+            if now - self._plc_clean_since < _PLC_CLEAR_S:
+                return False, notes
+            if self._plc_latched:
+                self._plc_latched = False
+                notes.append(f"PLC reports no trip for {_PLC_CLEAR_S:.0f} s of data: "
+                             "no longer inhibiting")
+            if self._plc_recheck_since is None or self._railed:
+                return False, notes
+            since = self._plc_recheck_since
+            self._plc_recheck_since = None
+            if self._state != _sm.STATE_TRIPPED:
+                return False, notes
+            prior = self._message
+            self._state = _sm.STATE_OK
+            self._message = "monitoring"
+        notes.append(
+            f"Interlock status back to OK: after the COM reconnect at "
+            f"{time.strftime('%H:%M:%S', time.localtime(since))} the PLC reports no trip "
+            f"for {_PLC_CLEAR_S:.0f} s of data (was tripped: {prior}).  Magnets left as "
+            "they are (off after the trip); Enable is a person's action.")
+        return False, notes
+
+    def _track_railed(self, sample: _Sample) -> Optional[str]:
+        """Railed Opta reads: a channel reporting the identical value for
+        ``railed_window_s`` (a gap in its reports longer than
+        ``stale_threshold_s`` restarts the run).  Returns the trip reason
+        when a channel is newly railed, else None.  A railed channel stays
+        railed until it reports a different value."""
+        now = time.monotonic()
+        readings: dict[str, tuple[float, str]] = {}
+        if sample.temperature_k is not None:
+            readings["temperature"] = (sample.temperature_k, "K")
+        for meter, v in sorted(sample.flow_v.items()):
+            readings[f"flow {meter}"] = (v, "V")
+        window = self._cfg.railed_window_s
+        new, ended = [], []
+        with self._state_lock:
+            for ch, (v, unit) in readings.items():
+                run = self._railed_runs.get(ch)
+                if run is None or run[0] != v:
+                    self._railed_runs[ch] = [v, now, now]
+                    if ch in self._railed:
+                        ended.append((ch, self._railed.pop(ch), v))
+                    continue
+                if now - run[2] > self._cfg.stale_threshold_s:
+                    run[1] = now
+                run[2] = now
+                held = now - run[1]
+                if ch not in self._railed and held >= window:
+                    self._railed[ch] = {"value": v, "unit": unit, "since": time.time() - held}
+                    new.append(f"{ch} reported {v!r} {unit} unchanged for {held:.0f} s")
+        for ch, old, v in ended:
+            _LOG.warning("Opta read %s no longer railed: %r -> %r %s (the interlock stays "
+                         "tripped until a COM reconnect's recheck)", ch, old["value"], v, old["unit"])
+        if not new:
+            return None
+        reason = "Opta read railed: " + "; ".join(new)
+        _LOG.critical(reason)
+        return reason
 
     def _parse_plc_buffer(self, buffer: bytes) -> Optional[_Sample]:
         # Mirror original parsing; produce structured _Sample only if checksum
