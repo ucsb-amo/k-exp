@@ -34,9 +34,10 @@ class InterlockClient(NetClient):
     # Wire helpers
     # ------------------------------------------------------------------
 
-    def _send(self, command: str) -> str:
+    def _send(self, command: str, timeout: Optional[float] = None) -> str:
+        timeout = self.timeout if timeout is None else float(timeout)
         with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
-            s.settimeout(self.timeout)
+            s.settimeout(timeout)
             try:
                 s.connect((self.host, self.port))
             except OSError as exc:
@@ -44,7 +45,7 @@ class InterlockClient(NetClient):
                 if not self._rediscover(timeout=1.0):
                     raise
                 s2 = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-                s2.settimeout(self.timeout)
+                s2.settimeout(timeout)
                 try:
                     s2.connect((self.host, self.port))
                     return self._roundtrip(s2, command)
@@ -64,8 +65,8 @@ class InterlockClient(NetClient):
                 break
         return buf.decode("utf-8", errors="replace").strip()
 
-    def _send_json(self, command: str) -> dict:
-        raw = self._send(command)
+    def _send_json(self, command: str, timeout: Optional[float] = None) -> dict:
+        raw = self._send(command, timeout=timeout)
         try:
             obj = json.loads(raw)
         except json.JSONDecodeError as exc:
@@ -114,6 +115,35 @@ class InterlockClient(NetClient):
         server refuses while the magnets are (or may be) enabled; the message
         says why.  Raises on network failure."""
         return self._com_reply(self._send_json("COM_DISCONNECT"))
+
+    # --- generic requests ------------------------------------------------
+
+    def send_command(self, command: str, timeout: Optional[float] = None) -> dict:
+        """A bare command (``ENABLE_MAGNETS`` ...) with its own timeout."""
+        return self._send_json(command, timeout=timeout)
+
+    def request(self, obj: dict, timeout: Optional[float] = None) -> dict:
+        """One JSON request line (the relay commands).  An old server answers
+        ``{"status": "error", "message": "unknown command: ..."}``."""
+        return self._send_json(json.dumps(obj), timeout=timeout)
+
+    # --- the ethernet relay (the server owns it) ------------------------
+
+    def relay_status(self, fresh: bool = False, timeout: Optional[float] = None) -> dict:
+        return self.request({"cmd": "relay_status", "fresh": bool(fresh)}, timeout=timeout)
+
+    def relay_set(self, channel: str, on: bool, timeout: Optional[float] = 10.0) -> dict:
+        return self.request({"cmd": "relay_set", "channel": channel, "on": bool(on)},
+                            timeout=timeout)
+
+    def artiq_restart(self, which: str, t_wait: float, t_between: float = 0.0,
+                      timeout: Optional[float] = 10.0) -> dict:
+        return self.request({"cmd": "artiq_restart", "which": which,
+                             "t_wait": float(t_wait), "t_between": float(t_between)},
+                            timeout=timeout)
+
+    def relay_job(self, job_id: str, timeout: Optional[float] = None) -> dict:
+        return self.request({"cmd": "relay_job", "job_id": job_id}, timeout=timeout)
 
     @staticmethod
     def _com_reply(reply: dict) -> tuple[bool, str]:

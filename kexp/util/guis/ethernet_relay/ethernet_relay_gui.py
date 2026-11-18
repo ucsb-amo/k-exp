@@ -8,12 +8,23 @@ from PyQt6.QtWidgets import (QApplication, QMainWindow, QWidget, QVBoxLayout,
                              QDialogButtonBox, QDoubleSpinBox)
 from PyQt6.QtCore import QTimer, Qt, QThread, pyqtSignal
 from PyQt6.QtGui import QFont, QPalette, QColor, QIcon, QPixmap, QPainter, QBrush, QPen
-from kexp.control.ethernet_relay import (EthernetRelay, SOURCE_RELAY_IDX,
+from kexp.control.ethernet_relay import (EthernetRelay, RelayRefused, SOURCE_RELAY_IDX,
                                           MAGNET_INHIBIT_IDX,
                                           ARTIQ_RESTART_TIME_S,
                                           ARTIQ_SATELLITE_MAIN_RESTART_OFFSET_S)
 
 logger = logging.getLogger("kexp.dashboard.client.ethernet_relay")
+
+# The interlock's reasons for refusing Enable, as a person reads them.
+_REFUSAL_WORDS = {
+    "tripped": "the interlock is tripped",
+    "no_plc_data": "no data from the interlock PLC yet",
+    "plc_still_tripped": "the interlock PLC still reports a trip",
+    "relay_not_answering": "the relay is not answering",
+    "kill_in_progress": "a magnet kill is in progress",
+    "safe_mode": "the interlock server is in safe mode",
+}
+_REFUSED_PREFIX = "Refused: "
 
 
 class ArtiqRestartSettingsDialog(QDialog):
@@ -75,9 +86,9 @@ class RelayWorker(QThread):
         self.relay = relay
         self.operation = operation
         self.settings = settings or {}
-        # One relay object (one socket) is shared by every worker: the lock
-        # keeps a status read from connecting/closing in the middle of an
-        # operation. probe_kwargs bound the periodic status read only.
+        # One relay client is shared by every worker (it asks the interlock
+        # server, the relay's only user): the lock keeps a status read from
+        # overlapping an operation. probe_kwargs shape the periodic read only.
         self.lock = lock
         self.probe_kwargs = probe_kwargs or {}
 
@@ -119,6 +130,9 @@ class RelayWorker(QThread):
                 return
             
             self.finished.emit([True])
+        except RelayRefused as e:
+            words = _REFUSAL_WORDS.get(e.reason, str(e))
+            self.error.emit(f"{_REFUSED_PREFIX}{words}")
         except Exception as e:
             self.error.emit(str(e))
 
@@ -128,11 +142,10 @@ class EthernetRelayGUI(QMainWindow):
     SUB_BUTTON_MIN_WIDTH = 62
     STATUS_MIN_WIDTH = 62
     SETTINGS_BUTTON_SIZE = 20
-    # The periodic status read is a best-effort probe: one connect attempt
-    # with a short socket timeout, so it always finishes well within a few
-    # ticks even when the relay is unreachable. User operations keep the
-    # relay's full connect retry policy.
-    STATUS_PROBE_KWARGS = {'retries': 0, 'timeout': 3.0}
+    # The periodic status read asks the interlock server for the relay states
+    # it last read (it polls the relay every 5 s itself); it never makes the
+    # server contact the relay.
+    STATUS_PROBE_KWARGS = {'fresh': False}
 
     def __init__(self, relay=None):
         super().__init__()
@@ -732,6 +745,13 @@ class EthernetRelayGUI(QMainWindow):
         self.artiq_restart_btn.setText("Restart ARTIQ")
         self.artiq_main_restart_btn.setText("Main")
         self.artiq_satellites_restart_btn.setText("Satellites")
+        if error_message.startswith(_REFUSED_PREFIX):
+            # Not a fault: the interlock said no. Keep the indicator, say why.
+            reason = error_message[len(_REFUSED_PREFIX):]
+            logger.warning("Magnet enable refused: %s", reason)
+            QMessageBox.information(self, "Magnets not enabled",
+                                    f"The magnets were not enabled: {reason}.")
+            return
         self._show_error_indicator()
 
         logger.error("Relay operation failed: %s", error_message)
