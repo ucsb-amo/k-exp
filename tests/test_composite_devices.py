@@ -151,6 +151,36 @@ def test_raman_window_warns_but_used_transitions_pass(config, params, frames):
     assert [c.level for c in arg.checks(200.e6, ctx)] == ["warn"]
 
 
+def test_raman_check_says_no_dds_frame(config, params):
+    arg = _device("raman").get_field("f")
+    ctx = Context(config, params, SimpleNamespace(dds=None, dac=None))
+    (found,) = arg.checks(119.4639e6, ctx)
+    assert found.level == "warn" and "no DDS frame" in found.message
+
+
+def test_failed_host_build_is_logged_named_and_retried(config, params, monkeypatch, caplog):
+    # a fresh frames object (its own cache) whose Raman channel is missing
+    class Dds:
+        pass
+    dds = Dds()
+    ctx = Context(config, params, SimpleNamespace(dds=dds, dac=None))
+    arg = _device("raman").get_field("f")
+    with caplog.at_level("ERROR", logger="kexp.config.composite_devices"):
+        (found,) = arg.checks(119.4639e6, ctx)
+        arg.checks(119.4639e6, ctx)                        # same failure: logged once
+    assert "AttributeError" in found.message and "raman_150_plus" in found.message
+    assert sum("raman host object" in r.getMessage() for r in caplog.records) == 1
+    # the failure is not cached forever: once the retry interval is past, it rebuilds
+    real = dds_frame(dac_frame_obj=dac_frame())
+    for name in ("raman_150_plus", "raman_80_plus", "raman_switch"):
+        setattr(dds, name, getattr(real, name))
+    assert kc._raman_pair(ctx) is None                     # inside the retry interval
+    monkeypatch.setattr(kc, "HOST_OBJECT_RETRY_S", 0.)
+    assert kc._raman_pair(ctx) is not None
+    assert kc.host_object_error("raman") == ""
+    assert arg.checks(119.4639e6, ctx) == []
+
+
 # --- imaging -----------------------------------------------------------------------
 
 def _host_imaging(frames, params):

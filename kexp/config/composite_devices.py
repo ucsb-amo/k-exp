@@ -64,7 +64,9 @@ from __future__ import annotations
 
 import contextlib
 import io
+import logging
 import math
+import time
 from dataclasses import replace
 
 from waxx.util.device_state.composite import (
@@ -89,6 +91,8 @@ from kexp.calibrations.tweezer import (
 from kexp.control.painted_lightsheet import V_LIGHTSHEET_PAINT_MIN
 from kexp.control.awg_tweezer import V_TWEEZER_PAINT_MIN
 from kexp.config.monitor_connections import AWG_CONNECTION_KEY
+
+log = logging.getLogger(__name__)
 
 # --- shared numbers ---------------------------------------------------------------
 
@@ -191,13 +195,23 @@ def _frame_attr(ctx, frame, name, attr, default=None):
 
 # --- lazily built host copies of the lab's classes (GUI side only) -----------------
 
+#: Seconds between attempts to rebuild a host object whose build raised.
+HOST_OBJECT_RETRY_S = 10.
+
+_HOST_OBJECT_ERRORS: dict = {}       # attr -> why the last build gave nothing
+
+
 def _host_object(ctx, attr, build):
     """Build (once per frames object) a host copy of a lab class for its
     conversions, so the GUI's numbers come from the same code the kernel
-    runs.  None when the GUI has no frames."""
+    runs.  None when the GUI has no DDS frame or the build raised;
+    :func:`host_object_error` says which.  A failed build is logged with its
+    traceback and retried after ``HOST_OBJECT_RETRY_S``, not cached."""
     frames = getattr(ctx, "frames", None)
     dds = getattr(frames, "dds", None)
     if dds is None:
+        _HOST_OBJECT_ERRORS[attr] = ("the GUI has no DDS frame (building it failed "
+                                     "when the panel opened; see the dashboard log)")
         return None
     cache = getattr(frames, "_composite_cache", None)
     if cache is None:
@@ -206,14 +220,32 @@ def _host_object(ctx, attr, build):
             frames._composite_cache = cache
         except Exception:
             pass
-    if attr not in cache:
-        try:
-            # The classes print a harmless note about the missing core device.
-            with contextlib.redirect_stdout(io.StringIO()):
-                cache[attr] = build(dds, ctx.params)
-        except Exception:
-            cache[attr] = None
-    return cache[attr]
+    if attr in cache:
+        return cache[attr]
+    failed_at = cache.get(("failed_at", attr))
+    if failed_at is not None and time.monotonic() - failed_at < HOST_OBJECT_RETRY_S:
+        return None
+    try:
+        # The classes print a harmless note about the missing core device.
+        with contextlib.redirect_stdout(io.StringIO()):
+            obj = build(dds, ctx.params)
+    except Exception as exc:
+        reason = f"building the host copy failed ({type(exc).__name__}: {exc})"
+        if _HOST_OBJECT_ERRORS.get(attr) != reason:     # log each new failure once
+            log.exception("composite_devices: %s host object: %s", attr, reason)
+        _HOST_OBJECT_ERRORS[attr] = reason
+        cache[("failed_at", attr)] = time.monotonic()
+        return None
+    cache[attr] = obj
+    cache.pop(("failed_at", attr), None)
+    _HOST_OBJECT_ERRORS.pop(attr, None)
+    return obj
+
+
+def host_object_error(attr) -> str:
+    """Why the last :func:`_host_object` call for ``attr`` gave None ("" if
+    it did not)."""
+    return _HOST_OBJECT_ERRORS.get(attr, "")
 
 
 def _raman_pair(ctx):
@@ -506,7 +538,8 @@ def _raman_p_readback(ctx):
 def _raman_f_check(value, ctx):
     ao = raman_ao_frequencies(ctx, value)
     if ao is None:
-        return Check.warn("cannot compute the AO frequencies (no frames)")
+        why = host_object_error("raman") if value is not None else "no transition frequency"
+        return Check.warn(f"cannot compute the AO frequencies: {why or 'unknown reason'}")
     f0, f1 = ao
     found = []
     if not (1.e6 < f0 < 400.e6) or not (1.e6 < f1 < 400.e6):
