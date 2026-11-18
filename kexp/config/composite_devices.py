@@ -525,13 +525,14 @@ def _raman_f_readback(ctx):
 
 
 def _raman_p_readback(ctx):
-    # expt.raman is RamanBeamsPID: the power is the 150+ PID setpoint over its
-    # balanced-max setpoint (the DDS amplitudes stay at their defaults)
-    v = ctx.dac_voltage("raman_150")
+    # expt.raman is RamanBeamsPID: the 150+ PID setpoint is
+    # dark + p * (max - dark) (the DDS amplitudes stay at their defaults)
+    v = ctx.dac_voltage("raman_150_pid")
     v_max = _float(getattr(ctx.params, "v_pd_dds0_balanced_max", None))
-    if v is None or not v_max:
+    v_dark = _float(getattr(ctx.params, "v_pd_dds0_dark", None)) or 0.
+    if v is None or v_max is None or v_max == v_dark:
         return None
-    return v / v_max
+    return (v - v_dark) / (v_max - v_dark)
 
 
 def _raman_f_check(value, ctx):
@@ -592,7 +593,7 @@ RAMAN = CompositeDevice(
     title="Raman beams",
     group="Probe light",
     doc=("expt.raman (RamanBeamsPID): raman_150_plus + raman_80_plus set the "
-         "two-photon frequency, the DACs raman_150 + raman_80 the intensity PID "
+         "two-photon frequency, the DACs raman_150_pid + raman_80_pid the intensity PID "
          "setpoints, raman_switch is the switch AO, raman_shutter the "
          "shutter.  quantum_machines_raman_rf_handoff_ttl high means the OPX drives "
          "the two AOs; On takes them back for ARTIQ."),
@@ -607,8 +608,9 @@ RAMAN = CompositeDevice(
         Arg("p", "Power fraction", decimals=3, step=0.01, minimum=0., maximum=1.,
             default=lambda ctx: ctx.params.fraction_power_raman,
             readback=_raman_p_readback, param="fraction_power_raman",
-            tooltip="fraction_power: each intensity PID setpoint at p x its balanced-max "
-                    "setpoint (v_pd_dds0/1_balanced_max); AOs at their default amplitudes. "
+            tooltip="Fraction of the p = 1 power in each beam: each intensity PID setpoint "
+                    "at dark + p x (max - dark) (v_pd_dds0/1_dark, v_pd_dds0/1_balanced_max); "
+                    "AOs at their default amplitudes. "
                     "↺ = ExptParams fraction_power_raman."),
     ),
     ops=(

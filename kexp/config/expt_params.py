@@ -187,16 +187,10 @@ class ExptParams(ExptParamsWaxx):
 
         self.t_feshbach_field_ramp_special = 20.e-3
 
-        # self.t_raman_pi_pulse = 3.9229e-06 #89418, 2026-10-28
-        # self.t_raman_pi_pulse = 3.8413e-06 #89744, 2026-10-29
-        # self.t_raman_pi_pulse = 3.4753e-06 #89767, 2026-10-29
-        # self.t_raman_pi_pulse = 3.6616e-06 #89933, 2026-10-29
-        # self.t_raman_pi_pulse = 3.6235e-06 #90199, 2026-10-30
-        # self.t_raman_pi_pulse = 3.7045e-06 #90236, 2026-10-30
-        # self.t_raman_pi_pulse = 5.0688e-06 #92595, 2026-11-05
-        # self.t_raman_pi_pulse = 9.3139e-06 #95762, 2026-11-14
-        # self.t_raman_pi_pulse = 9.1169e-06 #95779, 2026-11-16
         self.t_raman_pi_pulse = 9.4525e-06 #95797, 2026-11-16
+        # !! 2026-11-16 ~20:10: the Raman PID power mapping changed (v_pd_dds0/1_balanced_max, _dark below).
+        # #95797 ran at p 0.4 = setpoints 2.08 (150+) / 1.28 (80+) V; p 0.4 is now 2.19 / 2.92 V (x1.05 / x2.28
+        # PD). Every Raman pi time, resonance and light shift above predates it; recalibrate.
          
         # DAC controlled AO amplitudes
         self.amp_d1_3d_c = 0.3
@@ -409,13 +403,14 @@ class ExptParams(ExptParamsWaxx):
         self.frequency_raman_zeeman_state_xfer_sweep_fullwidth = 5.e6
         self.fraction_power_raman = 0.4
         self.fraction_power_raman_nf = 1.
-        # Raman intensity PID setpoints (V) giving ~max power with the two beams at equal
-        # power at the atoms; RamanBeamsPID sets fraction_power_raman * these.
-        # dds0 = raman_150_plus (DAC raman_150, PID loop 2), dds1 = raman_80_plus (DAC raman_80, loop 1).
-        # PLACEHOLDERS, NOT MEASURED: the DAC channels' max_v of 2026-11-07 (3.2 / 5.2 V, since removed
-        # from dac_id.py), not a balance point.
-        self.v_pd_dds0_balanced_max = 5.2
-        self.v_pd_dds1_balanced_max = 3.2
+        # Raman intensity PID: photodiode setpoints (V) for fraction_power_raman = 1, and the
+        # photodiode readings with no light. RamanBeamsPID sets each loop to
+        # dark + fraction_power_raman * (max - dark).
+        
+        self.v_pd_dds0_balanced_max = 5.9085 # 2026-11-17 (0.95 x 6.2195)
+        self.v_pd_dds1_balanced_max = 7.2665 # 2026-11-17 (0.95 x 7.6489)
+        self.v_pd_dds0_dark = 0.0017 # 2026-11-17
+        self.v_pd_dds1_dark = 0.0184 # 2026-11-17
         self.n_raman_sweep_steps = 100
 
         # self.frequency_raman_transition = 41.25e6 # 57 G 1,-1 to 1,0

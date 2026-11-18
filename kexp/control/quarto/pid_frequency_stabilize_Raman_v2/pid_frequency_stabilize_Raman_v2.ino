@@ -51,9 +51,9 @@ int32_t hold = 1;       // 1 = skip bad sweeps and pause in HOLD; 0 = use every 
 double setp = 5.5;      // ms, peak separation setpoint
 double vth = 3.0;       // V, peak threshold
 double hys = 0.2;       // V, a peak ends below vth - hys
-int32_t nmin = 2;       // samples above vth for a peak to count
+int32_t nmin = 1;       // samples above vth for a peak to count
 double tmin = 2.5;      // ms, ignore peaks closer than this to the first
-double win = 15.0;      // ms, |err| >= win skips the sweep
+double win = 30.0;      // ms, |err| >= win skips the sweep
 int32_t nbad = 5;       // skipped sweeps in a row: LOCKED -> HOLD
 int32_t ngood = 10;     // good sweeps in a row: HOLD -> LOCKED
 double g1 = -1.0;        // overall gain

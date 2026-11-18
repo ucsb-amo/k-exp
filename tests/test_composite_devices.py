@@ -125,10 +125,22 @@ def test_raman_readback_inverts_the_classes_split(config, params, frames):
 
 
 def test_raman_power_readback(config, params, frames):
-    # RamanBeamsPID.set: the 150+ PID setpoint at p x v_pd_dds0_balanced_max
+    # RamanBeamsPID.set: the 150+ PID setpoint at dark + p x (max - dark)
     ctx = _ctx(config, params, frames)
-    config["dac"]["raman_150"]["voltage"] = 0.3 * params.v_pd_dds0_balanced_max
+    v_dark, v_max = params.v_pd_dds0_dark, params.v_pd_dds0_balanced_max
+    config["dac"]["raman_150_pid"]["voltage"] = v_dark + 0.3 * (v_max - v_dark)
     assert kc._raman_p_readback(ctx) == pytest.approx(0.3)
+
+
+def test_raman_pid_setpoints_follow_dark_and_max(frames, params):
+    from kexp.control.misc.raman_beams_pid import RamanBeamsPID
+    raman = RamanBeamsPID(dds0=frames.dds.raman_150_plus, dds1=frames.dds.raman_80_plus,
+                          dds_sw=frames.dds.raman_switch, dac_pid0=frames.dac.raman_150_pid,
+                          dac_pid1=frames.dac.raman_80_pid, params=params)
+    v0, v1 = raman.fraction_power_to_v_pd(0.)
+    assert (v0, v1) == pytest.approx((params.v_pd_dds0_dark, params.v_pd_dds1_dark))
+    v0, v1 = raman.fraction_power_to_v_pd(1.)
+    assert (v0, v1) == pytest.approx((params.v_pd_dds0_balanced_max, params.v_pd_dds1_balanced_max))
 
 
 def test_raman_window_warns_but_used_transitions_pass(config, params, frames):
