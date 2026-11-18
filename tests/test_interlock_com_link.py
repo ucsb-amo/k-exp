@@ -345,7 +345,9 @@ def test_watchdog_does_not_exit_without_a_poll_loop(make, monkeypatch):
 def test_link_keeps_retrying_and_connects_when_port_appears(make):
     svc, bus, relay = make(present=False)
     assert _until(lambda: bus.opens >= 3)          # retries on its backoff
-    assert _com(svc)["status"] == "error"
+    # Between retries it reads "error"; during each 50 ms retry, "connecting"
+    # (one sample could land in either -- a race since this test was written).
+    assert _until(lambda: _com(svc)["status"] == "error")
     bus.present.add(PORT)
     assert _until(lambda: _com(svc)["status"] == "connected")
     assert _com(svc)["config_valid"] is True

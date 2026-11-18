@@ -173,8 +173,10 @@ class RelayOwner:
         if not self.lock.acquire(priority=priority, timeout=lock_timeout):
             raise RelayBusy("the relay is busy with another request")
 
-    def _contact(self, fn, *args):
-        """One bounded contact; the caller holds the lock."""
+    def _contact(self, fn, *args, store=None):
+        """One bounded contact; the caller holds the lock.  *store(result)*
+        runs before the contact is reported, so nobody sees the relay
+        answering with the cache still holding the state from before."""
         t0 = time.monotonic()
         try:
             result = fn(*args, retries=0, timeout=self.contact_budget_s)
@@ -183,6 +185,8 @@ class RelayOwner:
             if self._on_contact is not None:
                 self._on_contact(False, exc)
             raise
+        if store is not None:
+            result = store(result)
         self._count(None, time.monotonic() - t0)
         if self._on_contact is not None:
             self._on_contact(True, None)
@@ -208,12 +212,14 @@ class RelayOwner:
             self._states_mono = time.monotonic()
         return states
 
-    def _store_magnet(self, enabled: bool) -> None:
+    def _store_magnet(self, enabled) -> bool:
+        enabled = bool(enabled)
         with self._cache_lock:
             if self._states is not None:
                 self._states = list(self._states)
-                self._states[MAGNET_INHIBIT_IDX - 1] = bool(enabled)
+                self._states[MAGNET_INHIBIT_IDX - 1] = enabled
                 self._states_mono = time.monotonic()
+        return enabled
 
     # --- reads ------------------------------------------------------------
 
@@ -221,7 +227,7 @@ class RelayOwner:
         """Read all four relays now (one contact).  Raises on failure."""
         self._acquire(False, lock_timeout)
         try:
-            return self._store_states(self._contact(self._driver.read_relay_status))
+            return self._contact(self._driver.read_relay_status, store=self._store_states)
         finally:
             self.lock.release()
 
@@ -229,11 +235,9 @@ class RelayOwner:
         """The magnet relay, read now.  Raises on failure / RelayBusy."""
         self._acquire(False, lock_timeout)
         try:
-            enabled = bool(self._contact(self._driver.read_magnet_status))
+            return self._contact(self._driver.read_magnet_status, store=self._store_magnet)
         finally:
             self.lock.release()
-        self._store_magnet(enabled)
-        return enabled
 
     # --- magnet kill --------------------------------------------------------
 
@@ -243,11 +247,9 @@ class RelayOwner:
         Raises on a failed contact."""
         self._acquire(True, None)
         try:
-            still_on = bool(self._contact(self._driver.kill_magnets_and_read))
+            return self._contact(self._driver.kill_magnets_and_read, store=self._store_magnet)
         finally:
             self.lock.release()
-        self._store_magnet(still_on)
-        return still_on
 
     def kill_until_off(self, budget_s: float, stop_event: Optional[threading.Event] = None,
                        gap_s: float = 0.2) -> bool:
@@ -282,10 +284,10 @@ class RelayOwner:
                 refusal = guard()
                 if refusal is not None:
                     return refusal
-            states = self._contact(self._driver.set_channel_and_read_all, idx, on)
+            return self._contact(self._driver.set_channel_and_read_all, idx, on,
+                                 store=self._store_states)
         finally:
             self.lock.release()
-        return self._store_states(states)
 
     # ------------------------------------------------------------------
     # Cache / stats
