@@ -688,7 +688,10 @@ class Base(Expt, Devices, Cooling, Image, Cameras, Control, Clients):
             self.ry_980.sweep_to(reset=True)
         if self.ry_405._used:
             self.ry_405.sweep_to(reset=True)
-        self.tweezer.reset_awg()
+        # only a run whose init_kernel set the AWG up resets it (init_kernel(setup_awg=False)
+        # leaves the card alone at the start and at the end)
+        if self._setup_awg:
+            self.tweezer.reset_awg()
         self.core.break_realtime()
         if self.mot_preload:
             # the last shot's pre-load: light and 2D current off here, the

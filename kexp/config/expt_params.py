@@ -187,10 +187,7 @@ class ExptParams(ExptParamsWaxx):
 
         self.t_feshbach_field_ramp_special = 20.e-3
 
-        self.t_raman_pi_pulse = 9.4525e-06 #95797, 2026-11-16
-        # !! 2026-11-16 ~20:10: the Raman PID power mapping changed (v_pd_dds0/1_balanced_max, _dark below).
-        # #95797 ran at p 0.4 = setpoints 2.08 (150+) / 1.28 (80+) V; p 0.4 is now 2.19 / 2.92 V (x1.05 / x2.28
-        # PD). Every Raman pi time, resonance and light shift above predates it; recalibrate.
+        self.t_raman_pi_pulse = 7.0299e-06 #95837, 2026-11-17
          
         # DAC controlled AO amplitudes
         self.amp_d1_3d_c = 0.3

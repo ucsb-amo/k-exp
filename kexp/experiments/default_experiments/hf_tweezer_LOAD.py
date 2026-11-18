@@ -14,7 +14,7 @@ class mag_trap(EnvExperiment, Base):
 
     def prepare(self):
         Base.__init__(self,
-                      save_data=True,
+                      save_data=False,
                       camera_select=cameras.andor,
                       imaging_type=img_types.ABSORPTION, warmup_shots=1,
                       diagnostic_images=True,
@@ -85,8 +85,8 @@ class mag_trap(EnvExperiment, Base):
         # self.xvar('t_lightsheet_rampdown3',np.linspace(0.,175.,11)*1.e-3)
         
         # self.adjust('t_tweezer_hold',0.,100.e-3)
-        self.p.N_repeats = 1
-        self.xvar('beans',np.linspace(1,10,10))
+        self.p.N_repeats = 1000
+        # self.xvar('beans',np.linspace(1,10,10))
         # self.p.t_mot_load = 1.
             
         # self.p.v_lightsheet_dump = 0.
