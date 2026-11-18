@@ -398,7 +398,7 @@ class ExptParams(ExptParamsWaxx):
         # raman
         self.frequency_raman_zeeman_state_xfer_sweep_center = 40.e6
         self.frequency_raman_zeeman_state_xfer_sweep_fullwidth = 5.e6
-        self.fraction_power_raman = 0.4
+        self.fraction_power_raman = 0.35
         self.fraction_power_raman_nf = 1.
         # Raman intensity PID: photodiode setpoints (V) for fraction_power_raman = 1, and the
         # photodiode readings with no light. RamanBeamsPID sets each loop to

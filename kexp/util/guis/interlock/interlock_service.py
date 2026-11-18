@@ -47,7 +47,12 @@ Safety invariants (must always hold; see plan §"Safety invariants")
    by a person's Disconnect, in error, or reconnecting).
 4a. COM5 missing at startup → magnets killed once; the COM link keeps
    retrying the port; Enable is refused until a good PLC frame arrives.
-   A reconnect never enables the magnets or resets the interlock.
+   A reconnect never enables the magnets and never writes to the PLC.
+4b. After a COM (re)connect the PLC's own report decides a tripped status:
+   ``_PLC_CLEAR_S`` of unbroken PLC data with no trip text in it → the
+   status returns to ok (the magnets stay off until a person's Enable).
+   A PLC still latched keeps printing "I TRIPPED", so the status stays
+   tripped.  Without a reconnect a trip stays latched in the server.
 5. Relay unreachable when trip needed → retry forever, ``CRITICAL`` every 10
    attempts.  PLC hardware interlock is backstop.
 5a. Relay not answering (at startup or later) → the server keeps running and
@@ -128,6 +133,18 @@ _FRESH_READ_MIN_INTERVAL_S = 2.0
 _WRITE_LOCK_WAIT_S = 5.0
 # stop(): how long it waits for a running ARTIQ restart to restore power.
 _STOP_JOB_ABORT_S = 3.0
+# The PLC stream: text that means the PLC has tripped (the sketch prints
+# "SHUTTING OFF POWER SUPPLY ..." when it trips and "I TRIPPED" every loop,
+# ~1 s, while latched).  Searched across read boundaries (a line split
+# between two reads is still found): the last _PLC_TAIL_BYTES of each read
+# are kept for the next.
+_PLC_TRIP_TEXTS = (b"TRIPPED", b"SHUTTING OFF")
+_PLC_TAIL_BYTES = 16
+# The PLC counts as no longer tripped after this long of unbroken PLC data
+# (good frames, no empty read, no reconnect) with no trip text: several PLC
+# loops, since one ~1 s read can miss the "I TRIPPED" line and still pass
+# the checksum.  After a COM (re)connect, this decides a tripped status.
+_PLC_CLEAR_S = 5.0
 # Channels relay_set may switch (the magnet relay only via ENABLE/DISABLE_MAGNETS).
 _SETTABLE_CHANNELS = ("source_on", "artiq_main_power_cut", "artiq_satellites_power_cut")
 
@@ -208,6 +225,13 @@ class InterlockService:
         self._safe_mode_reason: Optional[str] = None
         self._consecutive_stale_windows = 0
         self._has_emailed_for_current_outage = False
+        # The PLC stream (_track_plc_stream; guarded by _state_lock).
+        self._plc_rx_tail = b""                       # end of the previous read
+        self._plc_latched = False                     # trip text seen, not yet cleared
+        self._plc_clean_since: Optional[float] = None # start of the current clean run
+        # Set by a COM (re)connect: the first completed clean run decides a
+        # tripped status (OK if the PLC reports no trip).  Wall time, for the message.
+        self._plc_recheck_since: Optional[float] = None
 
         # Monotonic timers (IT8 - clock-jump immunity).
         self._last_valid_data_monotonic = time.monotonic()
@@ -846,10 +870,15 @@ class InterlockService:
         return None
 
     def _on_com_connected(self) -> None:
-        """The link opened the port (first time or reconnect).  Bookkeeping
-        only: never enables the magnets, never resets the interlock, never
-        refreshes the staleness clock (only a good PLC frame does)."""
+        """The link opened the port (first time or reconnect).  Never enables
+        the magnets, never writes to the PLC, never refreshes the staleness
+        clock (only a good PLC frame does).  Starts a recheck: the PLC data
+        from now on decides a tripped status (``_track_plc_stream``)."""
         self._com_config_valid = True
+        with self._state_lock:
+            self._plc_rx_tail = b""
+            self._plc_clean_since = None
+            self._plc_recheck_since = time.time()
 
     # ------------------------------------------------------------------
     # Internal: poll loop

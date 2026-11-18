@@ -123,7 +123,7 @@ RAMAN_INTENSITY_LOG_DIR = _safe_join(DATA_DIR, 'raman_intensity_logs')
 DIAGNOSTIC_REFERENCE_CSV_PATH = _safe_join(DATA_DIR, 'diagnostic_reference.csv')
 
 ### Interlock controller
-INTERLOCK_COM = 'COM5'
+INTERLOCK_COM = 'COM19'
 
 ###
 WAVEMETER_MOGLABS_IP = '192.168.1.94'
