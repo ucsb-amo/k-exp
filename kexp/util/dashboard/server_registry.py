@@ -172,6 +172,23 @@ SERVER_SPECS: list[ServerSpec] = [
         hidden_panel=True,
     ),
     ServerSpec(
+        id="andor",
+        label="Andor camera server",
+        icon="📷",
+        # The beacon Andor server with kexp's camera table
+        # (camera_server:<host>:andor, camera andor_emccd:<cameras.andor serial>).
+        # Headless and panel-less: the Andor shows in the Camera Viewer.  It holds
+        # the camera only while a viewer has it open, and liveOD borrows it from
+        # here when it needs it.  Not in any PC's autostart (liveOD claims the
+        # Andor at its start on kong); start it from the Servers menu.
+        body_factory=None,
+        server_cmd=[_PY, "-m", "kexp.control.cameras.andor_server"],
+        cwd=_REPO,
+        # stopping closes the camera first: acquisition, shutter, SDK shutdown
+        graceful_stop_timeout_s=20.0,
+        hidden_panel=True,
+    ),
+    ServerSpec(
         id="raman_fp_lock",
         label="Raman FP lock",
         icon="🔐",
