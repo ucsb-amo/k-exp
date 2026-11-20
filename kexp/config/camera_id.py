@@ -183,7 +183,7 @@ class diagnostic_frame(diagnostic_frame_waxx):
         # mot(): before the load ends. t = -50 ms (2026-10-01) -> -150 ms #84561, 2026-10-01
         # (>= 100 ms from the GM edge); not taken for a load shorter than that
         self.img_mot = self.image(cameras.mot_basler, t_offset=-150.e-3, t_stage='t_mot_load',
-                                  exposure_time=300.e-6, gain=3., roi=[1668, 1049, 2373, 1767],
+                                  exposure_time=300.e-6, gain=3., roi=[1607, 632, 2541, 1711],
                                   label='MOT fluorescence', show='image')
         
         # end of cmot_d1(), where GM starts: 0.5 ms before GM end was blank, the ROI exposed after

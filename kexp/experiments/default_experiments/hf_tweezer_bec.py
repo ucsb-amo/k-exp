@@ -9,7 +9,7 @@ class hf_bec(EnvExperiment, Base):
 
     def prepare(self):
         Base.__init__(self,
-                      save_data=True,
+                      save_data=False,
                       camera_select=cameras.andor,
                       imaging_type=img_types.ABSORPTION,
                     #   diagnostic_images=True,
@@ -46,7 +46,7 @@ class hf_bec(EnvExperiment, Base):
 
         # self.data.apd = self.data.add_data_container(1)
         # self.xvar('t_tweezer_hold',np.linspace(0.,0.8,6))
-        self.p.N_repeats = 3
+        self.p.N_repeats = 1000
         # self.xvar('beans',np.linspace(1,10,10))
 
         # self.p.amp_tweezer_list = [0.5]
@@ -56,6 +56,7 @@ class hf_bec(EnvExperiment, Base):
         # self.adjust('phase_slm_mask',0.,3.*np.pi,0.1*np.pi)
         # self.adjust('amp_imaging',0.,3.,0.1)
         # self.adjust('t_imaging_pulse',10.e-6,500.e-6,10.e-6)
+        self.adjust('t_tof',5.e-6,2000.e-6,100.e-6)
 
         # Adjust.__init__(self)
         self.finish_prepare(shuffle=True)

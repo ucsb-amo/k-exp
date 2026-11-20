@@ -66,20 +66,20 @@ class hf_monitored_rabi(EnvExperiment, Base):
         self.prepare_hf_tweezers()
         # self.prep_raman(frequency_transition=self.p.frequency_raman_transition_lightshifted,
         #                 phase_mode=0)
-        self.prep_raman(frequency_transition=self.p.frequency_raman_transition,
+        self.prep_raman(frequency_transition=self.p.frequency_raman_transition_lightshifted,
                         phase_mode=0)
 
-        self.raman.set_up_fast_frequency_update(aggressive_mode=1)
-        self.raman.set_frequency_fast(self.p.frequency_raman_transition_lightshifted,
-                                      do_io_update=False)
+        # self.raman.set_up_fast_frequency_update(aggressive_mode=1)
+        # self.raman.set_frequency_fast(self.p.frequency_raman_transition_lightshifted,
+        #                               do_io_update=False)
         delay(1.e-3)
 
         self.raman.on()
 
         delay( self.p.t_raman_pi_pulse * self.p.n_dark_pi_pulse )
 
-        self.raman.io_update()
-        delay_mu(91)
+        # self.raman.io_update()
+        # delay_mu(91)
         self.imaging.on()
         
         self.ttl.pd_scope_trig3.pulse(1.e-6)

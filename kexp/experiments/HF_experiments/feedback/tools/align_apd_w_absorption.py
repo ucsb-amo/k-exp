@@ -17,12 +17,12 @@ class hf_monitored_rabi(EnvExperiment, Base):
                       imaging_type=img_types.ABSORPTION,
                       mot_preload=True)
         
-        self.p.t_imaging_pulse = 20.e-6
+        self.p.t_imaging_pulse = 200.e-6
         
         # self.xvar('make_atoms',[0,1]*1000)
         
         # self.xvar('amp_imaging',np.linspace(0.1,1.,10))
-        self.p.amp_imaging = 0.5
+        self.p.amp_imaging = 0.25
 
         # self.xvar('t_tweezer_hold',np.linspace(1.e-3,1.1e-3,10))
         self.p.t_tweezer_hold = 20.e-3
