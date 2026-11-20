@@ -74,14 +74,14 @@ class ExptParams(ExptParamsWaxx):
         self.detune_d2_2d_r_imaging = -4.4
 
         # SLM settings
-        self.dimension_slm_mask = 14.e-6 # this parameter has a bug -- it is actually writing "20 px", which ends up being 160um diameter (8 um per px)
+        self.dimension_slm_mask = 16.e-6 # this parameter has a bug -- it is actually writing "20 px", which ends up being 160um diameter (8 um per px)
         # self.phase_slm_mask = 0.323077 * np.pi  # 89420
         # self.phase_slm_mask = 0.5 * np.pi  #90243, 2026-10-30  # contrast 56 mV vs 35 at the old value, middle of the 0.425-0.575 pi plateau (user)
-        self.phase_slm_mask = 0.4125 * np.pi  #90249, 2026-10-30  # fine scan, pre-registered rule (user): best balance about the midpoint with read 1 >= 2/3 of reads 2-5; unconstrained pick 0.5375 pi
+        self.phase_slm_mask = 0.52 * np.pi  #90249, 2026-10-30  # fine scan, pre-registered rule (user): best balance about the midpoint with read 1 >= 2/3 of reads 2-5; unconstrained pick 0.5375 pi
         self.px_slm_grating_position_x = 994
         self.px_slm_grating_position_y = 824
-        self.px_slm_phase_mask_position_x = 1129
-        self.px_slm_phase_mask_position_y = 830
+        self.px_slm_phase_mask_position_x = 1128
+        self.px_slm_phase_mask_position_y = 827
 
         # Cooling timing
         self.t_tof = 20.e-6
@@ -189,7 +189,7 @@ class ExptParams(ExptParamsWaxx):
 
         # self.t_raman_pi_pulse = 7.0299e-06 #95837, 2026-11-17
         # self.t_raman_pi_pulse = 7.4862e-06 #95942, 2026-11-19
-        self.t_raman_pi_pulse = 8.5516e-06 #95971, 2026-11-19
+        self.t_raman_pi_pulse = 8.5226e-06 #95976, 2026-11-19
          
         # DAC controlled AO amplitudes
         self.amp_d1_3d_c = 0.3

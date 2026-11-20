@@ -30,7 +30,7 @@ class phase_spot_andor(EnvExperiment, Base):
 
         # self.xvar('amp_imaging',np.linspace(0.1,1.,10))
         self.p.amp_imaging = 0.25
-        self.p.t_imaging_pulse = 5.e-6
+        self.p.t_imaging_pulse = 10.e-6
 
         # f = 1.e6
         # df = 0.5e6
@@ -42,16 +42,16 @@ class phase_spot_andor(EnvExperiment, Base):
         # self.xvar('phase_slm_mask', np.linspace(0.26,0.34,11) * np.pi)
         # self.p.phase_slm_mask = 0.387097 * np.pi
 
-        # self.xvar('dimension_slm_mask',np.linspace(5.e-6,20.e-6,10))
+        self.xvar('dimension_slm_mask',np.linspace(5.e-6,25.e-6,7))
         # self.p.dimension_slm_mask = 20.e-6
 
         # spin state: up, down, superposition (inner xvar)
         self.xvar('t_raman_pulse', np.array([0.,
-                                             self.p.t_raman_pi_pulse,
-                                             self.p.t_raman_pi_pulse / 2]))
+                                             self.p.t_raman_pi_pulse]))
+                                            #  self.p.t_raman_pi_pulse / 2]))
         self.p.t_raman_pulse = self.p.t_raman_pi_pulse
 
-        self.p.N_repeats = 7
+        self.p.N_repeats = 3
 
         self.scope = self.scope_data.add_siglent_scope("192.168.1.108", label='PD', arm=True)
 

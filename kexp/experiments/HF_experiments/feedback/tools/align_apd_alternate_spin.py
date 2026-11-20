@@ -21,6 +21,7 @@ class hf_monitored_rabi(EnvExperiment, Base):
         # self.xvar('dummy',[0])
         
         self.p.amp_imaging = 0.3
+        
 
         self.p.t_tweezer_hold = 20.e-3
         self.p.t_mot_load = 1.0

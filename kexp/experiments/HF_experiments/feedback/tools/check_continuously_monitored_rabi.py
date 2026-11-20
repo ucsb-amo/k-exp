@@ -50,6 +50,7 @@ class hf_monitored_rabi(EnvExperiment, Base):
         self.p.n_dark_pi_pulse = 10.
         self.adjust('fraction_power_raman',0.,1.,0.05)
         self.adjust('n_dark_pi_pulse',0.,20.,dtype=float)
+        self.adjust('frequency_lightshift',10.e3,50.e3,step=1.e3,dtype=float)
 
         # self.scope = self.scope_data.add_siglent_scope("192.168.1.108", label='PD', arm=False)
 
@@ -97,7 +98,7 @@ class hf_monitored_rabi(EnvExperiment, Base):
 
     @kernel
     def run(self):
-        self.init_kernel()
+        self.init_kernel(force_dds_init=True)
         self.load_2D_mot(self.p.t_2D_mot_load_delay)
         self.scan()
         # self.mot_observe()

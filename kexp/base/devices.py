@@ -213,7 +213,7 @@ class Devices():
 
         # change argument to _ry_rf_sources() to 'siglent' (default) or 'rf_consultant'
         ry_405_source, ry_980_source = self._ry_rf_sources(ry_980_source='rf_consultant', 
-                                                           ry_405_source='siglent')
+                                                           ry_405_source='rf_consultant')
 
         self.ry_405 = RydbergDDSSwitchBeam(
                             rf_eo_source=ry_405_source,
