@@ -140,6 +140,8 @@ def main(argv: list[str] | None = None) -> int:
     )
     win.attach_log_panel(log_panel)
     win.set_auto_layout_hints(host_config.load_auto_layout_hints(), host_config.load_auto_layout_stacks())
+    # kdash on any lab PC can list and close this dashboard.
+    win.enable_remote_control()
     if win.width() < 400:
         win.resize(1400, 900)
     win.show()

@@ -180,6 +180,25 @@ def wire_server_controls(panel, sup, server_id: str = "") -> None:
         lambda _c=False, s=sup: s.restart() if confirmed("restart") else None)
 
 
+#: run_gate states in which a remote close of a server dashboard goes ahead
+#: without --force: no run anywhere ("held": a person's hold, not a run).
+_REMOTE_CLOSE_OK_STATES = ("free", "held")
+
+
+def machine_busy_reason(assess=None) -> str | None:
+    """None when no run holds the machine; otherwise why a remote close of a
+    server dashboard (kdash close) is refused without --force: a run in
+    progress, an Abort pending, a run fence, a queued job about to start, an
+    active run loop, or liveOD / the monitor server not answering (unknown
+    counts as busy)."""
+    if assess is None:
+        from waxx.util.device_state.run_gate import assess  # noqa: PLC0415
+    verdict = assess(timeout=4.0)
+    if verdict.state in _REMOTE_CLOSE_OK_STATES:
+        return None
+    return f"the machine is not free ({verdict.state}: {verdict.reason})"
+
+
 def main(argv: list[str] | None = None) -> int:
     args = _parse_args(argv if argv is not None else sys.argv[1:])
 
@@ -326,6 +345,10 @@ def main(argv: list[str] | None = None) -> int:
     win.register_supervisors(supervisors, com_ids=com_ids, labels=labels)
     win.register_links(links)
     win.set_autostart(sorted(autostart))
+    # kdash on any lab PC can list and close this dashboard (refused while a
+    # run holds the machine unless --force).  It listens only on the address
+    # its beacon advertises (the lab adapter), not on --host-ip.
+    win.enable_remote_control(busy_check=machine_busy_reason)
 
     if win.saveGeometry().isEmpty() or win.width() < 400:
         win.resize(1400, 900)
