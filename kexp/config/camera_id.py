@@ -30,13 +30,7 @@ class camera_frame(camera_frame_waxx):
         # use it. Beam check: tools/readout_clock_smear_test.py.
         # Frame gaps: readout 18.1 ms + keep-clean 3.9 ms + margin; 30 ms
         # validated at 0.5 us/+3 in run 80707 (no lost frames).
-        # serial_number: what the Andor SDK reports on kong (GetCameraSerialNumber):
-        # 13445 at every open in liveOD's log, 2026-11-14 .. 2026-11-18. It names
-        # the camera andor_emccd:13445 for liveOD, the Andor camera server and the
-        # SLM spot finder alike; a camera reporting another serial is refused at open.
-        # TEMPORARY (from 2026-11-18): 14040 is a borrowed Andor standing in for
-        # ours; put back '13445' when our camera returns.
-        self.andor = AndorParams(serial_number= '14040', #'13445',
+        self.andor = AndorParams(serial_number= '13445',
                                 amp_absorption=.2, exposure_time_abs=10.e-6, em_gain_abs=300.,
                                 amp_fluorescence=0.5, exposure_time_fluor=25.e-6, em_gain_fluor=1.,
                                 amp_dispersive=0.2, exposure_time_dispersive=5.e-6, em_gain_dispersive=300.,
