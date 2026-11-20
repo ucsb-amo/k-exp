@@ -32,6 +32,24 @@ def _default_roi_id_for(camera_key):
     return None
 
 
+def andor_constraints():
+    """The lab's constraints on the Andor (category "andor_emccd"), beyond its
+    category's own: liveOD's camera host and the Andor camera server
+    (kexp.control.cameras.andor_server) refuse them alike."""
+    from beacon.camera.schema import Constraint
+
+    # The DU897's vertical clock at index 0 (0.3 us) with amplitude index 0
+    # (Normal) moves no charge: the light frames of run 80708 held no image
+    # (light - dark peak 38 ADU vs 9400 ADU at 0.5 us / +3 in run 80707). The
+    # camera host refuses it for runs and live streaming alike (see
+    # kexp.config.camera_id for the sweep).
+    du897_vs = Constraint(
+        when=(("vs_speed", "==", 0), ("vs_amp", "==", 0)), level="refuse",
+        reason="0.3 us vertical clock with Normal amplitude transfers no charge "
+               "(runs 80707/80708)")
+    return (du897_vs,)
+
+
 def tool_windows():
     """The toolbar's tool windows (waxx ToolWindow), for the acquisition window
     and the remote viewer alike. Each runs as its own process."""
@@ -57,17 +75,6 @@ def make_live_od_config():
     from kexp.config.ip import server_talk, PATHS
     from kexp.config.camera_id import cameras
     from kexp.config.expt_params import ExptParams
-    from beacon.camera.schema import Constraint
-
-    # The DU897's vertical clock at index 0 (0.3 us) with amplitude index 0
-    # (Normal) moves no charge: the light frames of run 80708 held no image
-    # (light - dark peak 38 ADU vs 9400 ADU at 0.5 us / +3 in run 80707). The
-    # camera host refuses it for runs and live streaming alike (see
-    # kexp.config.camera_id for the sweep).
-    du897_vs = Constraint(
-        when=(("vs_speed", "==", 0), ("vs_amp", "==", 0)), level="refuse",
-        reason="0.3 us vertical clock with Normal amplitude transfers no charge "
-               "(runs 80707/80708)")
 
     def resolve_camera_params(camera_key):
         for value in vars(cameras).values():
@@ -95,7 +102,7 @@ def make_live_od_config():
         # Lab PCs may snap liveOD's cameras (a diagnostic stream's probe from a
         # run launched off kong); never during a run that holds the camera.
         camera_host_snap_from=("192.168.1.",),
-        camera_constraints={"andor_emccd": (du897_vs,)},
+        camera_constraints={"andor_emccd": andor_constraints()},
         # Kept exactly as it was: the pinned taskbar button's identity.
         tool_windows=tool_windows(),
         app_user_model_id="weldlab.kexp.gui.live_od",

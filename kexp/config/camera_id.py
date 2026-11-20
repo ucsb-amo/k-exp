@@ -30,7 +30,8 @@ class camera_frame(camera_frame_waxx):
         # use it. Beam check: tools/readout_clock_smear_test.py.
         # Frame gaps: readout 18.1 ms + keep-clean 3.9 ms + margin; 30 ms
         # validated at 0.5 us/+3 in run 80707 (no lost frames).
-        self.andor = AndorParams(amp_absorption=.2, exposure_time_abs=10.e-6, em_gain_abs=300.,
+        self.andor = AndorParams(serial_number= '13445',
+                                amp_absorption=.2, exposure_time_abs=10.e-6, em_gain_abs=300.,
                                 amp_fluorescence=0.5, exposure_time_fluor=25.e-6, em_gain_fluor=1.,
                                 amp_dispersive=0.2, exposure_time_dispersive=5.e-6, em_gain_dispersive=300.,
                                 magnification=16.4, # based on run 49189, updated 2025-11-20
@@ -42,7 +43,8 @@ class camera_frame(camera_frame_waxx):
                                 vs_speed=1, vs_amp=3, # restored 2026-09-24, run 80707/80708
                                 baseline_clamp=1,
                                 # 2026-09-26: run-owned fields; only these values are accepted for runs
-                                trigger_mode="ext", frame_transfer=0, sensor_roi=(0, 512, 0, 512, 1, 1),
+                                trigger_mode="ext", frame_transfer=0,
+                                sensor_roi=(0, 512, 0, 512, 1, 1),
                                 trigger_ttl=_ttl.andor)
 
         # The APD sits behind the Andor's pickoff beamsplitter, and keeps

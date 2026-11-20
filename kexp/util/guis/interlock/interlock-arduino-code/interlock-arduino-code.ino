@@ -3,12 +3,12 @@
 //import processing.serial.*;
 
 // constants that enable correct reading of analog pins, I don't understand divider but it seems to be neccessary to correctly read the pins. These numbers agree with a multimeter (I think!)
-const float VOLTAGE_MAX   = 3.5;    // Maximum voltage that can be read
-const float RESOLUTION    = 65535.0;   // 12-bit resolution
-const float DIVIDER       = 0.3034;      // Voltage divider
+const float VOLTAGE_MAX   = 3.3;      // Maximum voltage that can be read
+const float RESOLUTION    = 65535;   // 16-bit resolution
+const float DIVIDER       = 0.30907;      // Voltage divider
 
 const float tempBase = 293;//k
-const float voltBase = 1.465;
+const float voltBase = 1.3475;
 
 float flows[] = {4,4,4,4};
 
@@ -17,7 +17,7 @@ float bleh =330.1;
 // Array of terminals.
 const int TERMINALS[] = {A0, A1, A2, A3, A4, A5, A6};
 
-const float tempUpperBound = 306;
+const float tempUpperBound = 308;
 const float tempLowerBound = 280;
 const float flowLowerBound = 3.0;
 const float flowUpperBound = 8.0;
@@ -43,7 +43,7 @@ void setup() {
   digitalWrite(relayPin, HIGH);
 
   // Enable analog inputs on Opta
-  // Set the resolution of the ADC to 12 bits.
+  // Set the resolution of the ADC to 16 bits.
   analogReadResolution(16);
   //flows = new float[4];
 }
@@ -54,7 +54,9 @@ void loop() {
   float v = readAndPrint(TERMINALS[0]);
   //convert voltage to temperature
   // when v= 1.465, t = 293k
+  // float temp = v;
   float temp = tempBase*v/voltBase;
+
   Serial.print("/Temp is ");
   Serial.print(temp,5);
   Serial.println("k/");

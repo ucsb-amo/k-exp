@@ -9,7 +9,9 @@ touches the camera; this source asks it (open, live apply, live stream, snap,
 close).
 
 The core serves the camera on the network as ``camera_server:<host>:spot_finder``,
-under the id liveOD's camera host gives the Andor (``andor_emccd:andor``). So
+under the id liveOD's camera host gives the Andor (``andor_emccd:<serial>`` from
+kexp's ``cameras.andor``, ``andor_emccd:13445``; the Andor camera server,
+``beacon.andor``, serves it under the same id). So
 when liveOD needs the Andor -- its camera host opening it at start, a live
 stream, a run's INIT_RUN -- it finds it here and asks for it
 (RELINQUISH_CAMERA, waxx.util.live_od.camera_host.claims), as it asks the
@@ -90,7 +92,9 @@ logger = logging.getLogger(__name__)
 SERVER_ID_PREFIX = "camera_server:"
 SERVER_ID_SUFFIX = ":spot_finder"
 #: liveOD's camera host names the Andor andor_emccd:<serial or key> (camera_specs);
-#: kexp's cameras.andor has no serial and the key "andor"
+#: the id is worked out from kexp's cameras.andor (serial 13445 since 2026-11-18).
+#: This is only the fallback when it cannot be: a camera table with no serial
+#: and the key "andor"
 DEFAULT_ANDOR_CAMERA_ID = "andor_emccd:andor"
 #: this window's video, as a live requester of the core
 LIVE_REQUESTER = "spot_finder"

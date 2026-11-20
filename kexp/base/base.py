@@ -350,7 +350,7 @@ class Base(Expt, Devices, Cooling, Image, Cameras, Control, Clients):
                     setup_slm = True,
                     init_magnets = True,
                     init_ry = True,
-                    force_dds_init = True,
+                    force_dds_init = False,
                     raman_aos_on = True):
         """
         raman_aos_on: turn the raman_150_plus and raman_80_plus AOs on after
@@ -358,13 +358,14 @@ class Base(Expt, Devices, Cooling, Image, Cameras, Control, Clients):
         already on, like the beat-lock ref, before the first shot's
         raman.init(). raman_switch stays off.
 
-        force_dds_init: run the full AD9910 init on every channel. The default
-        is True (since k-exp 68d8dcb8, 2026-09-22): every run pays the full init
-        (~1.4 s). With False, channels that still hold their PLL / SYNC setup
-        from an earlier run are skipped (see Devices.init_all_dds for the
-        checks); that fast path stays off until the Raman relative-phase check
-        has validated it. Keep True after touching the Urukul clocking or SYNC
-        wiring, or whenever DDS phase coherence is in doubt.
+        force_dds_init: run the full AD9910 init on every channel (~1.4 s a
+        run). The default is False (2026-11-19, the user's call, to be checked
+        against the Raman relative phase; it was True from k-exp 68d8dcb8,
+        2026-09-22): channels that still hold their PLL / SYNC setup from an
+        earlier run are skipped (see Devices.init_all_dds for the checks; each
+        run records what was skipped in its file, `dds_init`). Pass True after
+        touching the Urukul clocking or SYNC wiring, or whenever DDS phase
+        coherence is in doubt.
         """
 
         # the camera streams' exposure delays as the run's claim measured them
