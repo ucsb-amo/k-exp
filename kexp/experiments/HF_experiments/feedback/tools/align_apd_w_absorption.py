@@ -15,7 +15,6 @@ class hf_monitored_rabi(EnvExperiment, Base):
                       save_data=False,
                       override_apd_stage=True,
                       imaging_type=img_types.ABSORPTION,
-                      override_apd_stage=True,
                       mot_preload=True)
         
         self.p.t_imaging_pulse = 20.e-6
@@ -24,7 +23,6 @@ class hf_monitored_rabi(EnvExperiment, Base):
         
         # self.xvar('amp_imaging',np.linspace(0.1,1.,10))
         self.p.amp_imaging = 0.5
-        self.camera_params.gain = 800.
 
         # self.xvar('t_tweezer_hold',np.linspace(1.e-3,1.1e-3,10))
         self.p.t_tweezer_hold = 20.e-3

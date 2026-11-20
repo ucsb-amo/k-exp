@@ -324,6 +324,25 @@ SERVER_SPECS: list[ServerSpec] = [
         default_placement="tab",
         tab_group="control",
     ),
+    ServerSpec(
+        id="powermeter",
+        label="Power Meters",
+        icon="💡",
+        # The embedded PowerMeterViewerMainWindow is a ZMQ client of every
+        # powermeter_server:* on the network; the server spawned here owns the
+        # Thorlabs PM100 consoles plugged into this PC (VISA exclusive lock --
+        # a notebook opening one directly gets RSRC_LOCKED; the panel's
+        # Release button frees it).  Autostarted on every PC (dashboard_hosts
+        # "*"); a PC with no meter or no NI-VISA runs it idle.
+        body_factory=_lazy_panel("waxx.util.guis.powermeter.powermeter_panel",
+                                 "PowerMeterServerPanel"),
+        server_cmd=[_PY, "-m", "beacon.powermeter.server"],
+        cwd=_REPO,
+        warm_imports=["pyqtgraph", "waxx.util.guis.powermeter.powermeter_panel"],
+        default_dock_area="right",
+        default_placement="tab",
+        tab_group="diag",
+    ),
 ]
 
 

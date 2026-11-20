@@ -48,6 +48,7 @@ class hf_monitored_rabi(EnvExperiment, Base):
         self.p.N_repeats = 300
 
         self.p.n_dark_pi_pulse = 10.
+        self.adjust('fraction_power_raman',0.,1.,0.05)
         self.adjust('n_dark_pi_pulse',0.,20.,dtype=float)
 
         # self.scope = self.scope_data.add_siglent_scope("192.168.1.108", label='PD', arm=False)

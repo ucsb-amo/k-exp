@@ -24,6 +24,10 @@ HOST_AUTOSTART_SERVERS: dict[str, list[str]] = {
     "*": [
         "basler",
         "tpi",
+        # Every PC: owns the Thorlabs PM100s plugged into it (none -> idle;
+        # no NI-VISA -> idle, says so).  Holds each under a VISA exclusive
+        # lock; the Power Meters panel's Release lends one to a notebook.
+        "powermeter",
         # One instance for the lab: the first dashboard up runs it, the
         # others show it EXTERNAL.
         "zabbix_coil",

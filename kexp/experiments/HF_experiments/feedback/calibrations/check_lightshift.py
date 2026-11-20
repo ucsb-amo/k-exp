@@ -21,7 +21,7 @@ class hf_raman(EnvExperiment, Base):
         # self.xvar('with_imaging', [0,1])
         self.p.with_imaging = 1
         # self.xvar('amp_imaging',np.linspace(0.05,0.4,15))
-        self.xvar('relative_phase', np.linspace(0., 3*np.pi, 21))
+        self.xvar('relative_phase', np.linspace(0., 2.5*np.pi, 21))
 
         # self.p.frequency_lightshift_target = 50.e3
 

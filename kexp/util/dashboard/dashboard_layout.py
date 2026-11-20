@@ -57,6 +57,7 @@ SERVER_PLACEMENT: dict[str, dict] = {
     "keysight":         {"placement": "tab",  "dock_area": "right", "tab_group": "diag"},
     "pdxc":             {"placement": "tab",  "dock_area": "right", "tab_group": "control"},
     "tpi":              {"placement": "tab",  "dock_area": "right", "tab_group": "control"},
+    "powermeter":       {"placement": "tab",  "dock_area": "right", "tab_group": "diag"},
     "remote_control":   {"placement": "tab",  "dock_area": "right", "tab_group": "control"},
     "ethernet_relay":   {"placement": "tab",  "dock_area": "right", "tab_group": "control"},
     "_running_servers": {"placement": "dock", "dock_area": "right"},
@@ -80,6 +81,7 @@ CLIENT_PLACEMENT: dict[str, dict] = {
     "remote_control": {"placement": "tab",  "dock_area": "right", "tab_group": "control"},
     "keysight":       {"placement": "tab",  "dock_area": "right", "tab_group": "control"},
     "tpi":            {"placement": "tab",  "dock_area": "right", "tab_group": "control"},
+    "powermeter":     {"placement": "tab",  "dock_area": "right", "tab_group": "control"},
     "device_control": {"placement": "dock", "dock_area": "bottom"},
     "_log":           {"placement": "dock", "dock_area": "bottom"},
 }
@@ -118,6 +120,7 @@ AUTO_LAYOUT_HINTS: dict[str, dict] = {
     "_log":              {"tier": "status",   "family": "framework", "min": (420, 160),  "pref": (900, 300)},
     "pdxc":              {"tier": "rare",     "family": "control",   "min": (320, 240),  "pref": (420, 320)},
     "tpi":               {"tier": "rare",     "family": "control",   "min": (400, 300),  "pref": (520, 400)},
+    "powermeter":        {"tier": "rare",     "family": "diag",      "min": (620, 400),  "pref": (1000, 560)},
     "remote_control":    {"tier": "rare",     "family": "control",   "min": (300, 200),  "pref": (400, 300)},
     "ethernet_relay":    {"tier": "rare",     "family": "control",   "min": (300, 200),  "pref": (380, 280)},
 }

@@ -79,6 +79,17 @@ CLIENT_SPECS: list[ClientSpec] = [
         default_placement="tab",
         tab_group="control",
     ),
+    ClientSpec(
+        id="powermeter",
+        label="Power Meters",
+        icon="💡",
+        body_factory=_lazy_panel("waxx.util.guis.powermeter.powermeter_panel",
+                                 "PowerMeterClientPanel"),
+        warm_imports=["pyqtgraph", "waxx.util.guis.powermeter.powermeter_panel"],
+        default_dock_area="right",
+        default_placement="tab",
+        tab_group="control",
+    ),
 
     # --- remote views of the lab servers ------------------------------
     ClientSpec(
