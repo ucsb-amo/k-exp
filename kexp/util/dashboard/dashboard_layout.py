@@ -121,3 +121,23 @@ AUTO_LAYOUT_HINTS: dict[str, dict] = {
     "remote_control":    {"tier": "rare",     "family": "control",   "min": (300, 200),  "pref": (400, 300)},
     "ethernet_relay":    {"tier": "rare",     "family": "control",   "min": (300, 200),  "pref": (380, 280)},
 }
+
+# Layout -> Auto-arrange: which panels share a tab stack.  Each rule lists
+# panels, the one shown on top first.
+#   "always":  stacked whenever they are shown.
+#   "cramped": a stack to fall back on when room runs out; earlier rules are
+#              used first, and all of them before the solver stacks panels on
+#              its own.  A rule also covers any part of its list, so a fallback
+#              that enlarges an earlier stack lists that stack's panels again.
+# Panels not shown (or not in this dashboard) are skipped.
+_CONTROL_STACK = ["ethernet_relay", "remote_control", "_running_servers", "interlock"]
+AUTO_LAYOUT_STACKS: list[dict] = [
+    {"stack": ["precilaser", "als"],                                    "when": "always"},
+    {"stack": ["raman_intensity", "raman_fp_lock"],                     "when": "always"},
+    {"stack": _CONTROL_STACK,                                           "when": "always"},
+    {"stack": ["tpi", "pdxc"],                                          "when": "always"},
+    {"stack": _CONTROL_STACK + ["_log"],                                "when": "cramped"},
+    {"stack": ["magnetometer", "keysight"],                             "when": "cramped"},
+    {"stack": ["device_control", "tpi", "pdxc"],                        "when": "cramped"},
+    {"stack": ["magnetometer", "keysight"] + _CONTROL_STACK + ["_log"], "when": "cramped"},
+]
