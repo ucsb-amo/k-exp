@@ -15,9 +15,17 @@ variance. Shots left out are listed with their reason:
 - no setpoint recorded (the shot was not taken);
 - a non-finite reading;
 - any PID2 PD sample of the shot at or above the saturation threshold
-  (``ad.p.v_pid2_pd_saturation``, 10 V).
+  (``ad.p.v_pid2_pd_saturation``; 9.8 V since the PD2 clip at 9.858 V,
+  #96058);
+- the PID1 PD mean more than ``MAX_PID1_TRACKING_ERROR`` from its setpoint
+  (the servo had not brought the light up: #96058 read the dark level at
+  0.08-0.10 V 20 ms after switch-on);
+- a within-shot PID2 PD std above ``MAX_PID2_REL_STD`` of its mean (the
+  light was still moving during the read).
 
-Nothing else is excluded. The write-back into kexp/calibrations/tweezer.py
+Nothing else is excluded. The last two rules were added 2026-11-20 after
+run 96058, whose readings are what they were made from; the PID2 rule was
+made relative after run 96059 (painted), see ``MAX_PID2_REL_STD``. The write-back into kexp/calibrations/tweezer.py
 happens only when no flag is raised (``FLAG_RULES``); a flagged result is
 printed and never written. The edit follows the calibration convention: the
 old line is commented out in place and the new one goes directly below it,
@@ -52,11 +60,42 @@ INTERCEPT_NAME = "v_pd2_y_intercept"
 #: says little about linearity).
 MIN_POINTS = 5
 
+#: A shot whose PID1 PD mean is further than this from its setpoint is
+#: excluded (settled shots of #96058: -4 to -7 mV).
+MAX_PID1_TRACKING_ERROR = 20.e-3
+#: A shot whose within-shot PID2 PD std is above this fraction of its mean
+#: is excluded. Relative, because painting adds a steady PD2 spread: settled
+#: shots 0.7-1 % painted (#96059, 35-65 mV), ~1 mV unpainted (#96058);
+#: unsettled shots of #96058 7-69 %. (Was an absolute 20 mV, set from
+#: #96058; changed after #96059 excluded every settled painted shot.)
+MAX_PID2_REL_STD = 0.03
+#: Residual rms above this -> flagged: PD2 vs PID1 is not a line over the
+#: used shots (a good fit of #96058's search: 10 mV; with clipped shots 2.3 V).
+MAX_RESIDUAL_RMS = 50.e-3
+#: More than this fraction of the taken shots excluded -> flagged.
+MAX_EXCLUDED_FRACTION = 0.5
+#: |relative slope change| vs the file above this -> flagged: a person
+#: decides (a PD move or a broken run, not drift).
+MAX_REL_SLOPE_CHANGE = 0.10
+
+#: The constants in tweezer.py map the PID1 setpoint to the PID2 SETPOINT
+#: that holds that PD2 level (tweezer.py comments). The fit is in PD2
+#: volts; it is divided through by the PID2 hold relation PD2 = gain * s2 +
+#: offset, measured in #87843 (2026-10-22), as the 10-22 values were. Before
+#: 2026-11-20 this module wrote the raw PD2 fit (0.19 % / ~4 mV different).
+PID2_HOLD_GAIN = 0.99815        # +/- 0.00014 #87843
+PID2_HOLD_OFFSET = -8.08e-3     # +/- 0.24 mV #87843
+PID2_HOLD_RUN = 87843
+
 #: The rules that block a write-back, stated before any data is seen.
 FLAG_RULES = (
     f"fewer than {MIN_POINTS} shots used",
     "slope / intercept or their uncertainties not finite, or an uncertainty <= 0",
     "the PID2 PD was saturated already at the minimum setpoint",
+    "the search found no PID2 saturation up to the cap",
+    f"residual rms above {MAX_RESIDUAL_RMS * 1e3:g} mV",
+    f"more than {MAX_EXCLUDED_FRACTION:.0%} of the taken shots excluded",
+    f"slope changes by more than {MAX_REL_SLOPE_CHANGE:.0%} from the file",
     "the search trace differs between shots",
     "kexp/calibrations/tweezer.py changed since the run started",
 )
@@ -75,6 +114,10 @@ class TweezerPidCal:
     intercept: float = math.nan
     intercept_unc: float = math.nan
     corr_slope_intercept: float = math.nan
+    # the raw fit, PD2 volts vs PID1 setpoint (slope/intercept above are in
+    # PID2-setpoint units, via PID2_HOLD_*)
+    pd2_slope: float = math.nan
+    pd2_intercept: float = math.nan
     n_shots: int = 0
     n_used: int = 0
     # [{"shot": i, "v_pid1": setpoint, "reason": ...}]
@@ -110,8 +153,8 @@ class TweezerPidCal:
 
     @property
     def v_pid1_at_saturation(self) -> float:
-        """PID1 setpoint at which the fit reaches the saturation threshold."""
-        return (self.v_pid2_saturation - self.intercept) / self.slope
+        """PID1 setpoint at which the PD2 fit reaches the saturation threshold."""
+        return (self.v_pid2_saturation - self.pd2_intercept) / self.pd2_slope
 
     def report(self) -> str:
         def pm(v, u):
@@ -140,6 +183,9 @@ class TweezerPidCal:
             else:
                 lines.append(f"  search ({n_steps} steps): no PID2 saturation up to the cap; "
                              f"sweep top = cap = {self.v_pid1_top:.4f} V")
+        lines.append(f"  PD2 fit: {self.pd2_slope:.6g} V/V, {self.pd2_intercept:+.6g} V; in PID2-setpoint "
+                     f"units (/ #{PID2_HOLD_RUN} hold relation {PID2_HOLD_GAIN:g}, "
+                     f"{PID2_HOLD_OFFSET * 1e3:+g} mV):")
         lines.append(f"  {SLOPE_NAME} = {pm(self.slope, self.slope_unc)} V/V"
                      f"{change(self.slope, self.slope_in_file)}")
         lines.append(f"  {INTERCEPT_NAME} = {pm(self.intercept, self.intercept_unc)} V"
@@ -212,6 +258,12 @@ def fit_pid2_vs_pid1(ad) -> TweezerPidCal:
             reason = "non-finite photodiode reading"
         elif y_max[i] >= v_sat:
             reason = f"PID2 PD saturated (a sample >= {v_sat:g} V)"
+        elif abs(pd1[i] - x[i]) > MAX_PID1_TRACKING_ERROR:
+            reason = (f"PID1 PD more than {MAX_PID1_TRACKING_ERROR * 1e3:g} mV from its "
+                      f"setpoint (servo not settled)")
+        elif not np.isfinite(y_std[i]) or y[i] <= 0. or y_std[i] > MAX_PID2_REL_STD * y[i]:
+            reason = (f"PID2 PD within-shot std above {MAX_PID2_REL_STD:.0%} of its mean "
+                      f"(light still moving)")
         if reason is not None:
             keep[i] = False
             cal.excluded.append({"shot": i, "v_pid1": float(x[i]), "reason": reason})
@@ -223,7 +275,12 @@ def fit_pid2_vs_pid1(ad) -> TweezerPidCal:
     cal.n_used = int(keep.sum())
 
     m, b, sm, sb, corr, res = _linfit(cal.v_pid1_used, cal.v_pid2_used)
-    cal.slope, cal.intercept, cal.slope_unc, cal.intercept_unc = m, b, sm, sb
+    cal.pd2_slope, cal.pd2_intercept = m, b
+    # PD2 volts -> PID2 setpoint (the #87843 uncertainties, 0.014 % / 0.24 mV,
+    # are below the fit's and are not propagated)
+    cal.slope, cal.slope_unc = m / PID2_HOLD_GAIN, sm / PID2_HOLD_GAIN
+    cal.intercept = (b - PID2_HOLD_OFFSET) / PID2_HOLD_GAIN
+    cal.intercept_unc = sb / PID2_HOLD_GAIN
     cal.corr_slope_intercept = corr
     if res.size:
         cal.residual_rms = float(np.sqrt(np.mean(res ** 2)))
@@ -263,10 +320,25 @@ def fit_pid2_vs_pid1(ad) -> TweezerPidCal:
     vals = (cal.slope, cal.intercept, cal.slope_unc, cal.intercept_unc)
     if not all(math.isfinite(v) for v in vals) or cal.slope_unc <= 0 or cal.intercept_unc <= 0:
         cal.flags.append("fit not finite, or an uncertainty <= 0")
-    # PID2 need not saturate: with no saturation up to the cap, the sweep
-    # simply tops out at the cap
     if cal.saturated_at_min:
         cal.flags.append("PID2 PD saturated already at the minimum setpoint")
+    # at ~70 V/V PD2 clips far below the cap: no saturation found means the
+    # threshold sits above the clip (#96058), not an unsaturated PD
+    if taken_idx.size and not cal.saturation_found and not cal.saturated_at_min:
+        cal.flags.append(f"the search found no PID2 saturation up to the cap "
+                         f"(threshold {v_sat:g} V above the PD2 clip?)")
+    if math.isfinite(cal.residual_rms) and cal.residual_rms > MAX_RESIDUAL_RMS:
+        cal.flags.append(f"residual rms {cal.residual_rms * 1e3:.3g} mV > "
+                         f"{MAX_RESIDUAL_RMS * 1e3:g} mV: not a line")
+    n_taken = int(taken.sum())
+    if n_taken and (n_taken - cal.n_used) > MAX_EXCLUDED_FRACTION * n_taken:
+        cal.flags.append(f"{n_taken - cal.n_used} of {n_taken} taken shots excluded "
+                         f"(> {MAX_EXCLUDED_FRACTION:.0%})")
+    if math.isfinite(cal.slope_in_file) and cal.slope_in_file != 0 and math.isfinite(cal.slope):
+        rel = (cal.slope - cal.slope_in_file) / abs(cal.slope_in_file)
+        if abs(rel) > MAX_REL_SLOPE_CHANGE:
+            cal.flags.append(f"slope changes by {rel:+.1%} from the file "
+                             f"(> {MAX_REL_SLOPE_CHANGE:.0%}): a person decides")
     if traces_differ:
         cal.flags.append("the search trace differs between shots")
     if math.isfinite(cal.slope_in_file) and (
@@ -345,7 +417,8 @@ def write_calibration(cal: TweezerPidCal, *, date: Optional[str] = None,
             lit = format_value(value, unc, old_lit)
             lits[name] = lit
             old_line = lines[idx]
-            new_line = f"{name} = {lit} #{cal.run_id}, {date}"
+            unit = "V/V" if name == SLOPE_NAME else "V"
+            new_line = f"{name} = {lit} # +/- {unc:.2g} {unit} #{cal.run_id}+{PID2_HOLD_RUN}, {date}"
             lines[idx] = "# " + old_line
             lines.insert(idx + 1, new_line)
             rep["old_lines"].insert(0, old_line)

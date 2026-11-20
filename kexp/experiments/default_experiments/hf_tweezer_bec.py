@@ -9,7 +9,7 @@ class hf_bec(EnvExperiment, Base):
 
     def prepare(self):
         Base.__init__(self,
-                      save_data=False,
+                      save_data=True,
                       camera_select=cameras.andor,
                       imaging_type=img_types.ABSORPTION,
                     #   diagnostic_images=True,
@@ -21,7 +21,7 @@ class hf_bec(EnvExperiment, Base):
         # self.p.t_tweezer_hold = 100.e-3
         # self.p.t_tweezer_hold = 900.e-3 #87461 (20 ms gave +20-40 % vs 100 ms), 2026-10-20
 
-        self.xvar('t_tof',np.linspace(0.,3000.,7)*1.e-6)
+        # self.xvar('t_tof',np.linspace(0.,3000.,7)*1.e-6)
         # self.xvar('v_hf_tweezer_paint_amp_max',np.linspace(-2.,4.99,6))
         # self.xvar('v_pd_hf_tweezer_1064_rampdown2_end',np.linspace(0.2,2.0,6))
         # self.xvar('i_hf_lightsheet_evap2_current', np.linspace(192.7, 193.8, 7))
@@ -46,17 +46,19 @@ class hf_bec(EnvExperiment, Base):
 
         # self.data.apd = self.data.add_data_container(1)
         # self.xvar('t_tweezer_hold',np.linspace(0.,0.8,6))
-        self.p.N_repeats = 1000
+        self.p.N_repeats = 3
         # self.xvar('beans',np.linspace(1,10,10))
 
         # self.p.amp_tweezer_list = [0.5]
+
+        # self.p.t_tof = 3.e-3
 
         self.scanning()
 
         # self.adjust('phase_slm_mask',0.,3.*np.pi,0.1*np.pi)
         # self.adjust('amp_imaging',0.,3.,0.1)
         # self.adjust('t_imaging_pulse',10.e-6,500.e-6,10.e-6)
-        self.adjust('t_tof',5.e-6,2000.e-6,100.e-6)
+        # self.adjust('t_tof',5.e-6,2000.e-6,100.e-6)
 
         # Adjust.__init__(self)
         self.finish_prepare(shuffle=True)
@@ -67,7 +69,7 @@ class hf_bec(EnvExperiment, Base):
         # self.p.v_hf_tweezer_paint_amp_max = 2.
         # self.p.v_pd_hf_tweezer_1064_rampdown2_end = 4.
 
-        # self.xvar('v_pd_hf_tweezer_1064_rampdown2_end',np.linspace(4.0,8.,4))
+        # self.xvar('v_pd_hf_tweezer_1064_rampdown2_end',np.linspace(0.3,2.,7))
 
         # self.xvar('v_hf_tweezer_paint_amp_max',np.linspace(2.0,4.9,7))
         # self.p.v_hf_tweezer_paint_amp_max = 3.25

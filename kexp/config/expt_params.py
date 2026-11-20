@@ -328,7 +328,8 @@ class ExptParams(ExptParamsWaxx):
 
         self.v_pd_hf_tweezer_1064_ramp_end = 8.4
         self.v_pd_hf_tweezer_1064_rampdown_end = 0.16 #87461, 2026-10-20
-        self.v_pd_hf_tweezer_1064_rampdown2_end = 0.5
+        # self.v_pd_hf_tweezer_1064_rampdown2_end = 0.5
+        self.v_pd_hf_tweezer_1064_rampdown2_end = 0.85 # taken at the new PID2 map (#96059), 2026-11-20
         self.n_tweezer_ramp_steps = 200
         # HF tweezer evap 1 painting law: paint_frac = (P/P_max)**e (0.3333 = constant trap frequency)
         # self.paint_amp_exponent_hf_tweezer = 1.0 #87461 (e 0.85-1 best), 2026-10-20

@@ -23,7 +23,8 @@ class tweezer_pid2_vs_pid1(EnvExperiment, Base):
        containers, the same in every shot; -1 = step not taken).
     2. Sweep (the scan, one shot per point): setpoint = min + frac_pid1_sweep *
        (v_pid1_top - min), frac_pid1_sweep from 1 down to 0 in order (not
-       shuffled), each shot tweezer on -> setpoint -> settle -> read -> off.
+       shuffled), each shot tweezer on -> setpoint -> settle
+       (t_tweezer_pid_cal_settle_on, then t_tweezer_pid_cal_settle) -> read -> off.
 
     analyze() fits PID2 PD vs PID1 setpoint (kexp.analysis.tweezer_pid_calibration)
     and, when no flag is raised and write_back_tweezer_cal is True, writes the
@@ -57,12 +58,19 @@ class tweezer_pid2_vs_pid1(EnvExperiment, Base):
         self.p.v_pd_tweezer_pid1_cal_search_max = 0.4
         self.p.dv_pd_tweezer_pid1_cal_coarse = 5.e-3
         self.p.dv_pd_tweezer_pid1_cal_fine = 0.5e-3
-        self.p.v_pid2_pd_saturation = 10.
+        # PID2 PD clips flat at 9.858 V (#96058, 2026-11-20); the old 10 V
+        # threshold was never reached, so the search ran to the cap
+        self.p.v_pid2_pd_saturation = 9.8
         self.p.t_tweezer_pid_cal_settle = 20.e-3
+        # after tweezer.on() the PID1 integrator starts from zero: at a 0.08-0.10 V
+        # setpoint the light was still off 20 ms later (#96058), so every
+        # switch-on waits this long before the first reading
+        self.p.t_tweezer_pid_cal_settle_on = 0.5
         self.p.N_tweezer_pid_cal_samples = 50
 
         # paint as in the evaporation (at v_hf_tweezer_paint_amp_max)?
-        self.paint_tweezer = False
+        # True as in #87842 (the map in use) and in the evaporation
+        self.paint_tweezer = True
 
         self.write_back_tweezer_cal = True
 
@@ -222,6 +230,8 @@ class tweezer_pid2_vs_pid1(EnvExperiment, Base):
         v = v_min + self.p.frac_pid1_sweep * (self.v_pid1_top - v_min)
 
         self.tweezer.on(paint=self.paint_tweezer)
+        self.tweezer.set_power(v_pd=v)
+        delay(self.p.t_tweezer_pid_cal_settle_on)
         self.measure_pds(v)
         self.tweezer.off()
 
@@ -243,6 +253,8 @@ class tweezer_pid2_vs_pid1(EnvExperiment, Base):
         self.core.break_realtime()
         try:
             self.tweezer.on(paint=self.paint_tweezer)
+            self.tweezer.set_power(v_pd=self.p.v_pd_tweezer_pid1_cal_min)
+            delay(self.p.t_tweezer_pid_cal_settle_on)
             self.find_pid2_saturation()
             self.tweezer.off()
             self.scan()

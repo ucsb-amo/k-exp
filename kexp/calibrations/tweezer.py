@@ -17,8 +17,10 @@ from artiq.experiment import TFloat, TArray, portable, rpc
 # v_pd2_y_intercept = -0.623155 # +/- 0.0025 V #87438+87439, 2026-10-20
 # 2026-10-22: PID2 photodiode adjusted by the user (gain x3.2, PD2 saturates at PID1 ~0.163 V). 87842 PD2 =
 # 68.75(6) s1 - 2.029(5) V (paint on) divided through by 87843's PD2 = 0.99815(14) s2 - 8.08(24) mV while PID2 holds.
-vpd2_per_vpd1_slope = 68.882 # +/- 0.063 V/V #87842+87843, 2026-10-22
-v_pd2_y_intercept = -2.0245 # +/- 0.0054 V #87842+87843, 2026-10-22
+# vpd2_per_vpd1_slope = 68.882 # +/- 0.063 V/V #87842+87843, 2026-10-22
+vpd2_per_vpd1_slope = 71.794 # +/- 0.066 V/V #96059+87843, 2026-11-20
+# v_pd2_y_intercept = -2.0245 # +/- 0.0054 V #87842+87843, 2026-10-22
+v_pd2_y_intercept = -2.1187 # +/- 0.0083 V #96059+87843, 2026-11-20
 
 # needs recalibration
 # vpd2_per_vpd1_slope_squeezer =  70.20864948083167
