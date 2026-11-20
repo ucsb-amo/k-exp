@@ -46,7 +46,7 @@ class hf_bec(EnvExperiment, Base):
 
         # self.data.apd = self.data.add_data_container(1)
         # self.xvar('t_tweezer_hold',np.linspace(0.,0.8,6))
-        self.p.N_repeats = 10
+        self.p.N_repeats = 3
         # self.xvar('beans',np.linspace(1,10,10))
 
         # self.p.amp_tweezer_list = [0.5]
@@ -72,7 +72,7 @@ class hf_bec(EnvExperiment, Base):
         # self.p.v_hf_tweezer_paint_amp_max = 3.25
 
 
-        self.xvar('t_tof',np.linspace(10.e-6,2000.e-6,5))
+        # self.xvar('t_tof',np.linspace(10.e-6,2000.e-6,5))
         # self.p.i_hf_tweezer_evap1_current= 193.75
         # self.xvar('i_hf_tweezer_evap1_current',np.linspace(192.,194.,9))
         

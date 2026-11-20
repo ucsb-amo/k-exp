@@ -14,6 +14,7 @@ class hf_monitored_rabi(EnvExperiment, Base):
         Base.__init__(self,camera_select=cameras.andor,
                       save_data=False,
                       imaging_type=img_types.ABSORPTION,
+                      override_apd_stage=True,
                       mot_preload=True)
         
         self.p.t_imaging_pulse = 20.e-6
@@ -21,7 +22,8 @@ class hf_monitored_rabi(EnvExperiment, Base):
         # self.xvar('make_atoms',[0,1]*1000)
         
         # self.xvar('amp_imaging',np.linspace(0.1,1.,10))
-        self.p.amp_imaging = 0.25
+        self.p.amp_imaging = 0.5
+        self.camera_params.gain = 800.
 
         # self.xvar('t_tweezer_hold',np.linspace(1.e-3,1.1e-3,10))
         self.p.t_tweezer_hold = 20.e-3
@@ -33,7 +35,8 @@ class hf_monitored_rabi(EnvExperiment, Base):
         self.p.phase_slm_mask = 0.
 
         self.p.make_atoms = 1.
-        # self.adjust('make_atoms',0.,1.,1)
+        self.adjust('amp_imaging',0.,2.,0.1)
+        self.adjust('t_tof',5.E-6,100.e-6,10.e-6)
 
         self.data.apd = self.data.add_data_container(1)
         # Adjust.__init__(self)
