@@ -26,7 +26,7 @@ class hf_bec(EnvExperiment, Base):
          # self.xvar('compress',[0,1])
         self.p.compress = 0
 
-        # self.xvar('frequency_eo_980', np.linspace(410.,440.,10)*1.e6)
+        self.xvar('frequency_eo_980', np.linspace(380.,440.,10)*1.e6)
         self.p.frequency_eo_980 = 418.7e6
         # self.xvar('frequency_eo_980', 418.1e6 + 1e6*np.linspace(-1,1,3))
 
