@@ -35,7 +35,7 @@ class camera_frame(camera_frame_waxx):
                                 amp_fluorescence=0.5, exposure_time_fluor=25.e-6, em_gain_fluor=1.,
                                 amp_dispersive=0.2, exposure_time_dispersive=5.e-6, em_gain_dispersive=300.,
                                 magnification=16.4, # based on run 49189, updated 2025-11-20
-                                # t_light_only_image_delay=50.e-3, # 2026-09-23
+                                # t_light_only_image_delay=F50.e-3, # 2026-09-23
                                 # t_dark_image_delay=50.e-3, # 2026-09-23
                                 t_light_only_image_delay=30.e-3, # 2026-09-23
                                 t_dark_image_delay=30.e-3, # 2026-09-23
@@ -99,16 +99,6 @@ class camera_frame(camera_frame_waxx):
                                        trigger_ttl=_ttl.mot_basler_trigger,
                                        pixel_size_m=2.e-6)
 
-        # Tweezer beam pickoff, for the beam position each shot ("image plain
-        # camera" in the Camera Viewer). Trigger wired to the 2D-MOT basler's
-        # line (user, 2026-10-19): a pulse on ttl.basler_2dmot exposes both,
-        # and their streams are siblings. Input on Line2 (user, 2026-10-19).
-        # Resolution/magnification not set.
-        # self.tweezer_pickoff_basler = BaslerParams(serial_number='40427782',
-        #                                            trigger_source='Line2',
-        #                                            trigger_ttl=_ttl.basler_2dmot,
-        #                                            pixel_size_m=2.5e-6)
-
         # acA640-750um: 8/10-bit sensor, no Mono12 -> Mono10p (uint16, 0..1023), 2026-11-14
         # self.apd_plane_camera = BaslerParams(serial_number='25618760',
         #                                      trigger_source='Line4',
@@ -116,38 +106,14 @@ class camera_frame(camera_frame_waxx):
         #                                      pixel_size_m=4.8e-6,
         #                                      pixel_format='Mono10p')
 
-        # pco.edge 5.5 (global reset) on Camera Link, served by the beacon PCO
-        # server (beacon.pco). An auxiliary camera only: camera_stream / a
-        # diagnostic image, never a run's acquisition camera. 2026-11-15:
-        #  - serial_number is the string the camera's SDK reports
-        #    (camera id pco_sc2:7010807XXXX); its numeric serial field reads
-        #    924. Not checked against the label.
-        #  - sensor_roi: the full sensor, bin 1 -> frames 2560 x 2160. In
-        #    global reset mode only frames up to 640 px wide arrived
-        #    uncorrupted over this Camera Link (2026-11-14); in global shutter
-        #    mode full-width frames are clean (hardware check with the cap
-        #    lifted, 2026-11-15), and the camera does not bin.
-        #  - no trigger line wired yet: free-run streams only (triggered mode
-        #    needs trigger_ttl; it was tested with software triggers only,
-        #    and exposure_delay is not measured).
-        #  - magnification not measured (1.0 is a placeholder); pixel size
-        #    6.5 um is the sensor's (one frame pixel at bin 1).
-        #  - the camera is in GLOBAL SHUTTER mode (set 2026-11-15; it was in
-        #    global reset, where rows collect light until read out and the
-        #    image hardly follows exposure_time). In global shutter the image
-        #    follows the exposure (same scene: mean 457 / 709 / 3535 / 10121
-        #    counts at 27.5 us / 1 ms / 10 ms / 30 ms), there is no binning,
-        #    and a full-height frame takes ~60 ms. The mode is stored in the
-        #    camera (beacon scripts/pco_settings_probe.py --set-shutter).
-        #  - exposure goes in 27.5 us steps (one sensor line), at least one.
-        self.pco_edge = PCOParams(serial_number='7010807XXXX',
-                                  exposure_time=1.e-3,
-                                  # sensor_roi=(0, 2560, 0, 2160, 4, 4), # global reset mode, 2026-11-15
-                                  # sensor_roi=(960, 1600, 0, 2160, 1, 1), # global shutter mode, 2026-11-15
-                                  sensor_roi=(0, 2560, 0, 2160, 1, 1), # full frame, clean in global shutter, 2026-11-15
-                                  readout_rate='slow',
-                                  magnification=1.,
-                                  trigger_ttl="")
+        # self.pco_edge = PCOParams(serial_number='7010807XXXX',
+        #                           exposure_time=1.e-3,
+        #                           # sensor_roi=(0, 2560, 0, 2160, 4, 4), # global reset mode, 2026-11-15
+        #                           # sensor_roi=(960, 1600, 0, 2160, 1, 1), # global shutter mode, 2026-11-15
+        #                           sensor_roi=(0, 2560, 0, 2160, 1, 1), # full frame, clean in global shutter, 2026-11-15
+        #                           readout_rate='slow',
+        #                           magnification=1.,
+        #                           trigger_ttl="")
 
         self.cleanup()
 
