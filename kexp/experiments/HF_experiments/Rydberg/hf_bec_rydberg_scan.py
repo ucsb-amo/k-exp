@@ -78,8 +78,6 @@ class hf_bec(EnvExperiment, Base):
             self.ry_405.on()
         if self.p.do_980_pulse == 1:
             self.ry_980.on()
-        
-    
 
         delay(self.p.t_tweezer_hold)
 

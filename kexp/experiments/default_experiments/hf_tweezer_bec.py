@@ -21,7 +21,7 @@ class hf_bec(EnvExperiment, Base):
         # self.p.t_tweezer_hold = 100.e-3
         # self.p.t_tweezer_hold = 900.e-3 #87461 (20 ms gave +20-40 % vs 100 ms), 2026-10-20
 
-        # self.xvar('t_tof',np.linspace(0.,200.,7)*1.e-6)
+        self.xvar('t_tof',np.linspace(0.,3000.,7)*1.e-6)
         # self.xvar('v_hf_tweezer_paint_amp_max',np.linspace(-2.,4.99,6))
         # self.xvar('v_pd_hf_tweezer_1064_rampdown2_end',np.linspace(0.2,2.0,6))
         # self.xvar('i_hf_lightsheet_evap2_current', np.linspace(192.7, 193.8, 7))
