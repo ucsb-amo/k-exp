@@ -1,0 +1,5 @@
+sphinx==9.2.0
+furo==2025.12.19
+myst-parser==5.2.0
+sphinx-autoapi==3.9.0
+sphinx-copybutton==0.5.2
