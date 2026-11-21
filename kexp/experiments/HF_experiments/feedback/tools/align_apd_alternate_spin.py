@@ -38,6 +38,7 @@ class hf_monitored_rabi(EnvExperiment, Base):
         # self.adjust('frequency_detuned_hf_midpoint',-568e6,-489.e6)
         self.adjust('phase_slm_mask',0.,2.*np.pi)
         self.adjust('amp_imaging',0.1,0.8)
+        self.adjust('t_imaging_pulse',1.e-6,100.e-6,5.e-6)
         # self.adjust('trigger_later',0.,1.,step=1,dtype=float)
 
         self.p.v_pd_hf_tweezer_squeeze_power = 0.

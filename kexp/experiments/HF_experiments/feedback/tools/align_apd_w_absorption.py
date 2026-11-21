@@ -17,7 +17,7 @@ class hf_monitored_rabi(EnvExperiment, Base):
                       imaging_type=img_types.ABSORPTION,
                       mot_preload=True)
         
-        self.p.t_imaging_pulse = 200.e-6
+        self.p.t_imaging_pulse = 10.e-6
         
         # self.xvar('make_atoms',[0,1]*1000)
         
@@ -36,6 +36,7 @@ class hf_monitored_rabi(EnvExperiment, Base):
         self.p.make_atoms = 1.
         self.adjust('amp_imaging',0.,2.,0.1)
         self.adjust('t_tof',5.E-6,100.e-6,10.e-6)
+        self.adjust('t_imaging_pulse',5.e-6,300.e-6,10.e-6)
 
         self.data.apd = self.data.add_data_container(1)
         # Adjust.__init__(self)
