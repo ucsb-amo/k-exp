@@ -51,6 +51,7 @@ class hf_monitored_rabi(EnvExperiment, Base):
         self.adjust('fraction_power_raman',0.,1.,0.05)
         self.adjust('n_dark_pi_pulse',0.,20.,dtype=float)
         self.adjust('frequency_lightshift',10.e3,50.e3,step=1.e3,dtype=float)
+        self.adjust('phase_slm_mask',0.,2*np.pi,0.1*np.pi)
 
         # self.scope = self.scope_data.add_siglent_scope("192.168.1.108", label='PD', arm=False)
 
@@ -66,20 +67,20 @@ class hf_monitored_rabi(EnvExperiment, Base):
         self.prepare_hf_tweezers()
         # self.prep_raman(frequency_transition=self.p.frequency_raman_transition_lightshifted,
         #                 phase_mode=0)
-        self.prep_raman(frequency_transition=self.p.frequency_raman_transition_lightshifted,
+        self.prep_raman(frequency_transition=self.p.frequency_raman_transition,
                         phase_mode=0)
 
-        # self.raman.set_up_fast_frequency_update(aggressive_mode=1)
-        # self.raman.set_frequency_fast(self.p.frequency_raman_transition_lightshifted,
-        #                               do_io_update=False)
+        self.raman.set_up_fast_frequency_update(aggressive_mode=1)
+        self.raman.set_frequency_fast(self.p.frequency_raman_transition_lightshifted,
+                                      do_io_update=False)
         delay(1.e-3)
 
         self.raman.on()
 
         delay( self.p.t_raman_pi_pulse * self.p.n_dark_pi_pulse )
 
-        # self.raman.io_update()
-        # delay_mu(91)
+        self.raman.io_update()
+        delay_mu(91)
         self.imaging.on()
         
         self.ttl.pd_scope_trig3.pulse(1.e-6)
