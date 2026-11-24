@@ -34,6 +34,7 @@ class sampler_frame(sampler_frame_waxx):
         # 500 A).
         self.inner_coil_transducer = self.sampler_assign(2,gain=0)
         self.outer_coil_transducer = self.sampler_assign(3,gain=0)
+        self.img_beatlock_servo = self.sampler_assign(5,gain=0)
 
         self.apd_integrator = self.sampler_assign_lastch(7,gain=0)
 

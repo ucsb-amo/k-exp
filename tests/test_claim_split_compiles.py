@@ -58,7 +58,6 @@ class ClaimSplitCompile(EnvExperiment, Base):
         self.diag.img_gm_beams_z.trigger()
         self.diag.img_tweezer_load_x.trigger()
         self.diag.img_tweezer_evap_x.trigger()
-        self.diag.img_apd_plane.trigger()
         delay(self.p.t_tof)
 
     @kernel

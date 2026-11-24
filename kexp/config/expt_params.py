@@ -77,7 +77,8 @@ class ExptParams(ExptParamsWaxx):
         self.dimension_slm_mask = 16.e-6 # this parameter has a bug -- it is actually writing "20 px", which ends up being 160um diameter (8 um per px)
         # self.phase_slm_mask = 0.323077 * np.pi  # 89420
         # self.phase_slm_mask = 0.5 * np.pi  #90243, 2026-10-30  # contrast 56 mV vs 35 at the old value, middle of the 0.425-0.575 pi plateau (user)
-        self.phase_slm_mask = 0.52 * np.pi  #90249, 2026-10-30  # fine scan, pre-registered rule (user): best balance about the midpoint with read 1 >= 2/3 of reads 2-5; unconstrained pick 0.5375 pi
+        # self.phase_slm_mask = 0.52 * np.pi  #90249, 2026-10-30  # fine scan, pre-registered rule (user): best balance about the midpoint with read 1 >= 2/3 of reads 2-5; unconstrained pick 0.5375 pi
+        self.phase_slm_mask = 0.37 * np.pi  #96096, 2026-11-21  # user's pick ("Take the 0.37pi") from the ramp phase scan 0.22-0.82 pi x 13 (reads 1-2 kernel): C 59.6 +/- 4.8 mV, SNR 7.6, midpoint 0.58 vs 24.0 +/- 6.0 mV, SNR 2.1 at 0.52 pi; no interleaved confirm run
         self.px_slm_grating_position_x = 994
         self.px_slm_grating_position_y = 824
         self.px_slm_phase_mask_position_x = 1128
@@ -190,7 +191,9 @@ class ExptParams(ExptParamsWaxx):
         # self.t_raman_pi_pulse = 7.0299e-06 #95837, 2026-11-17
         # self.t_raman_pi_pulse = 7.4862e-06 #95942, 2026-11-19
         # self.t_raman_pi_pulse = 8.5226e-06 #95976, 2026-11-19
-        self.t_raman_pi_pulse = 9.3566e-06 #96075, 2026-11-20
+        # self.t_raman_pi_pulse = 9.3566e-06 #96075, 2026-11-20
+        # self.t_raman_pi_pulse = 9.600e-06 #96086+#96089, 2026-11-21  # rate 1/(2f), inverse-variance mean of 9.683 +/- 0.110 and 9.492 +/- 0.126 us (agree 1.1 sigma), +/- 0.083 us (lower bound, fits chi2r ~2); +2.6 % vs #96075, cause unknown
+        self.t_raman_pi_pulse = 9.947e-06 #96378, 2026-11-21  # Rabi WITH the 45 ms painting ramp-off, rate 1/(2f), +/- 0.110 us (chi2/dof 1.39); +3.6 % (~2.5 SE) vs 9.600 (no ramp). One set with read_alpha_lightshift / read_twist_per_sz #96383 (expt_params_feedback.py). One run; the Rabi rate has been unstable: a later ramp Rabi > 2 SE away reopens it
          
         # DAC controlled AO amplitudes
         self.amp_d1_3d_c = 0.3
@@ -422,7 +425,8 @@ class ExptParams(ExptParamsWaxx):
         # self.frequency_raman_transition = 119.463528e6 #89967, 2026-10-29  # Ramsey 13 x 5, +/- 130 Hz (-347 Hz vs #89934 at 20:33), Raman lock 45.98 GHz
         # self.frequency_raman_transition = 119.463801e6 #90200, 2026-10-30  # Ramsey 13 x 5, +/- 46 Hz, Raman lock 45.95 GHz
         # self.frequency_raman_transition = 119.463504e6 #90240, 2026-10-30  # Ramsey 13 x 5, +/- 68 Hz (-297 Hz vs #90200), Raman lock 45.95 GHz
-        self.frequency_raman_transition = 119.4635753e6 #92596+#92600, 2026-11-05  # Ramsey coarse (17 x 5) + fine (500 us, 15 x 12) inverse-variance mean, +/- 35 Hz, Raman lock 47.19-47.21 GHz; branch: sign-constrained profile, post hoc, next branch at delta-chi2 >= 13.8
+        self.frequency_raman_transition = 119.4638257e6 #96087, 2026-11-21  # Ramsey 17 x 5 (10-500 us), +250 +/- 42 Hz (scaled) vs #92596+#92600; per-t centres spread ~150 Hz; Raman lock 49.10 GHz
+        # self.frequency_raman_transition = 119.4635753e6 #92596+#92600, 2026-11-05  # Ramsey coarse (17 x 5) + fine (500 us, 15 x 12) inverse-variance mean, +/- 35 Hz, Raman lock 47.19-47.21 GHz; branch: sign-constrained profile, post hoc, next branch at delta-chi2 >= 13.8
 
         self.frequency_raman_transition_nf_1m1_20 = 460.7e6 # 1.5 G 1,-1 to 2,0
         self.frequency_raman_transition_nf_1m1_2m2 = 458.4e6 # 1.5 G 1,-1 to 2,-2

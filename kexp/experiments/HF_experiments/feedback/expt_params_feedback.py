@@ -54,21 +54,15 @@ class ExptParams(expt_params_kexp):
         self.t_raman_pulse_offset = 127.e-9
         self.t_raman_pulse_ideal = self.t_raman_pulse - self.t_raman_pulse_offset
 
-        # calibration run 78267
-        # img amp 0.2, pulse time 5.0e-06 s
-        # self.frequency_lightshift = 4.061e+04  # Hz, +/- 1.5e+03 Hz, imaging amp 0.2 #80654
-        # run 83203 | RabiJointPosterior (apd_joint_calibration, f free, t0 127 ns), nuisances verdict PASS
-        # self.frequency_lightshift = 2.384e+04  # Hz, +/- 1.6e+03 Hz, imaging amp 0.2, t_pulse 5 us #89424
-        # self.frequency_lightshift = 2.337e+04  # Hz, +/- 1.5e+03 Hz, imaging amp 0.2, t_pulse 5 us #89769, 2026-10-29
-        # self.frequency_lightshift = 2.465e+04  # Hz, +/- 3.6e+03 Hz, imaging amp 0.2, t_pulse 5 us #89935, 2026-10-29
-        # self.frequency_lightshift = 2.375e+04  # Hz, +/- 1.8e+03 Hz, imaging amp 0.2, t_pulse 5 us #90201, 2026-10-30
-        # self.frequency_lightshift = 2.195e+04  # Hz, +/- 1.1e+03 Hz, imaging amp 0.2, t_pulse 5 us #90242, 2026-10-30
-        # self.frequency_lightshift = 3.30e+04  # Hz, +/- 6.1e+03 Hz, imaging amp 0.2, t_pulse 5 us #92599+#92602, 2026-11-05  # on-minus-off, inverse-variance mean of 2 runs (40.9 +/- 9.6, 27.8 +/- 7.8 kHz; agree 1.06 SE), rule fixed before the 2nd run
-        self.frequency_lightshift = 2.667e+04  # Hz, +/- 3.3e+03 Hz, imaging amp 0.2, t_pulse 5 us #95967
-                
+        # self.frequency_lightshift = 4.794e+04  # Hz, +/- 1.3e+03 Hz, imaging amp 0.4, t_pulse 5 us #96084
+        # self.frequency_lightshift = 2.370e+04  # Hz, +/- 1.4e+03 Hz (stat), imaging amp 0.2, t_pulse 5 us #96090, 2026-11-21
+        self.frequency_lightshift = 2.177e+04  # Hz, +/- 2.2e+03 Hz (lab-fit SE), imaging amp 0.2, t_pulse 5 us #96380, 2026-11-21: MEASURED no-light reference in the same run, with the adopted ramp; pulse areas from t_pi 9.947 us (#96378)
+        # #96090: pi/2 from pin 9.683 us (adopted t_pi 9.600); f_rabi pin sensitivity 3-7 kHz per 1 %; 11 % below #95967 (26.67 kHz, amp 0.2), unexplained
+
         # calibration run 89425 (S_z endpoints from 'fit', deg-2 S_z response fit)
         self.t_img_pulse = 5e-06  # s
-        self.amp_imaging = 0.2
+        # self.amp_imaging = 0.4
+        self.amp_imaging = 0.2  # user 2026-11-21: "use 0.2"; paired with frequency_lightshift #96090
         # APD readout calibration, runs 89442 (sigma_z), python -m kexp.analysis.apd_state_mapping
         # (retry of the suspicious 89440: agrees within 0.6 / 1.8 mV, contrast +6 %)
         # APD readout calibration, run 89746 (sigma_z 7 pt, t_pi #89744), python -m kexp.analysis.apd_state_mapping --degree 1
@@ -80,7 +74,16 @@ class ExptParams(expt_params_kexp):
         # self.v_apd_all_up = -0.13801 #89960, 2026-10-29  # periodic recal 3-pt, +/- 0.0014 V; retry 89962 -0.13895 agrees
         # self.v_apd_all_up = -0.13616 #90019, 2026-10-30  # refit-block recal 3-pt, +/- 0.0020 V; retry 90020 -0.13648 agrees
         # self.v_apd_all_up = -0.1409 #90202, 2026-10-30  # S_z=+1 of the degree-1 single-shot fit, +/- 0.0021 V
-        self.v_apd_all_up = -0.14588 #92603, 2026-11-05  # S_z=+1 of the degree-2 single-shot fit, reads 3-5, +/- 0.0014 V; contrast 14.2 +/- 1.9 mV (read 1 alone 24.7 +/- 3.3)
+        # self.v_apd_all_up = -0.14588 #92603, 2026-11-05  # S_z=+1 of the degree-2 single-shot fit, reads 3-5, +/- 0.0014 V; contrast 14.2 +/- 1.9 mV (read 1 alone 24.7 +/- 3.3)
+        # APD readout calibration #96098, 2026-11-21 (python -m kexp.analysis.apd_state_mapping 96098 --sz-source params --degree 2 --pulses 3 4 5):
+        # FIRST-READS map (reads 3-5 primary; read 1 alone: C 55.2 mV, midpoint 0.65 +/- 0.05), 66.7 us read spacing, 45 ms painting
+        # ramp-off before the reads (user 11-21), phase_slm_mask 0.37 pi, amp 0.2, settle 2 us, no Raman between reads: NOT a train map
+        # (90552). Residual SD by S_z bin 5.7-10.2 mV (largest near S_z 0, 8 shots). Pre-registered fold rule: REMOVED on read 1 and reads 3-5.
+        # self.v_apd_all_up = -0.13868 #96098, 2026-11-21  # S_z=+1 of the degree-2 single-shot fit, reads 3-5, +/- 0.0013 V; contrast 51.3 +/- 1.6 mV
+        self.v_apd_all_up = -0.13976 #96298, 2026-11-21  # 4th periodic 3-pt recal, reads 3-5, +/- 0.0015 V; -1.1 mV vs #96098 (rule base), -5.0 mV vs #96235; contrast 45.6 +/- 2.1 mV (-11 % vs #96098: contrast falling, flagged)
+        # self.v_apd_all_up = -0.13477 #96235, 2026-11-21  # 3rd periodic 3-pt recal, reads 3-5, +/- 0.0017 V; +0.6 mV vs #96173; contrast 52.1 +/- 2.3 mV
+        # self.v_apd_all_up = -0.13538 #96173, 2026-11-21  # 2nd periodic 3-pt recal, reads 3-5, +/- 0.0017 V; +0.3 mV vs #96130; contrast 51.8 +/- 2.4 mV
+        # self.v_apd_all_up = -0.13569 #96130, 2026-11-21  # periodic 3-pt recal (t_pi x 0, .5, 1; 10 reps), reads 3-5, +/- 0.0018 V; +3.0 mV vs #96098 (within the 5 mV rule); contrast 53.8 +/- 2.6 mV
         # self.v_apd_all_down = -0.16908
         # self.v_apd_all_down = -0.16948 #89442, 2026-10-29  # S_z=-1 of the degree-1 single-shot fit, +/- 0.0013 V
         # self.v_apd_all_down = -0.16677 #89746, 2026-10-29  # S_z=-1 of the degree-1 single-shot fit, +/- 0.0014 V
@@ -88,14 +91,24 @@ class ExptParams(expt_params_kexp):
         # self.v_apd_all_down = -0.16109 #89960, 2026-10-29  # periodic recal 3-pt, +/- 0.0015 V; retry 89962 -0.16114 agrees (contrast 31.3 -> 23.1 mV)
         # self.v_apd_all_down = -0.17389 #90019, 2026-10-30  # refit-block recal 3-pt, +/- 0.0021 V; retry 90020 -0.17579 agrees (contrast 23.1 -> 37.7 mV)
         # self.v_apd_all_down = -0.17856 #90202, 2026-10-30  # S_z=-1 of the degree-1 single-shot fit, +/- 0.0022 V
-        self.v_apd_all_down = -0.16012 #92603, 2026-11-05  # S_z=-1 of the degree-2 single-shot fit, reads 3-5, +/- 0.0015 V
+        # self.v_apd_all_down = -0.16012 #92603, 2026-11-05  # S_z=-1 of the degree-2 single-shot fit, reads 3-5, +/- 0.0015 V
+        # self.v_apd_all_down = -0.18997 #96098, 2026-11-21  # S_z=-1 of the degree-2 single-shot fit, reads 3-5, +/- 0.0011 V (down rises ~8 mV from read 1 to read 5)
+        self.v_apd_all_down = -0.18541 #96298, 2026-11-21  # 4th periodic 3-pt recal, reads 3-5, +/- 0.0015 V; +4.6 mV vs #96098, +1.5 mV vs #96235
+        # self.v_apd_all_down = -0.18691 #96235, 2026-11-21  # 3rd periodic 3-pt recal, reads 3-5, +/- 0.0017 V; +0.2 mV vs #96173
+        # self.v_apd_all_down = -0.18715 #96173, 2026-11-21  # 2nd periodic 3-pt recal, reads 3-5, +/- 0.0017 V; +2.3 mV vs #96130
+        # self.v_apd_all_down = -0.18944 #96130, 2026-11-21  # periodic 3-pt recal, reads 3-5, +/- 0.0018 V; +0.6 mV vs #96098
         # self.n_photons_per_shot = 691.7
         # self.n_photons_per_shot = 614.32 #89442, 2026-10-29  # scope integral, up minus down per pulse, +/- 30
         # self.n_photons_per_shot = 538.19 #89746, 2026-10-29  # scope integral, up minus down per pulse, +/- 33
         # self.n_photons_per_shot = 415.32 #89937, 2026-10-29  # scope integral, up minus down per pulse, +/- 51
         # self.n_photons_per_shot = 308.16 #89960, 2026-10-29  # scope integral, up minus down per pulse, +/- 42
         # self.n_photons_per_shot = 545.02 #90019, 2026-10-30  # scope integral, up minus down per pulse, +/- 53
-        self.n_photons_per_shot = 551.95 #90202, 2026-10-30  # scope integral, up minus down per pulse, +/- 53
+        # self.n_photons_per_shot = 551.95 #90202, 2026-10-30  # scope integral, up minus down per pulse, +/- 53
+        # self.n_photons_per_shot = 751.5 #96098, 2026-11-21  # scope integral, up minus down per pulse, reads 3-5, +/- 26; SR560 gain 500 / LP 300 kHz per the user 11-21 (not recorded in the run file)
+        self.n_photons_per_shot = 626.5 #96298, 2026-11-21  # 4th periodic recal, scope integral, reads 3-5 (-16 % vs #96235)
+        # self.n_photons_per_shot = 749.1 #96235, 2026-11-21  # 3rd periodic recal, scope integral, reads 3-5
+        # self.n_photons_per_shot = 829.2 #96173, 2026-11-21  # 2nd periodic recal, scope integral, reads 3-5
+        # self.n_photons_per_shot = 814.4 #96130, 2026-11-21  # periodic recal, scope integral, reads 3-5; SR560 gain 500 / LP 300 kHz per the user 11-21
         # self.std_n_photons_up = 132
         # self.std_n_photons_down = 97.663
         # self.std_n_photons_per_shot = 114.83 # avg of up/down
@@ -106,7 +119,12 @@ class ExptParams(expt_params_kexp):
         # self.std_n_photons_per_shot = 112.31 #89960, 2026-10-29  # 308.2 * 8.41 mV / 23.08 mV (within-run, up)
         # self.std_n_photons_per_shot = 124.0 #90019, 2026-10-30  # 545 * 8.59 mV / 37.73 mV (within-run, up)
         # self.std_n_photons_per_shot = 151.98 #90202, 2026-10-30  # 552 * 10.37 mV / 37.66 mV (within-run, up)
-        self.std_n_photons_per_shot = 367.98 #92603, 2026-11-05  # 552 * 9.49 mV / 14.24 mV (within-run, down; reads 3-5; n_photons kept, scope check failed)
+        # self.std_n_photons_per_shot = 367.98 #92603, 2026-11-05  # 552 * 9.49 mV / 14.24 mV (within-run, down; reads 3-5; n_photons kept, scope check failed)
+        # self.std_n_photons_per_shot = 111.38 #96098, 2026-11-21  # 751.5 * 7.60 mV / 51.29 mV (within-run, up; reads 3-5)
+        self.std_n_photons_per_shot = 114.10 #96298, 2026-11-21  # 626.5 * 8.31 mV / 45.65 mV (within-run, largest endpoint noise; 10 shots per area); midpoint kept at #96098
+        # self.std_n_photons_per_shot = 122.65 #96235, 2026-11-21  # 749.1 * 8.54 mV / 52.14 mV (within-run, largest endpoint noise; 10 shots per area); midpoint kept at #96098
+        # self.std_n_photons_per_shot = 140.61 #96173, 2026-11-21  # 829.2 * 8.78 mV / 51.77 mV (within-run, largest endpoint noise; 10 shots per area); midpoint kept at #96098
+        # self.std_n_photons_per_shot = 167.06 #96130, 2026-11-21  # 814.4 * 11.03 mV / 53.75 mV (within-run, largest endpoint noise; 10 shots per area, so noisier than #96098's estimate); midpoint kept at #96098 (physicist amendment: 3 areas = 0 dof)
         # self.feedback_measurement_midpoint_fraction = 0.50278
         # self.feedback_measurement_midpoint_fraction = 0.5 #89442, 2026-10-29  # linear map (quadratic term not resolved)
         # self.feedback_measurement_midpoint_fraction = 0.5 #89746, 2026-10-29  # linear map (degree 1 by procedure; deg-2 midpoint 0.691 +/- 0.055 NOT used)
@@ -114,16 +132,19 @@ class ExptParams(expt_params_kexp):
         # self.feedback_measurement_midpoint_fraction = 0.5 #89960, 2026-10-29  # linear map
         # self.feedback_measurement_midpoint_fraction = 0.5 #90019, 2026-10-30  # linear map
         # self.feedback_measurement_midpoint_fraction = 0.5 #90202, 2026-10-30  # linear map (degree 1 by procedure; deg-2 midpoint 0.85 +/- 0.07 NOT used)
-        self.feedback_measurement_midpoint_fraction = 0.58247 #92603, 2026-11-05  # quadratic fit, reads 3-5, +/- 0.14; quadratic term not resolved (F p .55), 0.6 SE from 0.5
+        # self.feedback_measurement_midpoint_fraction = 0.58247 #92603, 2026-11-05  # quadratic fit, reads 3-5, +/- 0.14; quadratic term not resolved (F p .55), 0.6 SE from 0.5
+        self.feedback_measurement_midpoint_fraction = 0.58198 #96098, 2026-11-21  # quadratic fit, reads 3-5, +/- 0.030 (read 1 alone 0.65 +/- 0.05)
 
         self.back_action_coherence = 0.8445 #88845-88847, 2026-10-26  # open-loop simcheck re-measure (SIMCHECK_PREREG.md sha c3448752, fit_remeasure.py 489c70c0): C0 under the live model, APD scale fixed at map #88792,88794 (34.21 mV), +/- 0.006, Raman lock 44.89 GHz, f_LS 26.2 kHz
 
         # State-dependent read model (READ_TWIST_SIGN in kexp.base.feedback): the read's z twist (rad)
         # and coherence slope per unit s_z at the read. 0 = off.
-        self.read_twist_per_sz = 0.976 #89437, 2026-10-28  # check_twist Ramsey phase vs s_z, +/- 0.111 (chi2_red 1.67, 3 dof, errors scaled), Raman lock 46.055 GHz (SD 2.8 MHz); contrast/sin(theta) not flat; reference assumed pi
+        self.read_twist_per_sz = 0.7799 #96383, 2026-11-21  # check_twist with the 45 ms ramp, t_pi 9.947 us (#96378, one set with it), larger-of-two phase SE: +/- 0.0874 (chi2_red 2.97, 3 dof, errors scaled); clipped-OD fixed box; unclipped N gives 0.877 +/- 0.073; t0 127->400 ns moves it +0.007; Raman lock 49.096 GHz (SD 1.6 MHz); reference assumed pi. Not yet validated by a sim check at these constants
+        # self.read_twist_per_sz = 0.976 #89437, 2026-10-28  # check_twist Ramsey phase vs s_z, +/- 0.111 (chi2_red 1.67, 3 dof, errors scaled), Raman lock 46.055 GHz (SD 2.8 MHz); contrast/sin(theta) not flat; reference assumed pi
         # self.read_twist_per_sz = 1.350 #88845-88847, 2026-10-26  # open-loop simcheck re-measure (SIMCHECK_PREREG.md sha c3448752): twist per unit s_z, +/- 0.063, Raman lock 44.89 GHz, f_LS 26.2 kHz
         self.back_action_coherence_slope = 0.0
-        self.read_alpha_lightshift = 0.948 #89437, 2026-10-28  # same fit, +/- 0.046; intercept carries the reference phase and Raman detuning
+        self.read_alpha_lightshift = 0.7380 #96383, 2026-11-21  # same fit, +/- 0.0419; agrees with light shift #96380 (0.684 +/- 0.069 rad over 5 us, 0.67 SE); conditional on t0: 127->400 ns moves it +0.059 (+1.4 SE)
+        # self.read_alpha_lightshift = 0.948 #89437, 2026-10-28  # same fit, +/- 0.046; intercept carries the reference phase and Raman detuning
         # self.read_alpha_lightshift = 1.191 #88845-88847, 2026-10-26
         self.feedback_measurement_midpoint_remap_enabled = True
 

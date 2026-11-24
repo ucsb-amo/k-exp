@@ -30,7 +30,7 @@ class dac_frame(dac_frame_waxx):
         self.outer_coil_supply_voltage = self.assign_dac_ch(10)
         self.inner_coil_supply_voltage = self.assign_dac_ch(11)
         self.v_pd_tweezer_pid1 = self.assign_dac_ch(12,v=9.7)
-        self.vco_rf = self.assign_dac_ch(13,v=0.)
+        self.img_beatlock_feed_forward = self.assign_dac_ch(13,v=0.)
         self.raman_80_pid = self.assign_dac_ch(14,v=0.)
 
         self.tweezer_paint_amp = self.assign_dac_ch(16)

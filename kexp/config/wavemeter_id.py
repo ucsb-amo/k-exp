@@ -1,3 +1,5 @@
+import threading
+
 from waxx.control.misc.moglabs import MOGDevice
 from waxx.control.misc.moglabs_wavemeter import WavemeterClient as WavemeterWaxx, WavemeterController, DummyWavemeterController, DummyWavemeterClient
 from kexp.config.ip import WAVEMETER_MOGLABS_IP
@@ -58,6 +60,7 @@ class fzw_frame():
 
         self._fzw = None
         self._connected = False
+        self._connect_lock = threading.RLock()
 
         self.ry_405 = self.add_wavemeter(2, target_frequency=p.frequency_target_405_lock)
         self.ry_980 = self.add_wavemeter(5, target_frequency=p.frequency_target_980_lock)
@@ -82,19 +85,22 @@ class fzw_frame():
         """The run's claim: open the FZW (an exclusive TCP connection) and
         give every channel its client. Once per frame; a failure falls back
         to the dummy clients (lock status not checked), as it always has."""
-        if self._connected:
-            return
-        self._connected = True
-        try:
-            self._fzw = WavemeterController(WAVEMETER_MOGLABS_IP)
-        except:
-            print('Failed to connect to wavemeter -- please close wavemeter software if it is open. Lock status will not be checked.')
-            self._fzw = DummyWavemeterController()
-        for lazy in self._channels():
-            if isinstance(self._fzw, WavemeterController):
-                impl = Wavemeter(ch=lazy.ch, target_freq=lazy.target_freq,
-                                 wavemeter_device=self._fzw)
-                impl.key = lazy.key
-            else:
-                impl = DummyWavemeterClient()
-            lazy._impl = impl
+        # a second caller (claim_overlap: claim thread + main thread) waits
+        # until every channel has its client
+        with self._connect_lock:
+            if self._connected:
+                return
+            self._connected = True
+            try:
+                self._fzw = WavemeterController(WAVEMETER_MOGLABS_IP)
+            except:
+                print('Failed to connect to wavemeter -- please close wavemeter software if it is open. Lock status will not be checked.')
+                self._fzw = DummyWavemeterController()
+            for lazy in self._channels():
+                if isinstance(self._fzw, WavemeterController):
+                    impl = Wavemeter(ch=lazy.ch, target_freq=lazy.target_freq,
+                                     wavemeter_device=self._fzw)
+                    impl.key = lazy.key
+                else:
+                    impl = DummyWavemeterClient()
+                lazy._impl = impl

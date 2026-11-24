@@ -127,11 +127,15 @@ def test_cleanup_makes_the_high_power_outputs_safe_before_anything_can_raise():
     (handler,) = first.handlers
     assert handler.type is None and handler.name is None          # bare except
     assert isinstance(handler.body[-1], ast.Raise) and handler.body[-1].exc is None
-    names = [n for n, _ in _calls(handler.body)]
+    # the handler makes the outputs safe through Base._outputs_safe_now
+    assert [n for n, _ in _calls(handler.body)] == ["self._outputs_safe_now"]
+    safe = ast.parse(textwrap.dedent(inspect.getsource(Base._outputs_safe_now))).body[0]
+    names = [n for n, _ in _calls(safe.body)]
     for needed in ("self.reset_coils", "self.lightsheet.off", "self.tweezer.off",
                    "self.imaging.off", "self.raman.off", "self.ttl.raman_shutter.off"):
         assert needed in names, needed
-    (rc,) = [c for n, c in _calls(handler.body) if n == "self.reset_coils"]
+    assert not any(isinstance(n, ast.Try) for n in ast.walk(safe))   # nothing swallowed
+    (rc,) = [c for n, c in _calls(safe.body) if n == "self.reset_coils"]
     kw = {k.arg: k.value for k in rc.keywords}
     assert isinstance(kw.get("trust_cached_state"), ast.Constant) and kw["trust_cached_state"].value is False
 
@@ -173,14 +177,21 @@ def test_the_per_shot_magnetometer_read_is_on_by_default_and_switchable():
     assert inspect.signature(Base.__init__).parameters["read_magnetometer_per_shot"].default is True
     init_src = inspect.getsource(Base.__init__)
     assert "self.params.do_read_magnetometer_per_shot = int(self.read_magnetometer_per_shot)" in init_src
-    fn = ast.parse(textwrap.dedent(inspect.getsource(Base.init_scan_kernel))).body[0]
-    ifs = [n for n in ast.walk(fn) if isinstance(n, ast.If)
-           and ast.unparse(n.test) == "self.read_magnetometer_per_shot"]
+    shot_start = ast.unparse(ast.parse(textwrap.dedent(
+        inspect.getsource(Base.init_scan_kernel))).body[0])
+    assert shot_start.count("self._read_field_at_shot_start()") == 1
+    assert "self.read_magnetometer()" not in shot_start
+    fn = ast.parse(textwrap.dedent(inspect.getsource(Base._read_field_at_shot_start))).body[0]
+    ifs = [n for n in fn.body if isinstance(n, ast.If)]
     assert len(ifs) == 1
     (node,) = ifs
-    assert [ast.unparse(s) for s in node.body] == ["self.read_magnetometer()"]
-    assert [ast.unparse(s) for s in node.orelse] == ["self.data.b.put_data(0.0)"]
-    # no other magnetometer read left in the shot start
+    # switched off: data.b = 0. (not read); on: read, unless the pre-load reads at the end
+    assert ast.unparse(node.test) == "not self.read_magnetometer_per_shot"
+    assert [ast.unparse(s) for s in node.body] == ["self.data.b.put_data(0.0)"]
+    (elif_,) = node.orelse
+    assert ast.unparse(elif_.test) == "not self.mot_preload"
+    assert [ast.unparse(s) for s in elif_.body] == ["self.read_magnetometer()"]
+    assert elif_.orelse == []
     assert ast.unparse(fn).count("self.read_magnetometer()") == 1
 
 
