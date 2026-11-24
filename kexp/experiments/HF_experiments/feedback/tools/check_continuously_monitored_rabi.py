@@ -44,14 +44,18 @@ class hf_monitored_rabi(EnvExperiment, Base):
         self.p.t_tweezer_hold = 20.e-3
         self.p.t_tof = 20.e-6
         self.p.t_mot_load = 1.0
+
+        a = 0.5
+        self.p.frequency_lightshift *= a/self.p.amp_imaging
+        self.p.amp_imaging = 0.7
         
         self.p.N_repeats = 300
 
         self.p.n_dark_pi_pulse = 10.
         self.adjust('fraction_power_raman',0.,1.,0.05)
         self.adjust('n_dark_pi_pulse',0.,20.,dtype=float)
-        self.adjust('frequency_lightshift',10.e3,50.e3,step=1.e3,dtype=float)
-        self.adjust('phase_slm_mask',0.,2*np.pi,0.1*np.pi)
+        self.adjust('frequency_lightshift',10.e3,100.e3,step=1.e3,dtype=float)
+        self.adjust('phase_slm_mask',0.,2*np.pi,step=0.1*np.pi)
 
         # self.scope = self.scope_data.add_siglent_scope("192.168.1.108", label='PD', arm=False)
 
